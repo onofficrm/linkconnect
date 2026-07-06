@@ -46,6 +46,7 @@ if (!function_exists('onoff_builder_spa_route_prefixes')) {
         return array(
             'select-center',
             'cpa-list',
+            'cps',
             'events',
             'partner',
             'advertiser',

@@ -8,7 +8,7 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # LinkConnect React SPA (BrowserRouter) — board short URL보다 우선
-RewriteRule ^(select-center|cpa-list|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
+RewriteRule ^(select-center|cpa-list|cps|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
 
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^robots\.txt$ robots.php [L]

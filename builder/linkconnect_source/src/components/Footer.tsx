@@ -1,15 +1,9 @@
 import { Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu } from './MemberAuthMenu';
-import { handleSectionLink } from '../lib/navigation';
 import { g5BbsUrl } from '../lib/urls';
 
 export function Footer() {
-  const sectionLink = (id: string) => ({
-    to: '/' as const,
-    onClick: () => handleSectionLink(id),
-  });
-
   return (
     <footer className="bg-slate-950 pt-20 pb-10 px-4 sm:px-6 lg:px-8 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
@@ -37,7 +31,7 @@ export function Footer() {
               <li><Link to="/" className="hover:text-emerald-400 transition-colors">회사소개</Link></li>
               <li><a href={g5BbsUrl('board.php?bo_table=notice')} className="hover:text-emerald-400 transition-colors">공지사항</a></li>
               <li><Link to="/cpa-list" className="hover:text-emerald-400 transition-colors">CPA 상품</Link></li>
-              <li><Link {...sectionLink('cps')} className="hover:text-emerald-400 transition-colors">CPS 상품</Link></li>
+              <li><Link to="/cps" className="hover:text-emerald-400 transition-colors">CPS 상품</Link></li>
               <li><Link to="/events" className="hover:text-emerald-400 transition-colors">이벤트/프로모션</Link></li>
             </ul>
           </div>

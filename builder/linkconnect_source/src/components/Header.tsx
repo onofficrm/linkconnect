@@ -27,9 +27,9 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-base font-medium text-slate-300 hover:text-white transition-colors">링크커넥트</Link>
+            <Link to="/" className="text-base font-medium text-slate-300 hover:text-white transition-colors">회사소개</Link>
             <Link to="/cpa-list" className="text-base font-medium text-slate-300 hover:text-white transition-colors">CPA</Link>
-            <Link to="/" onClick={() => goToSection('cps')} className="text-base font-medium text-slate-300 hover:text-white transition-colors">CPS</Link>
+            <Link to="/cps" className="text-base font-medium text-slate-300 hover:text-white transition-colors">CPS</Link>
             <Link to="/events" className="text-base font-medium text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link>
             <Link to="/partner" className="text-base font-medium text-slate-300 hover:text-emerald-400 transition-colors">파트너센터</Link>
             <Link to="/advertiser" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors">광고주센터</Link>
@@ -63,9 +63,9 @@ export function Header() {
 
       {isMobileMenuOpen && (
         <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 pt-2 pb-6 space-y-2 shadow-2xl">
-          <Link to="/" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">링크커넥트</Link>
+          <Link to="/" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">회사소개</Link>
           <Link to="/cpa-list" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">CPA 광고상품</Link>
-          <Link to="/" onClick={() => goToSection('cps')} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">CPS</Link>
+          <Link to="/cps" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">CPS</Link>
           <Link to="/events" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">이벤트/프로모션</Link>
           <Link to="/partner" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-emerald-400 hover:bg-white/5 rounded-lg">파트너센터</Link>
           <Link to="/advertiser" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-cyan-400 hover:bg-white/5 rounded-lg">광고주센터</Link>

@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import heroDashboardImage from '../assets/images/hero_dashboard_mockup_1782987484126.jpg';
+import heroDashboardImage from '../assets/images/hero_dashboard_mockup_1782987484126.png';
 import { handleSectionLink } from '../lib/navigation';
 
 export function Hero() {
@@ -29,11 +29,7 @@ export function Hero() {
                 인기 CPA 상품 보기
                 <ArrowUpRight className="w-5 h-5" />
               </Link>
-              <Link
-                to="/"
-                onClick={() => handleSectionLink('cps')}
-                className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors"
-              >
+              <Link to="/cps" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors">
                 CPS 상품 둘러보기
               </Link>
               <Link
