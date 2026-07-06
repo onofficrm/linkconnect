@@ -457,3 +457,292 @@ if (!function_exists('lc_merchant_dashboard_for_api')) {
         );
     }
 }
+
+if (!function_exists('lc_conversion_partner_status_label')) {
+    function lc_conversion_partner_status_label($status)
+    {
+        $labels = array(
+            LC_STATUS_PENDING  => '검수중',
+            LC_STATUS_APPROVED => '승인완료',
+            LC_STATUS_REJECTED => '취소/무효',
+            LC_STATUS_SETTLED  => '정산완료',
+        );
+
+        return isset($labels[$status]) ? $labels[$status] : lc_conversion_status_label($status);
+    }
+}
+
+if (!function_exists('lc_conversion_list_for_partner')) {
+    function lc_conversion_list_for_partner($pt_id, array $filters = array())
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $pt_id = (int) $pt_id;
+        $cv_table = lc_table('conversions');
+        $cp_table = lc_table('campaigns');
+
+        $where = " cv.pt_id = '{$pt_id}' ";
+
+        if (!empty($filters['status'])) {
+            $where .= " AND cv.cv_status = '" . lc_sql_escape($filters['status']) . "' ";
+        }
+
+        if (!empty($filters['q'])) {
+            $q = lc_sql_escape($filters['q']);
+            $where .= " AND (cv.cv_name LIKE '%{$q}%' OR cv.cv_phone LIKE '%{$q}%' OR cv.cv_code LIKE '%{$q}%') ";
+        }
+
+        if (!empty($filters['rejected_only'])) {
+            $where .= " AND cv.cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' ";
+        }
+
+        $sql = " SELECT cv.*, c.cp_name
+            FROM `{$cv_table}` cv
+            INNER JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
+            WHERE {$where}
+            ORDER BY cv.cv_id DESC
+            LIMIT 200 ";
+
+        $rows = array();
+        $result = lc_sql_query($sql, false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('lc_conversion_to_api_partner')) {
+    function lc_conversion_to_api_partner(array $row)
+    {
+        $status = (string) $row['cv_status'];
+        $price = (int) $row['cv_price'];
+        $approved = $status === LC_STATUS_APPROVED;
+
+        return array(
+            'id'          => (string) $row['cv_code'],
+            'cvId'        => (int) $row['cv_id'],
+            'date'        => date('Y.m.d H:i', strtotime($row['cv_created_at'])),
+            'campaign'    => (string) ($row['cp_name'] ?? ''),
+            'name'        => lc_conversion_mask_name($row['cv_name']),
+            'phone'       => lc_conversion_mask_phone($row['cv_phone']),
+            'channel'     => (string) $row['cv_channel'],
+            'subId'       => (string) $row['cv_sub_id'],
+            'status'      => lc_conversion_partner_status_label($status),
+            'statusCode'  => $status,
+            'price'       => $price,
+            'estRevenue'  => $status === LC_STATUS_REJECTED ? 0 : $price,
+            'confRevenue' => $approved ? $price : 0,
+            'comment'     => (string) $row['cv_comment'],
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_mask_name')) {
+    function lc_conversion_mask_name($name)
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strlen') && mb_strlen($name, 'UTF-8') > 1) {
+            return mb_substr($name, 0, 1, 'UTF-8') . '*';
+        }
+
+        return $name . '*';
+    }
+}
+
+if (!function_exists('lc_conversion_list_for_partner_api')) {
+    function lc_conversion_list_for_partner_api($pt_id, array $filters = array())
+    {
+        $rows = lc_conversion_list_for_partner($pt_id, $filters);
+
+        return array_map('lc_conversion_to_api_partner', $rows);
+    }
+}
+
+if (!function_exists('lc_conversion_partner_summary')) {
+    function lc_conversion_partner_summary($pt_id)
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $pt_id = (int) $pt_id;
+        $cv_table = lc_table('conversions');
+        $today = date('Y-m-d');
+
+        $row = lc_sql_fetch(" SELECT
+            COUNT(*) AS total_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' THEN 1 ELSE 0 END) AS pending_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected_cnt,
+            SUM(CASE WHEN DATE(cv_created_at) = '{$today}' THEN 1 ELSE 0 END) AS today_received,
+            SUM(CASE WHEN cv_status != '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN cv_price ELSE 0 END) AS est_revenue,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv_price ELSE 0 END) AS conf_revenue,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' AND DATE(cv_updated_at) = '{$today}' THEN cv_price ELSE 0 END) AS today_est_revenue
+            FROM `{$cv_table}` WHERE pt_id = '{$pt_id}' ");
+
+        return array(
+            'total'         => (int) ($row['total_cnt'] ?? 0),
+            'pending'       => (int) ($row['pending_cnt'] ?? 0),
+            'approved'      => (int) ($row['approved_cnt'] ?? 0),
+            'rejected'      => (int) ($row['rejected_cnt'] ?? 0),
+            'todayReceived' => (int) ($row['today_received'] ?? 0),
+            'estRevenue'    => (int) ($row['est_revenue'] ?? 0),
+            'confRevenue'   => (int) ($row['conf_revenue'] ?? 0),
+            'todayEstRevenue' => (int) ($row['today_est_revenue'] ?? 0),
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_partner_chart_7d')) {
+    function lc_conversion_partner_chart_7d($pt_id)
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $pt_id = (int) $pt_id;
+        $cv_table = lc_table('conversions');
+        $cl_table = lc_table('clicks');
+        $items = array();
+
+        for ($i = 6; $i >= 0; $i--) {
+            $day = date('Y-m-d', strtotime('-' . $i . ' days'));
+            $label = date('m.d', strtotime($day));
+
+            $click_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cl_table}` WHERE pt_id = '{$pt_id}' AND DATE(cl_created_at) = '{$day}' ");
+            $cv_row = lc_sql_fetch(" SELECT
+                COUNT(*) AS db_cnt,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approval_cnt
+                FROM `{$cv_table}`
+                WHERE pt_id = '{$pt_id}' AND DATE(cv_created_at) = '{$day}' ");
+
+            $items[] = array(
+                'date'     => $label,
+                'click'    => (int) ($click_row['cnt'] ?? 0),
+                'db'       => (int) ($cv_row['db_cnt'] ?? 0),
+                'approval' => (int) ($cv_row['approval_cnt'] ?? 0),
+            );
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('lc_conversion_create')) {
+    /**
+     * @return array{ok:bool,message:string,conversion:array|null}
+     */
+    function lc_conversion_create(array $payload)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'conversion' => null);
+        }
+
+        $name = trim((string) ($payload['name'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? ''));
+        if ($name === '' || $phone === '') {
+            return array('ok' => false, 'message' => '이름과 연락처는 필수입니다.', 'conversion' => null);
+        }
+
+        $pt_id = (int) ($payload['pt_id'] ?? 0);
+        $cp_id = (int) ($payload['cp_id'] ?? 0);
+        $lk_id = (int) ($payload['lk_id'] ?? 0);
+
+        if ($cp_id <= 0) {
+            return array('ok' => false, 'message' => '캠페인 정보가 없습니다.', 'conversion' => null);
+        }
+
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT * FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' AND cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' LIMIT 1 ");
+        if (!$campaign) {
+            return array('ok' => false, 'message' => '진행 중인 캠페인이 아닙니다.', 'conversion' => null);
+        }
+
+        $cv_code = lc_conversion_generate_code();
+        $table = lc_table('conversions');
+
+        lc_sql_query(" INSERT INTO `{$table}` SET
+            cv_code = '" . lc_sql_escape($cv_code) . "',
+            pt_id = '{$pt_id}',
+            cp_id = '{$cp_id}',
+            lk_id = '{$lk_id}',
+            cv_name = '" . lc_sql_escape($name) . "',
+            cv_phone = '" . lc_sql_escape($phone) . "',
+            cv_email = '" . lc_sql_escape($payload['email'] ?? '') . "',
+            cv_region = '" . lc_sql_escape($payload['region'] ?? '') . "',
+            cv_inquiry = '" . lc_sql_escape($payload['inquiry'] ?? '') . "',
+            cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "',
+            cv_price = '" . (int) $campaign['cp_price'] . "',
+            cv_channel = '" . lc_sql_escape($payload['channel'] ?? '') . "',
+            cv_sub_id = '" . lc_sql_escape($payload['sub_id'] ?? '') . "',
+            cv_comment = '',
+            cv_created_at = NOW(),
+            cv_updated_at = NOW() ", false);
+
+        $cv_id = (int) lc_sql_insert_id();
+        if ($cv_id <= 0) {
+            return array('ok' => false, 'message' => '디비 접수에 실패했습니다.', 'conversion' => null);
+        }
+
+        $conversion = lc_conversion_get_by_id($cv_id);
+
+        return array(
+            'ok'         => true,
+            'message'    => '상담 신청이 접수되었습니다.',
+            'conversion' => $conversion,
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_create_from_link')) {
+    /**
+     * @return array{ok:bool,message:string,conversion:array|null}
+     */
+    function lc_conversion_create_from_link(array $link, array $payload)
+    {
+        $payload['pt_id'] = (int) $link['pt_id'];
+        $payload['cp_id'] = (int) $link['cp_id'];
+        $payload['lk_id'] = (int) $link['lk_id'];
+        if (empty($payload['channel'])) {
+            $payload['channel'] = (string) ($link['lk_channel'] ?? '');
+        }
+        if (empty($payload['sub_id'])) {
+            $payload['sub_id'] = (string) ($link['lk_sub_id'] ?? '');
+        }
+
+        return lc_conversion_create($payload);
+    }
+}
+
+if (!function_exists('lc_partner_dashboard_for_api')) {
+    function lc_partner_dashboard_for_api($pt_id)
+    {
+        $partner = lc_get_partner_by_id($pt_id);
+        $summary = lc_conversion_partner_summary($pt_id);
+        $clicks = function_exists('lc_link_partner_click_summary') ? lc_link_partner_click_summary($pt_id) : array('today' => 0);
+        $chart = lc_conversion_partner_chart_7d($pt_id);
+        $channels = function_exists('lc_link_partner_channel_stats') ? lc_link_partner_channel_stats($pt_id) : array();
+        $recent = array_slice(lc_conversion_list_for_partner_api($pt_id), 0, 5);
+
+        return array(
+            'balance'          => is_array($partner) ? (int) $partner['pt_balance'] : 0,
+            'balanceFormatted' => is_array($partner) ? number_format((int) $partner['pt_balance']) : '0',
+            'summary'          => array_merge($summary, array(
+                'todayClicks' => (int) ($clicks['today'] ?? 0),
+            )),
+            'chart7d'          => $chart,
+            'channels'         => $channels,
+            'recent'           => $recent,
+        );
+    }
+}

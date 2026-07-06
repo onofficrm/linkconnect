@@ -143,6 +143,84 @@ export function fetchPartnerCampaigns(filters?: { category?: string; q?: string 
   });
 }
 
+export type PartnerLink = {
+  id: number;
+  code: string;
+  campaign: string;
+  campaignId: number;
+  channel: string;
+  subId: string;
+  url: string;
+  clicks: number;
+  received: number;
+  approved: number;
+  canceled: number;
+  estRevenue: number;
+  confRevenue: number;
+  status: string;
+  statusCode: string;
+  createdAt: string;
+};
+
+export type PartnerConversion = {
+  id: string;
+  cvId: number;
+  date: string;
+  campaign: string;
+  name: string;
+  phone: string;
+  channel: string;
+  subId: string;
+  status: string;
+  statusCode: string;
+  price: number;
+  estRevenue: number;
+  confRevenue: number;
+  comment: string;
+};
+
+export type PartnerDashboardResponse = {
+  balance: number;
+  balanceFormatted: string;
+  summary: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    todayReceived: number;
+    todayClicks: number;
+    estRevenue: number;
+    confRevenue: number;
+    todayEstRevenue: number;
+  };
+  chart7d: Array<{ date: string; click: number; db: number; approval: number }>;
+  channels: Array<{ channel: string; clicks: number; dbs: number; approved: number; percentage: number }>;
+  recent: PartnerConversion[];
+};
+
+export function fetchPartnerDashboard() {
+  return partnerApiGet<PartnerDashboardResponse>('dashboard.php');
+}
+
+export function fetchPartnerLinks() {
+  return partnerApiGet<{ items: PartnerLink[]; total: number }>('links.php');
+}
+
+export function createPartnerLink(payload: { campaignId: number; channel?: string; subId?: string }) {
+  return partnerApiPost<{ message: string; link: PartnerLink | null }>('links.php', payload);
+}
+
+export function fetchPartnerConversions(filters?: { status?: string; q?: string; rejected?: boolean }) {
+  return partnerApiGet<{ items: PartnerConversion[]; summary: PartnerDashboardResponse['summary']; total: number }>(
+    'conversions.php',
+    {
+      status: filters?.status ?? '',
+      q: filters?.q ?? '',
+      rejected: filters?.rejected ? '1' : '',
+    },
+  );
+}
+
 export function applyPartner() {
   return partnerApiPost<{ partner: PartnerProfile | null; message: string }>('apply.php');
 }

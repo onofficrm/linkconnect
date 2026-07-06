@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
-import { fetchPartnerCampaigns, PartnerCampaign } from '../../lib/api';
+import { fetchPartnerCampaigns, createPartnerLink, PartnerCampaign } from '../../lib/api';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -45,6 +45,11 @@ export function PartnerSearch() {
   const [items, setItems] = useState<CampaignCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [linkModal, setLinkModal] = useState<CampaignCardItem | null>(null);
+  const [linkChannel, setLinkChannel] = useState('');
+  const [linkSubId, setLinkSubId] = useState('');
+  const [linkCreating, setLinkCreating] = useState(false);
+  const [linkResult, setLinkResult] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +103,27 @@ export function PartnerSearch() {
     const total = items.reduce((sum, item) => sum + Number(item.price.replace(/,/g, '')), 0);
     return Math.round(total / items.length).toLocaleString();
   }, [items]);
+
+  const handleCreateLink = async () => {
+    if (!linkModal) return;
+    setLinkCreating(true);
+    setLinkResult('');
+    try {
+      const result = await createPartnerLink({
+        campaignId: linkModal.id,
+        channel: linkChannel,
+        subId: linkSubId,
+      });
+      if (result.link?.url) {
+        setLinkResult(result.link.url);
+        await navigator.clipboard.writeText(result.link.url);
+      }
+    } catch (err) {
+      setLinkResult(err instanceof Error ? err.message : '링크 생성에 실패했습니다.');
+    } finally {
+      setLinkCreating(false);
+    }
+  };
 
   return (
     <PartnerLayout activeMenu="search" title="광고상품 찾기">
@@ -170,7 +196,7 @@ export function PartnerSearch() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendedItems.map((item) => (
                   <div key={`rec-${item.id}`}>
-                    <CampaignCard item={item} />
+                    <CampaignCard item={item} onCreateLink={() => { setLinkModal(item); setLinkChannel(''); setLinkSubId(''); setLinkResult(''); }} />
                   </div>
                 ))}
               </div>
@@ -187,7 +213,7 @@ export function PartnerSearch() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {items.map((item) => (
               <div key={item.id}>
-                <CampaignCard item={item} />
+                <CampaignCard item={item} onCreateLink={() => { setLinkModal(item); setLinkChannel(''); setLinkSubId(''); setLinkResult(''); }} />
               </div>
             ))}
           </div>
@@ -217,11 +243,43 @@ export function PartnerSearch() {
         </div>
       </div>
 
+      {linkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">홍보 링크 생성</h3>
+              <p className="text-sm text-slate-500 mt-1">{linkModal.title}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">채널명</span>
+                <input value={linkChannel} onChange={(e) => setLinkChannel(e.target.value)} placeholder="네이버 블로그" className="mt-1 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">sub_id (선택)</span>
+                <input value={linkSubId} onChange={(e) => setLinkSubId(e.target.value)} placeholder="blog_01" className="mt-1 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
+              </label>
+              {linkResult && (
+                <p className={`text-sm ${linkResult.startsWith('http') ? 'text-emerald-600 break-all' : 'text-red-600'}`}>
+                  {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
+                </p>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-slate-50 flex gap-3">
+              <button type="button" onClick={() => setLinkModal(null)} className="flex-1 py-3 border border-slate-200 rounded-xl">닫기</button>
+              <button type="button" disabled={linkCreating} onClick={handleCreateLink} className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-60">
+                {linkCreating ? '생성 중...' : '링크 생성'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </PartnerLayout>
   );
 }
 
-function CampaignCard({ item }: { item: CampaignCardItem }) {
+function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreateLink: () => void }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
@@ -282,7 +340,7 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
         <button className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
           상세보기
         </button>
-        <button className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">
+        <button type="button" onClick={onCreateLink} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">
           <LinkIcon className="w-4 h-4" />
           홍보 링크 생성
         </button>

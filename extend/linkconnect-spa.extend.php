@@ -31,6 +31,21 @@ if (!function_exists('linkconnect_spa_route_pattern')) {
     }
 }
 
+if (!function_exists('linkconnect_add_tracking_rewrite_rules')) {
+    function linkconnect_add_tracking_rewrite_rules($rules, $get_path_url, $base_path, $return_string)
+    {
+        if (!linkconnect_spa_rewrite_enabled()) {
+            return $rules;
+        }
+
+        $extra = "# LinkConnect tracking / landing\n";
+        $extra .= 'RewriteRule ^r/([a-zA-Z0-9_-]+)$ r/index.php?code=$1 [L,QSA]' . "\n";
+        $extra .= 'RewriteRule ^c/([a-zA-Z0-9_-]+)$ c/index.php?code=$1 [L,QSA]' . "\n";
+
+        return $rules . $extra;
+    }
+}
+
 if (!function_exists('linkconnect_add_spa_rewrite_rules')) {
     function linkconnect_add_spa_rewrite_rules($rules, $get_path_url, $base_path, $return_string)
     {
@@ -47,5 +62,6 @@ if (!function_exists('linkconnect_add_spa_rewrite_rules')) {
 }
 
 if (function_exists('add_replace')) {
+    add_replace('add_mod_rewrite_rules', 'linkconnect_add_tracking_rewrite_rules', 4, 4);
     add_replace('add_mod_rewrite_rules', 'linkconnect_add_spa_rewrite_rules', 5, 4);
 }

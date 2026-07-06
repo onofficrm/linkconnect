@@ -59,6 +59,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/auth_bootstrap.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/link.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/api.php')) {
     require_once LC_PLUGIN_PATH . '/inc/api.php';
 }

@@ -7,6 +7,10 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
+# LinkConnect 홍보 링크·랜딩 (클릭 추적)
+RewriteRule ^r/([a-zA-Z0-9_-]+)$ r/index.php?code=$1 [L,QSA]
+RewriteRule ^c/([a-zA-Z0-9_-]+)$ c/index.php?code=$1 [L,QSA]
+
 # LinkConnect React SPA (BrowserRouter) — board short URL보다 우선
 RewriteRule ^(select-center|cpa-list|cps|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
 
