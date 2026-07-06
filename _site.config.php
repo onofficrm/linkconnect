@@ -8,8 +8,8 @@ if (!defined('_GNUBOARD_')) {
 }
 
 $site_config = array(
-    'site_name'           => '샘플 사이트',
-    'site_desc'           => '빌더 디자인 적용이 쉬운 그누보드 베이스 템플릿',
+    'site_name'           => 'LinkConnect',
+    'site_desc'           => 'CPA/CPS 제휴마케팅 플랫폼',
     'company_name'        => '회사명',
     'ceo_name'            => '대표자명',
     'business_no'         => '000-00-00000',
@@ -109,7 +109,7 @@ $site_config = array(
     'icrm_hub_enabled'          => true,
     'icrm_hub_geo_button'       => true,
     /* onoff-builder-bridge — 루트 / 를 빌더 페이지로 (project_id) */
-    'home_builder_bridge_id'    => '',
+    'home_builder_bridge_id'    => 'linkconnect',
 );
 
 /**
