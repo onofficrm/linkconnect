@@ -195,7 +195,7 @@ if (!function_exists('lc_merchant_assign_campaigns')) {
 
         lc_sql_query(" UPDATE `{$table}` SET mt_id = '{$mt_id}' WHERE mt_id = 0 ", false);
 
-        return (int) sql_affected_rows();
+        return lc_sql_affected_rows();
     }
 }
 

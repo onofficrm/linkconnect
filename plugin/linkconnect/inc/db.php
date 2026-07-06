@@ -139,6 +139,17 @@ if (!function_exists('lc_sql_error')) {
     }
 }
 
+if (!function_exists('lc_sql_affected_rows')) {
+    function lc_sql_affected_rows()
+    {
+        if (function_exists('get_sql_affected_rows')) {
+            return (int) get_sql_affected_rows(lc_sql_link());
+        }
+
+        return 0;
+    }
+}
+
 if (!function_exists('lc_sql_escape')) {
     function lc_sql_escape($value)
     {
