@@ -1,49 +1,115 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
-import { Database, CheckCircle2, Clock, XCircle, Search, Filter, Download, AlertCircle, ChevronRight, MessageSquare, Check, X, FileText, AlertTriangle, User, Link2, MonitorPlay, LogIn, Calendar, Hash, ArrowRight } from 'lucide-react';
+import { fetchMerchantConversions, MerchantConversion, updateMerchantConversion } from '../../lib/api';
+import { Database, CheckCircle2, Clock, XCircle, Search, Filter, Download, AlertCircle, ChevronRight, MessageSquare, Check, X, FileText, AlertTriangle, User, Link2, MonitorPlay, LogIn, Calendar, Hash, ArrowRight, Bot, Loader2 } from 'lucide-react';
 
-const dbData = [
-  { id: 'DB241007-001', date: '2026.10.07 14:22', campaign: '개인회생 상담 DB', name: '홍길동', phone: '010-1234-5678', email: 'hong@example.com', region: '서울', inquiry: '개인회생 상담 원합니다', partner: 'PTN-8291', status: '신규접수', price: 50000, comment: '', needsAction: true, channel: '네이버 블로그', subId: 'event_01', landingUrl: 'https://linkcon.net/c/1234', referer: 'https://blog.naver.com/...', utmSource: 'naver', utmMedium: 'blog', utmCampaign: 'oct_promo', approvalCriteria: '나이 30세 이상, 채무액 1000만원 이상, 통화 완료', cancelCriteria: '연락처 결번, 3회 이상 부재, 20세 미만', history: [{ time: '2026.10.07 14:22', text: '신규 디비 접수' }, { time: '2026.10.07 14:23', text: '광고주센터 전달' }], adminComment: '-', partnerPublic: false },
-  { id: 'DB241007-002', date: '2026.10.07 13:15', campaign: '어린이 영어캠프', name: '이소희', phone: '010-8812-5644', email: 'sohee@example.com', region: '경기', inquiry: '무료체험 신청', partner: 'PTN-1022', status: '승인완료', price: 35000, comment: '상담 예약 완료', needsAction: false, channel: '인스타그램', subId: '', landingUrl: 'https://linkcon.net/c/9922', referer: 'https://instagram.com/...', utmSource: 'instagram', utmMedium: 'social', utmCampaign: 'camp_2026', approvalCriteria: '자녀 연령 5~10세, 체험 일정 확정', cancelCriteria: '연락처 오류, 자녀 연령 미달', history: [{ time: '2026.10.07 13:15', text: '신규 디비 접수' }, { time: '2026.10.07 13:16', text: '광고주센터 전달' }, { time: '2026.10.07 14:00', text: '확인중 처리' }, { time: '2026.10.07 14:10', text: '승인완료' }], adminComment: '-', partnerPublic: true },
-  { id: 'DB241007-003', date: '2026.10.07 11:40', campaign: '개인회생 상담 DB', name: '박재민', phone: '010-2199-9922', email: 'jm@example.com', region: '부산', inquiry: '채무상담', partner: 'PTN-8291', status: '확인중', price: 50000, comment: '', needsAction: true, channel: '카카오톡', subId: 'kakao_01', landingUrl: 'https://linkcon.net/c/1234', referer: 'https://kakao.com/...', utmSource: 'kakao', utmMedium: 'messenger', utmCampaign: 'oct_promo', approvalCriteria: '나이 30세 이상, 채무액 1000만원 이상, 통화 완료', cancelCriteria: '연락처 결번, 3회 이상 부재, 20세 미만', history: [{ time: '2026.10.07 11:40', text: '신규 디비 접수' }, { time: '2026.10.07 11:41', text: '광고주센터 전달' }, { time: '2026.10.07 12:00', text: '확인중 처리' }], adminComment: '-', partnerPublic: false },
-  { id: 'DB241007-004', date: '2026.10.07 10:05', campaign: '자동차 렌트 상담', name: '최지훈', phone: '010-5511-3377', email: 'hoon@example.com', region: '대구', inquiry: 'G80 렌트', partner: 'PTN-3011', status: '취소/무효', price: 0, comment: '연락처 결번', needsAction: false, channel: '구글 검색', subId: '', landingUrl: 'https://linkcon.net/c/5533', referer: 'https://google.com/...', utmSource: 'google', utmMedium: 'cpc', utmCampaign: 'rent_g80', approvalCriteria: '본인인증 완료, 렌트 가능 신용도', cancelCriteria: '연락처 결번, 신용불량', history: [{ time: '2026.10.07 10:05', text: '신규 디비 접수' }, { time: '2026.10.07 10:06', text: '광고주센터 전달' }, { time: '2026.10.07 10:30', text: '취소요청 (사유: 연락불가)' }, { time: '2026.10.07 11:00', text: '취소/무효 승인' }], adminComment: '연락처 결번 확인됨', partnerPublic: true },
-  { id: 'DB241006-005', date: '2026.10.06 18:30', campaign: '소상공인 대출 상담', name: '정민수', phone: '010-7788-1122', email: 'min@example.com', region: '인천', inquiry: '정부지원 대출', partner: 'PTN-5044', status: '취소요청', price: 25000, comment: '조건 불일치', needsAction: true, channel: '네이버 검색', subId: '', landingUrl: 'https://linkcon.net/c/7744', referer: 'https://search.naver.com/...', utmSource: 'naver', utmMedium: 'cpc', utmCampaign: 'loan_biz', approvalCriteria: '사업자등록증 보유, 통화 완료', cancelCriteria: '비사업자, 3회 이상 부재', history: [{ time: '2026.10.06 18:30', text: '신규 디비 접수' }, { time: '2026.10.06 18:31', text: '광고주센터 전달' }, { time: '2026.10.07 09:30', text: '취소요청 (사유: 조건 불일치 - 비사업자)' }], adminComment: '-', partnerPublic: false },
-];
+const fallbackDbData: MerchantConversion[] = [];
 
 export function AdvertiserDb() {
-  const [selectedDb, setSelectedDb] = useState<any>(null);
+  const [rows, setRows] = useState<MerchantConversion[]>(fallbackDbData);
+  const [summary, setSummary] = useState({ pending: 9, needsAction: 9, todaySpend: 300000 });
+  const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState('');
+  const [approveComment, setApproveComment] = useState('');
+  const [processing, setProcessing] = useState(false);
+
+  const [selectedDb, setSelectedDb] = useState<MerchantConversion | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
-  
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelComment, setCancelComment] = useState("");
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelComment, setCancelComment] = useState('');
   const [isAIFiltering, setIsAIFiltering] = useState(false);
   const [showAbuseOnly, setShowAbuseOnly] = useState(false);
-
-  const handleOpenDetail = (db: any) => {
-    setSelectedDb(db);
-    setIsDetailOpen(true);
-  };
 
   const closeDetail = () => {
     setIsDetailOpen(false);
     setSelectedDb(null);
   };
 
-  const handleApproveClick = (db: any) => {
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMerchantConversions();
+      setRows(data.items);
+      setSummary(data.summary);
+    } catch {
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRows();
+  }, [loadRows]);
+
+  const handleApproveConfirm = async () => {
+    if (!selectedDb?.cvId) {
+      return;
+    }
+    setProcessing(true);
+    setActionError('');
+    try {
+      await updateMerchantConversion({
+        action: 'approve',
+        cvId: selectedDb.cvId,
+        comment: approveComment,
+      });
+      setIsApproveOpen(false);
+      setApproveComment('');
+      closeDetail();
+      await loadRows();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '승인 처리에 실패했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!selectedDb?.cvId || !cancelReason) {
+      return;
+    }
+    setProcessing(true);
+    setActionError('');
+    try {
+      await updateMerchantConversion({
+        action: 'reject',
+        cvId: selectedDb.cvId,
+        reason: cancelReason,
+        comment: cancelComment,
+      });
+      setIsRejectOpen(false);
+      setCancelReason('');
+      setCancelComment('');
+      closeDetail();
+      await loadRows();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '취소 처리에 실패했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleOpenDetail = (db: MerchantConversion) => {
+    setSelectedDb(db);
+    setIsDetailOpen(true);
+  };
+
+  const handleApproveClick = (db: MerchantConversion) => {
     setSelectedDb(db);
     setIsApproveOpen(true);
   };
-  
-  const handleRejectClick = (db: any) => {
+
+  const handleRejectClick = (db: MerchantConversion) => {
     setSelectedDb(db);
     setIsRejectOpen(true);
   };
 
   return (
-    <AdvertiserLayout activeMenu="db" title="디비 확인">
+    <AdvertiserLayout activeMenu="db" title="디비 확인" pendingBadge={summary.needsAction}>
       <div className="flex flex-col mb-8 -mt-2">
         <p className="text-slate-500">
           접수된 디비를 확인하고 승인 또는 취소/무효 처리를 진행하세요.
@@ -52,12 +118,9 @@ export function AdvertiserDb() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <SummaryCard title="신규접수" value="17" suffix="건" />
-        <SummaryCard title="확인중" value="9" suffix="건" color="blue" />
-        <SummaryCard title="승인완료" value="21" suffix="건" color="emerald" highlight />
-        <SummaryCard title="취소/무효" value="4" suffix="건" color="red" />
-        <SummaryCard title="오늘 처리 필요" value="9" suffix="건" color="cyan" highlight />
-        <SummaryCard title="오늘 사용 광고비" value="300,000" suffix="원" dark />
+        <SummaryCard title="신규접수" value={String(summary.pending)} suffix="건" />
+        <SummaryCard title="오늘 처리 필요" value={String(summary.needsAction)} suffix="건" color="cyan" highlight />
+        <SummaryCard title="오늘 사용 광고비" value={summary.todaySpend.toLocaleString()} suffix="원" dark />
       </div>
 
       {/* Alert Box */}
@@ -66,12 +129,20 @@ export function AdvertiserDb() {
           <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
             <AlertCircle size={20} />
           </div>
-          <p className="text-blue-900 font-medium">현재 승인 또는 취소 처리가 필요한 디비가 <strong>9건</strong> 있습니다.</p>
+          <p className="text-blue-900 font-medium">현재 승인 또는 취소 처리가 필요한 디비가 <strong>{summary.needsAction}건</strong> 있습니다.</p>
         </div>
         <button className="text-sm font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 px-4 py-2 rounded-lg flex items-center justify-center gap-1 transition-colors">
           바로 처리하기 <ChevronRight size={16} />
         </button>
       </div>
+
+      {actionError && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{actionError}</div>
+      )}
+
+      {loading && (
+        <p className="text-slate-500 mb-4">디비 목록을 불러오는 중...</p>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 flex flex-wrap gap-4 items-center mb-6 shadow-sm">
@@ -120,7 +191,7 @@ export function AdvertiserDb() {
       {/* DB List */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col mb-8">
         <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <div className="text-sm text-slate-600 font-medium">총 <span className="text-cyan-600 font-bold">5</span>건의 디비가 조회되었습니다.</div>
+          <div className="text-sm text-slate-600 font-medium">총 <span className="text-cyan-600 font-bold">{rows.length}</span>건의 디비가 조회되었습니다.</div>
           <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
             <Download size={14} /> 엑셀 다운로드
           </button>
@@ -145,7 +216,7 @@ export function AdvertiserDb() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {dbData.filter(db => !showAbuseOnly || db.status === "취소/무효" || db.status === "취소요청").map((db) => (
+              {rows.filter(db => !showAbuseOnly || db.status === "취소/무효" || db.status === "취소요청").map((db) => (
                 <tr key={db.id} className="hover:bg-slate-50 transition-colors" onClick={() => handleOpenDetail(db)}>
                   <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{db.date}</td>
                   <td className="px-4 py-4 font-medium text-slate-900 whitespace-nowrap">{db.campaign}</td>
@@ -191,7 +262,7 @@ export function AdvertiserDb() {
 
         {/* Mobile Cards */}
         <div className="lg:hidden divide-y divide-slate-100">
-          {dbData.map((db) => (
+          {rows.map((db) => (
             <div key={db.id} className="p-5 flex flex-col gap-4 cursor-pointer" onClick={() => handleOpenDetail(db)}>
               <div className="flex justify-between items-start">
                 <div>
@@ -509,7 +580,7 @@ export function AdvertiserDb() {
 
               <div className="mb-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">승인 코멘트 (선택)</label>
-                <input type="text" placeholder="예: 상담 예약 완료했습니다." className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow" />
+                <input type="text" placeholder="예: 상담 예약 완료했습니다." value={approveComment} onChange={(e) => setApproveComment(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow" />
               </div>
             </div>
             
@@ -517,8 +588,8 @@ export function AdvertiserDb() {
               <button onClick={() => setIsApproveOpen(false)} className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
                 취소
               </button>
-              <button onClick={() => { setIsApproveOpen(false); closeDetail(); }} className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20">
-                승인하기
+              <button onClick={handleApproveConfirm} disabled={processing || !selectedDb?.cvId} className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50">
+                {processing ? '처리 중...' : '승인하기'}
               </button>
             </div>
           </div>
@@ -582,11 +653,11 @@ export function AdvertiserDb() {
                 닫기
               </button>
               <button 
-                onClick={() => { setIsRejectOpen(false); closeDetail(); }} 
-                disabled={!cancelReason}
+                onClick={handleRejectConfirm}
+                disabled={!cancelReason || processing || !selectedDb?.cvId}
                 className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-red-600/20"
               >
-                무효 처리하기
+                {processing ? '처리 중...' : '무효 처리하기'}
               </button>
             </div>
           </div>

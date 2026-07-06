@@ -1,4 +1,5 @@
 import { Calendar, ChevronRight, Gift } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { events } from '../data';
 
 export function EventBoard() {
@@ -12,16 +13,16 @@ export function EventBoard() {
               수익을 더 높이는 이벤트와 프로모션
             </h2>
           </div>
-          <button className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center transition-colors">
+          <Link to="/events" className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center transition-colors">
             더보기 <ChevronRight className="w-4 h-4 ml-1" />
-          </button>
+          </Link>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           {events.map((event, i) => (
             <div 
               key={event.id} 
-              className={`group flex items-center justify-between p-5 hover:bg-slate-50 transition-colors cursor-pointer ${
+              className={`group flex items-center justify-between p-5 hover:bg-slate-50 transition-colors ${
                 i !== events.length - 1 ? 'border-b border-slate-100' : ''
               }`}
             >

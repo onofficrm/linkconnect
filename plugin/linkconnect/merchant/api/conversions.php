@@ -1,0 +1,82 @@
+<?php
+require_once __DIR__ . '/_common.php';
+
+$method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
+
+if ($method === 'GET') {
+    if (LC_MERCHANT_GUARD_ENABLED && lc_db_installed() && !lc_is_super_admin()) {
+        $merchant = lc_api_require_active_merchant();
+    } else {
+        lc_api_require_login();
+        $merchant = lc_get_current_merchant();
+    }
+
+    $mt_id = is_array($merchant) ? (int) $merchant['mt_id'] : 0;
+    $status = isset($_GET['status']) ? trim((string) $_GET['status']) : '';
+    $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+    $needs_action = isset($_GET['needs_action']) && $_GET['needs_action'] === '1';
+
+    $filters = array();
+    if ($status !== '') {
+        $filters['status'] = $status;
+    }
+    if ($q !== '') {
+        $filters['q'] = $q;
+    }
+    if ($needs_action) {
+        $filters['needs_action'] = true;
+    }
+
+    $items = lc_conversion_list_for_api($mt_id, $filters);
+    $summary = $mt_id > 0 ? lc_conversion_merchant_summary($mt_id) : array(
+        'pending' => 9, 'approved' => 21, 'rejected' => 4, 'needsAction' => 9,
+        'todayReceived' => 17, 'todaySpend' => 300000,
+    );
+
+    lc_api_success(array(
+        'items'   => $items,
+        'summary' => $summary,
+        'total'   => count($items),
+    ));
+}
+
+if ($method === 'POST') {
+    $merchant = lc_api_require_active_merchant();
+    $mt_id = (int) $merchant['mt_id'];
+    $body = lc_api_read_json_body();
+
+    $action = isset($body['action']) ? (string) $body['action'] : '';
+    $cv_id = isset($body['cvId']) ? (int) $body['cvId'] : 0;
+    $comment = isset($body['comment']) ? trim((string) $body['comment']) : '';
+
+    if ($cv_id <= 0) {
+        lc_api_error('디비 ID가 필요합니다.', 'INVALID_ID', 400);
+    }
+
+    if ($action === 'approve') {
+        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_APPROVED, $comment);
+    } elseif ($action === 'reject') {
+        $reason = isset($body['reason']) ? trim((string) $body['reason']) : '';
+        $full_comment = $reason;
+        if ($comment !== '') {
+            $full_comment = $reason !== '' ? $reason . ' - ' . $comment : $comment;
+        }
+        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_REJECTED, $full_comment);
+    } else {
+        lc_api_error('유효하지 않은 action 입니다.', 'INVALID_ACTION', 400);
+    }
+
+    if (!$result['ok']) {
+        lc_api_error($result['message'], 'UPDATE_FAILED', 400);
+    }
+
+    lc_api_success(array(
+        'message'    => $result['message'],
+        'conversion' => isset($result['conversion']) && is_array($result['conversion'])
+            ? lc_conversion_to_api_merchant($result['conversion'], false)
+            : null,
+        'merchant'   => lc_merchant_to_api(lc_get_merchant_by_id($mt_id)),
+    ));
+}
+
+lc_api_error('허용되지 않은 HTTP 메서드입니다.', 'METHOD_NOT_ALLOWED', 405);

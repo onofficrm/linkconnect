@@ -892,6 +892,10 @@ if (!function_exists('onoff_builder_render_import_page')) {
             onoff_builder_render_page_error('등록되지 않은 프로젝트입니다. 관리자 화면에서 업로드 여부를 확인해 주세요.');
         }
 
+        if (isset($meta['enabled']) && $meta['enabled'] === false) {
+            onoff_builder_render_page_error('비활성화된 프로젝트입니다. 관리자 화면에서 활성화 여부를 확인해 주세요.');
+        }
+
         $entry = function_exists('onoff_builder_resolve_import_entry')
             ? onoff_builder_resolve_import_entry($id, $meta)
             : (isset($meta['entry']) && $meta['entry'] !== '' ? $meta['entry'] : 'index.html');
@@ -918,6 +922,26 @@ if (!function_exists('onoff_builder_render_import_page')) {
 
         $html = onoff_builder_remove_base_tags($html);
         $html = onoff_builder_rewrite_asset_paths($html, $id, $entry);
+
+        if ($id === 'linkconnect') {
+            $lc_plugin = defined('G5_PLUGIN_PATH') ? G5_PLUGIN_PATH . '/linkconnect' : '';
+            $lc_config = $lc_plugin !== '' ? $lc_plugin . '/config.php' : '';
+            $lc_auth = $lc_plugin !== '' ? $lc_plugin . '/inc/auth_bootstrap.php' : '';
+            if ($lc_config !== '' && is_file($lc_config)) {
+                include_once $lc_config;
+            }
+            if ($lc_plugin !== '') {
+                foreach (array('db.php', 'partner.php', 'merchant.php', 'wallet.php', 'conversion.php', 'admin.php') as $lc_inc_file) {
+                    $lc_inc_path = $lc_plugin . '/inc/' . $lc_inc_file;
+                    if (is_file($lc_inc_path)) {
+                        include_once $lc_inc_path;
+                    }
+                }
+            }
+            if ($lc_auth !== '' && is_file($lc_auth) && function_exists('lc_inject_auth_bootstrap')) {
+                $html = lc_inject_auth_bootstrap($html);
+            }
+        }
 
         header('Content-Type: text/html; charset=utf-8');
         echo $html;

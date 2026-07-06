@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
-  Users, Building2, Database, ShieldAlert, CreditCard, 
-  TrendingUp, Activity, AlertCircle, ChevronRight, FileText, ServerCrash, RefreshCw, CheckCircle2
+  Building2, Database, ShieldAlert, CreditCard, 
+  ServerCrash, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ComposedChart, Line, CartesianGrid } from 'recharts';
+import { fetchAdminDashboard } from '../../lib/api';
 
-const chartData = [
+const fallbackChartData = [
   { date: '10.01', 접수: 210, 승인: 145, 취소: 32, 매출: 7250000 },
   { date: '10.02', 접수: 235, 승인: 160, 취소: 35, 매출: 8000000 },
   { date: '10.03', 접수: 198, 승인: 135, 취소: 28, 매출: 6750000 },
@@ -60,20 +61,65 @@ const apiErrors = [
 ];
 
 export function AdminDashboard() {
+  const [summary, setSummary] = useState({
+    todayReceived: 248,
+    todayApproved: 173,
+    todayRejected: 42,
+    todayRate: 69.7,
+    todayRevenue: 8650000,
+    pendingDb: 18,
+    pendingCharge: 2,
+    pendingPartners: 1,
+    pendingMerchants: 1,
+  });
+  const [chartData, setChartData] = useState(fallbackChartData);
+  const [recentItems, setRecentItems] = useState(recentDb);
+  const [lowBalanceMerchants, setLowBalanceMerchants] = useState(3);
+
+  useEffect(() => {
+    fetchAdminDashboard()
+      .then((data) => {
+        setSummary(data.summary);
+        setLowBalanceMerchants(data.merchants.lowBalance);
+        if (data.chart7d.length) {
+          setChartData(data.chart7d.map((row) => ({
+            date: row.date,
+            접수: row.received,
+            승인: row.approved,
+            취소: row.rejected,
+            매출: row.revenue,
+          })));
+        }
+        if (data.recent.length) {
+          setRecentItems(data.recent.map((row) => ({
+            date: row.date,
+            campaign: row.campaign,
+            partner: row.partner,
+            advertiser: row.advertiser,
+            customer: row.customer,
+            status: row.status,
+          })));
+        }
+      })
+      .catch(() => {
+        // 샘플 UI fallback
+      });
+  }, []);
+
   return (
     <AdminLayout activeMenu="dashboard" title="관리자 통합 대시보드" description="링크커넥트 CPA 운영 현황과 주요 이슈를 한눈에 확인하세요.">
       
       {/* 8 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <SummaryCard title="오늘 접수 DB" value="248" suffix="건" />
-        <SummaryCard title="오늘 승인 DB" value="173" suffix="건" color="emerald" highlight />
-        <SummaryCard title="오늘 취소/무효 DB" value="42" suffix="건" color="red" highlight />
-        <SummaryCard title="오늘 승인율" value="69.7" suffix="%" />
+        <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" />
+        <SummaryCard title="오늘 승인 DB" value={String(summary.todayApproved)} suffix="건" color="emerald" highlight />
+        <SummaryCard title="오늘 취소/무효 DB" value={String(summary.todayRejected)} suffix="건" color="red" highlight />
+        <SummaryCard title="오늘 승인율" value={String(summary.todayRate)} suffix="%" />
         
-        <SummaryCard title="오늘 매출" value="8,650,000" suffix="원" color="cyan" highlight />
-        <SummaryCard title="파트너 수익" value="5,190,000" suffix="원" />
-        <SummaryCard title="관리자 마진" value="3,460,000" suffix="원" color="blue" highlight />
-        <SummaryCard title="정산 대기 금액" value="12,800,000" suffix="원" dark />
+        <SummaryCard title="오늘 매출" value={summary.todayRevenue.toLocaleString()} suffix="원" color="cyan" highlight />
+        <SummaryCard title="승인 대기 DB" value={String(summary.pendingDb)} suffix="건" />
+        <SummaryCard title="충전 대기" value={String(summary.pendingCharge)} suffix="건" color="blue" highlight />
+        <SummaryCard title="승인 대기 파트너" value={String(summary.pendingPartners)} suffix="명" dark />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
@@ -121,7 +167,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                   <ShieldAlert size={18} />
                 </div>
-                <span className="text-orange-900 font-medium text-sm">취소/무효 검수 대기 <strong className="text-orange-700 ml-1">18건</strong></span>
+                <span className="text-orange-900 font-medium text-sm">취소/무효 검수 대기 <strong className="text-orange-700 ml-1">{summary.pendingDb}건</strong></span>
               </div>
               <button className="text-xs font-bold text-orange-700 hover:text-orange-800 bg-white px-3 py-1.5 rounded-lg border border-orange-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -131,7 +177,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                   <CreditCard size={18} />
                 </div>
-                <span className="text-emerald-900 font-medium text-sm">정산 승인 대기 <strong className="text-emerald-700 ml-1">7건</strong></span>
+                <span className="text-emerald-900 font-medium text-sm">충전 승인 대기 <strong className="text-emerald-700 ml-1">{summary.pendingCharge}건</strong></span>
               </div>
               <button className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-white px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -141,7 +187,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600">
                   <Building2 size={18} />
                 </div>
-                <span className="text-red-900 font-medium text-sm">광고비 부족 광고주 <strong className="text-red-700 ml-1">3곳</strong></span>
+                <span className="text-red-900 font-medium text-sm">광고비 부족 광고주 <strong className="text-red-700 ml-1">{lowBalanceMerchants}곳</strong></span>
               </div>
               <button className="text-xs font-bold text-red-700 hover:text-red-800 bg-white px-3 py-1.5 rounded-lg border border-red-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -161,7 +207,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
                   <AlertCircle size={18} />
                 </div>
-                <span className="text-yellow-900 font-medium text-sm">승인 지연 디비 <strong className="text-yellow-700 ml-1">24건</strong></span>
+                <span className="text-yellow-900 font-medium text-sm">승인 대기 파트너/광고주 <strong className="text-yellow-700 ml-1">{summary.pendingPartners + summary.pendingMerchants}곳</strong></span>
               </div>
               <button className="text-xs font-bold text-yellow-700 hover:text-yellow-800 bg-white px-3 py-1.5 rounded-lg border border-yellow-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -310,7 +356,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentDb.map((item, i) => (
+                {recentItems.map((item, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{item.date}</td>
                     <td className="px-6 py-3 text-slate-900 font-bold whitespace-nowrap">{item.campaign}</td>

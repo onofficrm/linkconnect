@@ -1,5 +1,6 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis } from 'recharts';
-import { ArrowUpRight, BarChart3, Database, Wallet } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, BarChart3, Database, Wallet } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const dbData = [
   { name: '11/01', db: 45 },
@@ -38,6 +39,9 @@ export function PartnerIntro() {
                 </li>
               ))}
             </ul>
+            <Link to="/partner" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-colors">
+              파트너센터 바로가기 <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
 
           <div className="relative">

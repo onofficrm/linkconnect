@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Bell, Search, Menu, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Bell, Search, Menu, LogOut, ChevronRight, Gift } from 'lucide-react';
+import { queueScrollTo } from '../lib/navigation';
+import { g5LogoutUrl } from '../lib/urls';
 
 const sidebarMenus = [
   { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
   { id: 'partners', label: '파트너 관리', icon: <Users size={20} />, path: '/admin/partners' },
   { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
   { id: 'campaigns', label: '광고상품 관리', icon: <Briefcase size={20} />, path: '/admin/campaigns' },
-  { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin' },
+  { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin/conversions' },
   { id: 'inspections', label: '취소/무효 검수', icon: <ShieldAlert size={20} />, path: '/admin/inspections' },
   { id: 'billing', label: '광고비 관리', icon: <CreditCard size={20} />, path: '/admin/billing' },
-  { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin' },
-  { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin' },
-  { id: 'support', label: '문의 관리', icon: <MessageSquare size={20} />, path: '/admin' },
+  { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
+  { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin/api' },
+  { id: 'events', label: '이벤트/프로모션', icon: <Gift size={20} />, path: '/admin/events' },
+  { id: 'support', label: '문의 관리', icon: <MessageSquare size={20} />, path: '/admin/support' },
   { id: 'settings', label: '환경설정', icon: <Settings size={20} />, path: '/admin/settings' },
 ];
 
@@ -43,8 +46,8 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
             <Link to="/" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">링크커넥트</Link>
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/cpa-list" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPA</Link>
-            <Link to="#" className="px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors">CPS</Link>
-            <Link to="#" className="px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors">이벤트/프로모션</Link>
+            <Link to="/" onClick={() => queueScrollTo('cps')} className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPS</Link>
+            <Link to="/events" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link>
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/partner" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">파트너센터</Link>
             <Link to="/advertiser" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">광고주센터</Link>
@@ -107,10 +110,13 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           </div>
           
           <div className="p-4 border-t border-slate-800">
-            <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors font-medium">
+            <a
+              href={g5LogoutUrl()}
+              className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors font-medium"
+            >
               <LogOut size={20} />
               <span>로그아웃</span>
-            </button>
+            </a>
           </div>
         </aside>
 

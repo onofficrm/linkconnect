@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from 'react-router-dom';
 import { 
   AlertCircle,
   BarChart3, 
@@ -17,10 +18,11 @@ import {
 
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
+import { fetchMerchantDashboard } from '../../lib/api';
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-const mockChartData = [
+const fallbackChartData = [
   { date: '10.01', db: 24, approval: 18, cancel: 6 },
   { date: '10.02', db: 18, approval: 12, cancel: 6 },
   { date: '10.03', db: 35, approval: 25, cancel: 10 },
@@ -31,17 +33,35 @@ const mockChartData = [
 ];
 
 export function AdvertiserDashboard() {
+  const [balance, setBalance] = useState('2,350,000');
+  const [summary, setSummary] = useState({ pending: 9, todayReceived: 17, todaySpend: 300000 });
+  const [chartData, setChartData] = useState(fallbackChartData);
+  const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
+  const [pendingAction, setPendingAction] = useState(9);
+
+  useEffect(() => {
+    fetchMerchantDashboard()
+      .then((data) => {
+        setBalance(data.balanceFormatted);
+        setSummary(data.summary);
+        setChartData(data.chart7d.length ? data.chart7d : fallbackChartData);
+        setRecent(data.recent);
+        setPendingAction(data.pendingAction);
+      })
+      .catch(() => {
+        // 샘플 UI fallback
+      });
+  }, []);
+
   return (
-    <AdvertiserLayout activeMenu="dashboard" title="대시보드">
+    <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <SummaryCard title="광고비 잔액" value="2,350,000" suffix="원" highlight color="cyan" />
-          <SummaryCard title="가차감 광고비" value="450,000" suffix="원" />
-          <SummaryCard title="사용 가능 잔액" value="1,900,000" suffix="원" dark />
-          <SummaryCard title="오늘 접수 DB" value="17" suffix="건" />
-          <SummaryCard title="승인대기 DB" value="9" suffix="건" color="blue" />
-          <SummaryCard title="오늘 사용 광고비" value="300,000" suffix="원" />
+          <SummaryCard title="광고비 잔액" value={balance} suffix="원" highlight color="cyan" />
+          <SummaryCard title="승인대기 DB" value={String(summary.pending)} suffix="건" color="blue" />
+          <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" />
+          <SummaryCard title="오늘 사용 광고비" value={summary.todaySpend.toLocaleString()} suffix="원" />
         </div>
 
         {/* Middle Area: Chart & Tables */}
@@ -52,7 +72,7 @@ export function AdvertiserDashboard() {
             <h2 className="text-lg font-bold text-slate-900 mb-6">최근 7일 디비 처리 현황</h2>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorDb" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
@@ -99,14 +119,14 @@ export function AdvertiserDashboard() {
                 </div>
                 <div className="flex justify-between items-center py-4">
                   <span className="text-lg font-medium text-slate-300">남은 잔액</span>
-                  <span className="text-3xl font-bold text-cyan-400">2,350,000 <span className="text-lg font-normal text-slate-400">원</span></span>
+                  <span className="text-3xl font-bold text-cyan-400">{balance} <span className="text-lg font-normal text-slate-400">원</span></span>
                 </div>
               </div>
             </div>
             
-            <button className="w-full py-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl transition-colors shadow-sm">
+            <Link to="/advertiser/billing" className="w-full py-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl transition-colors shadow-sm text-center block">
               광고비 충전하기
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -116,17 +136,17 @@ export function AdvertiserDashboard() {
             <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
               <AlertCircle size={20} />
             </div>
-            <p className="text-blue-900 font-medium">현재 승인 또는 취소 처리가 필요한 디비가 <strong>9건</strong> 있습니다.</p>
+            <p className="text-blue-900 font-medium">현재 승인 또는 취소 처리가 필요한 디비가 <strong>{pendingAction}건</strong> 있습니다.</p>
           </div>
-          <button className="text-sm font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1">
+          <Link to="/advertiser/db" className="text-sm font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1">
             바로 처리하기 <ChevronRight size={16} />
-          </button>
+          </Link>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-slate-900">최근 접수 디비</h2>
-            <button className="text-sm font-medium text-cyan-600 hover:text-cyan-700">디비 관리 가기</button>
+            <Link to="/advertiser/db" className="text-sm font-medium text-cyan-600 hover:text-cyan-700">디비 관리 가기</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -141,11 +161,17 @@ export function AdvertiserDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                <TableRow date="10.07 14:22" name="김민성" phone="010-4233-1255" product="개인회생 상담 DB" status="검수중"  needsAction />
-                <TableRow date="10.07 13:15" name="이소희" phone="010-8812-5644" product="어린이 영어캠프" status="승인완료"  />
-                <TableRow date="10.07 11:40" name="박재민" phone="010-2199-9922" product="개인회생 상담 DB" status="접수완료"  needsAction />
-                <TableRow date="10.07 10:05" name="최지훈" phone="010-5511-3377" product="자동차 렌트 상담" status="취소/무효"  />
-                <TableRow date="10.06 18:30" name="정민수" phone="010-7788-1122" product="소상공인 대출 상담" status="승인완료"  />
+                {recent.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    date={row.date}
+                    name={row.name}
+                    phone={row.phone}
+                    product={row.campaign}
+                    status={row.status}
+                    needsAction={row.needsAction}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
@@ -154,21 +180,6 @@ export function AdvertiserDashboard() {
       </AdvertiserLayout>
   );
 }
-
-function NavItem({ icon, label, active = false, badge }: { icon: React.ReactNode, label: string, active?: boolean, badge?: number }) {
-  return (
-    <a href="#" className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${active ? 'bg-cyan-500/10 text-cyan-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-      <div className="flex items-center gap-3">
-        {icon}
-        <span>{label}</span>
-      </div>
-      {badge && (
-        <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{badge}</span>
-      )}
-    </a>
-  );
-}
-
 
 function TableRow({ date, name, phone, product, status, needsAction = false }: any) {
   return (

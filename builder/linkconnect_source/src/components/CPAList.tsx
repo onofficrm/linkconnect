@@ -1,4 +1,5 @@
 import { ArrowRight, CheckCircle2, DollarSign, Target } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cpaItems } from '../data';
 import { cn } from '../lib/utils';
 
@@ -83,12 +84,12 @@ export function CPAList() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200">
+                  <Link to="/cpa-list" className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200 text-center">
                     상세보기
-                  </button>
-                  <button className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-md shadow-emerald-500/20">
+                  </Link>
+                  <Link to="/partner/search" className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-md shadow-emerald-500/20 text-center">
                     참여하기
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -96,10 +97,10 @@ export function CPAList() {
         </div>
 
         <div className="text-center">
-          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors font-medium bg-white shadow-sm">
+          <Link to="/cpa-list" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-colors font-medium bg-white shadow-sm">
             CPA 전체 상품 보기
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

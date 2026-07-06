@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   CreditCard, Wallet, ArrowDownCircle, ArrowUpCircle, RefreshCcw, AlertCircle,
-  Search, Filter, Calendar, ChevronDown, Download, CheckCircle2, 
-  PlusCircle, MinusCircle, History, X, FileText, Check, DollarSign,
+  Search, Calendar, ChevronDown, Download, CheckCircle2, 
+  PlusCircle, MinusCircle, X, Check,
   AlertTriangle
 } from 'lucide-react';
+import { AdminPendingCharge, fetchAdminPendingCharges, updateAdminCharge } from '../../lib/api';
 
 const advertiserBalanceData = [
   { name: '희망법무법인', balance: 15400000, pending: 2500000, available: 12900000, totalCharged: 50000000, totalUsed: 34600000, totalRefund: 0, lastCharged: '2026.07.01', status: '정상' },
@@ -33,11 +34,70 @@ export function AdminBilling() {
   const [activeTab, setActiveTab] = useState<'balance' | 'requests' | 'history'>('balance');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'충전' | '차감' | '환급' | '조정'>('충전');
+  const [chargeRequests, setChargeRequests] = useState<AdminPendingCharge[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  const loadPendingCharges = useCallback(() => {
+    fetchAdminPendingCharges()
+      .then((data) => {
+        setChargeRequests(data.items);
+        setPendingCount(data.pending);
+      })
+      .catch(() => {
+        // 샘플 UI fallback
+      });
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'requests') {
+      loadPendingCharges();
+    }
+  }, [activeTab, loadPendingCharges]);
+
+  const handleApproveCharge = async (wtId: number) => {
+    setProcessingId(wtId);
+    try {
+      await updateAdminCharge({ action: 'approve', wtId });
+      loadPendingCharges();
+    } catch {
+      // ignore — UI keeps row
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectCharge = async (wtId: number) => {
+    setProcessingId(wtId);
+    try {
+      await updateAdminCharge({ action: 'reject', wtId });
+      loadPendingCharges();
+    } catch {
+      // ignore
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const openModal = (type: '충전' | '차감' | '환급' | '조정') => {
     setModalType(type);
     setIsModalOpen(true);
   };
+
+  const displayRequests = chargeRequests.length
+    ? chargeRequests
+    : chargeRequestsData.map((item, index) => ({
+        id: index,
+        date: item.date,
+        merchant: item.advertiser,
+        merchantCode: '',
+        mtId: 0,
+        amount: item.amount,
+        memo: item.depositor,
+        status: item.status,
+      }));
+
+  const requestCount = chargeRequests.length ? pendingCount : chargeRequestsData.length;
 
   return (
     <AdminLayout activeMenu="billing" title="광고비 관리" description="광고주별 광고비 잔액과 충전/차감/환급 내역을 관리하세요.">
@@ -65,7 +125,7 @@ export function AdminBilling() {
             className={`flex-1 py-4 text-sm font-bold transition-colors border-b-2 ${activeTab === 'requests' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'} flex items-center justify-center gap-2`}
             onClick={() => setActiveTab('requests')}
           >
-            충전 신청 <span className="bg-cyan-100 text-cyan-700 py-0.5 px-2 rounded-full text-xs">2건</span>
+            충전 신청 <span className="bg-cyan-100 text-cyan-700 py-0.5 px-2 rounded-full text-xs">{requestCount}건</span>
           </button>
           <button 
             className={`flex-1 py-4 text-sm font-bold transition-colors border-b-2 ${activeTab === 'history' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
@@ -188,26 +248,45 @@ export function AdminBilling() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {chargeRequestsData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  {displayRequests.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-medium text-slate-600 whitespace-nowrap">{item.date}</td>
-                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">{item.advertiser}</td>
+                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">{item.merchant}</td>
                       <td className="px-4 py-4 text-right font-bold text-cyan-600 whitespace-nowrap text-base">
                         {item.amount.toLocaleString()}원
                       </td>
-                      <td className="px-4 py-4 font-medium text-slate-700 whitespace-nowrap">{item.depositor}</td>
+                      <td className="px-4 py-4 font-medium text-slate-700 whitespace-nowrap">{item.memo || '-'}</td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <span className={`text-xs font-bold px-2 py-1 rounded ${item.taxInvoice === '발행요청' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-slate-100 text-slate-500'}`}>
-                          {item.taxInvoice}
-                        </span>
+                        <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-500">미요청</span>
                       </td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <StatusBadge status={item.status} />
                       </td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <button className="px-3 py-1.5 bg-cyan-600 text-white hover:bg-cyan-700 rounded text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-1 mx-auto">
-                          <CheckCircle2 size={14} /> 충전 승인
-                        </button>
+                        {item.id > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              disabled={processingId === item.id}
+                              onClick={() => handleApproveCharge(item.id)}
+                              className="px-3 py-1.5 bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-60 rounded text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-1"
+                            >
+                              <CheckCircle2 size={14} /> {processingId === item.id ? '처리중' : '승인'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={processingId === item.id}
+                              onClick={() => handleRejectCharge(item.id)}
+                              className="px-2 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-bold transition-colors"
+                            >
+                              반려
+                            </button>
+                          </div>
+                        ) : (
+                          <button type="button" className="px-3 py-1.5 bg-cyan-600 text-white hover:bg-cyan-700 rounded text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-1 mx-auto">
+                            <CheckCircle2 size={14} /> 충전 승인
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

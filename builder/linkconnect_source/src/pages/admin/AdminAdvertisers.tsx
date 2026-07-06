@@ -1,27 +1,59 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
-  Building2, Activity, Database, CreditCard, AlertCircle, Clock,
-  Search, Filter, Calendar, ChevronDown, Download, X, ExternalLink, ShieldAlert,
-  Briefcase, Wallet, Users
+  Building2, Activity, AlertCircle, Clock,
+  Search, Download, X, ShieldAlert,
+  Wallet
 } from 'lucide-react';
-
-const advertiserData = [
-  { name: '희망법무법인', manager: '김희망', phone: '010-1111-2222', email: 'hope@law.com', bizNo: '123-45-67890', date: '2025.10.12', campaigns: 3, totalDb: 8500, approvedDb: 6200, canceledDb: 1500, rate: '72.9%', balance: 14500000, holdBalance: 1200000, spend: 31000000, totalCharge: 150000000, totalSpend: 135500000, avgTime: '2.4시간', status: '운영중' },
-  { name: '(주)성공대부', manager: '박성공', phone: '010-2222-3333', email: 'success@loan.com', bizNo: '234-56-78901', date: '2025.11.05', campaigns: 2, totalDb: 5200, approvedDb: 3800, canceledDb: 800, rate: '73.0%', balance: 2500000, holdBalance: 800000, spend: 15300000, totalCharge: 80000000, totalSpend: 77500000, avgTime: '1.2시간', status: '운영중' },
-  { name: '스피드렌터카', manager: '이렌탈', phone: '010-3333-4444', email: 'speed@rent.com', bizNo: '345-67-89012', date: '2026.01.20', campaigns: 4, totalDb: 3500, approvedDb: 2100, canceledDb: 1100, rate: '60.0%', balance: 120000, holdBalance: 50000, spend: 15600000, totalCharge: 40000000, totalSpend: 39880000, avgTime: '12.5시간', status: '광고비부족' },
-  { name: '라이프보험법인', manager: '최라이프', phone: '010-4444-5555', email: 'life@insure.com', bizNo: '456-78-90123', date: '2026.03.15', campaigns: 1, totalDb: 1800, approvedDb: 1400, canceledDb: 200, rate: '77.7%', balance: 8500000, holdBalance: 400000, spend: 12400000, totalCharge: 30000000, totalSpend: 21500000, avgTime: '4.8시간', status: '운영중' },
-  { name: '에듀스터디', manager: '정학습', phone: '010-5555-6666', email: 'edu@study.com', bizNo: '567-89-01234', date: '2026.05.10', campaigns: 1, totalDb: 900, approvedDb: 700, canceledDb: 100, rate: '77.7%', balance: 4200000, holdBalance: 150000, spend: 8400000, totalCharge: 15000000, totalSpend: 10800000, avgTime: '0.8시간', status: '운영중' },
-  { name: '헬스플러스', manager: '강건강', phone: '010-6666-7777', email: 'health@plus.com', bizNo: '678-90-12345', date: '2026.07.01', campaigns: 0, totalDb: 0, approvedDb: 0, canceledDb: 0, rate: '-', balance: 0, holdBalance: 0, spend: 0, totalCharge: 0, totalSpend: 0, avgTime: '-', status: '승인대기' },
-  { name: '투어여행사', manager: '윤투어', phone: '010-7777-8888', email: 'tour@travel.com', bizNo: '789-01-23456', date: '2025.12.01', campaigns: 2, totalDb: 4200, approvedDb: 1200, canceledDb: 2500, rate: '28.5%', balance: 1500000, holdBalance: 0, spend: 250000, totalCharge: 20000000, totalSpend: 18500000, avgTime: '48.2시간', status: '일시중지' },
-];
+import { AdminMerchant, fetchAdminMerchants, updateAdminMerchant } from '../../lib/api';
 
 export function AdminAdvertisers() {
-  const [selectedAdvertiser, setSelectedAdvertiser] = useState<any>(null);
+  const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
+  const [summary, setSummary] = useState({ total: 0, active: 0, pending: 0, lowBalance: 0 });
+  const [selectedAdvertiser, setSelectedAdvertiser] = useState<AdminMerchant | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [updating, setUpdating] = useState(false);
+  const [actionError, setActionError] = useState('');
 
-  const handleRowClick = (advertiser: any) => {
+  const loadMerchants = useCallback(() => {
+    fetchAdminMerchants({ q: search, status: statusFilter })
+      .then((data) => {
+        setMerchants(data.items);
+        setSummary(data.summary);
+      })
+      .catch(() => {
+        // 샘플 UI fallback
+      });
+  }, [search, statusFilter]);
+
+  useEffect(() => {
+    loadMerchants();
+  }, [loadMerchants]);
+
+  const handleRowClick = (advertiser: AdminMerchant) => {
     setSelectedAdvertiser(advertiser);
+    setActionError('');
+  };
+
+  const handleStatusChange = async (action: 'activate' | 'suspend' | 'pending') => {
+    if (!selectedAdvertiser?.id) {
+      return;
+    }
+    setUpdating(true);
+    setActionError('');
+    try {
+      const result = await updateAdminMerchant({ action, mtId: selectedAdvertiser.id });
+      loadMerchants();
+      if (result.merchant) {
+        setSelectedAdvertiser((prev) => (prev ? { ...prev, status: result.merchant!.status, statusCode: result.merchant!.statusCode } : null));
+      }
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '상태 변경에 실패했습니다.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -29,12 +61,10 @@ export function AdminAdvertisers() {
       
       {/* 6 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <SummaryCard title="전체 광고주" value="186" suffix="곳" icon={<Building2 size={18} />} />
-        <SummaryCard title="운영중 광고주" value="142" suffix="곳" color="emerald" highlight icon={<Activity size={18} />} />
-        <SummaryCard title="광고비 부족" value="7" suffix="곳" color="red" highlight icon={<AlertCircle size={18} />} />
-        <SummaryCard title="이번 달 사용 광고비" value="243,800,000" suffix="원" dark icon={<CreditCard size={18} />} />
-        <SummaryCard title="승인대기 DB" value="418" suffix="건" color="yellow" highlight icon={<Clock size={18} />} />
-        <SummaryCard title="취소율 높은 광고주" value="12" suffix="곳" color="orange" highlight icon={<ShieldAlert size={18} />} />
+        <SummaryCard title="전체 광고주" value={String(summary.total)} suffix="곳" icon={<Building2 size={18} />} />
+        <SummaryCard title="운영중 광고주" value={String(summary.active)} suffix="곳" color="emerald" highlight icon={<Activity size={18} />} />
+        <SummaryCard title="광고비 부족" value={String(summary.lowBalance)} suffix="곳" color="red" highlight icon={<AlertCircle size={18} />} />
+        <SummaryCard title="승인 대기" value={String(summary.pending)} suffix="곳" color="yellow" highlight icon={<Clock size={18} />} />
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6 mb-8">
@@ -48,17 +78,22 @@ export function AdminAdvertisers() {
                   <input 
                     type="text" 
                     placeholder="회사명, 담당자명 검색" 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <select className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500">
-                  <option>전체 상태</option>
-                  <option>운영중</option>
-                  <option>승인대기</option>
-                  <option>일시중지</option>
-                  <option>차단</option>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500"
+                >
+                  <option value="">전체 상태</option>
+                  <option value="active">운영중</option>
+                  <option value="pending">승인대기</option>
+                  <option value="suspended">일시중지</option>
                 </select>
                 <select className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500">
                   <option>광고비 상태 (전체)</option>
@@ -78,7 +113,7 @@ export function AdminAdvertisers() {
           {/* Table Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">186</strong>곳의 광고주</div>
+              <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">{summary.total}</strong>곳의 광고주</div>
               <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
                 <Download size={14} /> 엑셀 다운로드
               </button>
@@ -98,18 +133,22 @@ export function AdminAdvertisers() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {advertiserData.map((advertiser, i) => (
+                  {merchants.map((advertiser) => (
                     <tr 
-                      key={i} 
+                      key={advertiser.id || advertiser.code || advertiser.name} 
                       className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedAdvertiser?.name === advertiser.name ? 'bg-cyan-50/50' : ''}`}
                       onClick={() => handleRowClick(advertiser)}
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-bold text-slate-900 mb-0.5">{advertiser.name}</div>
                         <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                          <span>{advertiser.manager}</span>
-                          <span className="w-0.5 h-0.5 bg-slate-300 rounded-full"></span>
-                          <span>{advertiser.phone}</span>
+                          <span>{advertiser.code}</span>
+                          {advertiser.memberId && (
+                            <>
+                              <span className="w-0.5 h-0.5 bg-slate-300 rounded-full"></span>
+                              <span>{advertiser.memberId}</span>
+                            </>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center font-medium text-slate-600 whitespace-nowrap">{advertiser.campaigns}개</td>
@@ -190,11 +229,11 @@ export function AdminAdvertisers() {
               <div className="p-6 border-b border-slate-200 bg-slate-50 relative overflow-hidden">
                 <div className="absolute -right-4 -top-4 w-24 h-24 bg-cyan-100 rounded-full opacity-50 blur-xl"></div>
                 <div className="flex items-center gap-2 mb-2 relative z-10">
-                  <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">ADV-{Math.floor(Math.random() * 9000) + 1000}</span>
+                  <span className="text-xs font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">{selectedAdvertiser.code || 'ADV'}</span>
                   <StatusBadge status={selectedAdvertiser.status} />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 relative z-10">{selectedAdvertiser.name}</h2>
-                <div className="text-sm text-slate-500 mt-1 relative z-10">가입일: {selectedAdvertiser.date}</div>
+                <div className="text-sm text-slate-500 mt-1 relative z-10">가입일: {selectedAdvertiser.date || '-'}</div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -204,20 +243,8 @@ export function AdminAdvertisers() {
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">담당자</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.manager}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">연락처</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.phone}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">이메일</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.email}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">사업자번호</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.bizNo}</span>
+                      <span className="text-slate-500">회원 ID</span>
+                      <span className="font-medium text-slate-900">{selectedAdvertiser.memberId || '-'}</span>
                     </div>
                   </div>
                 </div>
@@ -233,19 +260,15 @@ export function AdminAdvertisers() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between py-1 border-b border-slate-100">
                       <span className="text-slate-500">가차감 광고비 (검수대기)</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.holdBalance.toLocaleString()}원</span>
+                      <span className="font-medium text-slate-900">-</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-100">
                       <span className="text-slate-500 font-bold">사용 가능 잔액</span>
-                      <span className="font-bold text-cyan-600">{(selectedAdvertiser.balance - selectedAdvertiser.holdBalance).toLocaleString()}원</span>
+                      <span className="font-bold text-cyan-600">{selectedAdvertiser.balance.toLocaleString()}원</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-slate-100 mt-2">
-                      <span className="text-slate-500">총 충전액</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.totalCharge.toLocaleString()}원</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
                       <span className="text-slate-500">총 사용액</span>
-                      <span className="font-medium text-slate-900">{selectedAdvertiser.totalSpend.toLocaleString()}원</span>
+                      <span className="font-medium text-slate-900">{selectedAdvertiser.spend.toLocaleString()}원</span>
                     </div>
                   </div>
                 </div>
@@ -261,7 +284,7 @@ export function AdminAdvertisers() {
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 mb-1">평균 처리시간</div>
-                      <div className="font-bold text-slate-900">{selectedAdvertiser.avgTime}</div>
+                      <div className="font-bold text-slate-900">-</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 mb-1">총 승인 DB</div>
@@ -284,31 +307,41 @@ export function AdminAdvertisers() {
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    관리자 메모
-                  </h3>
-                  <textarea 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm resize-none h-24 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-                    placeholder="광고주 특이사항을 기록하세요..."
-                    defaultValue={selectedAdvertiser.name === '스피드렌터카' ? '광고비 부족 알림 발송 완료 (7/5). 7/8일까지 미충전시 캠페인 자동 중지 예정.' : ''}
-                  ></textarea>
-                </div>
               </div>
-              
+
+              {actionError && <p className="px-6 text-sm text-red-600">{actionError}</p>}
+
               <div className="p-4 border-t border-slate-200 bg-slate-50 grid grid-cols-2 gap-2">
-                <button className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors flex justify-center items-center gap-1.5 shadow-sm">
-                  <Briefcase size={14} /> 광고상품
-                </button>
-                <button className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors flex justify-center items-center gap-1.5 shadow-sm">
-                  <Wallet size={14} /> 광고비
-                </button>
-                <button className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors flex justify-center items-center gap-1.5 shadow-sm">
-                  <Database size={14} /> 디비보기
-                </button>
-                <button className="py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm">
-                  상태 변경
-                </button>
+                {selectedAdvertiser.statusCode === 'pending' && (
+                  <button
+                    type="button"
+                    disabled={updating || !selectedAdvertiser.id}
+                    onClick={() => handleStatusChange('activate')}
+                    className="col-span-2 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 disabled:opacity-60 transition-colors shadow-sm"
+                  >
+                    {updating ? '처리 중...' : '광고주 승인 (운영중)'}
+                  </button>
+                )}
+                {selectedAdvertiser.statusCode === 'active' && (
+                  <button
+                    type="button"
+                    disabled={updating || !selectedAdvertiser.id}
+                    onClick={() => handleStatusChange('suspend')}
+                    className="col-span-2 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-60 transition-colors shadow-sm"
+                  >
+                    {updating ? '처리 중...' : '광고주 일시중지'}
+                  </button>
+                )}
+                {selectedAdvertiser.statusCode === 'suspended' && (
+                  <button
+                    type="button"
+                    disabled={updating || !selectedAdvertiser.id}
+                    onClick={() => handleStatusChange('activate')}
+                    className="col-span-2 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 disabled:opacity-60 transition-colors shadow-sm"
+                  >
+                    {updating ? '처리 중...' : '중지 해제 (운영중)'}
+                  </button>
+                )}
               </div>
             </div>
           ) : (

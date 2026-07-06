@@ -4,7 +4,7 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   ShieldAlert, Clock, CheckCircle2, XCircle, AlertTriangle, Percent,
   Search, Filter, Calendar, ChevronDown, Download, X, User, MessageSquare,
-  Building2, Users, FileText, Check, X as XIcon, RotateCcw, AlertCircle
+  Building2, Users, FileText, Check, X as XIcon, RotateCcw, AlertCircle, Bot
 } from 'lucide-react';
 
 const inspectionData = [

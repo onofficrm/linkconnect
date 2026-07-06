@@ -4,6 +4,7 @@
     "name": "[샘플] 랜딩 페이지 (비활성)",
     "path": "sample-landing",
     "entry": "index.html",
+    "enabled": false,
     "created_at": "2026-01-01 00:00:00"
   },
   {

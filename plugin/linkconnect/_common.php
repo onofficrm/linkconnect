@@ -1,0 +1,67 @@
+<?php
+/**
+ * LinkConnect 플러그인 — 그누보드 안전 부트스트랩
+ *
+ * - bbs/_common.php 경유 금지 (서브폴더 CWD 깨짐 방지)
+ * - 그누보드 루트 common.php 만 직접 로드
+ */
+if (defined('LC_COMMON_LOADED')) {
+    return;
+}
+
+define('LC_COMMON_LOADED', true);
+
+$lc_g5_root = realpath(dirname(__FILE__) . '/../..');
+if ($lc_g5_root === false || !is_file($lc_g5_root . '/common.php')) {
+    header('HTTP/1.1 500 Internal Server Error');
+    exit('LinkConnect: GNUBoard common.php를 찾을 수 없습니다.');
+}
+
+if (!defined('_GNUBOARD_')) {
+    include_once $lc_g5_root . '/common.php';
+}
+
+if (!defined('_GNUBOARD_')) {
+    header('HTTP/1.1 500 Internal Server Error');
+    exit('LinkConnect: GNUBoard 초기화에 실패했습니다.');
+}
+
+if (is_file(G5_PATH . '/_site.config.php')) {
+    include_once G5_PATH . '/_site.config.php';
+}
+
+require_once dirname(__FILE__) . '/config.php';
+
+if (is_file(LC_PLUGIN_PATH . '/inc/sample_data.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/sample_data.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/db.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/db.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/partner.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/partner.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/wallet.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/wallet.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/conversion.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/conversion.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/admin.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/admin.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/api.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/api.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/ui.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/ui.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/page.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/page.php';
+}

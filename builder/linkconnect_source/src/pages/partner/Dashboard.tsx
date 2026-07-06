@@ -76,9 +76,9 @@ export function PartnerDashboard() {
               <InflowItem label="기타" percentage={5} color="bg-slate-300" />
             </div>
           </div>
-          <button className="mt-6 text-sm text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1 w-full py-2 bg-slate-50 rounded-lg transition-colors">
+          <Link to="/partner/report" className="mt-6 text-sm text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1 w-full py-2 bg-slate-50 rounded-lg transition-colors">
             상세 리포트 보기 <ChevronRight size={16} />
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -136,26 +136,15 @@ export function PartnerDashboard() {
             </div>
           </div>
           
-          <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors">
+          <Link to="/partner/settlement" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-center block">
             정산 신청하기
-          </button>
+          </Link>
         </div>
 
       </div>
     </PartnerLayout>
   );
 }
-
-function NavItem({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
-  return (
-    <a href="#" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${active ? 'bg-emerald-500/10 text-emerald-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-      {icon}
-      <span>{label}</span>
-    </a>
-  );
-}
-
-
 
 function InflowItem({ label, percentage, color }: { label: string, percentage: number, color: string }) {
   return (

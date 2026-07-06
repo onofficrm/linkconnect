@@ -1,0 +1,79 @@
+<?php
+if (!defined('_GNUBOARD_')) {
+    exit;
+}
+
+if (!function_exists('lc_auth_state')) {
+    /**
+     * @return array{
+     *   loggedIn:bool,
+     *   isSuperAdmin:bool,
+     *   isPartner:bool,
+     *   isActivePartner:bool,
+     *   partnerId:int|null,
+     *   partnerCode:string|null,
+     *   partnerName:string|null,
+     *   partnerStatus:string|null,
+     *   dbReady:boolean,
+     *   isMerchant:bool,
+     *   isActiveMerchant:bool,
+     *   merchantId:int|null,
+     *   merchantCode:string|null,
+     *   merchantCompany:string|null,
+     *   merchantStatus:string|null,
+     *   merchantBalance:int|null
+     * }
+     */
+    function lc_auth_state()
+    {
+        $logged_in = function_exists('lc_is_logged_in') ? lc_is_logged_in() : false;
+        $partner = function_exists('lc_get_current_partner') ? lc_get_current_partner() : null;
+        $merchant = function_exists('lc_get_current_merchant') ? lc_get_current_merchant() : null;
+
+        return array(
+            'loggedIn'          => $logged_in,
+            'isSuperAdmin'      => function_exists('lc_is_super_admin') ? lc_is_super_admin() : false,
+            'isPartner'         => is_array($partner),
+            'isActivePartner'   => function_exists('lc_is_active_partner') ? lc_is_active_partner() : false,
+            'partnerId'         => is_array($partner) ? (int) $partner['pt_id'] : null,
+            'partnerCode'       => is_array($partner) ? (string) $partner['pt_code'] : null,
+            'partnerName'       => is_array($partner) ? (string) $partner['pt_name'] : null,
+            'partnerStatus'     => is_array($partner) ? (string) $partner['pt_status'] : null,
+            'dbReady'           => function_exists('lc_db_installed') ? lc_db_installed() : false,
+            'isMerchant'        => is_array($merchant),
+            'isActiveMerchant'  => function_exists('lc_is_active_merchant') ? lc_is_active_merchant() : false,
+            'merchantId'        => is_array($merchant) ? (int) $merchant['mt_id'] : null,
+            'merchantCode'      => is_array($merchant) ? (string) $merchant['mt_code'] : null,
+            'merchantCompany'   => is_array($merchant) ? (string) $merchant['mt_company'] : null,
+            'merchantStatus'    => is_array($merchant) ? (string) $merchant['mt_status'] : null,
+            'merchantBalance'   => is_array($merchant) ? (int) $merchant['mt_balance'] : null,
+            'isLinkconnectAdmin'=> function_exists('lc_is_linkconnect_admin') ? lc_is_linkconnect_admin() : false,
+            'canAccessAdmin'    => function_exists('lc_can_access_admin') ? lc_can_access_admin() : false,
+        );
+    }
+}
+
+if (!function_exists('lc_auth_bootstrap_script')) {
+    function lc_auth_bootstrap_script()
+    {
+        $json = json_encode(lc_auth_state(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
+
+        return '<script>window.__LC_AUTH__=' . $json . ';</script>';
+    }
+}
+
+if (!function_exists('lc_inject_auth_bootstrap')) {
+    /**
+     * @param string $html
+     * @return string
+     */
+    function lc_inject_auth_bootstrap($html)
+    {
+        $script = lc_auth_bootstrap_script();
+        if (stripos($html, '</head>') !== false) {
+            return preg_replace('/<\/head>/i', $script . '</head>', $html, 1);
+        }
+
+        return $script . $html;
+    }
+}

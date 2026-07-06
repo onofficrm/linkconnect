@@ -1,95 +1,123 @@
-import React from "react";
-import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
-import { useState } from 'react';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
+import { fetchPartnerCampaigns, PartnerCampaign } from '../../lib/api';
 
-const categories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
-const cpaItems = [
-  {
-    id: 1,
-    title: '개인회생 상담 DB',
-    category: '법률',
-    description: '개인회생/파산 무료 상담 신청 캠페인입니다.',
-    price: '30,000',
-    approvalRate: '68%',
-    avgTime: '1.8일',
-    allowedChannels: '블로그, 카페, 검색광고, SNS',
-    forbiddenChannels: '허위광고, 브랜드 사칭, 스팸문자',
-    status: '진행중',
-    badge: '추천',
-  },
-  {
-    id: 2,
-    title: '자동차 장기렌트 특가',
-    category: '렌탈',
-    description: '신차 장기렌트카 맞춤 견적 상담',
-    price: '25,000',
-    approvalRate: '72%',
-    avgTime: '1.2일',
-    allowedChannels: '블로그, SNS, 커뮤니티',
-    forbiddenChannels: '보상형 리워드, 강제 가입',
-    status: '진행중',
-    badge: '인기',
-  },
-  {
-    id: 3,
-    title: '어린이 영어캠프 조기등록',
-    category: '교육',
-    description: '프리미엄 원어민 영어캠프 상담 신청',
-    price: '35,000',
-    approvalRate: '55%',
-    avgTime: '2.5일',
-    allowedChannels: '맘카페, 교육 블로그, 인스타그램',
-    forbiddenChannels: '과장광고, 관련없는 타겟팅',
-    status: '진행중',
-    badge: '신규',
-  },
-  {
-    id: 4,
-    title: '프리미엄 임플란트 치과',
-    category: '병원',
-    description: '임플란트 및 치아교정 할인가 상담',
-    price: '40,000',
-    approvalRate: '45%',
-    avgTime: '3.0일',
-    allowedChannels: '블로그, 건강카페',
-    forbiddenChannels: '의료법 위반 문구, 허위 후기',
-    status: '진행중',
-  },
-  {
-    id: 5,
-    title: '소상공인 대출 지원센터',
-    category: '금융',
-    description: '개인사업자 및 소상공인 맞춤 대출 한도조회',
-    price: '32,000',
-    approvalRate: '60%',
-    avgTime: '1.5일',
-    allowedChannels: '자영업 커뮤니티, 블로그',
-    forbiddenChannels: '불법 스팸, 사칭',
-    status: '마감임박',
-  },
-];
+type CampaignCardItem = {
+  id: number;
+  title: string;
+  category: string;
+  description: string;
+  price: string;
+  approvalRate: string;
+  avgTime: string;
+  allowedChannels: string;
+  forbiddenChannels: string;
+  status: string;
+  badge?: string;
+  recommended?: boolean;
+};
+
+function toCardItem(campaign: PartnerCampaign): CampaignCardItem {
+  return {
+    id: campaign.id,
+    title: campaign.title,
+    category: campaign.category,
+    description: campaign.description,
+    price: campaign.priceFormatted,
+    approvalRate: campaign.approvalRate,
+    avgTime: campaign.avgTime,
+    allowedChannels: campaign.allowedChannels,
+    forbiddenChannels: campaign.forbiddenChannels,
+    status: campaign.status,
+    badge: campaign.badge || undefined,
+    recommended: campaign.recommended,
+  };
+}
 
 export function PartnerSearch() {
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState(fallbackCategories);
+  const [items, setItems] = useState<CampaignCardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await fetchPartnerCampaigns({
+          category: activeCategory,
+          q: searchQuery,
+        });
+        if (cancelled) {
+          return;
+        }
+        setCategories(data.categories.length ? data.categories : fallbackCategories);
+        setItems(data.items.map(toCardItem));
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const timer = window.setTimeout(load, searchQuery ? 300 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeCategory, searchQuery]);
+
+  const recommendedItems = useMemo(
+    () => items.filter((item) => item.recommended || item.badge).slice(0, 3),
+    [items],
+  );
+
+  const highApprovalCount = useMemo(
+    () => items.filter((item) => parseInt(item.approvalRate, 10) >= 70).length,
+    [items],
+  );
+
+  const avgPrice = useMemo(() => {
+    if (!items.length) {
+      return '0';
+    }
+    const total = items.reduce((sum, item) => sum + Number(item.price.replace(/,/g, '')), 0);
+    return Math.round(total / items.length).toLocaleString();
+  }, [items]);
 
   return (
     <PartnerLayout activeMenu="search" title="광고상품 찾기">
-      <p className="text-slate-500 mb-8 mt(-2)">
+      <p className="text-slate-500 mb-8 -mt-2">
         홍보 가능한 CPA 광고상품을 확인하고, 내 채널에 맞는 캠페인을 선택하세요.
       </p>
 
-      {/* Summary Cards */}
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <SummaryCard title="전체 CPA 상품" value="128" suffix="개" icon={<Briefcase className="text-slate-500" />} />
-        <SummaryCard title="신규 캠페인" value="14" suffix="개" icon={<PlusCircle className="text-blue-500" />} />
-        <SummaryCard title="승인율 70% 이상" value="37" suffix="개" icon={<CheckCircle className="text-emerald-500" />} />
-        <SummaryCard title="평균 파트너 단가" value="28,000" suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
+        <SummaryCard title="전체 CPA 상품" value={String(items.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
+        <SummaryCard title="신규 캠페인" value={String(items.filter((i) => i.badge === '신규').length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
+        <SummaryCard title="승인율 70% 이상" value={String(highApprovalCount)} suffix="개" icon={<CheckCircle className="text-emerald-500" />} />
+        <SummaryCard title="평균 파트너 단가" value={avgPrice} suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
       </div>
 
-      {/* Categories */}
       <div className="flex flex-wrap gap-2 mb-6">
         {categories.map((cat) => (
           <button
@@ -106,13 +134,14 @@ export function PartnerSearch() {
         ))}
       </div>
 
-      {/* Search & Sort Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center mb-10 shadow-sm">
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="상품명 검색..." 
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="상품명 검색..."
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
           />
         </div>
@@ -128,32 +157,43 @@ export function PartnerSearch() {
         </div>
       </div>
 
-      {/* Recommended Section (First 3) */}
-      <div className="mb-12">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-500" />
-          추천 CPA 캠페인
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cpaItems.slice(0, 3).map(item => (
-            <CampaignCard key={`rec-${item.id}`} item={item} />
-          ))}
-        </div>
-      </div>
+      {loading ? (
+        <p className="text-slate-500 mb-8">캠페인 목록을 불러오는 중...</p>
+      ) : (
+        <>
+          {recommendedItems.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                추천 CPA 캠페인
+              </h2>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedItems.map((item) => (
+                  <div key={`rec-${item.id}`}>
+                    <CampaignCard item={item} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-      <div className="h-px bg-slate-200 w-full mb-10"></div>
+          <div className="h-px bg-slate-200 w-full mb-10"></div>
 
-      {/* Main List */}
-      <div className="mb-6 flex items-center justify-between">
-         <h2 className="text-lg font-bold text-slate-900">전체 캠페인 <span className="text-emerald-600 font-bold">({cpaItems.length})</span></h2>
-      </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-        {cpaItems.map(item => (
-          <CampaignCard key={item.id} item={item} />
-        ))}
-      </div>
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">
+              전체 캠페인 <span className="text-emerald-600 font-bold">({items.length})</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {items.map((item) => (
+              <div key={item.id}>
+                <CampaignCard item={item} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      {/* Notice Section */}
       <div className="bg-slate-900 rounded-2xl p-6 md:p-8 text-white shadow-lg">
         <div className="flex items-start gap-4">
           <Info className="w-6 h-6 text-cyan-400 shrink-0 mt-0.5" />
@@ -181,9 +221,7 @@ export function PartnerSearch() {
   );
 }
 
-
-
-function CampaignCard({ item }: any) {
+function CampaignCard({ item }: { item: CampaignCardItem }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
@@ -213,7 +251,7 @@ function CampaignCard({ item }: any) {
             </span>
           </div>
         </div>
-        
+
         <h3 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h3>
         <p className="text-sm text-slate-500 mb-5 line-clamp-1">{item.description}</p>
 
@@ -239,7 +277,7 @@ function CampaignCard({ item }: any) {
           </div>
         </div>
       </div>
-      
+
       <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 sm:gap-3">
         <button className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
           상세보기

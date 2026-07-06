@@ -1,11 +1,32 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell, Building2 } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell, Building2, LogOut } from 'lucide-react';
+import { getLcAuth } from '../lib/auth';
+import { g5LogoutUrl } from '../lib/urls';
 
-export function AdvertiserLayout({ children, activeMenu, title, companyName = "(주)리드앤솔루션", balance = "2,350,000" }: { children: React.ReactNode, activeMenu: string, title: string, companyName?: string, balance?: string }) {
+export function AdvertiserLayout({
+  children,
+  activeMenu,
+  title,
+  companyName,
+  balance,
+  pendingBadge,
+}: {
+  children: React.ReactNode;
+  activeMenu: string;
+  title: string;
+  companyName?: string;
+  balance?: string;
+  pendingBadge?: number;
+}) {
+  const auth = getLcAuth();
+  const displayCompany = companyName ?? auth.merchantCompany ?? '(주)리드앤솔루션';
+  const displayBalance = balance ?? (auth.merchantBalance !== null ? auth.merchantBalance.toLocaleString() : '2,350,000');
+  const dbBadge = pendingBadge ?? (auth.dbReady ? undefined : 9);
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pt-20">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <SuperAdminWidget />
       <div className="flex flex-col md:flex-row flex-1">
       {/* Sidebar */}
@@ -15,11 +36,18 @@ export function AdvertiserLayout({ children, activeMenu, title, companyName = "(
           <nav className="flex md:flex-col gap-2 md:space-y-1 min-w-max md:min-w-0">
             <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" />
             <NavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" />
-            <NavItem icon={<Target size={20} />} label="디비 확인" badge={9} active={activeMenu === 'db'} to="/advertiser/db" />
+            <NavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" />
             <NavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" />
             <NavItem icon={<BarChart3 size={20} />} label="성과 리포트" active={activeMenu === 'reports'} to="/advertiser/reports" />
             <NavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" />
           </nav>
+          <a
+            href={g5LogoutUrl()}
+            className="hidden md:flex items-center gap-3 px-4 py-3 mt-4 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-medium border-t border-slate-800 pt-4"
+          >
+            <LogOut size={20} />
+            <span>로그아웃</span>
+          </a>
         </div>
       </aside>
 
@@ -29,13 +57,13 @@ export function AdvertiserLayout({ children, activeMenu, title, companyName = "(
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-            <p className="text-slate-500">{companyName}</p>
+            <p className="text-slate-500">{displayCompany}</p>
           </div>
           <div className="flex items-center gap-4">
             <SuperAdminHeaderButton />
             <div className="flex flex-col items-end bg-white px-4 py-1.5 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-xs text-slate-500">현재 광고비 잔액</span>
-              <span className="font-bold text-cyan-600">{balance} 원</span>
+              <span className="font-bold text-cyan-600">{displayBalance} 원</span>
             </div>
             <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 shadow-sm relative">
               <Bell size={20} />
