@@ -53,6 +53,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/conversion.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/admin.php')) {
     require_once LC_PLUGIN_PATH . '/inc/admin.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/auth_bootstrap.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/auth_bootstrap.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign.php';
 }
