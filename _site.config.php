@@ -113,7 +113,7 @@ $site_config = array(
     /* LinkConnect 전용 DB명 (그누보드 data/dbconfig.php DB와 분리) */
     'linkconnect_db_name'       => 'linkconnect',
     /* 원격 DB 설치 토큰 — 비우면 비활성. 설정 시 install.php?token=값&action=run 으로 CLI 대체 가능 */
-    'linkconnect_install_token' => 'LcInst_7f3a9c2e8b1d',
+    'linkconnect_install_token' => '',
 );
 
 /**
