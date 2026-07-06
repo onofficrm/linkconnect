@@ -114,6 +114,8 @@ $site_config = array(
     'linkconnect_db_name'       => 'linkconnect',
     /* 원격 DB 설치 토큰 — 비우면 비활성. 설정 시 install.php?token=값&action=run 으로 CLI 대체 가능 */
     'linkconnect_install_token' => '',
+    /* 데모 시드 토큰 — 비우면 install 토큰으로 대체. seed_demo.php 원격 호출용 */
+    'linkconnect_seed_token' => 'LcSeed_a8f2c9e1b4d7',
 );
 
 /**
