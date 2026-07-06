@@ -2,7 +2,7 @@
 if (!defined('_GNUBOARD_')) {
     exit;
 }
-$hero_img = lc_builder_asset_url('hero_dashboard_mockup_1782987484126-Is5X7C8a.png');
+$hero_img = lc_builder_asset_url('hero_dashboard_mockup.png');
 $cpa_url = lc_url('pages/cpa.php');
 $cps_url = lc_url('pages/cps.php');
 $events_url = lc_url('pages/events.php');

@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
+
   return {
+    base: isProd ? '/plugin/onoff-builder-bridge/imports/linkconnect/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

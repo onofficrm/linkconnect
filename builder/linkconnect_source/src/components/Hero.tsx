@@ -1,7 +1,8 @@
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import heroDashboardImage from '../assets/images/hero_dashboard_mockup_1782987484126.png';
 import { handleSectionLink } from '../lib/navigation';
+
+const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.png`;
 
 export function Hero() {
   return (
