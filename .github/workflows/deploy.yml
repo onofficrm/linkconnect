@@ -34,10 +34,10 @@ jobs:
             _backup_transfer_*/
             **/_backup_transfer_*/
             _BUILDER_INPUT/**
-            data/**
-            cache/**
-            session/**
-            tmp/**
+            /data/**
+            /cache/**
+            /session/**
+            /tmp/**
             *.log
             .env
             .env.*

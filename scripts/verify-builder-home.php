@@ -31,6 +31,7 @@ function check($label, $ok)
 check('home_builder_bridge_id', g5site_cfg('home_builder_bridge_id', '') === $projectId);
 check('project_exists', onoff_builder_project_exists($projectId));
 check('import_registered', onoff_builder_has_import($projectId));
+check('import_via_get', onoff_builder_get_import($projectId) !== null);
 check('import_enabled', !empty(onoff_builder_get_import($projectId)['enabled']));
 check('home_enabled', onoff_builder_home_enabled());
 

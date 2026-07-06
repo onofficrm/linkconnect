@@ -285,6 +285,137 @@ if (!function_exists('onoff_builder_migrate_legacy_imports')) {
     }
 }
 
+if (!function_exists('onoff_builder_normalize_import_meta')) {
+    function onoff_builder_normalize_import_meta(array $row, $fallback_id = '')
+    {
+        $id = !empty($row['id'])
+            ? onoff_builder_sanitize_project_id($row['id'])
+            : onoff_builder_sanitize_project_id($fallback_id);
+        if ($id === '') {
+            return null;
+        }
+
+        $entry = 'index.html';
+        if (!empty($row['entry'])) {
+            $entry = (string) $row['entry'];
+        } elseif (!empty($row['entry_file'])) {
+            $entry = (string) $row['entry_file'];
+        }
+
+        $meta = array(
+            'id'         => $id,
+            'name'       => isset($row['name']) && $row['name'] !== '' ? (string) $row['name'] : $id,
+            'path'       => isset($row['path']) && $row['path'] !== '' ? (string) $row['path'] : $id,
+            'entry'      => $entry,
+            'created_at' => isset($row['created_at']) && $row['created_at'] !== '' ? (string) $row['created_at'] : date('Y-m-d H:i:s'),
+        );
+
+        foreach (array('enabled', 'mode', 'seo_title', 'seo_description', 'import_path', 'needs_build', 'builder_source') as $key) {
+            if (array_key_exists($key, $row)) {
+                $meta[$key] = $row[$key];
+            }
+        }
+
+        return $meta;
+    }
+}
+
+if (!function_exists('onoff_builder_load_per_project_import_meta')) {
+    function onoff_builder_load_per_project_import_meta($id)
+    {
+        $id = onoff_builder_sanitize_project_id($id);
+        if ($id === '') {
+            return null;
+        }
+
+        $path = ONOFF_BUILDER_DATA_PATH . '/imports/' . $id . '.json';
+        if (!is_file($path)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            return null;
+        }
+
+        $row = json_decode($raw, true);
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return onoff_builder_normalize_import_meta($row, $id);
+    }
+}
+
+if (!function_exists('onoff_builder_build_import_meta_from_disk')) {
+    /** imports.json 없이 FTP로 올라온 dist 폴더만 있을 때 메타 자동 생성 */
+    function onoff_builder_build_import_meta_from_disk($id)
+    {
+        $id = onoff_builder_sanitize_project_id($id);
+        if ($id === '') {
+            return null;
+        }
+
+        $dir = onoff_builder_project_dir($id);
+        if ($dir === '' || !is_dir($dir)) {
+            return null;
+        }
+
+        $entry = function_exists('onoff_builder_find_index_html')
+            ? onoff_builder_find_index_html($dir)
+            : (is_file($dir . '/index.html') ? 'index.html' : '');
+        if ($entry === '') {
+            return null;
+        }
+
+        return array(
+            'id'         => $id,
+            'name'       => $id,
+            'path'       => $id,
+            'entry'      => $entry,
+            'enabled'    => true,
+            'mode'       => 'standalone',
+            'created_at' => date('Y-m-d H:i:s'),
+        );
+    }
+}
+
+if (!function_exists('onoff_builder_merge_per_project_imports')) {
+    function onoff_builder_merge_per_project_imports(array $items)
+    {
+        $ids = array();
+        foreach ($items as $row) {
+            if (!empty($row['id'])) {
+                $ids[$row['id']] = true;
+            }
+        }
+
+        $imports_dir = ONOFF_BUILDER_DATA_PATH . '/imports';
+        if (!is_dir($imports_dir)) {
+            return $items;
+        }
+
+        foreach (glob($imports_dir . '/*.json') ?: array() as $file) {
+            $raw = @file_get_contents($file);
+            if ($raw === false || trim($raw) === '') {
+                continue;
+            }
+            $row = json_decode($raw, true);
+            if (!is_array($row) || empty($row['id'])) {
+                continue;
+            }
+            $meta = onoff_builder_normalize_import_meta($row);
+            if (!$meta || isset($ids[$meta['id']])) {
+                continue;
+            }
+            $items[] = $meta;
+            $ids[$meta['id']] = true;
+        }
+
+        return $items;
+    }
+}
+
 if (!function_exists('onoff_builder_get_imports')) {
     function onoff_builder_get_imports()
     {
@@ -319,7 +450,7 @@ if (!function_exists('onoff_builder_get_imports')) {
             return strcmp($tb, $ta);
         });
 
-        return $out;
+        return onoff_builder_merge_per_project_imports($out);
     }
 }
 
@@ -388,7 +519,12 @@ if (!function_exists('onoff_builder_get_import')) {
             }
         }
 
-        return null;
+        $per_project = onoff_builder_load_per_project_import_meta($id);
+        if ($per_project) {
+            return $per_project;
+        }
+
+        return onoff_builder_build_import_meta_from_disk($id);
     }
 }
 
