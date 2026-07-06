@@ -3,16 +3,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 import { SuperAdminHeaderButton } from './SuperAdminWidget';
-import { handleSectionLink } from '../lib/navigation';
+import { isLcSuperAdmin } from '../lib/auth';
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const goToSection = (id: string) => {
-    handleSectionLink(id);
-    setIsMobileMenuOpen(false);
-  };
-
   const closeMobile = () => setIsMobileMenuOpen(false);
 
   return (
@@ -36,15 +30,8 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <SuperAdminHeaderButton />
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
-            <Link
-              to="/"
-              onClick={() => goToSection('lc-inquiry')}
-              className="text-base font-medium bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-6 py-2.5 rounded-full transition-colors"
-            >
-              광고주 문의
-            </Link>
+            <SuperAdminHeaderButton />
           </div>
 
           <div className="md:hidden flex items-center">
@@ -71,13 +58,15 @@ export function Header() {
           <Link to="/advertiser" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-cyan-400 hover:bg-white/5 rounded-lg">광고주센터</Link>
           <div className="pt-4 flex flex-col gap-3">
             <MemberAuthMenuMobile onNavigate={closeMobile} />
-            <Link
-              to="/"
-              onClick={() => goToSection('lc-inquiry')}
-              className="w-full text-center text-base font-medium bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-3 rounded-xl transition-colors"
-            >
-              광고주 문의
-            </Link>
+            {isLcSuperAdmin() && (
+              <Link
+                to="/admin"
+                onClick={closeMobile}
+                className="w-full text-center text-base font-bold text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-colors px-4 py-3 rounded-xl"
+              >
+                관리자센터
+              </Link>
+            )}
           </div>
         </div>
       )}

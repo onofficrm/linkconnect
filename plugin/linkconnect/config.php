@@ -509,8 +509,6 @@ if (!function_exists('lc_render_header_actions')) {
             echo '<a class="lc-btn lc-btn--outline lc-btn--sm" href="' . lc_h(lc_register_url()) . '">회원가입</a>';
         }
 
-        echo '<a class="lc-btn lc-btn--primary lc-btn--sm" href="' . lc_h(lc_inquiry_url()) . '">광고주 문의</a>';
-
         lc_ui_super_admin_header_btn();
 
         echo '</div>';
