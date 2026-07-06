@@ -50,4 +50,13 @@ check('asset_path_rewrite', strpos($rewritten, '/plugin/onoff-builder-bridge/imp
 $app = @file_get_contents($root . '/builder/linkconnect_source/src/App.tsx');
 check('browser_router', $app !== false && strpos($app, 'BrowserRouter') !== false);
 
+$spa_stub_dirs = array('partner', 'advertiser', 'admin', 'select-center', 'cpa-list', 'events');
+foreach ($spa_stub_dirs as $dir) {
+    check('spa_stub_' . $dir, is_file($root . '/' . $dir . '/index.php') && is_file($root . '/' . $dir . '/.htaccess'));
+}
+
+$htaccess = @file_get_contents($root . '/.htaccess');
+check('htaccess_spa_rule', $htaccess !== false && strpos($htaccess, 'partner|advertiser|admin') !== false);
+check('extend_spa_rewrite', is_file($root . '/extend/linkconnect-spa.extend.php'));
+
 exit($fail > 0 ? 1 : 0);

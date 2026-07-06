@@ -1,24 +1,24 @@
+#### GNUBOARD5 rewrite BEGIN #####
 <IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteBase /
 
-# LinkConnect React SPA (BrowserRouter) — 실제 파일/디렉터리가 없을 때 index.php로 전달
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
-# GNUBoard·플러그인·정적 자원 제외
-RewriteCond %{REQUEST_URI} !^/bbs/ [NC]
-RewriteCond %{REQUEST_URI} !^/plugin/ [NC]
-RewriteCond %{REQUEST_URI} !^/adm/ [NC]
-RewriteCond %{REQUEST_URI} !^/data/ [NC]
-RewriteCond %{REQUEST_URI} !^/api/ [NC]
-RewriteCond %{REQUEST_URI} !^/extend/ [NC]
-RewriteCond %{REQUEST_URI} !^/lib/ [NC]
-RewriteCond %{REQUEST_URI} !^/skin/ [NC]
-RewriteCond %{REQUEST_URI} !^/mobile/ [NC]
-RewriteCond %{REQUEST_URI} !^/css/ [NC]
-RewriteCond %{REQUEST_URI} !^/js/ [NC]
-RewriteCond %{REQUEST_URI} !^/img/ [NC]
-RewriteCond %{REQUEST_URI} !^/shop/ [NC]
-
+# LinkConnect React SPA (BrowserRouter) — board short URL보다 우선
 RewriteRule ^(select-center|cpa-list|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
+
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+RewriteRule ^rss\.xml$ rss.php [L]
+RewriteRule ^content/([0-9a-zA-Z_]+)$ bbs/content.php?co_id=$1&rewrite=1 [QSA,L]
+RewriteRule ^content/([^/]+)/$ bbs/content.php?co_seo_title=$1&rewrite=1 [QSA,L]
+RewriteRule ^rss/([0-9a-zA-Z_]+)$ bbs/rss.php?bo_table=$1 [QSA,L]
+RewriteRule ^([0-9a-zA-Z_]+)$ bbs/board.php?bo_table=$1&rewrite=1 [QSA,L]
+RewriteRule ^([0-9a-zA-Z_]+)/([^/]+)/$ bbs/board.php?bo_table=$1&wr_seo_title=$2&rewrite=1 [QSA,L]
+RewriteRule ^([0-9a-zA-Z_]+)/write$ bbs/write.php?bo_table=$1&rewrite=1 [QSA,L]
+RewriteRule ^([0-9a-zA-Z_]+)/([0-9]+)$ bbs/board.php?bo_table=$1&wr_id=$2&rewrite=1 [QSA,L]
 </IfModule>
+#### GNUBOARD5 rewrite END #####
