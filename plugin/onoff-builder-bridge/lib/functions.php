@@ -938,6 +938,9 @@ if (!function_exists('onoff_builder_render_import_page')) {
                     }
                 }
             }
+            if ($lc_auth !== '' && is_file($lc_auth)) {
+                include_once $lc_auth;
+            }
             if ($lc_auth !== '' && is_file($lc_auth) && function_exists('lc_inject_auth_bootstrap')) {
                 $html = lc_inject_auth_bootstrap($html);
             }

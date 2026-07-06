@@ -16,6 +16,10 @@ if (!defined('_GNUBOARD_')) {
     exit('LinkConnect SPA bootstrap failed');
 }
 
+if (is_file(G5_PATH . '/_site.config.php')) {
+    include_once G5_PATH . '/_site.config.php';
+}
+
 if (!defined('_INDEX_')) {
     define('_INDEX_', true);
 }

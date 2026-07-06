@@ -59,4 +59,7 @@ $htaccess = @file_get_contents($root . '/.htaccess');
 check('htaccess_spa_rule', $htaccess !== false && strpos($htaccess, 'partner|advertiser|admin') !== false);
 check('extend_spa_rewrite', is_file($root . '/extend/linkconnect-spa.extend.php'));
 
+$functions = @file_get_contents($root . '/plugin/onoff-builder-bridge/lib/functions.php');
+check('auth_bootstrap_include', $functions !== false && strpos($functions, "include_once \$lc_auth") !== false);
+
 exit($fail > 0 ? 1 : 0);

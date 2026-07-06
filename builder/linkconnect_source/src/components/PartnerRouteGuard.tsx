@@ -8,15 +8,21 @@ export function PartnerRouteGuard() {
   const auth = getLcAuth();
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState('');
+  const [redirecting, setRedirecting] = useState(!auth.loggedIn);
 
   useEffect(() => {
     if (!auth.loggedIn) {
-      window.location.href = g5LoginUrl(currentSpaReturnUrl('/partner'));
+      setRedirecting(true);
+      window.location.replace(g5LoginUrl(currentSpaReturnUrl('/partner')));
     }
   }, [auth.loggedIn]);
 
   if (!auth.loggedIn) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <p className="text-slate-600">{redirecting ? '로그인 페이지로 이동 중...' : '로그인이 필요합니다.'}</p>
+      </div>
+    );
   }
 
   if (canAccessPartnerCenter()) {
