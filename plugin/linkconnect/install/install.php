@@ -9,7 +9,109 @@ require_once dirname(__DIR__) . '/_common.php';
 
 $is_cli = php_sapi_name() === 'cli';
 
-if (!$is_cli) {
+if (!function_exists('lc_install_token_ok')) {
+    function lc_install_token_ok()
+    {
+        $expected = function_exists('g5site_cfg') ? g5site_cfg('linkconnect_install_token', '') : '';
+        if ($expected === '') {
+            return false;
+        }
+        $given = isset($_REQUEST['token']) ? (string) $_REQUEST['token'] : '';
+        if ($given === '') {
+            return false;
+        }
+
+        return hash_equals($expected, $given);
+    }
+}
+
+if (!function_exists('lc_install_run')) {
+    /**
+     * @return array{ok:bool,message:string,details:array}
+     */
+    function lc_install_run($activate_mb_id, $activate_merchant_mb_id)
+    {
+        global $member;
+
+        $schema = lc_db_run_schema();
+        if (!$schema['ok']) {
+            return array(
+                'ok'      => false,
+                'message' => $schema['message'],
+                'details' => array(),
+            );
+        }
+
+        $seed = lc_campaign_seed_defaults();
+        $migrate = lc_db_run_migrations();
+
+        $activated_partner = null;
+        $activated_merchant = null;
+
+        if ($activate_mb_id !== '') {
+            $create = lc_partner_create($activate_mb_id, $activate_mb_id, LC_PARTNER_STATUS_ACTIVE);
+            if ($create['ok'] && is_array($create['partner'])) {
+                $activated_partner = $create['partner'];
+            } elseif (!$create['ok'] && is_array($create['partner'])) {
+                lc_partner_update_status((int) $create['partner']['pt_id'], LC_PARTNER_STATUS_ACTIVE);
+                $activated_partner = lc_get_partner_by_mb_id($activate_mb_id);
+            }
+        } elseif (php_sapi_name() === 'cli' && lc_is_logged_in() && isset($member['mb_id'])) {
+            $create = lc_partner_create($member['mb_id'], $member['mb_name'] ?? $member['mb_id'], LC_PARTNER_STATUS_ACTIVE);
+            if ($create['ok']) {
+                $activated_partner = $create['partner'];
+            } elseif (is_array($create['partner'])) {
+                lc_partner_update_status((int) $create['partner']['pt_id'], LC_PARTNER_STATUS_ACTIVE);
+                $activated_partner = lc_get_partner_by_mb_id($member['mb_id']);
+            }
+        }
+
+        $merchant_mb = $activate_merchant_mb_id !== '' ? $activate_merchant_mb_id : $activate_mb_id;
+        if ($merchant_mb !== '') {
+            $merchant_seed = lc_merchant_seed_defaults($merchant_mb, $merchant_mb, 2350000);
+            if ($merchant_seed['ok'] && is_array($merchant_seed['merchant'])) {
+                $activated_merchant = $merchant_seed['merchant'];
+            }
+        }
+
+        $message = $schema['message'];
+        if ($migrate['ok']) {
+            $message .= "\n마이그레이션: 완료";
+        }
+        $message .= "\n캠페인 시드: " . (int) $seed['inserted'] . "건";
+        if ($activated_partner) {
+            $message .= "\n활성 파트너: " . $activated_partner['pt_code'] . ' (' . $activated_partner['mb_id'] . ')';
+        }
+        if ($activated_merchant) {
+            $message .= "\n활성 광고주: " . $activated_merchant['mt_code'] . ' (' . $activated_merchant['mb_id'] . ')';
+        }
+
+        return array(
+            'ok'      => true,
+            'message' => $message,
+            'details' => array(
+                'dbInstalled'       => lc_db_installed(),
+                'campaignSeeded'    => (int) $seed['inserted'],
+                'activatedPartner'  => $activated_partner,
+                'activatedMerchant' => $activated_merchant,
+            ),
+        );
+    }
+}
+
+if (!function_exists('lc_install_respond_json')) {
+    function lc_install_respond_json($payload, $status = 200)
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code((int) $status);
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+}
+
+$install_token_ok = lc_install_token_ok();
+
+if (!$is_cli && !$install_token_ok) {
     if (!lc_is_super_admin()) {
         alert('최고관리자만 DB를 설치할 수 있습니다.', G5_URL);
     }
@@ -17,68 +119,36 @@ if (!$is_cli) {
 
 $action = isset($_REQUEST['action']) ? (string) $_REQUEST['action'] : 'form';
 $activate_mb_id = isset($_REQUEST['activate_mb_id']) ? trim((string) $_REQUEST['activate_mb_id']) : '';
+$activate_merchant_mb_id = isset($_REQUEST['activate_merchant_mb_id']) ? trim((string) $_REQUEST['activate_merchant_mb_id']) : '';
+$json_response = $install_token_ok || (isset($_REQUEST['format']) && $_REQUEST['format'] === 'json');
 
 if ($action === 'run' || $is_cli) {
-    $schema = lc_db_run_schema();
-    if (!$schema['ok']) {
+    $result = lc_install_run($activate_mb_id, $activate_merchant_mb_id);
+    if (!$result['ok']) {
         if ($is_cli) {
-            fwrite(STDERR, $schema['message'] . PHP_EOL);
+            fwrite(STDERR, $result['message'] . PHP_EOL);
             exit(1);
         }
-        alert($schema['message']);
-    }
-
-    $seed = lc_campaign_seed_defaults();
-    $migrate = lc_db_run_migrations();
-
-    $activated_partner = null;
-    $activated_merchant = null;
-    $activate_merchant_mb_id = isset($_REQUEST['activate_merchant_mb_id']) ? trim((string) $_REQUEST['activate_merchant_mb_id']) : '';
-
-    if ($activate_mb_id !== '') {
-        $create = lc_partner_create($activate_mb_id, $activate_mb_id, LC_PARTNER_STATUS_ACTIVE);
-        if ($create['ok'] && is_array($create['partner'])) {
-            $activated_partner = $create['partner'];
-        } elseif (!$create['ok'] && is_array($create['partner'])) {
-            lc_partner_update_status((int) $create['partner']['pt_id'], LC_PARTNER_STATUS_ACTIVE);
-            $activated_partner = lc_get_partner_by_mb_id($activate_mb_id);
+        if ($json_response) {
+            lc_install_respond_json(array('ok' => false, 'message' => $result['message']), 500);
         }
-    } elseif ($is_cli && lc_is_logged_in() && isset($member['mb_id'])) {
-        $create = lc_partner_create($member['mb_id'], $member['mb_name'] ?? $member['mb_id'], LC_PARTNER_STATUS_ACTIVE);
-        if ($create['ok']) {
-            $activated_partner = $create['partner'];
-        } elseif (is_array($create['partner'])) {
-            lc_partner_update_status((int) $create['partner']['pt_id'], LC_PARTNER_STATUS_ACTIVE);
-            $activated_partner = lc_get_partner_by_mb_id($member['mb_id']);
-        }
-    }
-
-    $merchant_mb = $activate_merchant_mb_id !== '' ? $activate_merchant_mb_id : $activate_mb_id;
-    if ($merchant_mb !== '') {
-        $merchant_seed = lc_merchant_seed_defaults($merchant_mb, $merchant_mb, 2350000);
-        if ($merchant_seed['ok'] && is_array($merchant_seed['merchant'])) {
-            $activated_merchant = $merchant_seed['merchant'];
-        }
-    }
-
-    $message = $schema['message'];
-    if ($migrate['ok']) {
-        $message .= "\n마이그레이션: 완료";
-    }
-    $message .= "\n캠페인 시드: " . (int) $seed['inserted'] . "건";
-    if ($activated_partner) {
-        $message .= "\n활성 파트너: " . $activated_partner['pt_code'] . ' (' . $activated_partner['mb_id'] . ')';
-    }
-    if ($activated_merchant) {
-        $message .= "\n활성 광고주: " . $activated_merchant['mt_code'] . ' (' . $activated_merchant['mb_id'] . ')';
+        alert($result['message']);
     }
 
     if ($is_cli) {
-        echo $message . PHP_EOL;
+        echo $result['message'] . PHP_EOL;
         exit(0);
     }
 
-    alert($message, lc_url('install/install.php?done=1'));
+    if ($json_response) {
+        lc_install_respond_json(array(
+            'ok'      => true,
+            'message' => $result['message'],
+            'details' => $result['details'],
+        ));
+    }
+
+    alert($result['message'], lc_url('install/install.php?done=1'));
 }
 
 $done = isset($_GET['done']);
