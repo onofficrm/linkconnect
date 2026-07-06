@@ -1,0 +1,24 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# LinkConnect React SPA (BrowserRouter) — 실제 파일/디렉터리가 없을 때 index.php로 전달
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# GNUBoard·플러그인·정적 자원 제외
+RewriteCond %{REQUEST_URI} !^/bbs/ [NC]
+RewriteCond %{REQUEST_URI} !^/plugin/ [NC]
+RewriteCond %{REQUEST_URI} !^/adm/ [NC]
+RewriteCond %{REQUEST_URI} !^/data/ [NC]
+RewriteCond %{REQUEST_URI} !^/api/ [NC]
+RewriteCond %{REQUEST_URI} !^/extend/ [NC]
+RewriteCond %{REQUEST_URI} !^/lib/ [NC]
+RewriteCond %{REQUEST_URI} !^/skin/ [NC]
+RewriteCond %{REQUEST_URI} !^/mobile/ [NC]
+RewriteCond %{REQUEST_URI} !^/css/ [NC]
+RewriteCond %{REQUEST_URI} !^/js/ [NC]
+RewriteCond %{REQUEST_URI} !^/img/ [NC]
+RewriteCond %{REQUEST_URI} !^/shop/ [NC]
+
+RewriteRule ^(select-center|cpa-list|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
+</IfModule>

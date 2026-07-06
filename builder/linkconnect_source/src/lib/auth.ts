@@ -16,6 +16,11 @@ export type LcAuth = {
   merchantBalance: number | null;
   isLinkconnectAdmin: boolean;
   canAccessAdmin: boolean;
+  memberId: string | null;
+  memberName: string | null;
+  memberNick: string | null;
+  memberEmail: string | null;
+  bbsUrl: string;
   dbReady: boolean;
 };
 
@@ -43,6 +48,11 @@ const defaultAuth: LcAuth = {
   merchantBalance: null,
   isLinkconnectAdmin: false,
   canAccessAdmin: false,
+  memberId: null,
+  memberName: null,
+  memberNick: null,
+  memberEmail: null,
+  bbsUrl: '/bbs',
   dbReady: false,
 };
 
@@ -101,4 +111,18 @@ export function canAccessAdvertiserCenter(): boolean {
 
 export function canAccessAdmin(): boolean {
   return getLcAuth().canAccessAdmin;
+}
+
+export function getMemberDisplayName(): string {
+  const auth = getLcAuth();
+  if (auth.memberNick) {
+    return auth.memberNick;
+  }
+  if (auth.memberName) {
+    return auth.memberName;
+  }
+  if (auth.memberId) {
+    return auth.memberId;
+  }
+  return '회원';
 }

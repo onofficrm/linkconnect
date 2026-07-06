@@ -28,9 +28,9 @@ $lc_page_title = isset($lc_page_title) ? (string) $lc_page_title : '파트너센
       <button type="button" class="lc-partner-code__copy" title="복사">📋</button>
     </div>
     <button type="button" class="lc-partner-icon-btn" title="알림">🔔</button>
-    <button type="button" class="lc-partner-icon-btn lc-partner-icon-btn--user" title="내 정보">👤</button>
+    <a class="lc-partner-icon-btn lc-partner-icon-btn--user" href="<?php echo lc_h(lc_member_edit_url()); ?>" title="회원정보 수정">👤</a>
     <?php if (lc_is_logged_in()) { ?>
-    <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/logout.php' : '#'); ?>">로그아웃</a>
+    <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(lc_logout_url()); ?>">로그아웃</a>
     <?php } else { ?>
     <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(lc_login_url()); ?>">로그인</a>
     <?php } ?>

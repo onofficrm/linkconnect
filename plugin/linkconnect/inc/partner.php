@@ -33,7 +33,7 @@ if (!function_exists('lc_get_partner_by_mb_id')) {
         $mb_id = lc_sql_escape($mb_id);
         $table = lc_table('partners');
 
-        return sql_fetch(" SELECT * FROM `{$table}` WHERE mb_id = '{$mb_id}' LIMIT 1 ");
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE mb_id = '{$mb_id}' LIMIT 1 ");
     }
 }
 
@@ -47,7 +47,7 @@ if (!function_exists('lc_get_partner_by_id')) {
         $pt_id = (int) $pt_id;
         $table = lc_table('partners');
 
-        return sql_fetch(" SELECT * FROM `{$table}` WHERE pt_id = '{$pt_id}' LIMIT 1 ");
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE pt_id = '{$pt_id}' LIMIT 1 ");
     }
 }
 
@@ -134,7 +134,7 @@ if (!function_exists('lc_partner_create')) {
         $status_esc = lc_sql_escape($status);
         $temp_code = 'TMP-' . uniqid();
 
-        sql_query(" INSERT INTO `{$table}`
+        lc_sql_query(" INSERT INTO `{$table}`
             SET mb_id = '{$mb_id_esc}',
                 pt_code = '" . lc_sql_escape($temp_code) . "',
                 pt_name = '{$name_esc}',
@@ -142,13 +142,13 @@ if (!function_exists('lc_partner_create')) {
                 pt_created_at = NOW(),
                 pt_updated_at = NOW() ", false);
 
-        $pt_id = (int) sql_insert_id();
+        $pt_id = (int) lc_sql_insert_id();
         if ($pt_id <= 0) {
             return array('ok' => false, 'message' => '파트너 생성에 실패했습니다.', 'partner' => null);
         }
 
         $code = lc_partner_generate_code($pt_id);
-        sql_query(" UPDATE `{$table}` SET pt_code = '" . lc_sql_escape($code) . "' WHERE pt_id = '{$pt_id}' ", false);
+        lc_sql_query(" UPDATE `{$table}` SET pt_code = '" . lc_sql_escape($code) . "' WHERE pt_id = '{$pt_id}' ", false);
 
         $partner = lc_get_partner_by_id($pt_id);
 
@@ -175,7 +175,7 @@ if (!function_exists('lc_partner_update_status')) {
         $table = lc_table('partners');
         $status_esc = lc_sql_escape($status);
 
-        sql_query(" UPDATE `{$table}` SET pt_status = '{$status_esc}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
+        lc_sql_query(" UPDATE `{$table}` SET pt_status = '{$status_esc}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
 
         return array('ok' => true, 'message' => '파트너 상태가 변경되었습니다.');
     }

@@ -39,10 +39,10 @@ if (!function_exists('lc_wallet_record')) {
         $wallet_table = lc_table('wallet_transactions');
 
         if ($status === 'completed') {
-            sql_query(" UPDATE `{$merchant_table}` SET mt_balance = '{$new_balance}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
+            lc_sql_query(" UPDATE `{$merchant_table}` SET mt_balance = '{$new_balance}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
         }
 
-        sql_query(" INSERT INTO `{$wallet_table}` SET
+        lc_sql_query(" INSERT INTO `{$wallet_table}` SET
             mt_id = '{$mt_id}',
             wt_type = '" . lc_sql_escape($type) . "',
             wt_amount = '{$amount}',
@@ -75,7 +75,7 @@ if (!function_exists('lc_wallet_list_for_merchant')) {
         $limit = max(1, min(100, (int) $limit));
         $table = lc_table('wallet_transactions');
         $rows = array();
-        $result = sql_query(" SELECT * FROM `{$table}` WHERE mt_id = '{$mt_id}' ORDER BY wt_id DESC LIMIT {$limit} ", false);
+        $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE mt_id = '{$mt_id}' ORDER BY wt_id DESC LIMIT {$limit} ", false);
 
         if ($result) {
             while ($row = sql_fetch_array($result)) {
@@ -165,7 +165,7 @@ if (!function_exists('lc_wallet_count_pending')) {
         }
 
         $table = lc_table('wallet_transactions');
-        $row = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` WHERE wt_status = 'pending' AND wt_type = 'charge' ");
+        $row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` WHERE wt_status = 'pending' AND wt_type = 'charge' ");
 
         return (int) ($row['cnt'] ?? 0);
     }
@@ -189,7 +189,7 @@ if (!function_exists('lc_wallet_list_pending_charges')) {
             WHERE wt.wt_status = 'pending' AND wt.wt_type = 'charge'
             ORDER BY wt.wt_id DESC
             LIMIT {$limit} ";
-        $result = sql_query($sql, false);
+        $result = lc_sql_query($sql, false);
         if ($result) {
             while ($row = sql_fetch_array($result)) {
                 $rows[] = $row;
@@ -228,7 +228,7 @@ if (!function_exists('lc_wallet_approve_transaction')) {
 
         $wt_id = (int) $wt_id;
         $wt_table = lc_table('wallet_transactions');
-        $row = sql_fetch(" SELECT * FROM `{$wt_table}` WHERE wt_id = '{$wt_id}' AND wt_status = 'pending' LIMIT 1 ");
+        $row = lc_sql_fetch(" SELECT * FROM `{$wt_table}` WHERE wt_id = '{$wt_id}' AND wt_status = 'pending' LIMIT 1 ");
         if (!$row) {
             return array('ok' => false, 'message' => '대기 중인 거래를 찾을 수 없습니다.');
         }
@@ -243,8 +243,8 @@ if (!function_exists('lc_wallet_approve_transaction')) {
         $new_balance = (int) $merchant['mt_balance'] + $amount;
         $merchant_table = lc_table('merchants');
 
-        sql_query(" UPDATE `{$merchant_table}` SET mt_balance = '{$new_balance}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
-        sql_query(" UPDATE `{$wt_table}` SET wt_status = 'completed', wt_balance_after = '{$new_balance}' WHERE wt_id = '{$wt_id}' ", false);
+        lc_sql_query(" UPDATE `{$merchant_table}` SET mt_balance = '{$new_balance}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
+        lc_sql_query(" UPDATE `{$wt_table}` SET wt_status = 'completed', wt_balance_after = '{$new_balance}' WHERE wt_id = '{$wt_id}' ", false);
 
         return array('ok' => true, 'message' => '충전이 승인되었습니다.');
     }
@@ -259,13 +259,13 @@ if (!function_exists('lc_wallet_reject_transaction')) {
 
         $wt_id = (int) $wt_id;
         $wt_table = lc_table('wallet_transactions');
-        $row = sql_fetch(" SELECT * FROM `{$wt_table}` WHERE wt_id = '{$wt_id}' AND wt_status = 'pending' LIMIT 1 ");
+        $row = lc_sql_fetch(" SELECT * FROM `{$wt_table}` WHERE wt_id = '{$wt_id}' AND wt_status = 'pending' LIMIT 1 ");
         if (!$row) {
             return array('ok' => false, 'message' => '대기 중인 거래를 찾을 수 없습니다.');
         }
 
         $memo_esc = lc_sql_escape($memo !== '' ? $memo : '충전 신청 반려');
-        sql_query(" UPDATE `{$wt_table}` SET wt_status = 'rejected', wt_memo = CONCAT(wt_memo, ' / ', '{$memo_esc}') WHERE wt_id = '{$wt_id}' ", false);
+        lc_sql_query(" UPDATE `{$wt_table}` SET wt_status = 'rejected', wt_memo = CONCAT(wt_memo, ' / ', '{$memo_esc}') WHERE wt_id = '{$wt_id}' ", false);
 
         return array('ok' => true, 'message' => '충전 신청이 반려되었습니다.');
     }

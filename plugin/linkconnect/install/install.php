@@ -98,10 +98,15 @@ $done = isset($_GET['done']);
     <?php if ($done) { ?>
       <p class="lc-muted">설치가 완료되었습니다. 파트너센터 API를 사용할 수 있습니다.</p>
     <?php } else { ?>
-      <p class="lc-muted">파트너·캠페인·링크·전환·정산 테이블을 생성하고 기본 CPA 캠페인을 시드합니다.</p>
+      <p class="lc-muted">파트너·캠페인·링크·전환·정산 테이블을 <strong><?php echo lc_h(lc_mysql_db_name()); ?></strong> DB에 생성하고 기본 CPA 캠페인을 시드합니다. 그누보드 회원·게시판 DB는 그대로 유지됩니다.</p>
     <?php } ?>
 
     <ul class="lc-muted" style="margin:1rem 0;line-height:1.8;">
+      <li>LinkConnect DB: <code><?php echo lc_h(lc_mysql_db_name()); ?></code></li>
+      <?php if (defined('G5_MYSQL_DB')) { ?>
+      <li>그누보드 DB: <code><?php echo lc_h(G5_MYSQL_DB); ?></code></li>
+      <?php } ?>
+      <li>DB 연결: <strong><?php echo lc_db_connection_ok() ? '정상' : '실패'; ?></strong></li>
       <li>테이블 접두사: <code><?php echo lc_h(lc_table_prefix()); ?>lc_*</code></li>
       <li>DB 설치 여부: <strong><?php echo lc_db_installed() ? '완료' : '미설치'; ?></strong></li>
       <li>파트너 가드: <strong><?php echo LC_PARTNER_GUARD_ENABLED ? '활성' : '비활성'; ?></strong></li>
@@ -117,7 +122,10 @@ $done = isset($_GET['done']);
         <span class="lc-muted">설치 후 활성화할 광고주 회원 ID (선택, 비우면 파트너 ID와 동일)</span>
         <input type="text" name="activate_merchant_mb_id" class="lc-input" placeholder="admin" value="<?php echo lc_h(isset($_REQUEST['activate_merchant_mb_id']) ? (string) $_REQUEST['activate_merchant_mb_id'] : ''); ?>">
       </label>
-      <button type="submit" class="lc-btn lc-btn--primary">DB 설치 실행</button>
+      <button type="submit" class="lc-btn lc-btn--primary"<?php echo lc_db_connection_ok() ? '' : ' disabled'; ?>>DB 설치 실행</button>
+      <?php if (!lc_db_connection_ok()) { ?>
+      <p class="lc-muted" style="color:#b91c1c">linkconnect DB에 연결할 수 없습니다. MySQL에 <code><?php echo lc_h(lc_mysql_db_name()); ?></code> 데이터베이스가 생성되어 있는지, 접속 계정 권한을 확인하세요.</p>
+      <?php } ?>
     </form>
 
     <p style="margin-top:1.5rem">

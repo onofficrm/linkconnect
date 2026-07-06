@@ -67,7 +67,7 @@ if (!function_exists('lc_campaign_list_active')) {
         }
 
         $rows = array();
-        $result = sql_query(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY cp_recommended DESC, cp_sort ASC, cp_id DESC ", false);
+        $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY cp_recommended DESC, cp_sort ASC, cp_id DESC ", false);
 
         if ($result) {
             while ($row = sql_fetch_array($result)) {
@@ -90,7 +90,7 @@ if (!function_exists('lc_campaign_seed_defaults')) {
         }
 
         $table = lc_table('campaigns');
-        $count_row = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` ");
+        $count_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` ");
         if ($count_row && (int) $count_row['cnt'] > 0) {
             return array('ok' => true, 'inserted' => 0);
         }
@@ -122,7 +122,7 @@ if (!function_exists('lc_campaign_seed_defaults')) {
                 cp_sort = '{$sort}',
                 cp_created_at = NOW(),
                 cp_updated_at = NOW() ";
-            sql_query($sql, false);
+            lc_sql_query($sql, false);
             $inserted++;
         }
 

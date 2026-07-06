@@ -48,6 +48,6 @@ $rewritten = onoff_builder_rewrite_asset_paths($index, $projectId, 'index.html')
 check('asset_path_rewrite', strpos($rewritten, '/plugin/onoff-builder-bridge/imports/linkconnect/assets/') !== false);
 
 $app = @file_get_contents($root . '/builder/linkconnect_source/src/App.tsx');
-check('hash_router', $app !== false && strpos($app, 'HashRouter') !== false);
+check('browser_router', $app !== false && strpos($app, 'BrowserRouter') !== false);
 
 exit($fail > 0 ? 1 : 0);

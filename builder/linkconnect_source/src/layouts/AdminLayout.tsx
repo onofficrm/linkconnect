@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Bell, Search, Menu, LogOut, ChevronRight, Gift } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Bell, Search, Menu, ChevronRight, Gift } from 'lucide-react';
+import { MemberAuthMenu } from '../components/MemberAuthMenu';
+import { getLcAuth, getMemberDisplayName } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
-import { g5LogoutUrl } from '../lib/urls';
+import { g5MemberEditUrl } from '../lib/urls';
 
 const sidebarMenus = [
   { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
@@ -21,6 +23,10 @@ const sidebarMenus = [
 
 export function AdminLayout({ children, activeMenu, title, description }: { children: React.ReactNode, activeMenu: string, title: string, description?: string }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const auth = getLcAuth();
+  const displayName = getMemberDisplayName();
+  const memberEmail = auth.memberEmail ?? '';
+  const memberInitials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
@@ -67,18 +73,28 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
             <Bell size={20} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-slate-950"></span>
           </button>
-          <button className="p-2 text-slate-400 hover:text-white transition-colors">
+          <a
+            href={g5MemberEditUrl()}
+            className="p-2 text-slate-400 hover:text-white transition-colors"
+            title="회원정보 수정"
+          >
             <Settings size={20} />
-          </button>
+          </a>
           <div className="h-6 w-px bg-slate-800 mx-1 sm:mx-2"></div>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
-              <span className="text-sm font-bold">최고관리자</span>
-              <span className="text-xs text-slate-400">admin@linkconnect.kr</span>
+              <span className="text-sm font-bold">{displayName}</span>
+              {memberEmail ? (
+                <span className="text-xs text-slate-400">{memberEmail}</span>
+              ) : null}
             </div>
-            <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 text-cyan-400 font-bold">
-              AM
-            </div>
+            <a
+              href={g5MemberEditUrl()}
+              className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700 text-cyan-400 font-bold text-xs"
+              title="회원정보 수정"
+            >
+              {memberInitials}
+            </a>
           </div>
         </div>
       </header>
@@ -110,13 +126,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           </div>
           
           <div className="p-4 border-t border-slate-800">
-            <a
-              href={g5LogoutUrl()}
-              className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors font-medium"
-            >
-              <LogOut size={20} />
-              <span>로그아웃</span>
-            </a>
+            <MemberAuthMenu variant="sidebar" logoutReturnPath="/admin" />
           </div>
         </aside>
 

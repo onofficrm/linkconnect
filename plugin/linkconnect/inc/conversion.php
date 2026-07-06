@@ -46,7 +46,7 @@ if (!function_exists('lc_conversion_get_by_id')) {
         $cv_id = (int) $cv_id;
         $table = lc_table('conversions');
 
-        return sql_fetch(" SELECT * FROM `{$table}` WHERE cv_id = '{$cv_id}' LIMIT 1 ");
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE cv_id = '{$cv_id}' LIMIT 1 ");
     }
 }
 
@@ -60,7 +60,7 @@ if (!function_exists('lc_conversion_merchant_campaign_ids')) {
         $mt_id = (int) $mt_id;
         $table = lc_table('campaigns');
         $ids = array();
-        $result = sql_query(" SELECT cp_id FROM `{$table}` WHERE mt_id = '{$mt_id}' ", false);
+        $result = lc_sql_query(" SELECT cp_id FROM `{$table}` WHERE mt_id = '{$mt_id}' ", false);
 
         if ($result) {
             while ($row = sql_fetch_array($result)) {
@@ -113,7 +113,7 @@ if (!function_exists('lc_conversion_list_for_merchant')) {
             LIMIT 200 ";
 
         $rows = array();
-        $result = sql_query($sql, false);
+        $result = lc_sql_query($sql, false);
         if ($result) {
             while ($row = sql_fetch_array($result)) {
                 $rows[] = $row;
@@ -261,7 +261,7 @@ if (!function_exists('lc_conversion_update_status')) {
         $status_esc = lc_sql_escape($new_status);
         $comment_esc = lc_sql_escape($comment);
 
-        sql_query(" UPDATE `{$table}` SET
+        lc_sql_query(" UPDATE `{$table}` SET
             cv_status = '{$status_esc}',
             cv_comment = '{$comment_esc}',
             cv_updated_at = NOW()
@@ -286,7 +286,7 @@ if (!function_exists('lc_partner_credit_for_conversion')) {
         $amount = (int) $conversion['cv_price'];
         $table = lc_table('partners');
 
-        sql_query(" UPDATE `{$table}` SET pt_balance = pt_balance + '{$amount}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
+        lc_sql_query(" UPDATE `{$table}` SET pt_balance = pt_balance + '{$amount}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
     }
 }
 
@@ -313,7 +313,7 @@ if (!function_exists('lc_conversion_merchant_summary')) {
         $in = implode(',', array_map('intval', $campaign_ids));
         $today = date('Y-m-d');
 
-        $row = sql_fetch(" SELECT
+        $row = lc_sql_fetch(" SELECT
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' THEN 1 ELSE 0 END) AS pending_cnt,
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected_cnt,
@@ -351,7 +351,7 @@ if (!function_exists('lc_conversion_merchant_chart_7d')) {
         for ($i = 6; $i >= 0; $i--) {
             $day = date('Y-m-d', strtotime('-' . $i . ' days'));
             $label = date('m.d', strtotime($day));
-            $row = sql_fetch(" SELECT
+            $row = lc_sql_fetch(" SELECT
                 COUNT(*) AS db_cnt,
                 SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approval_cnt,
                 SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS cancel_cnt
@@ -389,7 +389,7 @@ if (!function_exists('lc_conversion_seed_for_merchant')) {
         $cp_table = lc_table('campaigns');
         $pt_table = lc_table('partners');
 
-        $count_row = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` cv
+        $count_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` cv
             INNER JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
             WHERE c.mt_id = '{$mt_id}' ");
         if ($count_row && (int) $count_row['cnt'] > 0) {
@@ -406,17 +406,17 @@ if (!function_exists('lc_conversion_seed_for_merchant')) {
 
         $inserted = 0;
         foreach (lc_sample_merchant_dbs() as $sample) {
-            $campaign = sql_fetch(" SELECT cp_id, cp_price FROM `{$cp_table}` WHERE cp_name = '" . lc_sql_escape($sample['campaign']) . "' AND mt_id = '{$mt_id}' LIMIT 1 ");
+            $campaign = lc_sql_fetch(" SELECT cp_id, cp_price FROM `{$cp_table}` WHERE cp_name = '" . lc_sql_escape($sample['campaign']) . "' AND mt_id = '{$mt_id}' LIMIT 1 ");
             if (!$campaign) {
                 continue;
             }
 
-            $partner = sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_code = '" . lc_sql_escape($sample['partner']) . "' LIMIT 1 ");
+            $partner = lc_sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_code = '" . lc_sql_escape($sample['partner']) . "' LIMIT 1 ");
             $pt_id = $partner ? (int) $partner['pt_id'] : 0;
             $status = isset($status_map[$sample['status']]) ? $status_map[$sample['status']] : LC_STATUS_PENDING;
             $price = $status === LC_STATUS_APPROVED ? (int) $campaign['cp_price'] : (int) $sample['price'];
 
-            sql_query(" INSERT INTO `{$cv_table}` SET
+            lc_sql_query(" INSERT INTO `{$cv_table}` SET
                 cv_code = '" . lc_sql_escape($sample['id']) . "',
                 pt_id = '{$pt_id}',
                 cp_id = '" . (int) $campaign['cp_id'] . "',

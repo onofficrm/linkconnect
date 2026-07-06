@@ -31,9 +31,9 @@ if (is_array($lc_toolbar_merchant)) {
       <span class="lc-merchant-balance__value"><?php echo lc_h($lc_merchant_balance); ?> 원</span>
     </div>
     <button type="button" class="lc-partner-icon-btn" title="알림">🔔</button>
-    <button type="button" class="lc-partner-icon-btn lc-merchant-icon-btn" title="광고주 정보">🏢</button>
+    <a class="lc-partner-icon-btn lc-merchant-icon-btn" href="<?php echo lc_h(lc_member_edit_url()); ?>" title="회원정보 수정">👤</a>
     <?php if (lc_is_logged_in()) { ?>
-    <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/logout.php' : '#'); ?>">로그아웃</a>
+    <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(lc_logout_url()); ?>">로그아웃</a>
     <?php } else { ?>
     <a class="lc-btn lc-btn--ghost lc-btn--xs" href="<?php echo lc_h(lc_login_url()); ?>">로그인</a>
     <?php } ?>

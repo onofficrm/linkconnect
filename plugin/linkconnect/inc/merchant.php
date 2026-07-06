@@ -33,7 +33,7 @@ if (!function_exists('lc_get_merchant_by_mb_id')) {
         $mb_id = lc_sql_escape($mb_id);
         $table = lc_table('merchants');
 
-        return sql_fetch(" SELECT * FROM `{$table}` WHERE mb_id = '{$mb_id}' LIMIT 1 ");
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE mb_id = '{$mb_id}' LIMIT 1 ");
     }
 }
 
@@ -47,7 +47,7 @@ if (!function_exists('lc_get_merchant_by_id')) {
         $mt_id = (int) $mt_id;
         $table = lc_table('merchants');
 
-        return sql_fetch(" SELECT * FROM `{$table}` WHERE mt_id = '{$mt_id}' LIMIT 1 ");
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE mt_id = '{$mt_id}' LIMIT 1 ");
     }
 }
 
@@ -131,7 +131,7 @@ if (!function_exists('lc_merchant_create')) {
         $balance = (int) $initial_balance;
         $temp_code = 'TMP-' . uniqid();
 
-        sql_query(" INSERT INTO `{$table}`
+        lc_sql_query(" INSERT INTO `{$table}`
             SET mb_id = '{$mb_id_esc}',
                 mt_code = '" . lc_sql_escape($temp_code) . "',
                 mt_company = '{$company_esc}',
@@ -140,13 +140,13 @@ if (!function_exists('lc_merchant_create')) {
                 mt_created_at = NOW(),
                 mt_updated_at = NOW() ", false);
 
-        $mt_id = (int) sql_insert_id();
+        $mt_id = (int) lc_sql_insert_id();
         if ($mt_id <= 0) {
             return array('ok' => false, 'message' => '광고주 생성에 실패했습니다.', 'merchant' => null);
         }
 
         $code = lc_merchant_generate_code($mt_id);
-        sql_query(" UPDATE `{$table}` SET mt_code = '" . lc_sql_escape($code) . "' WHERE mt_id = '{$mt_id}' ", false);
+        lc_sql_query(" UPDATE `{$table}` SET mt_code = '" . lc_sql_escape($code) . "' WHERE mt_id = '{$mt_id}' ", false);
 
         if ($balance > 0) {
             lc_wallet_record($mt_id, 'charge', $balance, '초기 광고비 지급', 'setup', $mt_id);
@@ -177,7 +177,7 @@ if (!function_exists('lc_merchant_update_status')) {
         $table = lc_table('merchants');
         $status_esc = lc_sql_escape($status);
 
-        sql_query(" UPDATE `{$table}` SET mt_status = '{$status_esc}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
+        lc_sql_query(" UPDATE `{$table}` SET mt_status = '{$status_esc}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' ", false);
 
         return array('ok' => true, 'message' => '광고주 상태가 변경되었습니다.');
     }
@@ -193,7 +193,7 @@ if (!function_exists('lc_merchant_assign_campaigns')) {
         $mt_id = (int) $mt_id;
         $table = lc_table('campaigns');
 
-        sql_query(" UPDATE `{$table}` SET mt_id = '{$mt_id}' WHERE mt_id = 0 ", false);
+        lc_sql_query(" UPDATE `{$table}` SET mt_id = '{$mt_id}' WHERE mt_id = 0 ", false);
 
         return (int) sql_affected_rows();
     }

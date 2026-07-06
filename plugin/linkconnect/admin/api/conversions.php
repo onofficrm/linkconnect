@@ -21,7 +21,7 @@ if (lc_db_installed()) {
 
     $cv_table = lc_table('conversions');
     $today = date('Y-m-d');
-    $row = sql_fetch(" SELECT
+    $row = lc_sql_fetch(" SELECT
         COUNT(*) AS total_cnt,
         SUM(CASE WHEN DATE(cv_created_at) = '{$today}' THEN 1 ELSE 0 END) AS today_cnt,
         SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,

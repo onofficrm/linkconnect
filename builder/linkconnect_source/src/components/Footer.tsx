@@ -1,16 +1,14 @@
 import { Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { isLcLoggedIn } from '../lib/auth';
+import { MemberAuthMenu } from './MemberAuthMenu';
 import { handleSectionLink } from '../lib/navigation';
-import { currentSpaReturnUrl, g5BbsUrl, g5LoginUrl, g5LogoutUrl, g5RegisterUrl } from '../lib/urls';
+import { g5BbsUrl } from '../lib/urls';
 
 export function Footer() {
   const sectionLink = (id: string) => ({
     to: '/' as const,
     onClick: () => handleSectionLink(id),
   });
-  const loggedIn = isLcLoggedIn();
-  const loginUrl = g5LoginUrl(currentSpaReturnUrl('/select-center'));
 
   return (
     <footer className="bg-slate-950 pt-20 pb-10 px-4 sm:px-6 lg:px-8 border-t border-white/5">
@@ -49,14 +47,7 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-slate-400">
               <li><Link to="/partner" className="hover:text-cyan-400 transition-colors">파트너센터</Link></li>
               <li><Link to="/advertiser" className="hover:text-cyan-400 transition-colors">광고주센터</Link></li>
-              {!loggedIn ? (
-                <>
-                  <li><a href={loginUrl} className="hover:text-cyan-400 transition-colors">로그인</a></li>
-                  <li><a href={g5RegisterUrl()} className="hover:text-cyan-400 transition-colors">회원가입</a></li>
-                </>
-              ) : (
-                <li><a href={g5LogoutUrl()} className="hover:text-cyan-400 transition-colors">로그아웃</a></li>
-              )}
+              <MemberAuthMenu variant="footer" />
               <li><a href={g5BbsUrl('content.php?co_id=provision')} className="hover:text-cyan-400 transition-colors">이용약관</a></li>
               <li><a href={g5BbsUrl('content.php?co_id=privacy')} className="hover:text-cyan-400 transition-colors">개인정보처리방침</a></li>
             </ul>

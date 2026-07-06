@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell, Building2, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell } from 'lucide-react';
+import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { getLcAuth } from '../lib/auth';
-import { g5LogoutUrl } from '../lib/urls';
 
 export function AdvertiserLayout({
   children,
@@ -41,13 +41,7 @@ export function AdvertiserLayout({
             <NavItem icon={<BarChart3 size={20} />} label="성과 리포트" active={activeMenu === 'reports'} to="/advertiser/reports" />
             <NavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" />
           </nav>
-          <a
-            href={g5LogoutUrl()}
-            className="hidden md:flex items-center gap-3 px-4 py-3 mt-4 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors font-medium border-t border-slate-800 pt-4"
-          >
-            <LogOut size={20} />
-            <span>로그아웃</span>
-          </a>
+          <MemberAuthMenu variant="sidebar" logoutReturnPath="/advertiser" />
         </div>
       </aside>
 
@@ -69,9 +63,7 @@ export function AdvertiserLayout({
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <button className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center border border-cyan-200 shadow-sm">
-              <Building2 size={20} />
-            </button>
+            <MemberAuthMenu variant="compact" logoutReturnPath="/advertiser" />
           </div>
         </header>
 

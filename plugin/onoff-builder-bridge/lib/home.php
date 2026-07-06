@@ -35,15 +35,87 @@ if (!function_exists('onoff_builder_home_enabled')) {
     }
 }
 
+if (!function_exists('onoff_builder_spa_route_prefixes')) {
+    /**
+     * LinkConnect React SPA (BrowserRouter) 최상위 경로
+     *
+     * @return string[]
+     */
+    function onoff_builder_spa_route_prefixes()
+    {
+        return array(
+            'select-center',
+            'cpa-list',
+            'events',
+            'partner',
+            'advertiser',
+            'admin',
+        );
+    }
+}
+
+if (!function_exists('onoff_builder_get_request_path')) {
+    function onoff_builder_get_request_path()
+    {
+        $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return '/';
+        }
+
+        if (defined('G5_URL')) {
+            $base_path = parse_url(G5_URL, PHP_URL_PATH);
+            if (is_string($base_path) && $base_path !== '' && $base_path !== '/') {
+                if (strpos($path, $base_path) === 0) {
+                    $path = substr($path, strlen($base_path));
+                    if ($path === '') {
+                        $path = '/';
+                    }
+                }
+            }
+        }
+
+        $path = '/' . ltrim($path, '/');
+        if ($path === '/index.php') {
+            return '/';
+        }
+
+        return rtrim($path, '/') ?: '/';
+    }
+}
+
+if (!function_exists('onoff_builder_is_spa_request')) {
+    function onoff_builder_is_spa_request()
+    {
+        $path = onoff_builder_get_request_path();
+        if ($path === '/') {
+            return true;
+        }
+
+        $relative = ltrim($path, '/');
+        foreach (onoff_builder_spa_route_prefixes() as $prefix) {
+            if ($relative === $prefix || strpos($relative, $prefix . '/') === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('onoff_builder_maybe_render_home')) {
     /**
-     * index.php 에서 호출 — 홈(/)을 빌더 페이지로 출력
+     * index.php 에서 호출 — 홈(/) 및 SPA 경로를 빌더 페이지로 출력
      *
      * @return bool 렌더 후 종료해야 하면 true
      */
     function onoff_builder_maybe_render_home()
     {
         if (!onoff_builder_home_enabled()) {
+            return false;
+        }
+
+        if (!onoff_builder_is_spa_request()) {
             return false;
         }
 

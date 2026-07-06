@@ -59,6 +59,26 @@ define('LC_MERCHANT_STATUS_SUSPENDED', 'suspended');
  */
 define('LC_MERCHANT_GUARD_ENABLED', true);
 
+/* ── LinkConnect 전용 DB (그누보드 기본 DB와 분리) ── */
+if (!defined('LC_MYSQL_DB')) {
+    if (function_exists('g5site_cfg')) {
+        $lc_db_name = g5site_cfg('linkconnect_db_name', 'linkconnect');
+    } else {
+        $lc_db_name = 'linkconnect';
+    }
+    define('LC_MYSQL_DB', $lc_db_name);
+}
+/** 비우면 G5_MYSQL_HOST / USER / PASSWORD 사용 */
+if (!defined('LC_MYSQL_HOST')) {
+    define('LC_MYSQL_HOST', '');
+}
+if (!defined('LC_MYSQL_USER')) {
+    define('LC_MYSQL_USER', '');
+}
+if (!defined('LC_MYSQL_PASSWORD')) {
+    define('LC_MYSQL_PASSWORD', '');
+}
+
 /* ── 샘플 UI 상태값 (실제 DB 연동 전) ── */
 define('LC_STATUS_DRAFT', 'draft');
 define('LC_STATUS_ACTIVE', 'active');
@@ -205,9 +225,40 @@ if (!function_exists('lc_public_home_url')) {
     }
 }
 
+if (!function_exists('lc_builder_spa_enabled')) {
+    function lc_builder_spa_enabled()
+    {
+        return function_exists('onoff_builder_home_enabled') && onoff_builder_home_enabled();
+    }
+}
+
+if (!function_exists('lc_spa_url')) {
+    /**
+     * React SPA 경로 (BrowserRouter, # 없음)
+     */
+    function lc_spa_url($path = '/')
+    {
+        $base = defined('G5_URL') ? rtrim(G5_URL, '/') : '';
+        $path = '/' . ltrim((string) $path, '/');
+
+        return $base . ($path === '/' ? '/' : $path);
+    }
+}
+
 if (!function_exists('lc_nav_items_public')) {
     function lc_nav_items_public()
     {
+        if (lc_builder_spa_enabled()) {
+            return array(
+                array('id' => 'home', 'label' => '링크커넥트', 'url' => lc_public_home_url(), 'tone' => ''),
+                array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_spa_url('/cpa-list'), 'tone' => ''),
+                array('id' => 'cps', 'label' => 'CPS', 'url' => lc_public_home_url(), 'tone' => ''),
+                array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_spa_url('/events'), 'tone' => ''),
+                array('id' => 'partner', 'label' => '파트너센터', 'url' => lc_spa_url('/partner'), 'tone' => 'partner'),
+                array('id' => 'merchant', 'label' => '광고주센터', 'url' => lc_spa_url('/advertiser'), 'tone' => 'merchant'),
+            );
+        }
+
         return array(
             array('id' => 'home', 'label' => '링크커넥트', 'url' => lc_public_home_url(), 'tone' => ''),
             array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_url('pages/cpa.php'), 'tone' => ''),
@@ -370,7 +421,9 @@ if (!function_exists('lc_login_url')) {
     function lc_login_url($return_url = '')
     {
         if ($return_url === '') {
-            if (defined('G5_URL') && isset($_SERVER['REQUEST_URI'])) {
+            if (function_exists('lc_builder_spa_enabled') && lc_builder_spa_enabled()) {
+                $return_url = function_exists('lc_spa_url') ? lc_spa_url('/') : lc_public_home_url();
+            } elseif (defined('G5_URL') && isset($_SERVER['REQUEST_URI'])) {
                 $return_url = G5_URL . $_SERVER['REQUEST_URI'];
             } else {
                 $return_url = lc_public_home_url();
@@ -395,6 +448,37 @@ if (!function_exists('lc_register_url')) {
     }
 }
 
+if (!function_exists('lc_member_edit_url')) {
+    function lc_member_edit_url()
+    {
+        if (!defined('G5_BBS_URL')) {
+            return '#';
+        }
+
+        return G5_BBS_URL . '/member_confirm.php?url=' . urlencode('register_form.php');
+    }
+}
+
+if (!function_exists('lc_logout_url')) {
+    function lc_logout_url($return_path = '')
+    {
+        if ($return_path === '') {
+            $return_path = '/';
+            if (defined('G5_URL')) {
+                $base = parse_url(G5_URL, PHP_URL_PATH);
+                if (is_string($base) && $base !== '' && $base !== '/') {
+                    $return_path = rtrim($base, '/') . '/';
+                }
+            }
+        }
+        if (defined('G5_BBS_URL')) {
+            return G5_BBS_URL . '/logout.php?url=' . urlencode($return_path);
+        }
+
+        return '#';
+    }
+}
+
 if (!function_exists('lc_inquiry_url')) {
     function lc_inquiry_url()
     {
@@ -413,8 +497,13 @@ if (!function_exists('lc_render_header_actions')) {
         echo '<div class="' . lc_h($wrap_class) . '">';
 
         if (lc_is_logged_in()) {
-            $logout = defined('G5_BBS_URL') ? G5_BBS_URL . '/logout.php' : '#';
-            echo '<a class="lc-btn lc-btn--ghost lc-btn--sm" href="' . lc_h($logout) . '">로그아웃</a>';
+            global $member;
+            $nick = is_array($member) && isset($member['mb_nick']) ? (string) $member['mb_nick'] : '';
+            if ($nick !== '') {
+                echo '<span class="lc-header__member-name">' . lc_h($nick) . '</span>';
+            }
+            echo '<a class="lc-btn lc-btn--ghost lc-btn--sm" href="' . lc_h(lc_member_edit_url()) . '">정보수정</a>';
+            echo '<a class="lc-btn lc-btn--ghost lc-btn--sm" href="' . lc_h(lc_logout_url()) . '">로그아웃</a>';
         } else {
             echo '<a class="lc-btn lc-btn--ghost lc-btn--sm" href="' . lc_h(lc_login_url()) . '">로그인</a>';
             echo '<a class="lc-btn lc-btn--outline lc-btn--sm" href="' . lc_h(lc_register_url()) . '">회원가입</a>';

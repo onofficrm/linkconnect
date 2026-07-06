@@ -110,6 +110,8 @@ $site_config = array(
     'icrm_hub_geo_button'       => true,
     /* onoff-builder-bridge — 루트 / 를 빌더 페이지로 (project_id) */
     'home_builder_bridge_id'    => 'linkconnect',
+    /* LinkConnect 전용 DB명 (그누보드 data/dbconfig.php DB와 분리) */
+    'linkconnect_db_name'       => 'linkconnect',
 );
 
 /**

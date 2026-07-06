@@ -27,10 +27,122 @@ if (!function_exists('lc_table')) {
     }
 }
 
+if (!function_exists('lc_mysql_db_name')) {
+    function lc_mysql_db_name()
+    {
+        if (defined('LC_MYSQL_DB') && (string) LC_MYSQL_DB !== '') {
+            return (string) LC_MYSQL_DB;
+        }
+
+        return 'linkconnect';
+    }
+}
+
+if (!function_exists('lc_mysql_credentials')) {
+    /**
+     * @return array{host:string,user:string,pass:string,db:string}
+     */
+    function lc_mysql_credentials()
+    {
+        return array(
+            'host' => (defined('LC_MYSQL_HOST') && (string) LC_MYSQL_HOST !== '') ? (string) LC_MYSQL_HOST : G5_MYSQL_HOST,
+            'user' => (defined('LC_MYSQL_USER') && (string) LC_MYSQL_USER !== '') ? (string) LC_MYSQL_USER : G5_MYSQL_USER,
+            'pass' => defined('LC_MYSQL_PASSWORD') ? (string) LC_MYSQL_PASSWORD : G5_MYSQL_PASSWORD,
+            'db'   => lc_mysql_db_name(),
+        );
+    }
+}
+
+if (!function_exists('lc_connect_db')) {
+    function lc_connect_db()
+    {
+        global $g5;
+
+        if (isset($g5['lc_connect_db']) && $g5['lc_connect_db']) {
+            return $g5['lc_connect_db'];
+        }
+
+        $cred = lc_mysql_credentials();
+        $link = sql_connect($cred['host'], $cred['user'], $cred['pass'], $cred['db']);
+        if (!$link) {
+            return null;
+        }
+
+        sql_set_charset(G5_DB_CHARSET, $link);
+        $g5['lc_connect_db'] = $link;
+
+        return $link;
+    }
+}
+
+if (!function_exists('lc_uses_gnuboard_db')) {
+    function lc_uses_gnuboard_db()
+    {
+        return defined('G5_MYSQL_DB') && G5_MYSQL_DB === lc_mysql_db_name();
+    }
+}
+
+if (!function_exists('lc_sql_link')) {
+    function lc_sql_link()
+    {
+        global $g5;
+
+        if (lc_uses_gnuboard_db()) {
+            return $g5['connect_db'];
+        }
+
+        $link = lc_connect_db();
+        if ($link) {
+            return $link;
+        }
+
+        return $g5['connect_db'];
+    }
+}
+
+if (!function_exists('lc_db_connection_ok')) {
+    function lc_db_connection_ok()
+    {
+        if (lc_uses_gnuboard_db()) {
+            return true;
+        }
+
+        return lc_connect_db() !== null;
+    }
+}
+
+if (!function_exists('lc_sql_query')) {
+    function lc_sql_query($sql, $error = G5_DISPLAY_SQL_ERROR)
+    {
+        return sql_query($sql, $error, lc_sql_link());
+    }
+}
+
+if (!function_exists('lc_sql_fetch')) {
+    function lc_sql_fetch($sql, $error = G5_DISPLAY_SQL_ERROR)
+    {
+        return sql_fetch($sql, $error, lc_sql_link());
+    }
+}
+
+if (!function_exists('lc_sql_insert_id')) {
+    function lc_sql_insert_id()
+    {
+        return sql_insert_id(lc_sql_link());
+    }
+}
+
+if (!function_exists('lc_sql_error')) {
+    function lc_sql_error()
+    {
+        return sql_error_info(lc_sql_link());
+    }
+}
+
 if (!function_exists('lc_sql_escape')) {
     function lc_sql_escape($value)
     {
-        return sql_real_escape_string((string) $value);
+        return sql_real_escape_string((string) $value, lc_sql_link());
     }
 }
 
@@ -38,7 +150,7 @@ if (!function_exists('lc_db_table_exists')) {
     function lc_db_table_exists($table_name)
     {
         $table_name = lc_sql_escape($table_name);
-        $row = sql_fetch(" SHOW TABLES LIKE '{$table_name}' ", false);
+        $row = lc_sql_fetch(" SHOW TABLES LIKE '{$table_name}' ", false);
 
         return is_array($row) && count($row) > 0;
     }
@@ -50,6 +162,11 @@ if (!function_exists('lc_db_installed')) {
         static $installed = null;
 
         if ($installed !== null) {
+            return $installed;
+        }
+
+        if (!lc_db_connection_ok()) {
+            $installed = false;
             return $installed;
         }
 
@@ -243,11 +360,11 @@ if (!function_exists('lc_db_run_schema')) {
         );
 
         foreach ($queries as $sql) {
-            $result = sql_query($sql, false);
+            $result = lc_sql_query($sql, false);
             if ($result === false) {
                 return array(
                     'ok'      => false,
-                    'message' => '테이블 생성 실패: ' . sql_error(),
+                    'message' => '테이블 생성 실패: ' . lc_sql_error(),
                     'tables'  => array(),
                 );
             }
@@ -271,7 +388,7 @@ if (!function_exists('lc_db_column_exists')) {
     {
         $table_name = lc_sql_escape($table_name);
         $column_name = lc_sql_escape($column_name);
-        $row = sql_fetch(" SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}' ", false);
+        $row = lc_sql_fetch(" SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}' ", false);
 
         return is_array($row) && count($row) > 0;
     }
@@ -308,11 +425,11 @@ if (!function_exists('lc_db_run_migrations')) {
         }
 
         foreach ($alters as $sql) {
-            $result = sql_query($sql, false);
+            $result = lc_sql_query($sql, false);
             if ($result === false) {
                 return array(
                     'ok'      => false,
-                    'message' => '마이그레이션 실패: ' . sql_error(),
+                    'message' => '마이그레이션 실패: ' . lc_sql_error(),
                 );
             }
         }

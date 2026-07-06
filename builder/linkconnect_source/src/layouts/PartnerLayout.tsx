@@ -6,18 +6,16 @@ import {
   CreditCard, 
   LayoutDashboard, 
   Link as LinkIcon, 
-  LogOut,
   MessageSquare, 
   PieChart, 
   Search, 
   Target, 
-  User, 
   XCircle 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { getLcAuth } from '../lib/auth';
-import { g5LogoutUrl } from '../lib/urls';
 
 interface PartnerLayoutProps {
   children: React.ReactNode;
@@ -67,13 +65,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
               </Link>
             ))}
           </nav>
-          <a
-            href={g5LogoutUrl()}
-            className="hidden md:flex items-center gap-3 px-4 py-3 mt-4 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium border-t border-slate-800 pt-4"
-          >
-            <LogOut size={20} />
-            <span>로그아웃</span>
-          </a>
+          <MemberAuthMenu variant="sidebar" logoutReturnPath="/partner" />
         </div>
       </aside>
 
@@ -96,9 +88,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
               <Bell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <button className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center border border-emerald-200 shadow-sm">
-              <User size={20} />
-            </button>
+            <MemberAuthMenu variant="compact" logoutReturnPath="/partner" />
           </div>
         </header>
 

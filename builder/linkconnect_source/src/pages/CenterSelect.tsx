@@ -1,9 +1,11 @@
-import { ArrowRight, BarChart3, LogIn, Settings, Target, UserPlus } from 'lucide-react';
+import { ArrowRight, BarChart3, LogIn, Settings, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { g5LoginUrl, g5RegisterUrl, currentSpaReturnUrl } from '../lib/urls';
+import { MemberAuthMenu } from '../components/MemberAuthMenu';
+import { currentSpaReturnUrl } from '../lib/urls';
 
 export function CenterSelect() {
-  const loginUrl = g5LoginUrl(currentSpaReturnUrl('/select-center'));
+  const loginReturnUrl = currentSpaReturnUrl('/select-center');
+  const logoutReturnPath = '/select-center';
 
   return (
     <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -22,21 +24,11 @@ export function CenterSelect() {
             <p className="text-sm text-slate-400 mt-0.5">로그인 완료 후 이 페이지로 돌아옵니다.</p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <a
-            href={loginUrl}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-colors"
-          >
-            로그인 <ArrowRight className="w-4 h-4" />
-          </a>
-          <a
-            href={g5RegisterUrl()}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/15 border border-white/15 font-medium rounded-xl transition-colors"
-          >
-            <UserPlus className="w-4 h-4" />
-            회원가입
-          </a>
-        </div>
+        <MemberAuthMenu
+          variant="card"
+          loginReturnUrl={loginReturnUrl}
+          logoutReturnPath={logoutReturnPath}
+        />
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

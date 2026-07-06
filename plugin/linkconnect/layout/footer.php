@@ -46,7 +46,8 @@ if (!isset($lc_show_footer) || !$lc_show_footer) {
           <li><a href="<?php echo lc_h(lc_login_url()); ?>">로그인</a></li>
           <li><a href="<?php echo lc_h(lc_register_url()); ?>">회원가입</a></li>
           <?php } else { ?>
-          <li><a href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/logout.php' : '#'); ?>">로그아웃</a></li>
+          <li><a href="<?php echo lc_h(lc_member_edit_url()); ?>">정보수정</a></li>
+          <li><a href="<?php echo lc_h(lc_logout_url()); ?>">로그아웃</a></li>
           <?php } ?>
           <li><a href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/content.php?co_id=provision' : '#'); ?>">이용약관</a></li>
           <li><a href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/content.php?co_id=privacy' : '#'); ?>">개인정보처리방침</a></li>

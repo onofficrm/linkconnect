@@ -61,7 +61,7 @@ if (!function_exists('lc_admin_list_partners')) {
             ORDER BY p.pt_id DESC ";
 
         $rows = array();
-        $result = sql_query($sql, false);
+        $result = lc_sql_query($sql, false);
         if ($result) {
             while ($row = sql_fetch_array($result)) {
                 $rows[] = $row;
@@ -132,7 +132,7 @@ if (!function_exists('lc_admin_list_merchants')) {
             ORDER BY m.mt_id DESC ";
 
         $rows = array();
-        $result = sql_query($sql, false);
+        $result = lc_sql_query($sql, false);
         if ($result) {
             while ($row = sql_fetch_array($result)) {
                 $rows[] = $row;
@@ -178,7 +178,7 @@ if (!function_exists('lc_admin_partner_summary')) {
         }
 
         $table = lc_table('partners');
-        $row = sql_fetch(" SELECT
+        $row = lc_sql_fetch(" SELECT
             COUNT(*) AS total_cnt,
             SUM(CASE WHEN pt_status = '" . lc_sql_escape(LC_PARTNER_STATUS_ACTIVE) . "' THEN 1 ELSE 0 END) AS active_cnt,
             SUM(CASE WHEN pt_status = '" . lc_sql_escape(LC_PARTNER_STATUS_PENDING) . "' THEN 1 ELSE 0 END) AS pending_cnt
@@ -200,7 +200,7 @@ if (!function_exists('lc_admin_merchant_summary')) {
         }
 
         $table = lc_table('merchants');
-        $row = sql_fetch(" SELECT
+        $row = lc_sql_fetch(" SELECT
             COUNT(*) AS total_cnt,
             SUM(CASE WHEN mt_status = '" . lc_sql_escape(LC_MERCHANT_STATUS_ACTIVE) . "' THEN 1 ELSE 0 END) AS active_cnt,
             SUM(CASE WHEN mt_status = '" . lc_sql_escape(LC_MERCHANT_STATUS_PENDING) . "' THEN 1 ELSE 0 END) AS pending_cnt,
@@ -245,7 +245,7 @@ if (!function_exists('lc_admin_list_conversions')) {
             LIMIT {$limit} ";
 
         $rows = array();
-        $result = sql_query($sql, false);
+        $result = lc_sql_query($sql, false);
         if ($result) {
             while ($row = sql_fetch_array($result)) {
                 $rows[] = $row;
@@ -284,14 +284,14 @@ if (!function_exists('lc_admin_dashboard_data')) {
         $cv_table = lc_table('conversions');
         $today = date('Y-m-d');
 
-        $today_row = sql_fetch(" SELECT
+        $today_row = lc_sql_fetch(" SELECT
             COUNT(*) AS received,
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved,
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected,
             SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv_price ELSE 0 END) AS revenue
             FROM `{$cv_table}` WHERE DATE(cv_created_at) = '{$today}' ");
 
-        $pending_cv = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' ");
+        $pending_cv = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' ");
         $pending_charge = 0;
         if (function_exists('lc_wallet_count_pending')) {
             $pending_charge = lc_wallet_count_pending();
@@ -301,7 +301,7 @@ if (!function_exists('lc_admin_dashboard_data')) {
         for ($i = 6; $i >= 0; $i--) {
             $day = date('Y-m-d', strtotime('-' . $i . ' days'));
             $label = date('m.d', strtotime($day));
-            $row = sql_fetch(" SELECT
+            $row = lc_sql_fetch(" SELECT
                 COUNT(*) AS received,
                 SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved,
                 SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected,

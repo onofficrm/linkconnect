@@ -26,6 +26,8 @@ if (!function_exists('lc_auth_state')) {
      */
     function lc_auth_state()
     {
+        global $member;
+
         $logged_in = function_exists('lc_is_logged_in') ? lc_is_logged_in() : false;
         $partner = function_exists('lc_get_current_partner') ? lc_get_current_partner() : null;
         $merchant = function_exists('lc_get_current_merchant') ? lc_get_current_merchant() : null;
@@ -49,6 +51,11 @@ if (!function_exists('lc_auth_state')) {
             'merchantBalance'   => is_array($merchant) ? (int) $merchant['mt_balance'] : null,
             'isLinkconnectAdmin'=> function_exists('lc_is_linkconnect_admin') ? lc_is_linkconnect_admin() : false,
             'canAccessAdmin'    => function_exists('lc_can_access_admin') ? lc_can_access_admin() : false,
+            'memberId'          => $logged_in && is_array($member) && isset($member['mb_id']) ? (string) $member['mb_id'] : null,
+            'memberName'        => $logged_in && is_array($member) && isset($member['mb_name']) ? (string) $member['mb_name'] : null,
+            'memberNick'        => $logged_in && is_array($member) && isset($member['mb_nick']) ? (string) $member['mb_nick'] : null,
+            'memberEmail'       => $logged_in && is_array($member) && isset($member['mb_email']) ? (string) $member['mb_email'] : null,
+            'bbsUrl'            => defined('G5_BBS_URL') ? (string) G5_BBS_URL : '/bbs',
         );
     }
 }

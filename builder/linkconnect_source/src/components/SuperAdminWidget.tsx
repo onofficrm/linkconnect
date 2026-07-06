@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, ShieldCheck, ArrowRight, X } from 'lucide-react';
 import { isLcSuperAdmin } from '../lib/auth';
-import { lcPluginUrl } from '../lib/urls';
 
 export function SuperAdminWidget() {
   const isSuperAdmin = isLcSuperAdmin();
   const [showBanner, setShowBanner] = useState(true);
-  const adminPhpUrl = lcPluginUrl('admin/dashboard.php');
 
   if (!isSuperAdmin) return null;
 
@@ -25,12 +23,12 @@ export function SuperAdminWidget() {
             </div>
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            <a
-              href={adminPhpUrl}
+            <Link
+              to="/admin"
               className="flex-1 sm:flex-none text-center bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               관리자센터 바로가기 <ArrowRight size={14} />
-            </a>
+            </Link>
             <button type="button" onClick={() => setShowBanner(false)} className="text-slate-500 hover:text-white p-1">
               <X size={16} />
             </button>
@@ -39,8 +37,8 @@ export function SuperAdminWidget() {
       )}
 
       <div className="fixed bottom-6 right-6 md:hidden z-50">
-        <a
-          href={adminPhpUrl}
+        <Link
+          to="/admin"
           className="flex items-center justify-center w-14 h-14 bg-slate-900 text-cyan-400 rounded-full shadow-lg border border-slate-700 hover:bg-slate-800 transition-colors relative group"
         >
           <ShieldAlert size={24} />
@@ -48,7 +46,7 @@ export function SuperAdminWidget() {
             관리자센터
           </span>
           <span className="absolute top-0 right-0 w-3 h-3 bg-cyan-500 border-2 border-slate-900 rounded-full"></span>
-        </a>
+        </Link>
       </div>
     </>
   );
@@ -56,11 +54,10 @@ export function SuperAdminWidget() {
 
 export function SuperAdminHeaderButton() {
   if (!isLcSuperAdmin()) return null;
-  const adminPhpUrl = lcPluginUrl('admin/dashboard.php');
 
   return (
-    <a
-      href={adminPhpUrl}
+    <Link
+      to="/admin"
       className="hidden md:flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm relative group"
     >
       <ShieldCheck size={14} />
@@ -68,6 +65,6 @@ export function SuperAdminHeaderButton() {
       <div className="absolute top-full mt-2 right-0 w-48 bg-slate-900 border border-slate-800 text-slate-300 text-xs p-2.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
         최고관리자 전용 메뉴입니다.
       </div>
-    </a>
+    </Link>
   );
 }

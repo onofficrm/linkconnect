@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { Home } from './pages/Home';
 import { Events } from './pages/Events';
@@ -45,7 +45,7 @@ import { AdminRouteGuard } from './components/AdminRouteGuard';
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         {/* 공개 마케팅 페이지 — Header + Footer */}
         <Route path="/" element={<RootLayout />}>
@@ -92,6 +92,6 @@ export default function App() {
           <Route path="admin/events" element={<AdminEventsBridge />} />
         </Route>
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
