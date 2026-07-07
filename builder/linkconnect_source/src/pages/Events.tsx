@@ -4,12 +4,13 @@ import {
   ChevronRight, Calendar, AlertCircle, CheckCircle2, Megaphone, Target, Briefcase, Zap, Star, Sparkles, User, HelpCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchPublicEvents, PublicEventSummaryItem } from '../lib/api';
+import { fetchPublicEvents, PublicEventItem, PublicEventSummaryItem } from '../lib/api';
 
 const SUMMARY_ICONS: Record<string, React.ReactNode> = {
   megaphone: <Megaphone size={24} />,
   gift: <Gift size={24} />,
   trending: <TrendingUp size={24} />,
+  trend: <TrendingUp size={24} />,
   clock: <Clock size={24} />,
 };
 
@@ -17,6 +18,7 @@ const SUMMARY_COLORS: Record<string, string> = {
   megaphone: 'bg-cyan-50 text-cyan-600',
   gift: 'bg-purple-50 text-purple-600',
   trending: 'bg-emerald-50 text-emerald-600',
+  trend: 'bg-emerald-50 text-emerald-600',
   clock: 'bg-orange-50 text-orange-600',
 };
 
@@ -51,6 +53,8 @@ export function Events() {
   const [activeTab, setActiveTab] = useState('전체');
   const [isMounted, setIsMounted] = useState(false);
   const [summaryCards, setSummaryCards] = useState<PublicEventSummaryItem[]>(DEFAULT_SUMMARY);
+  const [eventItems, setEventItems] = useState<PublicEventItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => { setTimeout(() => setIsMounted(true), 100); }, []);
 
@@ -58,9 +62,23 @@ export function Events() {
     fetchPublicEvents()
       .then((data) => {
         if (data.summary?.length) setSummaryCards(data.summary);
+        if (data.items?.length) setEventItems(data.items);
       })
       .catch(() => {});
   }, []);
+
+  const filteredEvents = eventItems.filter((item) => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q || item.title.toLowerCase().includes(q) || item.product.toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+    if (activeTab === '전체') return true;
+    if (activeTab === '파트너 이벤트') return item.badges.some((b) => b.includes('파트너') || b.includes('보너스'));
+    if (activeTab === '광고주 프로모션') return item.badges.some((b) => b.includes('광고주'));
+    if (activeTab === '단가 상승') return item.badges.some((b) => b.includes('단가'));
+    if (activeTab === '신규 캠페인') return item.badges.some((b) => b.includes('신규'));
+    if (activeTab === '마감 임박') return item.badges.some((b) => b.includes('마감')) || !!item.ribbon;
+    return true;
+  });
 
   const tabs = ['전체', '파트너 이벤트', '광고주 프로모션', '단가 상승', '신규 캠페인', '마감 임박', '리워드 랭킹'];
 
@@ -403,7 +421,9 @@ export function Events() {
             <div className="flex gap-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-64">
                 <input 
-                  type="text" 
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="이벤트명, 광고상품명으로 검색하세요." 
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow"
                 />
@@ -418,105 +438,48 @@ export function Events() {
 
           {/* Event Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* Event Card 1 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-200 transition-all overflow-hidden flex flex-col group cursor-pointer">
-              <div className="p-6 flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge type="진행중">진행중</Badge>
-                  <Badge type="단가 상승">단가 상승</Badge>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">개인회생 상담 DB 단가 상승 이벤트</h3>
-                <p className="text-sm text-slate-600 line-clamp-2 mb-5 leading-relaxed">
-                  이벤트 기간 동안 개인회생 상담 DB 승인 1건당 파트너 지급 단가가 30,000원에서 40,000원으로 상승합니다.
-                </p>
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Calendar size={14} /> 기간</span>
-                    <span className="font-bold text-slate-800">2026.10.01 ~ 10.31</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Briefcase size={14} /> 적용 상품</span>
-                    <span className="font-bold text-slate-800">개인회생 상담 DB 외 3개</span>
-                  </div>
-                  <div className="pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-sm">
-                    <span className="font-bold text-slate-800">보너스 혜택</span>
-                    <span className="font-bold text-emerald-600 flex items-center gap-1"><TrendingUp size={14}/> 승인 1건당 +10,000원</span>
-                  </div>
-                </div>
+            {filteredEvents.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+                표시할 이벤트가 없습니다.
               </div>
-              <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-2">
-                <button className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors">상세보기</button>
-                <button className="py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:bg-cyan-700 transition-colors shadow-sm">홍보 링크 만들기</button>
-              </div>
-            </div>
-
-            {/* Event Card 2 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-200 transition-all overflow-hidden flex flex-col group cursor-pointer relative">
-              <div className="absolute -right-12 top-6 bg-rose-500 text-white text-[10px] font-bold py-1 px-12 rotate-45 z-10 shadow-sm">
-                마감 3일전
-              </div>
-              <div className="p-6 flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge type="마감임박">마감임박</Badge>
-                  <Badge type="파트너 보너스">파트너 보너스</Badge>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">신규 파트너 첫 승인 보너스</h3>
-                <p className="text-sm text-slate-600 line-clamp-2 mb-5 leading-relaxed">
-                  신규 파트너가 첫 승인 DB를 발생시키면 추가 보너스 50,000원을 지급합니다.
-                </p>
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Calendar size={14} /> 기간</span>
-                    <span className="font-bold text-slate-800">~ 2026.10.10 까지</span>
+            ) : filteredEvents.map((item) => (
+              <div key={item.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-200 transition-all overflow-hidden flex flex-col group cursor-pointer relative">
+                {item.ribbon && (
+                  <div className="absolute -right-12 top-6 bg-rose-500 text-white text-[10px] font-bold py-1 px-12 rotate-45 z-10 shadow-sm">
+                    {item.ribbon}
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Target size={14} /> 참여 조건</span>
-                    <span className="font-bold text-slate-800">첫 승인 DB 1건 이상</span>
+                )}
+                <div className="p-6 flex-1">
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    {item.badges.map((badge) => (
+                      <Badge key={`${item.id}-${badge}`} type={badge}>{badge}</Badge>
+                    ))}
                   </div>
-                  <div className="pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-sm">
-                    <span className="font-bold text-slate-800">예상 리워드</span>
-                    <span className="font-bold text-purple-600 flex items-center gap-1"><Gift size={14}/> 50,000원 지급</span>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">{item.title}</h3>
+                  <p className="text-sm text-slate-600 line-clamp-2 mb-5 leading-relaxed">{item.desc}</p>
+                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 flex items-center gap-1.5"><Calendar size={14} /> 기간</span>
+                      <span className="font-bold text-slate-800">{item.period}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 flex items-center gap-1.5"><Briefcase size={14} /> 적용 상품</span>
+                      <span className="font-bold text-slate-800 truncate max-w-[160px]">{item.product}</span>
+                    </div>
+                    {item.benefit && (
+                      <div className="pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-sm">
+                        <span className="font-bold text-slate-800">혜택</span>
+                        <span className="font-bold text-emerald-600">{item.benefit}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-2">
-                <button className="col-span-2 py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:bg-cyan-700 transition-colors shadow-sm">참여하기</button>
-              </div>
-            </div>
-
-            {/* Event Card 3 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-200 transition-all overflow-hidden flex flex-col group cursor-pointer">
-              <div className="p-6 flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <Badge type="진행중">진행중</Badge>
-                  <Badge type="신규 캠페인">신규 캠페인</Badge>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">영어캠프 상담 DB 집중 프로모션</h3>
-                <p className="text-sm text-slate-600 line-clamp-2 mb-5 leading-relaxed">
-                  겨울방학 시즌을 맞아 세부 영어캠프 상담 DB 캠페인의 집중 홍보 파트너를 모집합니다.
-                </p>
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Calendar size={14} /> 기간</span>
-                    <span className="font-bold text-slate-800">상시 진행</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500 flex items-center gap-1.5"><Briefcase size={14} /> 적용 상품</span>
-                    <span className="font-bold text-slate-800">세부 영어캠프 상담 DB</span>
-                  </div>
-                  <div className="pt-3 mt-3 border-t border-slate-200 flex items-center justify-between text-sm">
-                    <span className="font-bold text-slate-800">파트너 단가</span>
-                    <span className="font-bold text-cyan-600 flex items-center gap-1">35,000원</span>
-                  </div>
+                <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-2">
+                  <Link to={`/events/detail?id=${encodeURIComponent(item.id)}`} className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors text-center">상세보기</Link>
+                  <Link to="/partner/search" className="py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:bg-cyan-700 transition-colors shadow-sm text-center">홍보 링크 만들기</Link>
                 </div>
               </div>
-              <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-2">
-                <button className="py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-100 transition-colors">상품 보기</button>
-                <button className="py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:bg-cyan-700 transition-colors shadow-sm">홍보 시작하기</button>
-              </div>
-            </div>
-            
+            ))}
           </div>
         </section>
 

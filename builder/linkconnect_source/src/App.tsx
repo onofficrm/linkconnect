@@ -39,7 +39,7 @@ import { AdminApi } from './pages/admin/AdminApi';
 import { AdminSupport } from './pages/admin/AdminSupport';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminConversions } from './pages/admin/AdminConversions';
-import { AdminEventsBridge } from './pages/admin/AdminEventsBridge';
+import { AdminEvents } from './pages/admin/AdminEvents';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
@@ -91,7 +91,7 @@ export default function App() {
           <Route path="admin/api" element={<AdminApi />} />
           <Route path="admin/support" element={<AdminSupport />} />
           <Route path="admin/settings" element={<AdminSettings />} />
-          <Route path="admin/events" element={<AdminEventsBridge />} />
+          <Route path="admin/events" element={<AdminEvents />} />
         </Route>
       </Routes>
     </BrowserRouter>

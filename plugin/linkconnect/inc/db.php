@@ -208,6 +208,7 @@ if (!function_exists('lc_db_run_schema')) {
             lc_table('settings'),
             lc_table('api_clients'),
             lc_table('api_logs'),
+            lc_table('events'),
         );
 
         $queries = array(
@@ -424,6 +425,31 @@ if (!function_exists('lc_db_run_schema')) {
                 KEY `idx_al_created_at` (`al_created_at`),
                 KEY `idx_al_status` (`al_status`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('events') . "` (
+                `ev_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_code` varchar(20) NOT NULL,
+                `ev_title` varchar(200) NOT NULL,
+                `ev_type` varchar(50) NOT NULL DEFAULT '',
+                `ev_desc` text,
+                `ev_period` varchar(100) NOT NULL DEFAULT '',
+                `ev_product` varchar(200) NOT NULL DEFAULT '',
+                `ev_benefit` varchar(200) NOT NULL DEFAULT '',
+                `ev_badges` varchar(500) NOT NULL DEFAULT '',
+                `ev_ribbon` varchar(50) NOT NULL DEFAULT '',
+                `ev_status` varchar(20) NOT NULL DEFAULT 'active',
+                `ev_target` varchar(20) NOT NULL DEFAULT 'partner',
+                `ev_campaign_ids` varchar(500) NOT NULL DEFAULT '',
+                `ev_campaign_labels` varchar(500) NOT NULL DEFAULT '',
+                `ev_featured` tinyint(1) NOT NULL DEFAULT 0,
+                `ev_sort` int NOT NULL DEFAULT 0,
+                `ev_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ev_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ev_id`),
+                UNIQUE KEY `uk_ev_code` (`ev_code`),
+                KEY `idx_ev_status` (`ev_status`),
+                KEY `idx_ev_sort` (`ev_sort`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         );
 
         foreach ($queries as $sql) {
@@ -529,6 +555,41 @@ if (!function_exists('lc_db_run_migrations')) {
                 return array(
                     'ok'      => false,
                     'message' => '마이그레이션 실패: ' . lc_sql_error(),
+                );
+            }
+        }
+
+        $events = lc_table('events');
+        if (!lc_db_table_exists($events)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$events}` (
+                `ev_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_code` varchar(20) NOT NULL,
+                `ev_title` varchar(200) NOT NULL,
+                `ev_type` varchar(50) NOT NULL DEFAULT '',
+                `ev_desc` text,
+                `ev_period` varchar(100) NOT NULL DEFAULT '',
+                `ev_product` varchar(200) NOT NULL DEFAULT '',
+                `ev_benefit` varchar(200) NOT NULL DEFAULT '',
+                `ev_badges` varchar(500) NOT NULL DEFAULT '',
+                `ev_ribbon` varchar(50) NOT NULL DEFAULT '',
+                `ev_status` varchar(20) NOT NULL DEFAULT 'active',
+                `ev_target` varchar(20) NOT NULL DEFAULT 'partner',
+                `ev_campaign_ids` varchar(500) NOT NULL DEFAULT '',
+                `ev_campaign_labels` varchar(500) NOT NULL DEFAULT '',
+                `ev_featured` tinyint(1) NOT NULL DEFAULT 0,
+                `ev_sort` int NOT NULL DEFAULT 0,
+                `ev_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ev_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ev_id`),
+                UNIQUE KEY `uk_ev_code` (`ev_code`),
+                KEY `idx_ev_status` (`ev_status`),
+                KEY `idx_ev_sort` (`ev_sort`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+            if ($create === false) {
+                return array(
+                    'ok'      => false,
+                    'message' => 'events 테이블 생성 실패: ' . lc_sql_error(),
                 );
             }
         }

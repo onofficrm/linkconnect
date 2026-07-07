@@ -71,6 +71,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/settings.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/api_client.php')) {
     require_once LC_PLUGIN_PATH . '/inc/api_client.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/event.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/event.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
     require_once LC_PLUGIN_PATH . '/inc/link.php';
 }

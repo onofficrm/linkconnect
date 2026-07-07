@@ -1125,6 +1125,53 @@ export type PublicEventsResponse = {
   dbReady: boolean;
 };
 
-export function fetchPublicEvents() {
-  return publicApiGet<PublicEventsResponse>('events.php');
+export function fetchPublicEvents(q?: string) {
+  return publicApiGet<PublicEventsResponse>('events.php', { q: q ?? '' });
+}
+
+export type AdminEventSummary = {
+  total: number;
+  active: number;
+  closing: number;
+  scheduled: number;
+  ended: number;
+};
+
+export type AdminEvent = {
+  id: number;
+  code: string;
+  title: string;
+  type: string;
+  desc: string;
+  period: string;
+  product: string;
+  benefit: string;
+  badges: string[];
+  ribbon: string;
+  status: string;
+  statusCode: string;
+  target: string;
+  campaigns: string;
+  campaignIds: string;
+  partners: number;
+  received: number;
+  approved: number;
+  rewardPending: string;
+  featured: boolean;
+  sort: number;
+};
+
+export function fetchAdminEvents(filters?: { q?: string; status?: string }) {
+  return adminApiGet<{ items: AdminEvent[]; summary: AdminEventSummary; dbReady: boolean }>('events.php', {
+    q: filters?.q ?? '',
+    status: filters?.status ?? '',
+  });
+}
+
+export function saveAdminEvent(payload: Record<string, unknown>) {
+  return adminApiPost<{ message: string; event: AdminEvent; summary: AdminEventSummary }>('events.php', payload);
+}
+
+export function updateAdminEventStatus(payload: { action: string; evId: number }) {
+  return adminApiPost<{ message: string; event: AdminEvent; summary: AdminEventSummary }>('events.php', payload);
 }
