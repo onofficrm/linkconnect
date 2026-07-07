@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
-import { fetchMerchantConversions, MerchantConversion, updateMerchantConversion } from '../../lib/api';
+import { fetchMerchantConversions, MerchantConversion, reportMerchantChannel, updateMerchantConversion } from '../../lib/api';
 import { Database, CheckCircle2, Clock, XCircle, Search, Filter, Download, AlertCircle, ChevronRight, MessageSquare, Check, X, FileText, AlertTriangle, User, Link2, MonitorPlay, LogIn, Calendar, Hash, ArrowRight, Bot, Loader2 } from 'lucide-react';
 
 const fallbackDbData: MerchantConversion[] = [];
@@ -25,6 +25,9 @@ export function AdvertiserDb() {
   const [cancelComment, setCancelComment] = useState('');
   const [isAIFiltering, setIsAIFiltering] = useState(false);
   const [showAbuseOnly, setShowAbuseOnly] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportChannel, setReportChannel] = useState('');
 
   const closeDetail = () => {
     setIsDetailOpen(false);
@@ -71,6 +74,31 @@ export function AdvertiserDb() {
       await loadRows();
     } catch (error) {
       setActionError(error instanceof Error ? error.message : '승인 처리에 실패했습니다.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleReportChannel = async () => {
+    if (!selectedDb?.cvId || !reportReason.trim()) {
+      return;
+    }
+    setProcessing(true);
+    setActionError('');
+    try {
+      const result = await reportMerchantChannel({
+        cvId: selectedDb.cvId,
+        channel: reportChannel || selectedDb.channel,
+        reason: reportReason.trim(),
+      });
+      alert(result.message);
+      setIsReportOpen(false);
+      setReportReason('');
+      setReportChannel('');
+      closeDetail();
+      await loadRows();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '금지 채널 신고에 실패했습니다.');
     } finally {
       setProcessing(false);
     }
@@ -537,6 +565,9 @@ export function AdvertiserDb() {
 
             {/* Footer Buttons */}
             <div className="px-6 py-4 border-t border-slate-200 bg-white shrink-0 flex flex-wrap gap-2 md:gap-3">
+              <button type="button" onClick={() => { setReportChannel(selectedDb.channel || ''); setIsReportOpen(true); }} className="flex-1 md:flex-none px-4 py-2 border border-orange-200 bg-orange-50 text-orange-700 rounded-xl text-sm font-bold hover:bg-orange-100 transition-colors inline-flex items-center gap-1.5">
+                <AlertTriangle size={14} /> 금지 채널 신고
+              </button>
               <button className="flex-1 md:flex-none px-4 py-2 border border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
                 확인중으로 변경
               </button>
@@ -700,6 +731,56 @@ export function AdvertiserDb() {
                 className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-red-600/20"
               >
                 {processing ? '처리 중...' : '무효 처리하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isReportOpen && selectedDb && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => setIsReportOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 md:p-8">
+              <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-5 mx-auto">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-center text-slate-900 mb-2">금지 채널 유입 신고</h3>
+              <p className="text-sm text-center text-slate-500 mb-6">
+                금지된 채널(예: 성인, 도박, 스팸 등)을 통한 유입으로 의심될 경우 신고해 주세요. 관리자가 검토 후 파트너 제재 워크플로우를 생성합니다.
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">유입 채널</label>
+                  <input
+                    type="text"
+                    value={reportChannel}
+                    onChange={(e) => setReportChannel(e.target.value)}
+                    placeholder={selectedDb.channel || '채널명 입력'}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">신고 사유 *</label>
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="금지 채널 유입 근거를 상세히 입력해 주세요."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-orange-500 min-h-[100px] resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button type="button" onClick={() => setIsReportOpen(false)} className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-colors">
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={handleReportChannel}
+                disabled={!reportReason.trim() || processing || !selectedDb?.cvId}
+                className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                {processing ? '신고 중...' : '신고 접수'}
               </button>
             </div>
           </div>

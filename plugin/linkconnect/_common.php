@@ -104,3 +104,21 @@ if (is_file(LC_PLUGIN_PATH . '/inc/admin_log.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/impersonate.php')) {
     require_once LC_PLUGIN_PATH . '/inc/impersonate.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/partner_tier.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/partner_tier.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/admin_ops.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/admin_ops.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/abuse.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/abuse.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/settlement_risk.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/settlement_risk.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/event_roi.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/event_roi.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/channel_report.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/channel_report.php';
+}

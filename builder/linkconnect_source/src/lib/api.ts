@@ -429,6 +429,12 @@ export type AdminPartner = {
   balance: number;
   status: string;
   statusCode: string;
+  adminMemo?: string;
+  tags?: string[];
+  assignedTo?: string;
+  abuseScore?: number;
+  reviewScore?: number;
+  tier?: string | null;
 };
 
 export type AdminMerchant = {
@@ -446,6 +452,11 @@ export type AdminMerchant = {
   spend: number;
   status: string;
   statusCode: string;
+  adminMemo?: string;
+  tags?: string[];
+  assignedTo?: string;
+  abuseScore?: number;
+  reviewScore?: number;
 };
 
 export type AdminDashboardResponse = {
@@ -566,6 +577,110 @@ export function exitImpersonate() {
   return adminApiPost<{ message: string; impersonate: ImpersonateState; redirect: string }>('impersonate.php', {
     action: 'exit',
   });
+}
+
+export type ImpersonateHistoryItem = {
+  id: number;
+  type: string;
+  targetId: number;
+  label: string;
+  startedAt: string;
+  endedAt: string;
+};
+
+export function fetchImpersonateHistory() {
+  return adminApiGet<{ history: ImpersonateHistoryItem[]; impersonate: ImpersonateState }>('impersonate.php');
+}
+
+export type ReviewQueueItem = {
+  entityType: string;
+  entityId: number;
+  code: string;
+  name: string;
+  status: string;
+  reviewScore: number;
+  abuseScore?: number;
+  tags?: string[];
+};
+
+export function fetchAdminReviewQueue() {
+  return adminApiGet<{ items: ReviewQueueItem[]; dbReady: boolean }>('ops.php', { view: 'review_queue' });
+}
+
+export function saveAdminEntityMeta(payload: {
+  entityType: 'partner' | 'merchant';
+  entityId: number;
+  adminMemo?: string;
+  tags?: string[];
+  assignedTo?: string;
+}) {
+  return adminApiPost<{ message: string }>('ops.php', { action: 'save_meta', ...payload });
+}
+
+export function bulkAdminPartners(ids: number[], subAction: 'activate' | 'suspend' | 'pending') {
+  return adminApiPost<{ message: string; count: number }>('ops.php', { action: 'bulk_partner', ids, subAction });
+}
+
+export function bulkAdminMerchants(ids: number[], subAction: 'activate' | 'suspend' | 'pending') {
+  return adminApiPost<{ message: string; count: number }>('ops.php', { action: 'bulk_merchant', ids, subAction });
+}
+
+export function bulkAdminRewardPay(ids: number[]) {
+  return adminApiPost<{ message: string; count: number }>('ops.php', { action: 'bulk_reward_pay', ids });
+}
+
+export type EventRoiItem = {
+  evId: number;
+  code: string;
+  title: string;
+  status: string;
+  participants: number;
+  totalDb: number;
+  approvedDb: number;
+  revenue: number;
+  paidRewards: number;
+  pendingRewards: number;
+  roi: number;
+};
+
+export function fetchAdminEventRoi() {
+  return adminApiGet<{ items: EventRoiItem[]; summary: { totalReward: number; totalRevenue: number; netRoi: number } }>(
+    'events.php',
+    { view: 'roi' },
+  );
+}
+
+export type ChannelReportItem = {
+  id: number;
+  cvId: number;
+  cvCode: string;
+  ptId: number;
+  partner: string;
+  partnerName: string;
+  channel: string;
+  reason: string;
+  status: string;
+  adminMemo: string;
+  createdAt: string;
+};
+
+export function fetchAdminChannelReports(status?: string) {
+  return adminApiGet<{ items: ChannelReportItem[]; dbReady: boolean }>('channel_reports.php', { status: status ?? '' });
+}
+
+export function updateAdminChannelReport(payload: { action: 'sanction' | 'dismiss' | 'review'; crId: number; memo?: string }) {
+  return adminApiPost<{ message: string }>('channel_reports.php', payload);
+}
+
+export function reportMerchantChannel(payload: { cvId: number; channel?: string; reason: string }) {
+  return merchantApiPost<{ message: string }>('conversions.php', { action: 'report_channel', ...payload });
+}
+
+export function fetchSettlementRisk(stId: number) {
+  return adminApiGet<{ risk: { score: number; level: string; risks: Array<{ level: string; code: string; message: string }>; blocked: boolean } }>(
+    'settlements.php',
+    { view: 'risk', stId: String(stId) },
+  );
 }
 
 export function fetchAdminPendingCharges() {

@@ -6,6 +6,14 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'GET') {
     lc_api_require_admin();
 
+    if (isset($_GET['view']) && (string) $_GET['view'] === 'risk') {
+        $st_id = isset($_GET['stId']) ? (int) $_GET['stId'] : 0;
+        if ($st_id <= 0) {
+            lc_api_error('정산 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+        lc_api_success(array('risk' => lc_settlement_risk_check_for_api($st_id)));
+    }
+
     $filters = array(
         'status' => isset($_GET['status']) ? (string) $_GET['status'] : '',
         'q'      => isset($_GET['q']) ? (string) $_GET['q'] : '',
@@ -32,6 +40,13 @@ if ($method === 'POST') {
 
     if ($st_id <= 0) {
         lc_api_error('정산 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+    }
+
+    if ($action === 'approve' || $action === 'pay') {
+        $risk = lc_settlement_risk_check_for_api($st_id);
+        if (!empty($risk['blocked'])) {
+            lc_api_error('정산 리스크가 높아 처리할 수 없습니다.', 'RISK_BLOCKED', 400, array('risk' => $risk));
+        }
     }
 
     $result = lc_settlement_admin_update($st_id, $action, $body);

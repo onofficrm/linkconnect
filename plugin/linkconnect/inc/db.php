@@ -580,9 +580,37 @@ if (!function_exists('lc_db_run_migrations')) {
             'cv_quality_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `cv_partner_appeal`",
             'cv_quality_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `cv_quality_score`",
             'cv_partner_visible' => "tinyint(1) NOT NULL DEFAULT 1 AFTER `cv_quality_tags`",
+            'cv_ip' => "varchar(45) NOT NULL DEFAULT '' AFTER `cv_partner_visible`",
+            'cv_abuse_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `cv_ip`",
+            'cv_is_duplicate' => "tinyint(1) NOT NULL DEFAULT 0 AFTER `cv_abuse_score`",
         ) as $col => $definition) {
             if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, $col)) {
                 $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `{$col}` {$definition}";
+            }
+        }
+
+        $partners = lc_table('partners');
+        foreach (array(
+            'pt_admin_memo' => "varchar(500) NOT NULL DEFAULT '' AFTER `pt_balance`",
+            'pt_admin_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `pt_admin_memo`",
+            'pt_assigned_mb_id' => "varchar(20) NOT NULL DEFAULT '' AFTER `pt_admin_tags`",
+            'pt_abuse_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `pt_assigned_mb_id`",
+            'pt_tier' => "varchar(20) NOT NULL DEFAULT 'bronze' AFTER `pt_abuse_score`",
+        ) as $col => $definition) {
+            if (lc_db_table_exists($partners) && !lc_db_column_exists($partners, $col)) {
+                $alters[] = "ALTER TABLE `{$partners}` ADD COLUMN `{$col}` {$definition}";
+            }
+        }
+
+        $merchants = lc_table('merchants');
+        foreach (array(
+            'mt_admin_memo' => "varchar(500) NOT NULL DEFAULT '' AFTER `mt_balance`",
+            'mt_admin_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `mt_admin_memo`",
+            'mt_assigned_mb_id' => "varchar(20) NOT NULL DEFAULT '' AFTER `mt_admin_tags`",
+            'mt_abuse_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `mt_assigned_mb_id`",
+        ) as $col => $definition) {
+            if (lc_db_table_exists($merchants) && !lc_db_column_exists($merchants, $col)) {
+                $alters[] = "ALTER TABLE `{$merchants}` ADD COLUMN `{$col}` {$definition}";
             }
         }
 
@@ -732,6 +760,47 @@ if (!function_exists('lc_db_run_migrations')) {
                     'ok'      => false,
                     'message' => 'admin_logs 테이블 생성 실패: ' . lc_sql_error(),
                 );
+            }
+        }
+
+        $ilog = lc_table('impersonate_logs');
+        if (!lc_db_table_exists($ilog)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$ilog}` (
+                `ilog_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `mb_id` varchar(20) NOT NULL DEFAULT '',
+                `ilog_type` varchar(20) NOT NULL DEFAULT '',
+                `ilog_target_id` int unsigned NOT NULL DEFAULT 0,
+                `ilog_label` varchar(200) NOT NULL DEFAULT '',
+                `ilog_started_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ilog_ended_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`ilog_id`),
+                KEY `idx_ilog_mb_id` (`mb_id`),
+                KEY `idx_ilog_type_target` (`ilog_type`, `ilog_target_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'impersonate_logs 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $cr = lc_table('channel_reports');
+        if (!lc_db_table_exists($cr)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$cr}` (
+                `cr_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `cv_id` int unsigned NOT NULL DEFAULT 0,
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `cr_channel` varchar(100) NOT NULL DEFAULT '',
+                `cr_reason` varchar(500) NOT NULL DEFAULT '',
+                `cr_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `cr_admin_memo` varchar(500) NOT NULL DEFAULT '',
+                `cr_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `cr_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`cr_id`),
+                KEY `idx_cr_status` (`cr_status`),
+                KEY `idx_cr_pt_id` (`pt_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'channel_reports 테이블 생성 실패: ' . lc_sql_error());
             }
         }
 

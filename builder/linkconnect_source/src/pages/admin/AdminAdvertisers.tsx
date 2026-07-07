@@ -6,8 +6,9 @@ import {
   Search, Download, X, ShieldAlert,
   Wallet, Eye
 } from 'lucide-react';
-import { AdminMerchant, fetchAdminMerchants, updateAdminMerchant, viewAsMerchant } from '../../lib/api';
+import { AdminMerchant, bulkAdminMerchants, fetchAdminMerchants, updateAdminMerchant, viewAsMerchant } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
+import { AdminEntityMetaPanel } from '../../components/AdminEntityMetaPanel';
 
 export function AdminAdvertisers() {
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
@@ -17,6 +18,8 @@ export function AdminAdvertisers() {
   const [statusFilter, setStatusFilter] = useState('');
   const [updating, setUpdating] = useState(false);
   const [viewingAs, setViewingAs] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
   const isSuperAdmin = isLcSuperAdmin();
 
@@ -75,6 +78,25 @@ export function AdminAdvertisers() {
     }
   };
 
+  const handleBulk = async (subAction: 'activate' | 'suspend') => {
+    if (!selectedIds.length) return;
+    setBulkProcessing(true);
+    try {
+      const result = await bulkAdminMerchants(selectedIds, subAction);
+      alert(result.message);
+      setSelectedIds([]);
+      loadMerchants();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '일괄 처리 실패');
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   return (
     <AdminLayout activeMenu="advertisers" title="광고주 관리" description="광고주별 광고상품, 광고비, 디비 처리 현황을 관리하세요.">
       
@@ -131,16 +153,26 @@ export function AdminAdvertisers() {
 
           {/* Table Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-wrap gap-2">
               <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">{summary.total}</strong>곳의 광고주</div>
-              <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
-                <Download size={14} /> 엑셀 다운로드
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedIds.length > 0 && (
+                  <>
+                    <span className="text-xs text-slate-500">{selectedIds.length}건 선택</span>
+                    <button type="button" disabled={bulkProcessing} onClick={() => handleBulk('activate')} className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg">일괄 승인</button>
+                    <button type="button" disabled={bulkProcessing} onClick={() => handleBulk('suspend')} className="px-3 py-1.5 text-xs font-bold bg-red-600 text-white rounded-lg">일괄 정지</button>
+                  </>
+                )}
+                <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
+                  <Download size={14} /> 엑셀 다운로드
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-slate-500 bg-white border-b border-slate-200">
                   <tr>
+                    <th className="px-4 py-3 font-medium w-10"></th>
                     <th className="px-4 py-3 font-medium">광고주명/담당자</th>
                     <th className="px-4 py-3 font-medium text-center">운영상품</th>
                     <th className="px-4 py-3 font-medium text-right">접수/승인/취소 DB</th>
@@ -158,6 +190,11 @@ export function AdminAdvertisers() {
                       className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedAdvertiser?.name === advertiser.name ? 'bg-cyan-50/50' : ''}`}
                       onClick={() => handleRowClick(advertiser)}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {advertiser.id ? (
+                          <input type="checkbox" checked={selectedIds.includes(advertiser.id)} onChange={() => toggleSelect(advertiser.id)} className="rounded border-slate-300" />
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-bold text-slate-900 mb-0.5">{advertiser.name}</div>
                         <div className="text-xs text-slate-500 flex items-center gap-1.5">
@@ -268,6 +305,20 @@ export function AdminAdvertisers() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-3">관리자 메모/태그</h3>
+                  {selectedAdvertiser.id ? (
+                    <AdminEntityMetaPanel
+                      entityType="merchant"
+                      entityId={selectedAdvertiser.id}
+                      adminMemo={selectedAdvertiser.adminMemo}
+                      tags={selectedAdvertiser.tags}
+                      assignedTo={selectedAdvertiser.assignedTo}
+                      onSaved={loadMerchants}
+                    />
+                  ) : null}
+                </div>
+
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                     <Building2 size={16} className="text-slate-500" /> 기본 정보

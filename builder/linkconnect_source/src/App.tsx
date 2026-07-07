@@ -41,6 +41,8 @@ import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminConversions } from './pages/admin/AdminConversions';
 import { AdminEvents } from './pages/admin/AdminEvents';
 import { AdminLogs } from './pages/admin/AdminLogs';
+import { AdminReviewQueue } from './pages/admin/AdminReviewQueue';
+import { AdminChannelReports } from './pages/admin/AdminChannelReports';
 import { NoticeList } from './pages/notice/NoticeList';
 import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
@@ -101,6 +103,8 @@ export default function App() {
           <Route path="admin/settings" element={<AdminSettings />} />
           <Route path="admin/events" element={<AdminEvents />} />
           <Route path="admin/logs" element={<AdminLogs />} />
+          <Route path="admin/review-queue" element={<AdminReviewQueue />} />
+          <Route path="admin/channel-reports" element={<AdminChannelReports />} />
         </Route>
       </Routes>
     </BrowserRouter>

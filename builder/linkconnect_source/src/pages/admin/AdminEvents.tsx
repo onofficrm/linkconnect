@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { Gift, Megaphone, Clock, Calendar, Search, Plus, X, Edit3, Coins, Zap, Check, Ban } from 'lucide-react';
+import { Gift, Megaphone, Clock, Calendar, Search, Plus, X, Edit3, Coins, Zap, Check, Ban, TrendingUp } from 'lucide-react';
 import {
   AdminEvent,
   AdminEventReward,
   AdminEventSummary,
   autoAdminEventRankingRewards,
+  bulkAdminRewardPay,
   fetchAdminEvents,
   fetchAdminEventRewards,
+  fetchAdminEventRoi,
   saveAdminEvent,
   updateAdminEventReward,
   updateAdminEventStatus,
+  EventRoiItem,
 } from '../../lib/api';
 
 const emptySummary: AdminEventSummary = {
@@ -87,10 +90,14 @@ function toForm(event: AdminEvent | null, isNew = false): EventForm {
 }
 
 export function AdminEvents() {
-  const [tab, setTab] = useState<'events' | 'rewards'>('events');
+  const [tab, setTab] = useState<'events' | 'rewards' | 'roi'>('events');
   const [items, setItems] = useState<AdminEvent[]>([]);
   const [rewards, setRewards] = useState<AdminEventReward[]>([]);
+  const [roiItems, setRoiItems] = useState<EventRoiItem[]>([]);
+  const [roiSummary, setRoiSummary] = useState({ totalReward: 0, totalRevenue: 0, netRoi: 0 });
   const [rewardStatus, setRewardStatus] = useState('');
+  const [selectedRewardIds, setSelectedRewardIds] = useState<number[]>([]);
+  const [bulkRewardLoading, setBulkRewardLoading] = useState(false);
   const [autoRankingLoading, setAutoRankingLoading] = useState(false);
   const [rewardProcessingId, setRewardProcessingId] = useState<number | null>(null);
   const [summary, setSummary] = useState<AdminEventSummary>(emptySummary);
@@ -170,11 +177,43 @@ export function AdminEvents() {
       .catch(() => setRewards([]));
   }, [rewardStatus]);
 
+  const loadRoi = useCallback(() => {
+    fetchAdminEventRoi()
+      .then((data) => {
+        setRoiItems(data.items);
+        setRoiSummary(data.summary);
+      })
+      .catch(() => {
+        setRoiItems([]);
+      });
+  }, []);
+
   useEffect(() => {
     if (tab === 'rewards') {
       loadRewards();
+    } else if (tab === 'roi') {
+      loadRoi();
     }
-  }, [tab, loadRewards]);
+  }, [tab, loadRewards, loadRoi]);
+
+  const handleBulkRewardPay = async () => {
+    if (!selectedRewardIds.length) return;
+    setBulkRewardLoading(true);
+    try {
+      const result = await bulkAdminRewardPay(selectedRewardIds);
+      alert(result.message);
+      setSelectedRewardIds([]);
+      loadRewards();
+    } catch {
+      alert('일괄 지급에 실패했습니다.');
+    } finally {
+      setBulkRewardLoading(false);
+    }
+  };
+
+  const toggleRewardSelect = (id: number) => {
+    setSelectedRewardIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   const handleAutoRanking = async () => {
     setAutoRankingLoading(true);
@@ -208,9 +247,55 @@ export function AdminEvents() {
         <button type="button" onClick={() => setTab('rewards')} className={`px-4 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 ${tab === 'rewards' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
           <Coins size={16} /> 리워드 정산
         </button>
+        <button type="button" onClick={() => setTab('roi')} className={`px-4 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 ${tab === 'roi' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
+          <TrendingUp size={16} /> ROI 분석
+        </button>
       </div>
 
-      {tab === 'rewards' ? (
+      {tab === 'roi' ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SummaryCard title="총 지급 리워드" value={roiSummary.totalReward.toLocaleString()} suffix="원" color="yellow" />
+            <SummaryCard title="총 매출" value={roiSummary.totalRevenue.toLocaleString()} suffix="원" color="cyan" />
+            <SummaryCard title="순 ROI" value={roiSummary.netRoi.toFixed(1)} suffix="%" color={roiSummary.netRoi >= 0 ? 'emerald' : 'red'} highlight />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3">이벤트</th>
+                  <th className="px-4 py-3 text-right">참여 파트너</th>
+                  <th className="px-4 py-3 text-right">신규 DB</th>
+                  <th className="px-4 py-3 text-right">승인 DB</th>
+                  <th className="px-4 py-3 text-right">매출</th>
+                  <th className="px-4 py-3 text-right">지급 리워드</th>
+                  <th className="px-4 py-3 text-right">ROI</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {roiItems.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500">ROI 데이터가 없습니다.</td></tr>
+                ) : roiItems.map((row) => (
+                  <tr key={row.evId} className="hover:bg-slate-50">
+                    <td className="px-4 py-4">
+                      <div className="font-bold text-slate-900">{row.title}</div>
+                      <div className="text-xs text-slate-500 font-mono">{row.code}</div>
+                    </td>
+                    <td className="px-4 py-4 text-right">{row.participants.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right">{row.totalDb.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right text-emerald-600 font-bold">{row.approvedDb.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-right">{row.revenue.toLocaleString()}원</td>
+                    <td className="px-4 py-4 text-right text-amber-600">{row.paidRewards.toLocaleString()}원</td>
+                    <td className="px-4 py-4 text-right font-bold">
+                      <span className={row.roi >= 0 ? 'text-emerald-600' : 'text-red-600'}>{row.roi.toFixed(1)}%</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : tab === 'rewards' ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-3 justify-between">
             <div className="flex items-center gap-3">
@@ -225,11 +310,17 @@ export function AdminEvents() {
             <button type="button" disabled={autoRankingLoading} onClick={handleAutoRanking} className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-sm font-bold disabled:opacity-50">
               <Zap size={16} /> {autoRankingLoading ? '생성 중...' : '월말 랭킹 자동 정산'}
             </button>
+            {selectedRewardIds.length > 0 && (
+              <button type="button" disabled={bulkRewardLoading} onClick={handleBulkRewardPay} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold disabled:opacity-50">
+                <Check size={16} /> {selectedRewardIds.length}건 일괄 지급
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
                 <tr>
+                  <th className="px-4 py-3 w-10"></th>
                   <th className="px-4 py-3">파트너</th>
                   <th className="px-4 py-3">이벤트</th>
                   <th className="px-4 py-3">조건</th>
@@ -240,9 +331,14 @@ export function AdminEvents() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {rewards.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">리워드 내역이 없습니다.</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500">리워드 내역이 없습니다.</td></tr>
                 ) : rewards.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-4">
+                      {row.status === 'pending' ? (
+                        <input type="checkbox" checked={selectedRewardIds.includes(row.id)} onChange={() => toggleRewardSelect(row.id)} className="rounded border-slate-300" />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-4">
                       <div className="font-bold text-slate-900">{row.name}</div>
                       <div className="text-xs text-slate-500 font-mono">{row.partner}</div>

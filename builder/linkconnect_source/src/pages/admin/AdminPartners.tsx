@@ -5,8 +5,9 @@ import {
   Users, Activity, Database, CreditCard, Receipt, 
   Search, Calendar, ChevronDown, Download, ShieldAlert, X, Eye
 } from 'lucide-react';
-import { AdminPartner, fetchAdminPartners, updateAdminPartner, viewAsPartner } from '../../lib/api';
+import { AdminPartner, bulkAdminPartners, fetchAdminPartners, updateAdminPartner, viewAsPartner } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
+import { AdminEntityMetaPanel } from '../../components/AdminEntityMetaPanel';
 
 export function AdminPartners() {
   const [partners, setPartners] = useState<AdminPartner[]>([]);
@@ -16,6 +17,8 @@ export function AdminPartners() {
   const [statusFilter, setStatusFilter] = useState('');
   const [updating, setUpdating] = useState(false);
   const [viewingAs, setViewingAs] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkProcessing, setBulkProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
   const isSuperAdmin = isLcSuperAdmin();
 
@@ -74,6 +77,25 @@ export function AdminPartners() {
     }
   };
 
+  const handleBulk = async (subAction: 'activate' | 'suspend') => {
+    if (!selectedIds.length) return;
+    setBulkProcessing(true);
+    try {
+      const result = await bulkAdminPartners(selectedIds, subAction);
+      alert(result.message);
+      setSelectedIds([]);
+      loadPartners();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '일괄 처리 실패');
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   return (
     <AdminLayout activeMenu="partners" title="파트너 관리" description="파트너별 유입 성과, 수익, 정산 상태를 관리하세요.">
       
@@ -129,16 +151,26 @@ export function AdminPartners() {
 
           {/* Table Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-wrap gap-2">
               <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">{summary.total}</strong>명의 파트너</div>
-              <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
-                <Download size={14} /> 엑셀 다운로드
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedIds.length > 0 && (
+                  <>
+                    <span className="text-xs text-slate-500">{selectedIds.length}건 선택</span>
+                    <button type="button" disabled={bulkProcessing} onClick={() => handleBulk('activate')} className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg">일괄 승인</button>
+                    <button type="button" disabled={bulkProcessing} onClick={() => handleBulk('suspend')} className="px-3 py-1.5 text-xs font-bold bg-red-600 text-white rounded-lg">일괄 정지</button>
+                  </>
+                )}
+                <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
+                  <Download size={14} /> 엑셀 다운로드
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-slate-500 bg-white border-b border-slate-200">
                   <tr>
+                    <th className="px-4 py-3 font-medium w-10"></th>
                     <th className="px-4 py-3 font-medium">파트너 정보</th>
                     <th className="px-4 py-3 font-medium text-center">링크</th>
                     <th className="px-4 py-3 font-medium text-right">접수/승인/취소 DB</th>
@@ -156,6 +188,11 @@ export function AdminPartners() {
                       className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedPartner?.code === partner.code ? 'bg-cyan-50/50' : ''}`}
                       onClick={() => handleRowClick(partner)}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {partner.id ? (
+                          <input type="checkbox" checked={selectedIds.includes(partner.id)} onChange={() => toggleSelect(partner.id)} className="rounded border-slate-300" />
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="font-bold text-slate-900">{partner.name}</span>
@@ -195,6 +232,7 @@ export function AdminPartners() {
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <StatusBadge status={partner.status === '활성' ? '정상' : partner.status === '차단' ? '정지' : partner.status} />
+                        {partner.tier ? <span className="ml-1 text-[10px] font-bold uppercase text-amber-600">{partner.tier}</span> : null}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
@@ -273,6 +311,20 @@ export function AdminPartners() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-3">관리자 메모/태그</h3>
+                  {selectedPartner.id ? (
+                    <AdminEntityMetaPanel
+                      entityType="partner"
+                      entityId={selectedPartner.id}
+                      adminMemo={selectedPartner.adminMemo}
+                      tags={selectedPartner.tags}
+                      assignedTo={selectedPartner.assignedTo}
+                      onSaved={loadPartners}
+                    />
+                  ) : null}
+                </div>
+
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                     기본 정보

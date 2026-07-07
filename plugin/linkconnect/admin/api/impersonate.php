@@ -7,6 +7,7 @@ if ($method === 'GET') {
     lc_api_require_admin();
     lc_api_success(array(
         'impersonate' => lc_impersonate_state_for_api(),
+        'history'     => lc_impersonate_history_for_api(10),
     ));
 }
 

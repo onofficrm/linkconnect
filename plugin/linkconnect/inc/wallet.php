@@ -534,5 +534,58 @@ if (!function_exists('lc_wallet_check_low_balance')) {
         }
 
         lc_notification_emit_low_balance($mt_id, $balance, $threshold);
+
+        if (function_exists('lc_wallet_send_recharge_notices')) {
+            lc_wallet_send_recharge_notices($mt_id, $balance, $threshold);
+        }
+    }
+}
+
+if (!function_exists('lc_wallet_send_recharge_notices')) {
+    function lc_wallet_send_recharge_notices($mt_id, $balance, $threshold)
+    {
+        $merchant = function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+        if (!is_array($merchant)) {
+            return;
+        }
+
+        $company = (string) ($merchant['mt_company'] ?? '광고주');
+        $balance_fmt = number_format((int) $balance);
+        $threshold_fmt = number_format((int) $threshold);
+
+        $email_tpl = function_exists('lc_settings_get') ? lc_settings_get('notifyLowBalanceEmailTpl') : '';
+        if ($email_tpl === '') {
+            $email_tpl = '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.';
+        }
+        $sms_tpl = function_exists('lc_settings_get') ? lc_settings_get('notifyLowBalanceSmsTpl') : '';
+        if ($sms_tpl === '') {
+            $sms_tpl = '[{site}] 광고비 잔액 {balance}원. 충전 필요.';
+        }
+        $kakao_tpl = function_exists('lc_settings_get') ? lc_settings_get('notifyLowBalanceKakaoTpl') : '';
+        if ($kakao_tpl === '') {
+            $kakao_tpl = '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.';
+        }
+
+        $vars = array(
+            '{site}'      => function_exists('lc_settings_get') ? lc_settings_get('siteName', '링크커넥트') : '링크커넥트',
+            '{company}'   => $company,
+            '{balance}'   => $balance_fmt,
+            '{threshold}' => $threshold_fmt,
+        );
+        $render = function ($tpl) use ($vars) {
+            return str_replace(array_keys($vars), array_values($vars), (string) $tpl);
+        };
+
+        if (function_exists('lc_admin_log_write')) {
+            if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('notifyLowBalanceEmail', true)) {
+                lc_admin_log_write('notify_email', 'merchant', $mt_id, $render($email_tpl));
+            }
+            if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('notifyLowBalanceSms', false)) {
+                lc_admin_log_write('notify_sms', 'merchant', $mt_id, $render($sms_tpl));
+            }
+            if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('notifyLowBalanceKakao', false)) {
+                lc_admin_log_write('notify_kakao', 'merchant', $mt_id, $render($kakao_tpl));
+            }
+        }
     }
 }

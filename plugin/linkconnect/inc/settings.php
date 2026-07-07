@@ -44,6 +44,12 @@ if (!function_exists('lc_settings_defaults')) {
             'aiChatDailyLimit'      => 30,
             'aiPromoDailyLimit'     => 20,
             'aiSummaryDailyLimit'   => 10,
+            'notifyLowBalanceEmail' => '1',
+            'notifyLowBalanceSms'   => '0',
+            'notifyLowBalanceKakao' => '0',
+            'notifyLowBalanceEmailTpl' => '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.',
+            'notifyLowBalanceSmsTpl'   => '[{site}] 광고비 잔액 {balance}원. 충전 필요.',
+            'notifyLowBalanceKakaoTpl' => '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.',
         );
     }
 }
@@ -164,6 +170,12 @@ if (!function_exists('lc_settings_to_api')) {
                 'billingLowMode'     => (string) ($settings['billingLowMode'] ?? 'hold'),
                 'minChargeAmount'    => (int) ($settings['minChargeAmount'] ?? 500000),
                 'chargeApprovalMode' => (string) ($settings['chargeApprovalMode'] ?? 'manual'),
+                'notifyLowBalanceEmail' => lc_settings_get_bool('notifyLowBalanceEmail', true),
+                'notifyLowBalanceSms'   => lc_settings_get_bool('notifyLowBalanceSms'),
+                'notifyLowBalanceKakao' => lc_settings_get_bool('notifyLowBalanceKakao'),
+                'notifyLowBalanceEmailTpl' => (string) ($settings['notifyLowBalanceEmailTpl'] ?? ''),
+                'notifyLowBalanceSmsTpl'   => (string) ($settings['notifyLowBalanceSmsTpl'] ?? ''),
+                'notifyLowBalanceKakaoTpl' => (string) ($settings['notifyLowBalanceKakaoTpl'] ?? ''),
             ),
             'partner' => array(
                 'showEstRevenue'      => lc_settings_get_bool('showEstRevenue'),

@@ -9,6 +9,7 @@ import {
   AdminSettlement,
   AdminSettlementSummary,
   fetchAdminSettlements,
+  fetchSettlementRisk,
   updateAdminSettlement,
 } from '../../lib/api';
 
@@ -32,6 +33,8 @@ export function AdminSettlements() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [riskData, setRiskData] = useState<{ score: number; level: string; blocked: boolean; risks: Array<{ level: string; code: string; message: string }> } | null>(null);
+  const [riskLoading, setRiskLoading] = useState(false);
 
   const selected = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -59,6 +62,13 @@ export function AdminSettlements() {
   useEffect(() => {
     if (selected) {
       setApprovedAmount(selected.approvedAmount || selected.requestAmount);
+      setRiskLoading(true);
+      fetchSettlementRisk(selected.id)
+        .then((data) => setRiskData(data.risk))
+        .catch(() => setRiskData(null))
+        .finally(() => setRiskLoading(false));
+    } else {
+      setRiskData(null);
     }
   }, [selected]);
 
@@ -145,14 +155,13 @@ export function AdminSettlements() {
                     <th className="px-4 py-3 font-medium text-right">신청금액</th>
                     <th className="px-4 py-3 font-medium">계좌정보</th>
                     <th className="px-4 py-3 font-medium text-center">상태</th>
-                    <th className="px-4 py-3 font-medium text-center">관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td></tr>
                   ) : items.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">정산 신청 내역이 없습니다.</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-500">정산 신청 내역이 없습니다.</td></tr>
                   ) : items.map((item) => (
                     <tr
                       key={item.id}
@@ -179,11 +188,6 @@ export function AdminSettlements() {
                       </td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <StatusBadge status={item.status} />
-                      </td>
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <button className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">
-                          상세보기
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -216,6 +220,33 @@ export function AdminSettlements() {
                     <div className="flex justify-between"><span className="text-slate-500">상태</span><StatusBadge status={selected.status} /></div>
                   </div>
                 </section>
+                <section>
+                  <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2"><AlertTriangle size={16} className="text-amber-600" />정산 리스크 체크</h4>
+                  {riskLoading ? (
+                    <div className="text-sm text-slate-500">리스크 점검 중...</div>
+                  ) : riskData ? (
+                    <div className={`rounded-xl p-4 text-sm space-y-2 border ${riskData.blocked ? 'bg-red-50 border-red-200' : riskData.level === 'high' ? 'bg-orange-50 border-orange-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-900">리스크 점수</span>
+                        <span className={`font-bold ${riskData.blocked ? 'text-red-600' : 'text-slate-900'}`}>{riskData.score}점 ({riskData.level})</span>
+                      </div>
+                      {riskData.risks.length > 0 ? (
+                        <ul className="space-y-1 mt-2">
+                          {riskData.risks.map((r) => (
+                            <li key={r.code} className={`text-xs ${r.level === 'high' ? 'text-red-700' : r.level === 'medium' ? 'text-orange-700' : 'text-slate-600'}`}>
+                              • {r.message}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-emerald-700">특이 리스크 없음</p>
+                      )}
+                      {riskData.blocked && <p className="text-xs font-bold text-red-700 mt-2">차단 조건 충족 — 승인/지급 전 확인 필요</p>}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">리스크 정보 없음</div>
+                  )}
+                </section>
                 <section className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <h4 className="text-sm font-bold text-slate-900 mb-3">관리자 처리</h4>
                   <div className="space-y-4">
@@ -224,8 +255,8 @@ export function AdminSettlements() {
                     <div className="grid grid-cols-2 gap-2 pt-2">
                       <button onClick={() => handleAction('hold')} disabled={saving} className="py-2 bg-slate-800 text-white rounded-lg text-sm font-bold disabled:opacity-50">승인 보류</button>
                       <button onClick={() => handleAction('reject')} disabled={saving} className="py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-bold disabled:opacity-50">반려 처리</button>
-                      <button onClick={() => handleAction('approve')} disabled={saving} className="py-2 bg-cyan-600 text-white rounded-lg text-sm font-bold col-span-2 disabled:opacity-50">승인 완료</button>
-                      <button onClick={() => handleAction('pay')} disabled={saving} className="py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold col-span-2 disabled:opacity-50">최종 지급완료 처리</button>
+                      <button onClick={() => handleAction('approve')} disabled={saving || riskData?.blocked} className="py-2 bg-cyan-600 text-white rounded-lg text-sm font-bold col-span-2 disabled:opacity-50">승인 완료</button>
+                      <button onClick={() => handleAction('pay')} disabled={saving || riskData?.blocked} className="py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold col-span-2 disabled:opacity-50">최종 지급완료 처리</button>
                     </div>
                   </div>
                 </section>

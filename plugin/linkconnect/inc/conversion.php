@@ -371,6 +371,15 @@ if (!function_exists('lc_conversion_update_status')) {
             lc_event_on_conversion_approved($updated);
         }
 
+        if (is_array($updated) && function_exists('lc_abuse_check_cancel_spike')) {
+            lc_abuse_check_cancel_spike((int) ($updated['pt_id'] ?? 0), 0);
+        }
+
+        if ($new_status === LC_STATUS_REJECTED && is_array($updated) && function_exists('lc_abuse_refresh_partner_score')) {
+            lc_abuse_refresh_partner_score((int) ($updated['pt_id'] ?? 0));
+            lc_abuse_check_cancel_spike((int) ($updated['pt_id'] ?? 0), 0);
+        }
+
         if ($new_status === LC_STATUS_APPROVED && !empty($opts['qualityScore']) && (int) $opts['qualityScore'] <= 3) {
             $pt_id = (int) ($updated['pt_id'] ?? 0);
             if ($pt_id > 0 && function_exists('lc_notification_create')) {
@@ -404,6 +413,16 @@ if (!function_exists('lc_partner_credit_for_conversion')) {
 
         $pt_id = (int) $conversion['pt_id'];
         $amount = (int) $conversion['cv_price'];
+        if (function_exists('lc_get_partner_by_id')) {
+            $partner = lc_get_partner_by_id($pt_id);
+            if (is_array($partner) && function_exists('lc_partner_tier_bonus_rate')) {
+                $tier = lc_partner_tier_label($partner);
+                $bonus = lc_partner_tier_bonus_rate($tier);
+                if ($bonus > 0) {
+                    $amount += (int) round($amount * $bonus);
+                }
+            }
+        }
         $table = lc_table('partners');
 
         lc_sql_query(" UPDATE `{$table}` SET pt_balance = pt_balance + '{$amount}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
@@ -785,6 +804,16 @@ if (!function_exists('lc_conversion_create')) {
         $cp_id = (int) ($payload['cp_id'] ?? 0);
         $lk_id = (int) ($payload['lk_id'] ?? 0);
 
+        $duplicate = false;
+        $abuse_score = 0;
+        if (function_exists('lc_abuse_check_duplicate')) {
+            $dup = lc_abuse_check_duplicate($payload);
+            $duplicate = !empty($dup['duplicate']);
+        }
+        if (function_exists('lc_abuse_compute_conversion_score')) {
+            $abuse_score = lc_abuse_compute_conversion_score($payload, $duplicate);
+        }
+
         if ($cp_id <= 0) {
             return array('ok' => false, 'message' => '캠페인 정보가 없습니다.', 'conversion' => null);
         }
@@ -828,6 +857,10 @@ if (!function_exists('lc_conversion_create')) {
             if (is_array($meta)) {
                 lc_notification_emit_conversion($meta, 'received');
             }
+        }
+
+        if (function_exists('lc_abuse_on_conversion_created')) {
+            lc_abuse_on_conversion_created($cv_id, $payload, $duplicate, $abuse_score);
         }
 
         return array(

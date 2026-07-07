@@ -23,6 +23,12 @@ const defaultRaw: RawSettings = {
   aiChatDailyLimit: '30',
   aiPromoDailyLimit: '20',
   aiSummaryDailyLimit: '10',
+  notifyLowBalanceEmail: '1',
+  notifyLowBalanceSms: '0',
+  notifyLowBalanceKakao: '0',
+  notifyLowBalanceEmailTpl: '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.',
+  notifyLowBalanceSmsTpl: '[{site}] 광고비 잔액 {balance}원. 충전 필요.',
+  notifyLowBalanceKakaoTpl: '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.',
 };
 
 function boolVal(raw: RawSettings, key: string) {
@@ -74,6 +80,12 @@ export function AdminSettings() {
           billingLowMode: raw.billingLowMode || 'hold',
           minChargeAmount: Number(raw.minChargeAmount || 500000),
           chargeApprovalMode: raw.chargeApprovalMode || 'manual',
+          notifyLowBalanceEmail: boolVal(raw, 'notifyLowBalanceEmail'),
+          notifyLowBalanceSms: boolVal(raw, 'notifyLowBalanceSms'),
+          notifyLowBalanceKakao: boolVal(raw, 'notifyLowBalanceKakao'),
+          notifyLowBalanceEmailTpl: raw.notifyLowBalanceEmailTpl || '',
+          notifyLowBalanceSmsTpl: raw.notifyLowBalanceSmsTpl || '',
+          notifyLowBalanceKakaoTpl: raw.notifyLowBalanceKakaoTpl || '',
         },
         partner: {
           showEstRevenue: boolVal(raw, 'showEstRevenue'),
@@ -202,6 +214,19 @@ export function AdminSettings() {
           </div>
         </section>
 
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-slate-50"><h3 className="font-bold text-slate-900">광고주 자동 충전 안내</h3></div>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-slate-500">잔액이 기준 이하일 때 발송할 알림 채널과 템플릿을 설정합니다. 변수: {'{site}'}, {'{company}'}, {'{balance}'}, {'{threshold}'}</p>
+            <Toggle label="이메일 발송" checked={boolVal(raw, 'notifyLowBalanceEmail')} onChange={(v) => setRaw((prev) => setBool(prev, 'notifyLowBalanceEmail', v))} />
+            <TextAreaField label="이메일 템플릿" value={raw.notifyLowBalanceEmailTpl || ''} onChange={(v) => update('notifyLowBalanceEmailTpl', v)} />
+            <Toggle label="문자(SMS) 발송" checked={boolVal(raw, 'notifyLowBalanceSms')} onChange={(v) => setRaw((prev) => setBool(prev, 'notifyLowBalanceSms', v))} />
+            <TextAreaField label="문자 템플릿" value={raw.notifyLowBalanceSmsTpl || ''} onChange={(v) => update('notifyLowBalanceSmsTpl', v)} />
+            <Toggle label="카카오 알림톡 발송" checked={boolVal(raw, 'notifyLowBalanceKakao')} onChange={(v) => setRaw((prev) => setBool(prev, 'notifyLowBalanceKakao', v))} />
+            <TextAreaField label="카카오 템플릿" value={raw.notifyLowBalanceKakaoTpl || ''} onChange={(v) => update('notifyLowBalanceKakaoTpl', v)} />
+          </div>
+        </section>
+
         <div className="flex items-center justify-between pt-6 border-t border-slate-200 pb-12">
           <button type="button" onClick={handleReset} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 flex items-center gap-2">
             <RotateCcw size={16} /> 기본값 복원
@@ -243,5 +268,14 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 text-cyan-600 rounded" />
     </label>
+  );
+}
+
+function TextAreaField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none resize-none" />
+    </div>
   );
 }

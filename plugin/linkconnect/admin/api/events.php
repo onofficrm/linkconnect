@@ -30,6 +30,11 @@ if ($method === 'GET') {
         ));
     }
 
+    if ($view === 'roi') {
+        $data = lc_event_roi_for_api(isset($_GET['evId']) ? (int) $_GET['evId'] : 0);
+        lc_api_success(array_merge($data, array('dbReady' => lc_db_installed())));
+    }
+
     $filters = array(
         'q'      => isset($_GET['q']) ? (string) $_GET['q'] : '',
         'status' => isset($_GET['status']) ? (string) $_GET['status'] : '',

@@ -79,6 +79,17 @@ if ($method === 'POST') {
             $opts['qualityTags'] = $body['qualityTags'];
         }
         $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_REJECTED, $full_comment, $opts);
+    } elseif ($action === 'report_channel') {
+        $result = lc_channel_report_create(array(
+            'cvId'    => $cv_id,
+            'mtId'    => $mt_id,
+            'channel' => isset($body['channel']) ? (string) $body['channel'] : '',
+            'reason'  => isset($body['reason']) ? (string) $body['reason'] : '',
+        ));
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'REPORT_FAILED', 400);
+        }
+        lc_api_success(array('message' => $result['message']));
     } else {
         lc_api_error('유효하지 않은 action 입니다.', 'INVALID_ACTION', 400);
     }

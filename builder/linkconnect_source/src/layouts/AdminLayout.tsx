@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { getLcAuth, getMemberDisplayName } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
 import { g5MemberEditUrl } from '../lib/urls';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { ImpersonateHistoryBar } from '../components/ImpersonateHistoryBar';
 
 const sidebarMenus = [
   { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
   { id: 'partners', label: '파트너 관리', icon: <Users size={20} />, path: '/admin/partners' },
+  { id: 'review', label: '자동 심사 큐', icon: <ClipboardList size={20} />, path: '/admin/review-queue' },
   { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
   { id: 'campaigns', label: '광고상품 관리', icon: <Briefcase size={20} />, path: '/admin/campaigns' },
   { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin/conversions' },
   { id: 'inspections', label: '취소/무효 검수', icon: <ShieldAlert size={20} />, path: '/admin/inspections' },
+  { id: 'channel_reports', label: '금지 채널 신고', icon: <AlertTriangle size={20} />, path: '/admin/channel-reports' },
   { id: 'billing', label: '광고비 관리', icon: <CreditCard size={20} />, path: '/admin/billing' },
   { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
   { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin/api' },
@@ -73,6 +76,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
             />
           </div>
           <NotificationCenter center="admin" variant="dark" />
+          <ImpersonateHistoryBar />
           <a
             href={g5MemberEditUrl()}
             className="p-2 text-slate-400 hover:text-white transition-colors"

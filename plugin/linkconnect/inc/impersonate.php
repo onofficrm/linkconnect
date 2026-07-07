@@ -152,6 +152,10 @@ if (!function_exists('lc_impersonate_start')) {
             );
         }
 
+        if (function_exists('lc_impersonate_log_start')) {
+            lc_impersonate_log_start($type, $id, lc_impersonate_label());
+        }
+
         return array(
             'ok'      => true,
             'message' => '해당 계정 화면으로 전환합니다.',
@@ -171,6 +175,9 @@ if (!function_exists('lc_impersonate_clear')) {
         }
 
         $current = lc_impersonate_get();
+        if ($current && function_exists('lc_impersonate_log_end_active')) {
+            lc_impersonate_log_end_active((string) ($current['type'] ?? ''), (int) ($current['id'] ?? 0));
+        }
         unset($_SESSION[lc_impersonate_session_key()]);
 
         if ($current && function_exists('lc_admin_log_write')) {

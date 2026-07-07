@@ -93,7 +93,7 @@ if (!function_exists('lc_admin_partner_to_api')) {
             'balance'         => (int) $row['pt_balance'],
             'status'          => lc_admin_partner_status_ui($row['pt_status']),
             'statusCode'      => (string) $row['pt_status'],
-        );
+        ) + (function_exists('lc_admin_entity_meta_for_api') ? lc_admin_entity_meta_for_api($row, 'partner') : array());
     }
 }
 
@@ -166,7 +166,7 @@ if (!function_exists('lc_admin_merchant_to_api')) {
             'spend'      => (int) ($row['spend'] ?? 0),
             'status'     => lc_admin_merchant_status_ui($row['mt_status']),
             'statusCode' => (string) $row['mt_status'],
-        );
+        ) + (function_exists('lc_admin_entity_meta_for_api') ? lc_admin_entity_meta_for_api($row, 'merchant') : array());
     }
 }
 
