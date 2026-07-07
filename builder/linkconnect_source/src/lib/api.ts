@@ -1125,8 +1125,38 @@ export type PublicEventsResponse = {
   dbReady: boolean;
 };
 
+export type PublicEventProgress = {
+  joined: boolean;
+  current: number;
+  target: number;
+  pct: number;
+  reward: string;
+  alert: string;
+};
+
+export type PublicEventRule = { text: string; critical: boolean };
+export type PublicEventPromoCopy = { title: string; text: string };
+export type PublicEventPromoTab = { id: string; label: string; copies: PublicEventPromoCopy[] };
+
+export type PublicEventDetail = PublicEventItem & {
+  type: string;
+  status: string;
+  statusCode: string;
+  condition: string;
+  campaigns: string;
+  products: string[];
+  rules: PublicEventRule[];
+  promoTabs: PublicEventPromoTab[];
+  progress: PublicEventProgress;
+  dbReady: boolean;
+};
+
 export function fetchPublicEvents(q?: string) {
   return publicApiGet<PublicEventsResponse>('events.php', { q: q ?? '' });
+}
+
+export function fetchPublicEventDetail(code: string) {
+  return publicApiGet<PublicEventDetail>('events.php', { code });
 }
 
 export type AdminEventSummary = {

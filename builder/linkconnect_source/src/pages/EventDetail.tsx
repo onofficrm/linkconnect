@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Gift, Trophy, ArrowRight, Search, Filter, 
   ChevronRight, Calendar, AlertCircle, CheckCircle2, Megaphone, Target, Briefcase, Zap, Star, Sparkles, User, HelpCircle, Clock, Link as LinkIcon,
   Copy, FileText, MessageCircle, MessageSquare, Youtube,
   ShieldAlert, ListChecks, XCircle, Ban, AlertTriangle
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { fetchPublicEventDetail, PublicEventDetail } from '../lib/api';
 
 function Badge({ children, type }: { children: React.ReactNode, type: string }) {
   const BADGE_STYLES: Record<string, string> = {
@@ -27,15 +28,76 @@ function Badge({ children, type }: { children: React.ReactNode, type: string }) 
 }
 
 export function EventDetail() {
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('id') ?? '';
+  const [detail, setDetail] = useState<PublicEventDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('블로그 제목');
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
+
+  useEffect(() => {
+    if (!eventId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    fetchPublicEventDetail(eventId)
+      .then((data) => setDetail(data))
+      .catch(() => setDetail(null))
+      .finally(() => setLoading(false));
+  }, [eventId]);
+
+  useEffect(() => {
+    if (detail?.promoTabs?.length) {
+      setActiveTab(detail.promoTabs[0].label);
+    }
+  }, [detail]);
+
+  const promoTabs = detail?.promoTabs?.length
+    ? detail.promoTabs.map((tab) => tab.label)
+    : ['블로그 제목', '블로그 본문', '카페 글', 'SNS 문구', '유튜브 설명란', '문자/카카오 안내'];
+
+  const blogTitleSamples = detail?.promoTabs?.find((t) => t.id === 'blog' || t.label.includes('블로그'))?.copies?.map((c) => c.title || c.text)
+    ?? ['개인회생 상담 전 꼭 확인해야 할 5가지', '개인회생 신청 조건, 어렵게 생각하지 마세요', '채무조정이 필요할 때 무료 상담으로 확인하는 방법'];
 
   const handleCopy = (text: string, id: string | number) => {
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  if (!eventId) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-slate-600 mb-4">이벤트를 선택해주세요.</p>
+          <Link to="/events" className="text-cyan-600 font-bold">이벤트 목록으로</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">이벤트 정보를 불러오는 중…</p>
+      </div>
+    );
+  }
+
+  if (!detail) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-slate-600 mb-4">이벤트를 찾을 수 없습니다.</p>
+          <Link to="/events" className="text-cyan-600 font-bold">목록으로 돌아가기</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = detail.progress;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -54,9 +116,9 @@ export function EventDetail() {
       
       {/* Mobile Sticky CTA */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-cyan-900/20 transition-colors">
+        <Link to="/partner/search" className="block w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-cyan-900/20 transition-colors text-center">
           내 홍보 링크 만들기
-        </button>
+        </Link>
       </div>
 
       {/* Hero Section */}
@@ -68,23 +130,25 @@ export function EventDetail() {
               <ChevronRight className="rotate-180" size={16} /> 목록으로 돌아가기
             </Link>
           </div>
-          <div className="flex items-center gap-2 mb-4">
-            <Badge type="진행중">참여중</Badge>
-            <span className="text-sm font-bold text-slate-300 bg-white/10 px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10"><Calendar size={14} /> 2026.10.01 ~ 2026.10.31</span>
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            {detail.badges.map((badge) => (
+              <Badge key={badge} type={badge}>{badge}</Badge>
+            ))}
+            <span className="text-sm font-bold text-slate-300 bg-white/10 px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/10"><Calendar size={14} /> {detail.period}</span>
           </div>
           <h1 className="text-3xl md:text-5xl font-black text-white mb-6 leading-tight">
-            첫 승인 5건 달성 보너스
+            {detail.title}
           </h1>
           <p className="text-lg md:text-xl text-slate-300 max-w-2xl mb-8">
-            신규 및 기존 파트너 모두 참여 가능! 이벤트 기간 내 승인 DB 5건 달성 시 100,000원 추가 보너스를 지급합니다.
+            {detail.desc}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <button className="px-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-base font-bold transition-colors shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
+            <Link to="/partner/search" className="px-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-base font-bold transition-colors shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2">
               <LinkIcon size={18} /> 홍보 링크 만들기
-            </button>
-            <button className="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-base font-bold transition-colors flex items-center justify-center gap-2">
+            </Link>
+            <Link to="/partner/support" className="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-base font-bold transition-colors flex items-center justify-center gap-2">
               이벤트 문의하기
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -95,21 +159,21 @@ export function EventDetail() {
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col md:flex-row md:items-center gap-8">
           <div className="flex-1">
             <h3 className="text-xl font-bold text-slate-900 mb-2">나의 참여 현황</h3>
-            <p className="text-sm text-slate-600 mb-4">현재까지 승인된 DB 개수와 예상 보너스입니다.</p>
-            <div className="text-sm font-bold text-cyan-600 flex items-center gap-1.5 p-3 bg-cyan-50 rounded-xl border border-cyan-100"><CheckCircle2 size={16} /> 목표까지 승인 DB 2건 남았습니다!</div>
+            <p className="text-sm text-slate-600 mb-4">{progress.joined ? '현재까지 승인된 DB 개수와 예상 보너스입니다.' : '파트너 로그인 후 참여 현황을 확인할 수 있습니다.'}</p>
+            <div className="text-sm font-bold text-cyan-600 flex items-center gap-1.5 p-3 bg-cyan-50 rounded-xl border border-cyan-100"><CheckCircle2 size={16} /> {progress.alert}</div>
           </div>
 
           <div className="flex-1 w-full">
             <div className="flex justify-between items-end mb-3">
-              <div className="text-sm font-bold text-slate-500">진행률 <span className="text-cyan-600 text-lg ml-1">60%</span></div>
-              <div className="text-base font-bold text-slate-800">3 / 5건</div>
+              <div className="text-sm font-bold text-slate-500">진행률 <span className="text-cyan-600 text-lg ml-1">{progress.pct}%</span></div>
+              <div className="text-base font-bold text-slate-800">{progress.current} / {progress.target}건</div>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-3 mb-5 overflow-hidden border border-slate-200/50">
-              <div className="bg-gradient-to-r from-cyan-400 to-cyan-500 h-3 rounded-full" style={{ width: '60%' }}></div>
+              <div className="bg-gradient-to-r from-cyan-400 to-cyan-500 h-3 rounded-full transition-all duration-700" style={{ width: `${progress.pct}%` }}></div>
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-slate-100 mt-2">
-              <span className="text-sm font-bold text-slate-500">예상 보너스 금액</span>
-              <span className="text-2xl font-black text-cyan-600">100,000원</span>
+              <span className="text-sm font-bold text-slate-500">예상 보너스</span>
+              <span className="text-2xl font-black text-cyan-600">{progress.reward}</span>
             </div>
           </div>
         </div>
@@ -137,7 +201,7 @@ export function EventDetail() {
 
           {/* Tabs */}
           <div className="flex overflow-x-auto gap-2 pb-2 mb-6 scrollbar-hide">
-            {['블로그 제목', '블로그 본문', '카페 글', 'SNS 문구', '유튜브 설명란', '문자/카카오 안내'].map((tab) => (
+            {promoTabs.map((tab) => (
               <button 
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -150,12 +214,12 @@ export function EventDetail() {
 
           {/* Tab Content */}
           <div className="space-y-4">
-            {activeTab === '블로그 제목' && (
+            {(activeTab.includes('블로그') && !activeTab.includes('본문')) && (
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
                 <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">블로그 제목 샘플</h4>
                 
                 <div className="space-y-3">
-                  {['개인회생 상담 전 꼭 확인해야 할 5가지', '개인회생 신청 조건, 어렵게 생각하지 마세요', '채무조정이 필요할 때 무료 상담으로 확인하는 방법'].map((sample, idx) => (
+                  {blogTitleSamples.map((sample, idx) => (
                     <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group hover:border-cyan-300 transition-colors">
                       <div className="flex-1 text-slate-700 font-medium text-sm">"{sample}"</div>
                       <div className="flex gap-2 shrink-0 w-full sm:w-auto">
@@ -303,22 +367,36 @@ export function EventDetail() {
         {/* Content Section */}
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm prose prose-slate max-w-none prose-headings:font-bold prose-a:text-cyan-600">
           <h2 className="text-2xl font-bold mb-4">이벤트 상세 내용</h2>
-          <p>
-            링크커넥트 파트너님들의 적극적인 홍보를 지원하기 위해 10월 한 달 동안 <strong>첫 승인 5건 달성 보너스</strong> 이벤트를 진행합니다.
-            기존에 활동하시던 파트너님은 물론 신규 가입하신 파트너님도 모두 참여하실 수 있습니다.
-          </p>
+          <p>{detail.desc}</p>
+          {detail.benefit && (
+            <p className="mt-4"><strong>혜택:</strong> {detail.benefit}</p>
+          )}
+          {detail.products.length > 0 && (
+            <>
+              <h3 className="text-xl font-bold mt-8 mb-4">적용 광고상품</h3>
+              <ul className="list-disc pl-5 space-y-2">
+                {detail.products.map((product) => (
+                  <li key={product}>{product}</li>
+                ))}
+              </ul>
+            </>
+          )}
           <h3 className="text-xl font-bold mt-8 mb-4">참여 방법</h3>
           <ol className="list-decimal pl-5 space-y-2">
             <li>상단의 <strong>홍보 링크 만들기</strong> 버튼을 클릭하여 원하는 캠페인의 링크를 생성합니다.</li>
             <li>생성된 링크를 블로그, 카페, SNS 등에 홍보합니다.</li>
-            <li>이벤트 기간 내에 <strong>승인 DB 5건</strong>을 달성하면 자동으로 이벤트에 참여됩니다.</li>
+            <li>이벤트 기간 내 조건을 달성하면 자동으로 이벤트에 참여됩니다.</li>
           </ol>
-          <h3 className="text-xl font-bold mt-8 mb-4">주의사항</h3>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>본 이벤트는 당사 사정에 의해 조기 종료될 수 있습니다.</li>
-            <li>어뷰징이나 부정 행위가 적발될 경우 보너스 지급이 취소될 수 있습니다.</li>
-            <li>동일 IP 중복 접수 등 유효하지 않은 DB는 승인 건수에서 제외됩니다.</li>
-          </ul>
+          {detail.rules.length > 0 && (
+            <>
+              <h3 className="text-xl font-bold mt-8 mb-4">주의사항</h3>
+              <ul className="list-disc pl-5 space-y-2">
+                {detail.rules.map((rule) => (
+                  <li key={rule.text}>{rule.text}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
 
         {/* Guidelines Section */}
@@ -467,12 +545,12 @@ export function EventDetail() {
               </label>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-                <button className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all ${isAgreed ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/50' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+                <Link to="/partner/search" className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all text-center ${isAgreed ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/50' : 'bg-slate-800 text-slate-500 pointer-events-none'}`}>
                   확인 후 이벤트 참여하기
-                </button>
-                <button className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all border ${isAgreed ? 'bg-transparent hover:bg-slate-800 text-white border-slate-600' : 'bg-transparent text-slate-600 border-slate-800 cursor-not-allowed'}`}>
+                </Link>
+                <Link to="/partner/search" className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all border text-center ${isAgreed ? 'bg-transparent hover:bg-slate-800 text-white border-slate-600' : 'bg-transparent text-slate-600 border-slate-800 pointer-events-none'}`}>
                   홍보 링크 만들기
-                </button>
+                </Link>
               </div>
 
               <p className="text-slate-500 text-xs mt-6">

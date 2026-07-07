@@ -309,6 +309,169 @@ if (!function_exists('lc_event_get_by_code')) {
     }
 }
 
+if (!function_exists('lc_event_partner_progress')) {
+    function lc_event_partner_progress(array $row)
+    {
+        $benefit = (string) ($row['ev_benefit'] ?? '');
+        $target = 5;
+        if (preg_match('/(\d+)\s*건/u', $benefit, $m)) {
+            $target = max(1, (int) $m[1]);
+        }
+
+        $progress = array(
+            'joined'  => false,
+            'current' => 0,
+            'target'  => $target,
+            'pct'     => 0,
+            'reward'  => $benefit !== '' ? $benefit : '—',
+            'alert'   => '파트너 로그인 후 참여 현황을 확인할 수 있습니다.',
+        );
+
+        global $member;
+        if (!isset($member['mb_id']) || $member['mb_id'] === '' || !function_exists('lc_get_partner_by_mb_id')) {
+            return $progress;
+        }
+
+        $partner = lc_get_partner_by_mb_id($member['mb_id']);
+        if (!is_array($partner) || empty($partner['pt_id'])) {
+            return $progress;
+        }
+
+        if (!lc_db_table_exists(lc_table('conversions'))) {
+            return $progress;
+        }
+
+        $pt_id = (int) $partner['pt_id'];
+        $cv = lc_table('conversions');
+        $count_row = lc_sql_fetch("
+            SELECT COUNT(*) AS cnt
+            FROM `{$cv}`
+            WHERE pt_id = {$pt_id}
+              AND cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "'
+        ", false);
+        $current = (int) ($count_row['cnt'] ?? 0);
+        $pct = $target > 0 ? min(100, (int) round(($current / $target) * 100)) : 0;
+        $remaining = max(0, $target - $current);
+
+        $alert = $remaining > 0
+            ? '목표까지 승인 DB ' . $remaining . '건 남았습니다!'
+            : '목표를 성공적으로 달성했습니다!';
+
+        return array(
+            'joined'  => true,
+            'current' => $current,
+            'target'  => $target,
+            'pct'     => $pct,
+            'reward'  => $benefit !== '' ? $benefit : '—',
+            'alert'   => $alert,
+        );
+    }
+}
+
+if (!function_exists('lc_event_row_to_public_detail')) {
+    function lc_event_row_to_public_detail(array $row)
+    {
+        $products = array();
+        foreach (array($row['ev_product'] ?? '', $row['ev_campaign_labels'] ?? '') as $chunk) {
+            foreach (preg_split('/[,，]/u', (string) $chunk) as $part) {
+                $part = trim($part);
+                if ($part !== '' && !in_array($part, $products, true)) {
+                    $products[] = $part;
+                }
+            }
+        }
+
+        $rules = function_exists('lc_sample_event_rules_checklist') ? lc_sample_event_rules_checklist() : array();
+        $promoTabs = function_exists('lc_sample_promo_copy_tabs') ? lc_sample_promo_copy_tabs() : array();
+
+        return array(
+            'id'         => (string) ($row['ev_code'] ?? ''),
+            'title'      => (string) ($row['ev_title'] ?? ''),
+            'type'       => (string) ($row['ev_type'] ?? ''),
+            'desc'       => (string) ($row['ev_desc'] ?? ''),
+            'period'     => (string) ($row['ev_period'] ?? ''),
+            'product'    => (string) ($row['ev_product'] ?? ''),
+            'benefit'    => (string) ($row['ev_benefit'] ?? ''),
+            'badges'     => lc_event_decode_badges($row['ev_badges'] ?? ''),
+            'ribbon'     => (string) ($row['ev_ribbon'] ?? ''),
+            'status'     => lc_event_status_ui($row['ev_status'] ?? ''),
+            'statusCode' => (string) ($row['ev_status'] ?? ''),
+            'condition'  => (string) ($row['ev_benefit'] ?? ''),
+            'campaigns'  => (string) ($row['ev_campaign_labels'] ?? ''),
+            'products'   => $products,
+            'rules'      => $rules,
+            'promoTabs'  => $promoTabs,
+            'progress'   => lc_event_partner_progress($row),
+            'dbReady'    => lc_db_installed(),
+        );
+    }
+}
+
+if (!function_exists('lc_event_public_detail')) {
+    function lc_event_public_detail($code)
+    {
+        $code = trim((string) $code);
+        if ($code === '') {
+            return null;
+        }
+
+        if (lc_db_table_exists(lc_event_table())) {
+            lc_event_ensure_seed();
+            $row = lc_event_get_by_code($code);
+            if (is_array($row)) {
+                return lc_event_row_to_public_detail($row);
+            }
+        }
+
+        if (function_exists('lc_sample_event_cards')) {
+            foreach (lc_sample_event_cards() as $i => $card) {
+                $sample_code = 'EVT-' . str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT);
+                if ($sample_code !== $code && ($card['title'] ?? '') !== $code) {
+                    continue;
+                }
+
+                return lc_event_row_to_public_detail(array(
+                    'ev_code'            => $sample_code,
+                    'ev_title'           => $card['title'] ?? '',
+                    'ev_type'            => $card['badges'][1] ?? ($card['badges'][0] ?? ''),
+                    'ev_desc'            => $card['desc'] ?? '',
+                    'ev_period'          => $card['period'] ?? '',
+                    'ev_product'         => $card['product'] ?? '',
+                    'ev_benefit'         => $card['benefit'] ?? '',
+                    'ev_badges'          => lc_event_encode_badges($card['badges'] ?? array()),
+                    'ev_ribbon'          => $card['ribbon'] ?? '',
+                    'ev_status'          => LC_EVENT_ACTIVE,
+                    'ev_campaign_labels' => $card['product'] ?? '',
+                ));
+            }
+        }
+
+        if (function_exists('lc_sample_admin_events_list')) {
+            foreach (lc_sample_admin_events_list() as $item) {
+                if (($item['code'] ?? '') !== $code) {
+                    continue;
+                }
+
+                return lc_event_row_to_public_detail(array(
+                    'ev_code'            => $item['code'],
+                    'ev_title'           => $item['title'] ?? '',
+                    'ev_type'            => $item['type'] ?? '',
+                    'ev_desc'            => $item['title'] ?? '',
+                    'ev_period'          => $item['period'] ?? '',
+                    'ev_product'         => $item['campaigns'] ?? '',
+                    'ev_benefit'         => '',
+                    'ev_badges'          => lc_event_encode_badges(array($item['status'] ?? '진행중', $item['type'] ?? '')),
+                    'ev_ribbon'          => '',
+                    'ev_status'          => LC_EVENT_ACTIVE,
+                    'ev_campaign_labels' => $item['campaigns'] ?? '',
+                ));
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('lc_events_public_payload')) {
     function lc_events_public_payload(array $filters = array())
     {
