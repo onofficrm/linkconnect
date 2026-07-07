@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
+import { CenterHomeLink } from '../components/CenterHomeLink';
 import { getLcAuth } from '../lib/auth';
 
 export function AdvertiserLayout({
@@ -54,6 +55,7 @@ export function AdvertiserLayout({
             <p className="text-slate-500">{displayCompany}</p>
           </div>
           <div className="flex items-center gap-4">
+            <CenterHomeLink accent="cyan" />
             <SuperAdminHeaderButton />
             <div className="flex flex-col items-end bg-white px-4 py-1.5 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-xs text-slate-500">현재 광고비 잔액</span>

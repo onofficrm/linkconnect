@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
+import { CenterHomeLink } from '../components/CenterHomeLink';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { getLcAuth } from '../lib/auth';
 
@@ -78,6 +79,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
             <p className="text-slate-500">{dateLabel}</p>
           </div>
           <div className="flex items-center gap-4">
+            <CenterHomeLink accent="emerald" />
             <SuperAdminHeaderButton />
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-sm text-slate-500">파트너 코드</span>

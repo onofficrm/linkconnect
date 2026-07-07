@@ -49,7 +49,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           </div>
           
           <nav className="hidden xl:flex items-center gap-1 text-sm font-medium ml-8">
-            <Link to="/" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">회사소개</Link>
+            <Link to="/" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">홈페이지</Link>
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/cpa-list" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPA</Link>
             <Link to="/cps" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPS</Link>
