@@ -6,7 +6,8 @@ import {
   ServerCrash, RefreshCw, AlertCircle
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ComposedChart, Line, CartesianGrid } from 'recharts';
-import { fetchAdminDashboard } from '../../lib/api';
+import { fetchAdminDashboard, fetchAdminAiSummary } from '../../lib/api';
+import { AiReportInsight } from '../../components/AiReportInsight';
 
 const fallbackChartData = [
   { date: '10.01', 접수: 210, 승인: 145, 취소: 32, 매출: 7250000 },
@@ -168,7 +169,8 @@ export function AdminDashboard() {
 
   return (
     <AdminLayout activeMenu="dashboard" title="관리자 통합 대시보드" description="링크커넥트 CPA 운영 현황과 주요 이슈를 한눈에 확인하세요.">
-      
+      <AiReportInsight title="AI 운영 브리핑" fetchSummary={fetchAdminAiSummary} />
+
       {/* 8 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" />

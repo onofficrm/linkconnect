@@ -6,7 +6,8 @@ import {
   ComposedChart, Line, Area,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Filter, Lightbulb } from 'lucide-react';
-import { fetchMerchantReports, MerchantReportResponse } from '../../lib/api';
+import { fetchMerchantReports, fetchMerchantAiSummary, MerchantReportResponse } from '../../lib/api';
+import { AiReportInsight } from '../../components/AiReportInsight';
 
 const emptyReport: MerchantReportResponse = {
   summary: { total: 0, approved: 0, rejected: 0, avgRate: 0, totalSpend: 0, avgPrice: 0 },
@@ -65,6 +66,8 @@ export function AdvertiserReports() {
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
+
+      <AiReportInsight title="AI 성과 브리핑" fetchSummary={fetchMerchantAiSummary} />
 
       <div className="flex flex-col lg:flex-col gap-6 lg:gap-8 mb-8">
         <div className="bg-white p-4 lg:p-5 rounded-2xl border border-slate-200 flex flex-wrap gap-4 items-center shadow-sm">

@@ -30,7 +30,7 @@ if (!isset($lc_show_footer) || !$lc_show_footer) {
         <h4 class="lc-footer__title">플랫폼</h4>
         <ul class="lc-footer__links">
           <li><a href="<?php echo lc_h(lc_url('pages/home.php')); ?>">회사소개</a></li>
-          <li><a href="<?php echo lc_h(defined('G5_BBS_URL') ? G5_BBS_URL . '/board.php?bo_table=notice' : '#'); ?>">공지사항</a></li>
+          <li><a href="<?php echo lc_h(function_exists('lc_spa_url') && lc_builder_spa_enabled() ? lc_spa_url('/notice') : (defined('G5_BBS_URL') ? G5_BBS_URL . '/board.php?bo_table=notice' : '#')); ?>">공지사항</a></li>
           <li><a href="<?php echo lc_h(lc_url('pages/cpa.php')); ?>">CPA 상품</a></li>
           <li><a href="<?php echo lc_h(lc_url('pages/cps.php')); ?>">CPS 상품</a></li>
           <li><a href="<?php echo lc_h(lc_url('pages/events.php')); ?>">이벤트/프로모션</a></li>

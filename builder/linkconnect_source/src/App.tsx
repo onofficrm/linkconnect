@@ -40,6 +40,10 @@ import { AdminSupport } from './pages/admin/AdminSupport';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminConversions } from './pages/admin/AdminConversions';
 import { AdminEvents } from './pages/admin/AdminEvents';
+import { AdminLogs } from './pages/admin/AdminLogs';
+import { NoticeList } from './pages/notice/NoticeList';
+import { NoticeDetailPage } from './pages/notice/NoticeDetail';
+import { NoticeForm } from './pages/notice/NoticeForm';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
@@ -56,6 +60,10 @@ export default function App() {
           <Route path="cps" element={<CpsList />} />
           <Route path="events" element={<Events />} />
           <Route path="events/detail" element={<EventDetail />} />
+          <Route path="notice" element={<NoticeList />} />
+          <Route path="notice/write" element={<NoticeForm />} />
+          <Route path="notice/:id/edit" element={<NoticeForm />} />
+          <Route path="notice/:id" element={<NoticeDetailPage />} />
         </Route>
 
         {/* 센터 — 전용 레이아웃만 (마케팅 chrome 없음) */}
@@ -92,6 +100,7 @@ export default function App() {
           <Route path="admin/support" element={<AdminSupport />} />
           <Route path="admin/settings" element={<AdminSettings />} />
           <Route path="admin/events" element={<AdminEvents />} />
+          <Route path="admin/logs" element={<AdminLogs />} />
         </Route>
       </Routes>
     </BrowserRouter>

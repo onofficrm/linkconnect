@@ -22,6 +22,7 @@ export function Header() {
 
           <nav className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-base font-medium text-slate-300 hover:text-white transition-colors">회사소개</Link>
+            <Link to="/notice" className="text-base font-medium text-slate-300 hover:text-white transition-colors">공지사항</Link>
             <Link to="/cpa-list" className="text-base font-medium text-slate-300 hover:text-white transition-colors">CPA</Link>
             <Link to="/cps" className="text-base font-medium text-slate-300 hover:text-white transition-colors">CPS</Link>
             <Link to="/events" className="text-base font-medium text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link>
@@ -51,6 +52,7 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 pt-2 pb-6 space-y-2 shadow-2xl">
           <Link to="/" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">회사소개</Link>
+          <Link to="/notice" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">공지사항</Link>
           <Link to="/cpa-list" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">CPA 광고상품</Link>
           <Link to="/cps" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">CPS</Link>
           <Link to="/events" onClick={closeMobile} className="block px-3 py-3 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg">이벤트/프로모션</Link>

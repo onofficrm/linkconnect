@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { Gift, Megaphone, Clock, Calendar, Search, Plus, X, Edit3 } from 'lucide-react';
+import { Gift, Megaphone, Clock, Calendar, Search, Plus, X, Edit3, Coins, Zap, Check, Ban } from 'lucide-react';
 import {
   AdminEvent,
+  AdminEventReward,
   AdminEventSummary,
+  autoAdminEventRankingRewards,
   fetchAdminEvents,
+  fetchAdminEventRewards,
   saveAdminEvent,
+  updateAdminEventReward,
   updateAdminEventStatus,
 } from '../../lib/api';
 
@@ -83,7 +87,12 @@ function toForm(event: AdminEvent | null, isNew = false): EventForm {
 }
 
 export function AdminEvents() {
+  const [tab, setTab] = useState<'events' | 'rewards'>('events');
   const [items, setItems] = useState<AdminEvent[]>([]);
+  const [rewards, setRewards] = useState<AdminEventReward[]>([]);
+  const [rewardStatus, setRewardStatus] = useState('');
+  const [autoRankingLoading, setAutoRankingLoading] = useState(false);
+  const [rewardProcessingId, setRewardProcessingId] = useState<number | null>(null);
   const [summary, setSummary] = useState<AdminEventSummary>(emptySummary);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -155,8 +164,111 @@ export function AdminEvents() {
     }
   };
 
+  const loadRewards = useCallback(() => {
+    fetchAdminEventRewards({ status: rewardStatus })
+      .then((data) => setRewards(data.items))
+      .catch(() => setRewards([]));
+  }, [rewardStatus]);
+
+  useEffect(() => {
+    if (tab === 'rewards') {
+      loadRewards();
+    }
+  }, [tab, loadRewards]);
+
+  const handleAutoRanking = async () => {
+    setAutoRankingLoading(true);
+    try {
+      const result = await autoAdminEventRankingRewards();
+      alert(result.message);
+      loadRewards();
+    } catch {
+      alert('랭킹 리워드 생성에 실패했습니다.');
+    } finally {
+      setAutoRankingLoading(false);
+    }
+  };
+
+  const handleRewardAction = async (erId: number, action: 'pay_reward' | 'reject_reward') => {
+    setRewardProcessingId(erId);
+    try {
+      await updateAdminEventReward({ action, erId });
+      loadRewards();
+    } catch {
+      alert('리워드 처리에 실패했습니다.');
+    } finally {
+      setRewardProcessingId(null);
+    }
+  };
+
   return (
-    <AdminLayout activeMenu="events" title="이벤트/프로모션 관리" description="이벤트 등록, CPA 연결, 노출 상태를 관리하세요.">
+    <AdminLayout activeMenu="events" title="이벤트/프로모션 관리" description="이벤트 등록, 리워드 정산, 노출 상태를 관리하세요.">
+      <div className="flex gap-2 mb-6">
+        <button type="button" onClick={() => setTab('events')} className={`px-4 py-2 rounded-xl text-sm font-bold ${tab === 'events' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>이벤트 목록</button>
+        <button type="button" onClick={() => setTab('rewards')} className={`px-4 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 ${tab === 'rewards' ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'}`}>
+          <Coins size={16} /> 리워드 정산
+        </button>
+      </div>
+
+      {tab === 'rewards' ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <select value={rewardStatus} onChange={(e) => setRewardStatus(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">전체 상태</option>
+                <option value="pending">대기</option>
+                <option value="paid">지급완료</option>
+                <option value="rejected">거절</option>
+              </select>
+              <button type="button" onClick={loadRewards} className="px-4 py-2 bg-slate-100 rounded-xl text-sm font-bold">조회</button>
+            </div>
+            <button type="button" disabled={autoRankingLoading} onClick={handleAutoRanking} className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-sm font-bold disabled:opacity-50">
+              <Zap size={16} /> {autoRankingLoading ? '생성 중...' : '월말 랭킹 자동 정산'}
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3">파트너</th>
+                  <th className="px-4 py-3">이벤트</th>
+                  <th className="px-4 py-3">조건</th>
+                  <th className="px-4 py-3 text-right">금액</th>
+                  <th className="px-4 py-3 text-center">상태</th>
+                  <th className="px-4 py-3 text-center">관리</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rewards.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">리워드 내역이 없습니다.</td></tr>
+                ) : rewards.map((row) => (
+                  <tr key={row.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-4">
+                      <div className="font-bold text-slate-900">{row.name}</div>
+                      <div className="text-xs text-slate-500 font-mono">{row.partner}</div>
+                    </td>
+                    <td className="px-4 py-4 text-slate-700">{row.eventTitle || '—'}</td>
+                    <td className="px-4 py-4 text-slate-600">{row.condition}</td>
+                    <td className="px-4 py-4 text-right font-bold">{row.amount.toLocaleString()}원</td>
+                    <td className="px-4 py-4 text-center"><StatusBadge status={row.status === 'paid' ? '지급완료' : row.status === 'pending' ? '대기' : '거절'} /></td>
+                    <td className="px-4 py-4">
+                      {row.status === 'pending' ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <button type="button" disabled={rewardProcessingId === row.id} onClick={() => handleRewardAction(row.id, 'pay_reward')} className="px-2 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-50 rounded-lg inline-flex items-center gap-1"><Check size={12} /> 지급</button>
+                          <button type="button" disabled={rewardProcessingId === row.id} onClick={() => handleRewardAction(row.id, 'reject_reward')} className="px-2 py-1 text-xs font-bold text-red-700 hover:bg-red-50 rounded-lg inline-flex items-center gap-1"><Ban size={12} /> 거절</button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">{row.paidAt || row.createdAt}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <SummaryCard title="전체 이벤트" value={String(summary.total)} suffix="개" icon={<Gift size={18} />} />
         <SummaryCard title="진행중" value={String(summary.active)} suffix="개" color="cyan" highlight icon={<Megaphone size={18} />} />
@@ -321,6 +433,9 @@ export function AdminEvents() {
             </div>
           </div>
         </div>
+      )}
+
+        </>
       )}
     </AdminLayout>
   );

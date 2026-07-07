@@ -38,6 +38,12 @@ if (!function_exists('lc_settings_defaults')) {
             'apiLogEnabled'         => '1',
             'apiMaskPii'            => '1',
             'apiRetryCount'         => 3,
+            'geminiApiKey'          => '',
+            'geminiEnabled'         => '1',
+            'geminiModel'           => 'gemini-2.0-flash',
+            'aiChatDailyLimit'      => 30,
+            'aiPromoDailyLimit'     => 20,
+            'aiSummaryDailyLimit'   => 10,
         );
     }
 }
@@ -110,6 +116,16 @@ if (!function_exists('lc_settings_save')) {
             if (!array_key_exists($key, $defaults)) {
                 continue;
             }
+            if ($key === 'geminiApiKey') {
+                $key_val = trim((string) $value);
+                if ($key_val !== '') {
+                    $key_esc = lc_sql_escape($key);
+                    $val_esc = lc_sql_escape($key_val);
+                    lc_sql_query(" INSERT INTO `{$table}` (st_key, st_value) VALUES ('{$key_esc}', '{$val_esc}')
+                        ON DUPLICATE KEY UPDATE st_value = '{$val_esc}', st_updated_at = NOW() ", false);
+                }
+                continue;
+            }
             $key_esc = lc_sql_escape((string) $key);
             $val_esc = lc_sql_escape(is_bool($value) ? ($value ? '1' : '0') : (string) $value);
             lc_sql_query(" INSERT INTO `{$table}` (st_key, st_value) VALUES ('{$key_esc}', '{$val_esc}')
@@ -170,6 +186,15 @@ if (!function_exists('lc_settings_to_api')) {
                 'apiLogEnabled'    => lc_settings_get_bool('apiLogEnabled'),
                 'apiMaskPii'       => lc_settings_get_bool('apiMaskPii'),
                 'apiRetryCount'    => (int) ($settings['apiRetryCount'] ?? 3),
+            ),
+            'ai' => array(
+                'geminiEnabled'       => lc_settings_get_bool('geminiEnabled', true),
+                'geminiModel'         => (string) ($settings['geminiModel'] ?? 'gemini-2.0-flash'),
+                'geminiApiKeySet'     => trim((string) ($settings['geminiApiKey'] ?? '')) !== '',
+                'geminiApiKeyMasked'  => lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? '')),
+                'aiChatDailyLimit'    => (int) ($settings['aiChatDailyLimit'] ?? 30),
+                'aiPromoDailyLimit'   => (int) ($settings['aiPromoDailyLimit'] ?? 20),
+                'aiSummaryDailyLimit' => (int) ($settings['aiSummaryDailyLimit'] ?? 10),
             ),
         );
     }

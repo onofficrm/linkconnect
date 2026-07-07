@@ -29,7 +29,7 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4">플랫폼</h4>
             <ul className="space-y-3 text-sm text-slate-400">
               <li><Link to="/" className="hover:text-emerald-400 transition-colors">회사소개</Link></li>
-              <li><a href={g5BbsUrl('board.php?bo_table=notice')} className="hover:text-emerald-400 transition-colors">공지사항</a></li>
+              <li><Link to="/notice" className="hover:text-emerald-400 transition-colors">공지사항</Link></li>
               <li><Link to="/cpa-list" className="hover:text-emerald-400 transition-colors">CPA 상품</Link></li>
               <li><Link to="/cps" className="hover:text-emerald-400 transition-colors">CPS 상품</Link></li>
               <li><Link to="/events" className="hover:text-emerald-400 transition-colors">이벤트/프로모션</Link></li>

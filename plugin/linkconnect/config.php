@@ -251,6 +251,7 @@ if (!function_exists('lc_nav_items_public')) {
         if (lc_builder_spa_enabled()) {
             return array(
                 array('id' => 'home', 'label' => '회사소개', 'url' => lc_public_home_url(), 'tone' => ''),
+                array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
                 array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_spa_url('/cpa-list'), 'tone' => ''),
                 array('id' => 'cps', 'label' => 'CPS', 'url' => lc_spa_url('/cps'), 'tone' => ''),
                 array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_spa_url('/events'), 'tone' => ''),
@@ -261,6 +262,7 @@ if (!function_exists('lc_nav_items_public')) {
 
         return array(
             array('id' => 'home', 'label' => '회사소개', 'url' => lc_public_home_url(), 'tone' => ''),
+            array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
             array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_url('pages/cpa.php'), 'tone' => ''),
             array('id' => 'cps', 'label' => 'CPS', 'url' => lc_url('pages/cps.php'), 'tone' => ''),
             array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_url('pages/events.php'), 'tone' => ''),

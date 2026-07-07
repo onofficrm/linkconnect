@@ -5,9 +5,14 @@ lc_api_require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $settings = lc_settings_get_all();
+    $raw = $settings;
+    unset($raw['geminiApiKey']);
+    $raw['geminiApiKeySet'] = trim((string) ($settings['geminiApiKey'] ?? '')) !== '';
+    $raw['geminiApiKeyMasked'] = lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? ''));
+
     lc_api_success(array(
         'settings' => lc_settings_to_api($settings),
-        'raw'      => $settings,
+        'raw'      => $raw,
         'dbReady'  => lc_db_installed(),
     ));
 }
@@ -56,6 +61,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (isset($values['api']) && is_array($values['api'])) {
         foreach ($values['api'] as $key => $value) {
+            $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
+        }
+    }
+    if (isset($values['ai']) && is_array($values['ai'])) {
+        foreach ($values['ai'] as $key => $value) {
+            if ($key === 'geminiApiKey') {
+                $key_val = trim((string) $value);
+                if ($key_val !== '' && strpos($key_val, '*') === false) {
+                    $flat['geminiApiKey'] = $key_val;
+                }
+                continue;
+            }
+            if ($key === 'geminiApiKeySet' || $key === 'geminiApiKeyMasked') {
+                continue;
+            }
             $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
         }
     }

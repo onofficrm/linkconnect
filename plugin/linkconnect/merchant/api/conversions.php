@@ -54,14 +54,31 @@ if ($method === 'POST') {
     }
 
     if ($action === 'approve') {
-        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_APPROVED, $comment);
+        $opts = array();
+        if (isset($body['qualityScore'])) {
+            $opts['qualityScore'] = (int) $body['qualityScore'];
+        }
+        if (isset($body['qualityTags']) && is_array($body['qualityTags'])) {
+            $opts['qualityTags'] = $body['qualityTags'];
+        }
+        if (isset($body['partnerVisible'])) {
+            $opts['partnerVisible'] = !empty($body['partnerVisible']);
+        }
+        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_APPROVED, $comment, $opts);
     } elseif ($action === 'reject') {
         $reason = isset($body['reason']) ? trim((string) $body['reason']) : '';
         $full_comment = $reason;
         if ($comment !== '') {
             $full_comment = $reason !== '' ? $reason . ' - ' . $comment : $comment;
         }
-        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_REJECTED, $full_comment);
+        $opts = array();
+        if (isset($body['partnerVisible'])) {
+            $opts['partnerVisible'] = !empty($body['partnerVisible']);
+        }
+        if (isset($body['qualityTags']) && is_array($body['qualityTags'])) {
+            $opts['qualityTags'] = $body['qualityTags'];
+        }
+        $result = lc_conversion_update_status($cv_id, $mt_id, LC_STATUS_REJECTED, $full_comment, $opts);
     } else {
         lc_api_error('유효하지 않은 action 입니다.', 'INVALID_ACTION', 400);
     }

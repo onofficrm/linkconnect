@@ -53,6 +53,10 @@ if (!function_exists('lc_wallet_record')) {
             wt_ref_id = '" . (int) $ref_id . "',
             wt_created_at = NOW() ", false);
 
+        if ($status === 'completed' && function_exists('lc_wallet_check_low_balance')) {
+            lc_wallet_check_low_balance($mt_id, $new_balance);
+        }
+
         return array('ok' => true, 'message' => '거래가 기록되었습니다.', 'balance' => $status === 'completed' ? $new_balance : $balance);
     }
 }
@@ -492,5 +496,43 @@ if (!function_exists('lc_wallet_admin_adjust')) {
             'ok'      => $result['ok'],
             'message' => $result['ok'] ? '거래가 처리되었습니다.' : $result['message'],
         );
+    }
+}
+
+if (!function_exists('lc_wallet_low_balance_threshold')) {
+    function lc_wallet_low_balance_threshold()
+    {
+        if (function_exists('lc_settings_get')) {
+            $settings = lc_settings_get();
+
+            return max(0, (int) ($settings['minChargeAmount'] ?? 500000));
+        }
+
+        return 500000;
+    }
+}
+
+if (!function_exists('lc_wallet_check_low_balance')) {
+    function lc_wallet_check_low_balance($mt_id, $balance)
+    {
+        $mt_id = (int) $mt_id;
+        $balance = (int) $balance;
+        $threshold = lc_wallet_low_balance_threshold();
+
+        if ($mt_id <= 0 || $threshold <= 0 || $balance >= $threshold) {
+            return;
+        }
+
+        if (!function_exists('lc_notification_emit_low_balance')) {
+            return;
+        }
+
+        if (function_exists('lc_notification_recent_exists')) {
+            if (lc_notification_recent_exists('merchant', $mt_id, 'wallet', 24)) {
+                return;
+            }
+        }
+
+        lc_notification_emit_low_balance($mt_id, $balance, $threshold);
     }
 }

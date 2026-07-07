@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchPublicEventDetail, joinPartnerEvent, PublicEventDetail } from '../lib/api';
+import { AiPromoPanel } from '../components/AiPromoPanel';
 
 function Badge({ children, type }: { children: React.ReactNode, type: string }) {
   const BADGE_STYLES: Record<string, string> = {
@@ -215,6 +216,17 @@ export function EventDetail() {
             <p className="text-slate-500 text-sm">
               블로그, 카페, SNS에 활용할 수 있는 예시 문구를 확인하고 내 홍보 링크와 함께 사용해보세요.
             </p>
+          </div>
+
+          <div className="mb-6 bg-slate-50 rounded-2xl border border-slate-200 p-5">
+            <AiPromoPanel
+              campaign={{
+                title: detail.product || detail.title,
+                category: detail.type,
+                price: detail.benefit,
+                eventTitle: detail.title,
+              }}
+            />
           </div>
 
           {/* Tabs */}

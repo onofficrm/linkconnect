@@ -1,7 +1,6 @@
 import React from "react";
 import { 
   BarChart3, 
-  Bell, 
   Copy, 
   CreditCard, 
   LayoutDashboard, 
@@ -17,6 +16,8 @@ import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterHomeLink } from '../components/CenterHomeLink';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { getLcAuth } from '../lib/auth';
+import { AiGuideChat } from '../components/AiGuideChat';
+import { NotificationCenter } from '../components/NotificationCenter';
 
 interface PartnerLayoutProps {
   children: React.ReactNode;
@@ -86,10 +87,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
               <span className="font-mono font-bold text-slate-700">{partnerCode}</span>
               <button className="text-slate-400 hover:text-emerald-500"><Copy size={14} /></button>
             </div>
-            <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 relative shadow-sm">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationCenter center="partner" />
             <MemberAuthMenu variant="compact" logoutReturnPath="/partner" />
           </div>
         </header>
@@ -97,6 +95,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
         {children}
       </main>
       </div>
+      <AiGuideChat page="partner" role="partner" />
     </div>
   );
 }

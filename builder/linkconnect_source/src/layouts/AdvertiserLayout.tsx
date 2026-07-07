@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, Bell } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterHomeLink } from '../components/CenterHomeLink';
 import { getLcAuth } from '../lib/auth';
+import { AiGuideChat } from '../components/AiGuideChat';
+import { NotificationCenter } from '../components/NotificationCenter';
 
 export function AdvertiserLayout({
   children,
@@ -61,10 +63,7 @@ export function AdvertiserLayout({
               <span className="text-xs text-slate-500">현재 광고비 잔액</span>
               <span className="font-bold text-cyan-600">{displayBalance} 원</span>
             </div>
-            <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 shadow-sm relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationCenter center="merchant" />
             <MemberAuthMenu variant="compact" logoutReturnPath="/advertiser" />
           </div>
         </header>
@@ -72,6 +71,7 @@ export function AdvertiserLayout({
         {children}
       </main>
       </div>
+      <AiGuideChat page="advertiser" role="merchant" />
     </div>
   );
 }

@@ -309,6 +309,9 @@ export type MerchantConversion = {
   needsAction: boolean;
   channel: string;
   subId: string;
+  qualityScore?: number;
+  qualityTags?: string[];
+  partnerVisible?: boolean;
 };
 
 export type MerchantDashboardResponse = {
@@ -346,7 +349,15 @@ export function fetchMerchantConversions(filters?: { status?: string; q?: string
   );
 }
 
-export function updateMerchantConversion(payload: { action: 'approve' | 'reject'; cvId: number; comment?: string; reason?: string }) {
+export function updateMerchantConversion(payload: {
+  action: 'approve' | 'reject';
+  cvId: number;
+  comment?: string;
+  reason?: string;
+  qualityScore?: number;
+  qualityTags?: string[];
+  partnerVisible?: boolean;
+}) {
   return merchantApiPost<{ message: string; conversion: MerchantConversion | null; merchant: MerchantProfile | null }>(
     'conversions.php',
     payload,
@@ -682,6 +693,26 @@ async function publicApiGet<T>(endpoint: string, query?: Record<string, string>)
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: { Accept: 'application/json' },
+  });
+
+  const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
+  if (!body.ok) {
+    const errBody = body as ApiErrorBody;
+    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+  }
+
+  return (body as ApiSuccessBody<T>).data;
+}
+
+async function publicApiPost<T>(endpoint: string, payload?: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${PUBLIC_API_BASE}/${endpoint}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: payload ? JSON.stringify(payload) : undefined,
   });
 
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
@@ -1265,6 +1296,71 @@ export function updateAdminEventReward(payload: { action: 'pay_reward' | 'reject
   return adminApiPost<{ message: string }>('events.php', payload);
 }
 
+export function autoAdminEventRankingRewards(period?: string) {
+  return adminApiPost<{ message: string; created: number }>('events.php', { action: 'auto_ranking_rewards', period: period ?? '' });
+}
+
+export type LcNotificationCenter = 'admin' | 'partner' | 'merchant';
+
+export type LcNotification = {
+  id: number;
+  center: string;
+  userId: number;
+  type: string;
+  title: string;
+  body: string;
+  link: string;
+  refType: string;
+  refId: number;
+  read: boolean;
+  readAt: string;
+  createdAt: string;
+};
+
+export function fetchPartnerNotifications() {
+  return partnerApiGet<{ items: LcNotification[]; unread: number; total: number }>('notifications.php');
+}
+
+export function markPartnerNotificationsRead(id?: number) {
+  return partnerApiPost<{ message: string }>('notifications.php', { action: 'read', id: id ?? 0 });
+}
+
+export function fetchMerchantNotifications() {
+  return merchantApiGet<{ items: LcNotification[]; unread: number; total: number }>('notifications.php');
+}
+
+export function markMerchantNotificationsRead(id?: number) {
+  return merchantApiPost<{ message: string }>('notifications.php', { action: 'read', id: id ?? 0 });
+}
+
+export function fetchAdminNotifications() {
+  return adminApiGet<{ items: LcNotification[]; unread: number; total: number }>('notifications.php');
+}
+
+export function markAdminNotificationsRead(id?: number) {
+  return adminApiPost<{ message: string }>('notifications.php', { action: 'read', id: id ?? 0 });
+}
+
+export type AdminLogItem = {
+  id: number;
+  memberId: string;
+  action: string;
+  targetType: string;
+  targetId: number;
+  summary: string;
+  payload: Record<string, unknown>;
+  ip: string;
+  createdAt: string;
+};
+
+export function fetchAdminLogs(filters?: { q?: string; action?: string; limit?: number }) {
+  return adminApiGet<{ items: AdminLogItem[]; total: number; dbReady: boolean }>('logs.php', {
+    q: filters?.q ?? '',
+    action: filters?.action ?? '',
+    limit: String(filters?.limit ?? 50),
+  });
+}
+
 export type AdminEventSummary = {
   total: number;
   active: number;
@@ -1310,4 +1406,103 @@ export function saveAdminEvent(payload: Record<string, unknown>) {
 
 export function updateAdminEventStatus(payload: { action: string; evId: number }) {
   return adminApiPost<{ message: string; event: AdminEvent; summary: AdminEventSummary }>('events.php', payload);
+}
+
+export type NoticePermissions = {
+  canWrite: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
+
+export type NoticeListItem = {
+  id: number;
+  subject: string;
+  author: string;
+  memberId: string;
+  date: string;
+  datetime: string;
+  hit: number;
+  isNotice: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
+
+export type NoticeDetail = NoticeListItem & {
+  contentHtml: string;
+  contentPlain: string;
+  isHtml: boolean;
+  prevId: number;
+  nextId: number;
+};
+
+export type NoticeListResponse = {
+  items: NoticeListItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  perPage: number;
+  boardReady: boolean;
+  permissions: NoticePermissions;
+  boardTitle: string;
+};
+
+export function fetchNoticeList(filters?: { page?: number; q?: string; perPage?: number }) {
+  return publicApiGet<NoticeListResponse>('notice.php', {
+    page: String(filters?.page ?? 1),
+    q: filters?.q ?? '',
+    perPage: String(filters?.perPage ?? 15),
+  });
+}
+
+export function fetchNoticeDetail(id: number) {
+  return publicApiGet<{ item: NoticeDetail; permissions: NoticePermissions; boardReady: boolean }>('notice.php', {
+    id: String(id),
+  });
+}
+
+export function saveNotice(payload: { subject: string; content: string; isNotice?: boolean; id?: number; action?: string }) {
+  return publicApiPost<{ message: string; item: NoticeDetail }>('notice.php', payload);
+}
+
+export function deleteNotice(id: number) {
+  return publicApiPost<{ message: string }>('notice.php', { action: 'delete', id });
+}
+
+export type AiStatus = {
+  available: boolean;
+  model: string;
+  limits: { chat: number; promo: number; summary: number };
+  message: string;
+};
+
+export type AiPromoCopy = { id: string; label: string; text: string };
+
+export function fetchAiStatus() {
+  return publicApiGet<AiStatus>('ai.php');
+}
+
+export function sendAiChat(payload: { message: string; history?: Array<{ role: string; text: string }>; context?: Record<string, string> }) {
+  return publicApiPost<{ reply: string; fallback: boolean }>('ai.php', { action: 'chat', ...payload });
+}
+
+export function generatePartnerPromo(payload: {
+  campaignId?: number;
+  title?: string;
+  category?: string;
+  price?: string;
+  approvalRate?: string;
+  allowedChannels?: string;
+  forbiddenChannels?: string;
+  channel?: string;
+  eventTitle?: string;
+}) {
+  return partnerApiPost<{ copies: AiPromoCopy[]; fallback: boolean; message?: string }>('ai.php', { action: 'promo', ...payload });
+}
+
+export function fetchAdminAiSummary() {
+  return adminApiPost<{ summary: string; fallback: boolean }>('ai.php', { action: 'summary' });
+}
+
+export function fetchMerchantAiSummary() {
+  return merchantApiPost<{ summary: string; fallback: boolean }>('ai.php', { action: 'summary' });
 }

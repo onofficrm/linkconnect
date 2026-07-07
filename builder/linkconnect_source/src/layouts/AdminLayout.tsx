@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Bell, Search, Menu, ChevronRight, Gift } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { getLcAuth, getMemberDisplayName } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
 import { g5MemberEditUrl } from '../lib/urls';
+import { AiGuideChat } from '../components/AiGuideChat';
+import { NotificationCenter } from '../components/NotificationCenter';
 
 const sidebarMenus = [
   { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
@@ -17,6 +19,7 @@ const sidebarMenus = [
   { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
   { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin/api' },
   { id: 'events', label: '이벤트/프로모션', icon: <Gift size={20} />, path: '/admin/events' },
+  { id: 'logs', label: '작업 로그', icon: <ScrollText size={20} />, path: '/admin/logs' },
   { id: 'support', label: '문의 관리', icon: <MessageSquare size={20} />, path: '/admin/support' },
   { id: 'settings', label: '환경설정', icon: <Settings size={20} />, path: '/admin/settings' },
 ];
@@ -69,10 +72,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
               className="pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 w-64 transition-all"
             />
           </div>
-          <button className="p-2 text-slate-400 hover:text-white relative transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-slate-950"></span>
-          </button>
+          <NotificationCenter center="admin" variant="dark" />
           <a
             href={g5MemberEditUrl()}
             className="p-2 text-slate-400 hover:text-white transition-colors"
@@ -157,6 +157,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           </div>
         </main>
       </div>
+      <AiGuideChat page="admin" role="admin" />
     </div>
   );
 }

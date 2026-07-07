@@ -12,6 +12,9 @@ export function AdvertiserDb() {
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState('');
   const [approveComment, setApproveComment] = useState('');
+  const [qualityScore, setQualityScore] = useState(4);
+  const [qualityTags, setQualityTags] = useState<string[]>([]);
+  const [partnerVisible, setPartnerVisible] = useState(true);
   const [processing, setProcessing] = useState(false);
 
   const [selectedDb, setSelectedDb] = useState<MerchantConversion | null>(null);
@@ -56,9 +59,14 @@ export function AdvertiserDb() {
         action: 'approve',
         cvId: selectedDb.cvId,
         comment: approveComment,
+        qualityScore,
+        qualityTags,
+        partnerVisible: true,
       });
       setIsApproveOpen(false);
       setApproveComment('');
+      setQualityScore(4);
+      setQualityTags([]);
       closeDetail();
       await loadRows();
     } catch (error) {
@@ -80,10 +88,12 @@ export function AdvertiserDb() {
         cvId: selectedDb.cvId,
         reason: cancelReason,
         comment: cancelComment,
+        partnerVisible,
       });
       setIsRejectOpen(false);
       setCancelReason('');
       setCancelComment('');
+      setPartnerVisible(true);
       closeDetail();
       await loadRows();
     } catch (error) {
@@ -578,6 +588,38 @@ export function AdvertiserDb() {
                 파트너 수익에 즉시 반영됩니다.
               </div>
 
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">리드 품질 평가</label>
+                <div className="flex gap-2 mb-3">
+                  {[1, 2, 3, 4, 5].map((score) => (
+                    <button
+                      key={score}
+                      type="button"
+                      onClick={() => setQualityScore(score)}
+                      className={`w-9 h-9 rounded-full text-sm font-bold border ${qualityScore === score ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'}`}
+                    >
+                      {score}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {['상담예약', '구매의사', '지역적합', '연락원활', '중복의심'].map((tag) => {
+                    const active = qualityTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setQualityTags((prev) => (active ? prev.filter((t) => t !== tag) : [...prev, tag]))}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${active ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-500 mt-2">3점 이하 품질은 파트너에게 피드백 알림이 발송됩니다.</p>
+              </div>
+
               <div className="mb-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">승인 코멘트 (선택)</label>
                 <input type="text" placeholder="예: 상담 예약 완료했습니다." value={approveComment} onChange={(e) => setApproveComment(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow" />
@@ -639,7 +681,7 @@ export function AdvertiserDb() {
                 </div>
 
                 <div className="flex items-start gap-2 pt-2">
-                  <input type="checkbox" id="partnerPublic" className="mt-1 w-4 h-4 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" defaultChecked />
+                  <input type="checkbox" id="partnerPublic" checked={partnerVisible} onChange={(e) => setPartnerVisible(e.target.checked)} className="mt-1 w-4 h-4 text-cyan-600 rounded border-slate-300 focus:ring-cyan-500" />
                   <label htmlFor="partnerPublic" className="text-sm text-slate-700 cursor-pointer">
                     <span className="font-medium block mb-0.5">파트너에게 사유 공개</span>
                     <span className="text-slate-500 text-xs block">체크 시 파트너도 취소 사유와 코멘트를 확인할 수 있습니다.</span>

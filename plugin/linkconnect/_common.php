@@ -86,3 +86,18 @@ if (is_file(LC_PLUGIN_PATH . '/inc/ui.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/page.php')) {
     require_once LC_PLUGIN_PATH . '/inc/page.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/notice_board.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/notice_board.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/gemini.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/gemini.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/ai.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/ai.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/notification.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/notification.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/admin_log.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/admin_log.php';
+}

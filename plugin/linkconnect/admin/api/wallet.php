@@ -74,6 +74,14 @@ if ($method === 'POST') {
         lc_api_error($result['message'], 'UPDATE_FAILED', 400);
     }
 
+    if (function_exists('lc_admin_log_write') && $action === 'adjust') {
+        lc_admin_log_write('wallet_adjust', 'merchant', (int) ($body['mtId'] ?? 0), $result['message'], array(
+            'type'   => (string) ($body['type'] ?? ''),
+            'amount' => (int) ($body['amount'] ?? 0),
+            'memo'   => $memo,
+        ));
+    }
+
     lc_api_success(array(
         'message' => $result['message'],
         'summary' => lc_wallet_admin_summary(),

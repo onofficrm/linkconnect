@@ -147,6 +147,9 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             'needsAction' => lc_conversion_needs_action($status),
             'channel'     => (string) $row['cv_channel'],
             'subId'       => (string) $row['cv_sub_id'],
+            'qualityScore'=> (int) ($row['cv_quality_score'] ?? 0),
+            'qualityTags' => lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? ''),
+            'partnerVisible' => !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1,
         );
     }
 }
@@ -213,11 +216,93 @@ if (!function_exists('lc_conversion_belongs_to_merchant')) {
     }
 }
 
+if (!function_exists('lc_conversion_decode_quality_tags')) {
+    function lc_conversion_decode_quality_tags($raw)
+    {
+        $raw = trim((string) $raw);
+        if ($raw === '') {
+            return array();
+        }
+
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return array_values(array_filter(array_map('strval', $decoded)));
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $raw))));
+    }
+}
+
+if (!function_exists('lc_conversion_encode_quality_tags')) {
+    function lc_conversion_encode_quality_tags($tags)
+    {
+        if (!is_array($tags)) {
+            return '';
+        }
+
+        $clean = array_values(array_filter(array_map('trim', array_map('strval', $tags))));
+
+        return json_encode($clean, JSON_UNESCAPED_UNICODE);
+    }
+}
+
+if (!function_exists('lc_conversion_with_meta')) {
+    function lc_conversion_with_meta($cv_id)
+    {
+        if (!lc_db_installed()) {
+            return null;
+        }
+
+        $cv_id = (int) $cv_id;
+        $cv = lc_table('conversions');
+        $cp = lc_table('campaigns');
+
+        return lc_sql_fetch("
+            SELECT cv.*, c.cp_name, c.mt_id
+            FROM `{$cv}` cv
+            LEFT JOIN `{$cp}` c ON c.cp_id = cv.cp_id
+            WHERE cv.cv_id = {$cv_id}
+            LIMIT 1
+        ", false);
+    }
+}
+
+if (!function_exists('lc_conversion_apply_quality_feedback')) {
+    function lc_conversion_apply_quality_feedback($cv_id, array $opts = array())
+    {
+        if (!lc_db_installed()) {
+            return;
+        }
+
+        $cv_id = (int) $cv_id;
+        $score = isset($opts['qualityScore']) ? max(0, min(5, (int) $opts['qualityScore'])) : null;
+        $tags = isset($opts['qualityTags']) ? lc_conversion_encode_quality_tags($opts['qualityTags']) : null;
+        $visible = isset($opts['partnerVisible']) ? (!empty($opts['partnerVisible']) ? 1 : 0) : null;
+
+        $sets = array();
+        if ($score !== null) {
+            $sets[] = "cv_quality_score = {$score}";
+        }
+        if ($tags !== null) {
+            $sets[] = "cv_quality_tags = '" . lc_sql_escape($tags) . "'";
+        }
+        if ($visible !== null) {
+            $sets[] = "cv_partner_visible = {$visible}";
+        }
+        if (!$sets) {
+            return;
+        }
+
+        $table = lc_table('conversions');
+        lc_sql_query(" UPDATE `{$table}` SET " . implode(', ', $sets) . ", cv_updated_at = NOW() WHERE cv_id = {$cv_id} ", false);
+    }
+}
+
 if (!function_exists('lc_conversion_update_status')) {
     /**
      * @return array{ok:bool,message:string,conversion?:array}
      */
-    function lc_conversion_update_status($cv_id, $mt_id, $new_status, $comment = '')
+    function lc_conversion_update_status($cv_id, $mt_id, $new_status, $comment = '', array $opts = array())
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
@@ -269,10 +354,43 @@ if (!function_exists('lc_conversion_update_status')) {
             cv_updated_at = NOW()
             WHERE cv_id = '" . (int) $cv_id . "' ", false);
 
+        if ($opts) {
+            lc_conversion_apply_quality_feedback($cv_id, $opts);
+        }
+
+        $updated = lc_conversion_with_meta($cv_id);
+        if (!$updated) {
+            $updated = lc_conversion_get_by_id($cv_id);
+        }
+
+        if (function_exists('lc_notification_emit_conversion') && is_array($updated)) {
+            lc_notification_emit_conversion($updated, $new_status === LC_STATUS_APPROVED ? 'approved' : 'rejected');
+        }
+
+        if ($new_status === LC_STATUS_APPROVED && function_exists('lc_event_on_conversion_approved') && is_array($updated)) {
+            lc_event_on_conversion_approved($updated);
+        }
+
+        if ($new_status === LC_STATUS_APPROVED && !empty($opts['qualityScore']) && (int) $opts['qualityScore'] <= 3) {
+            $pt_id = (int) ($updated['pt_id'] ?? 0);
+            if ($pt_id > 0 && function_exists('lc_notification_create')) {
+                lc_notification_create(array(
+                    'center'  => 'partner',
+                    'userId'  => $pt_id,
+                    'type'    => 'conversion',
+                    'title'   => '리드 품질 피드백',
+                    'body'    => (string) ($updated['cp_name'] ?? '캠페인') . ' · 품질 ' . (int) $opts['qualityScore'] . '점',
+                    'link'    => '/partner/db-status',
+                    'refType' => 'conversion',
+                    'refId'   => (int) $cv_id,
+                ));
+            }
+        }
+
         return array(
             'ok'         => true,
             'message'    => $new_status === LC_STATUS_APPROVED ? '승인 처리되었습니다.' : '취소/무효 처리되었습니다.',
-            'conversion' => lc_conversion_get_by_id($cv_id),
+            'conversion' => $updated ?: lc_conversion_get_by_id($cv_id),
         );
     }
 }
@@ -525,6 +643,8 @@ if (!function_exists('lc_conversion_to_api_partner')) {
         $status = (string) $row['cv_status'];
         $price = (int) $row['cv_price'];
         $approved = $status === LC_STATUS_APPROVED;
+        $partner_visible = !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1;
+        $quality_score = (int) ($row['cv_quality_score'] ?? 0);
 
         return array(
             'id'          => (string) $row['cv_code'],
@@ -540,10 +660,12 @@ if (!function_exists('lc_conversion_to_api_partner')) {
             'price'       => $price,
             'estRevenue'  => $status === LC_STATUS_REJECTED ? 0 : $price,
             'confRevenue' => $approved ? $price : 0,
-            'comment'     => (string) $row['cv_comment'],
-            'reason'      => (string) ($row['cv_reject_reason'] ?? ''),
+            'comment'     => $partner_visible ? (string) $row['cv_comment'] : '',
+            'reason'      => $partner_visible ? (string) ($row['cv_reject_reason'] ?? '') : '',
             'appeal'      => (string) ($row['cv_partner_appeal'] ?? ''),
             'hasAppeal'   => trim((string) ($row['cv_partner_appeal'] ?? '')) !== '',
+            'qualityScore'=> $approved && $quality_score > 0 ? $quality_score : 0,
+            'qualityTags' => $approved ? lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? '') : array(),
         );
     }
 }
@@ -700,6 +822,13 @@ if (!function_exists('lc_conversion_create')) {
         }
 
         $conversion = lc_conversion_get_by_id($cv_id);
+
+        if (function_exists('lc_notification_emit_conversion')) {
+            $meta = lc_conversion_with_meta($cv_id);
+            if (is_array($meta)) {
+                lc_notification_emit_conversion($meta, 'received');
+            }
+        }
 
         return array(
             'ok'         => true,

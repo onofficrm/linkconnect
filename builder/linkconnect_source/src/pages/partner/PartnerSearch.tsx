@@ -3,6 +3,7 @@ import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, Tr
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { fetchPartnerCampaigns, createPartnerLink, PartnerCampaign } from '../../lib/api';
+import { AiPromoPanel } from '../../components/AiPromoPanel';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -264,6 +265,17 @@ export function PartnerSearch() {
                   {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
                 </p>
               )}
+              <AiPromoPanel
+                campaign={{
+                  id: linkModal.id,
+                  title: linkModal.title,
+                  category: linkModal.category,
+                  price: linkModal.price,
+                  approvalRate: linkModal.approvalRate,
+                  allowedChannels: linkModal.allowedChannels,
+                  forbiddenChannels: linkModal.forbiddenChannels,
+                }}
+              />
             </div>
             <div className="px-6 py-4 bg-slate-50 flex gap-3">
               <button type="button" onClick={() => setLinkModal(null)} className="flex-1 py-3 border border-slate-200 rounded-xl">닫기</button>

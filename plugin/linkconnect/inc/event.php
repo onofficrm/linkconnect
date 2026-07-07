@@ -638,6 +638,7 @@ if (!function_exists('lc_event_ranking_item_for_api')) {
         $earnings = (int) ($row['earnings'] ?? 0);
         $item = array(
             'rank'    => $rank,
+            'ptId'    => $pt_id,
             'partner' => lc_event_mask_partner_code((string) ($row['pt_code'] ?? ''), $is_self),
             'dbs'     => $dbs,
             'reward'  => lc_event_ranking_reward_label($rank),
@@ -1015,6 +1016,21 @@ if (!function_exists('lc_event_reward_update_status')) {
 
         $table = lc_event_reward_table();
         $paid_at = $status === 'paid' ? ", er_paid_at = NOW()" : '';
+
+        $reward = lc_sql_fetch(" SELECT * FROM `{$table}` WHERE er_id = {$er_id} LIMIT 1 ", false);
+        if (!is_array($reward) || empty($reward['er_id'])) {
+            return array('ok' => false, 'message' => '리워드를 찾을 수 없습니다.');
+        }
+
+        if ($status === 'paid' && (string) ($reward['er_status'] ?? '') !== 'paid') {
+            $pt_id = (int) ($reward['pt_id'] ?? 0);
+            $amount = (int) ($reward['er_amount'] ?? 0);
+            if ($pt_id > 0 && $amount > 0) {
+                $pt_table = lc_table('partners');
+                lc_sql_query(" UPDATE `{$pt_table}` SET pt_balance = pt_balance + {$amount}, pt_updated_at = NOW() WHERE pt_id = {$pt_id} ", false);
+            }
+        }
+
         lc_sql_query("
             UPDATE `{$table}`
             SET er_status = '" . lc_sql_escape($status) . "',
@@ -1023,6 +1039,27 @@ if (!function_exists('lc_event_reward_update_status')) {
             WHERE er_id = {$er_id}
             LIMIT 1
         ", false);
+
+        if ($status === 'paid' && function_exists('lc_notification_emit_event_reward')) {
+            $ev_title = '';
+            if ((int) ($reward['ev_id'] ?? 0) > 0 && lc_db_table_exists(lc_event_table())) {
+                $ev = lc_sql_fetch(" SELECT ev_title FROM `" . lc_event_table() . "` WHERE ev_id = " . (int) $reward['ev_id'] . " LIMIT 1 ", false);
+                $ev_title = is_array($ev) ? (string) ($ev['ev_title'] ?? '') : '';
+            }
+            if ($ev_title === '') {
+                $ev_title = (string) ($reward['er_condition'] ?? '이벤트');
+            }
+            lc_notification_emit_event_reward((int) $reward['pt_id'], (int) $reward['er_amount'], $ev_title, $er_id);
+        }
+
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write(
+                $status === 'paid' ? 'event_reward_pay' : 'event_reward_reject',
+                'event_reward',
+                $er_id,
+                ($status === 'paid' ? '리워드 지급' : '리워드 거절') . ' #' . $er_id
+            );
+        }
 
         return array('ok' => true, 'message' => $status === 'paid' ? '리워드 지급이 완료되었습니다.' : '리워드 상태가 변경되었습니다.');
     }
@@ -1240,5 +1277,171 @@ if (!function_exists('lc_event_ensure_seed')) {
                 'sort'       => 100 - $i,
             ), 0);
         }
+    }
+}
+
+if (!function_exists('lc_event_on_conversion_approved')) {
+    function lc_event_on_conversion_approved(array $conversion)
+    {
+        $pt_id = (int) ($conversion['pt_id'] ?? 0);
+        if ($pt_id <= 0 || !lc_db_table_exists(lc_table('event_participants'))) {
+            return;
+        }
+
+        $ep = lc_table('event_participants');
+        $ev = lc_event_table();
+        $active = lc_sql_escape(LC_EVENT_ACTIVE);
+        $closing = lc_sql_escape(LC_EVENT_CLOSING);
+
+        lc_sql_query("
+            UPDATE `{$ep}` ep
+            INNER JOIN `{$ev}` e ON e.ev_id = ep.ev_id
+            SET ep.ep_approved_cnt = ep.ep_approved_cnt + 1, ep.ep_updated_at = NOW()
+            WHERE ep.pt_id = {$pt_id}
+              AND ep.ep_status = 'joined'
+              AND e.ev_status IN ('{$active}', '{$closing}')
+        ", false);
+
+        if (function_exists('lc_event_check_milestone_rewards')) {
+            lc_event_check_milestone_rewards($pt_id);
+        }
+    }
+}
+
+if (!function_exists('lc_event_parse_milestone_target')) {
+    function lc_event_parse_milestone_target($benefit)
+    {
+        $benefit = trim((string) $benefit);
+        if ($benefit === '') {
+            return 0;
+        }
+
+        if (preg_match('/(\d+)\s*건/u', $benefit, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 0;
+    }
+}
+
+if (!function_exists('lc_event_check_milestone_rewards')) {
+    function lc_event_check_milestone_rewards($pt_id)
+    {
+        $pt_id = (int) $pt_id;
+        if ($pt_id <= 0 || !lc_db_table_exists(lc_event_reward_table())) {
+            return;
+        }
+
+        $ep = lc_table('event_participants');
+        $ev = lc_event_table();
+        $er = lc_event_reward_table();
+        $active = lc_sql_escape(LC_EVENT_ACTIVE);
+        $closing = lc_sql_escape(LC_EVENT_CLOSING);
+
+        $result = lc_sql_query("
+            SELECT ep.ev_id, ep.ep_approved_cnt, e.ev_title, e.ev_benefit, e.ev_type
+            FROM `{$ep}` ep
+            INNER JOIN `{$ev}` e ON e.ev_id = ep.ev_id
+            WHERE ep.pt_id = {$pt_id}
+              AND ep.ep_status = 'joined'
+              AND e.ev_status IN ('{$active}', '{$closing}')
+        ", false);
+
+        if (!$result) {
+            return;
+        }
+
+        while ($row = sql_fetch_array($result)) {
+            $type = (string) ($row['ev_type'] ?? '');
+            if (strpos($type, '랭킹') !== false) {
+                continue;
+            }
+
+            $target = lc_event_parse_milestone_target($row['ev_benefit'] ?? '');
+            $approved = (int) ($row['ep_approved_cnt'] ?? 0);
+            $ev_id = (int) ($row['ev_id'] ?? 0);
+            if ($target <= 0 || $approved < $target || $ev_id <= 0) {
+                continue;
+            }
+
+            $condition = $target . '건 달성';
+            $exists = lc_sql_fetch("
+                SELECT er_id FROM `{$er}`
+                WHERE ev_id = {$ev_id} AND pt_id = {$pt_id}
+                  AND er_condition = '" . lc_sql_escape($condition) . "'
+                LIMIT 1
+            ", false);
+            if (is_array($exists) && !empty($exists['er_id'])) {
+                continue;
+            }
+
+            $amount = 50000;
+            if (preg_match('/(\d[\d,]*)\s*원/u', (string) ($row['ev_benefit'] ?? ''), $m)) {
+                $amount = (int) str_replace(',', '', $m[1]);
+            }
+
+            lc_event_reward_create(array(
+                'evId'      => $ev_id,
+                'ptId'      => $pt_id,
+                'amount'    => $amount,
+                'condition' => $condition,
+            ));
+        }
+    }
+}
+
+if (!function_exists('lc_event_auto_ranking_rewards')) {
+    function lc_event_auto_ranking_rewards($period = '')
+    {
+        if (!lc_db_table_exists(lc_event_reward_table())) {
+            return array('ok' => false, 'message' => '리워드 테이블이 없습니다.', 'created' => 0);
+        }
+
+        $period = trim((string) $period);
+        if ($period === '') {
+            $period = date('Y-m');
+        }
+
+        $ranking = lc_event_ranking_for_api();
+        $top = isset($ranking['top']) && is_array($ranking['top']) ? $ranking['top'] : array();
+        $created = 0;
+        $er = lc_event_reward_table();
+        $condition_prefix = $period . ' 랭킹';
+
+        foreach ($top as $item) {
+            $rank = (int) ($item['rank'] ?? 0);
+            $pt_id = (int) ($item['ptId'] ?? 0);
+            $amount = lc_event_ranking_reward_amount($rank);
+            if ($rank <= 0 || $pt_id <= 0 || $amount <= 0) {
+                continue;
+            }
+
+            $condition = $condition_prefix . ' ' . $rank . '위';
+            $exists = lc_sql_fetch("
+                SELECT er_id FROM `{$er}`
+                WHERE pt_id = {$pt_id}
+                  AND er_condition = '" . lc_sql_escape($condition) . "'
+                LIMIT 1
+            ", false);
+            if (is_array($exists) && !empty($exists['er_id'])) {
+                continue;
+            }
+
+            $result = lc_event_reward_create(array(
+                'evId'      => 0,
+                'ptId'      => $pt_id,
+                'amount'    => $amount,
+                'condition' => $condition,
+            ));
+            if (!empty($result['ok'])) {
+                $created++;
+            }
+        }
+
+        return array(
+            'ok'      => true,
+            'message' => $created > 0 ? $created . '건의 랭킹 리워드가 생성되었습니다.' : '생성할 신규 랭킹 리워드가 없습니다.',
+            'created' => $created,
+        );
     }
 }

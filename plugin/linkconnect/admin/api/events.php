@@ -125,6 +125,23 @@ if ($method === 'POST') {
         ));
     }
 
+    if ($action === 'auto_ranking_rewards') {
+        $period = isset($body['period']) ? trim((string) $body['period']) : '';
+        $result = lc_event_auto_ranking_rewards($period);
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'CREATE_FAILED', 400);
+        }
+
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('event_auto_ranking', 'event', 0, $result['message'], array('created' => (int) ($result['created'] ?? 0)));
+        }
+
+        lc_api_success(array(
+            'message' => $result['message'],
+            'created' => (int) ($result['created'] ?? 0),
+        ));
+    }
+
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);
 }
 

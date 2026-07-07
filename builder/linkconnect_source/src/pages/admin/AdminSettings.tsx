@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Settings, Save, RotateCcw, Check } from 'lucide-react';
+import { Settings, Save, RotateCcw, Check, Sparkles } from 'lucide-react';
 import { fetchAdminSettings, resetAdminSettings, saveAdminSettings } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -16,6 +16,13 @@ const defaultRaw: RawSettings = {
   minSettlementAmount: '50000',
   settlementPeriod: '매월 1일 ~ 5일',
   apiRetryCount: '3',
+  geminiEnabled: '1',
+  geminiModel: 'gemini-2.0-flash',
+  geminiApiKeySet: '0',
+  geminiApiKeyMasked: '',
+  aiChatDailyLimit: '30',
+  aiPromoDailyLimit: '20',
+  aiSummaryDailyLimit: '10',
 };
 
 function boolVal(raw: RawSettings, key: string) {
@@ -28,6 +35,7 @@ function setBool(raw: RawSettings, key: string, value: boolean): RawSettings {
 
 export function AdminSettings() {
   const [raw, setRaw] = useState<RawSettings>(defaultRaw);
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,7 +53,7 @@ export function AdminSettings() {
     setSaveStatus('saving');
     setError('');
     try {
-      await saveAdminSettings({
+      const data = await saveAdminSettings({
         general: {
           siteName: raw.siteName,
           siteStatus: raw.siteStatus,
@@ -89,7 +97,17 @@ export function AdminSettings() {
           apiMaskPii: boolVal(raw, 'apiMaskPii'),
           apiRetryCount: Number(raw.apiRetryCount || 3),
         },
+        ai: {
+          geminiEnabled: boolVal(raw, 'geminiEnabled'),
+          geminiModel: raw.geminiModel || 'gemini-2.0-flash',
+          geminiApiKey: geminiKeyInput.trim(),
+          aiChatDailyLimit: Number(raw.aiChatDailyLimit || 30),
+          aiPromoDailyLimit: Number(raw.aiPromoDailyLimit || 20),
+          aiSummaryDailyLimit: Number(raw.aiSummaryDailyLimit || 10),
+        },
       });
+      setRaw({ ...defaultRaw, ...data.raw });
+      setGeminiKeyInput('');
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -149,6 +167,38 @@ export function AdminSettings() {
             <Toggle label="파트너 이의신청 허용" checked={boolVal(raw, 'partnerAppealAllowed')} onChange={(v) => setRaw((prev) => setBool(prev, 'partnerAppealAllowed', v))} />
             <Toggle label="API 로그 저장" checked={boolVal(raw, 'apiLogEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'apiLogEnabled', v))} />
             <Toggle label="개인정보 마스킹 저장" checked={boolVal(raw, 'apiMaskPii')} onChange={(v) => setRaw((prev) => setBool(prev, 'apiMaskPii', v))} />
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-cyan-400" />
+            <h3 className="font-bold text-white">AI · Gemini 설정</h3>
+          </div>
+          <div className="p-6 space-y-6">
+            <Toggle label="AI 기능 사용" checked={boolVal(raw, 'geminiEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'geminiEnabled', v))} />
+            <Field label="Gemini 모델" value={raw.geminiModel} onChange={(v) => update('geminiModel', v)} />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Google Gemini API 키</label>
+              {raw.geminiApiKeySet === '1' || raw.geminiApiKeySet === 'true' ? (
+                <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.geminiApiKeyMasked || '********'}</p>
+              ) : (
+                <p className="text-xs text-amber-600 mb-2">API 키가 설정되지 않았습니다. AI 기능을 사용하려면 키를 입력하세요.</p>
+              )}
+              <input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder="새 API 키 입력 (변경 시에만)"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
+              />
+              <p className="text-[11px] text-slate-400 mt-2">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다. Google AI Studio에서 발급받을 수 있습니다.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Field label="챗봇 일일 한도" value={raw.aiChatDailyLimit} onChange={(v) => update('aiChatDailyLimit', v)} type="number" />
+              <Field label="홍보문구 일일 한도" value={raw.aiPromoDailyLimit} onChange={(v) => update('aiPromoDailyLimit', v)} type="number" />
+              <Field label="리포트요약 일일 한도" value={raw.aiSummaryDailyLimit} onChange={(v) => update('aiSummaryDailyLimit', v)} type="number" />
+            </div>
           </div>
         </section>
 

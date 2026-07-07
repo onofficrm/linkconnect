@@ -211,6 +211,8 @@ if (!function_exists('lc_db_run_schema')) {
             lc_table('events'),
             lc_table('event_participants'),
             lc_table('event_rewards'),
+            lc_table('notifications'),
+            lc_table('admin_logs'),
         );
 
         $queries = array(
@@ -575,6 +577,9 @@ if (!function_exists('lc_db_run_migrations')) {
             'cv_review_status' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_comment`",
             'cv_reject_reason' => "varchar(100) NOT NULL DEFAULT '' AFTER `cv_review_status`",
             'cv_partner_appeal' => "varchar(500) NOT NULL DEFAULT '' AFTER `cv_reject_reason`",
+            'cv_quality_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `cv_partner_appeal`",
+            'cv_quality_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `cv_quality_score`",
+            'cv_partner_visible' => "tinyint(1) NOT NULL DEFAULT 1 AFTER `cv_quality_tags`",
         ) as $col => $definition) {
             if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, $col)) {
                 $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `{$col}` {$definition}";
@@ -672,6 +677,60 @@ if (!function_exists('lc_db_run_migrations')) {
                 return array(
                     'ok'      => false,
                     'message' => 'event_rewards 테이블 생성 실패: ' . lc_sql_error(),
+                );
+            }
+        }
+
+        $nf = lc_table('notifications');
+        if (!lc_db_table_exists($nf)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$nf}` (
+                `nf_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `nf_center` varchar(20) NOT NULL DEFAULT 'admin',
+                `nf_user_id` int unsigned NOT NULL DEFAULT 0,
+                `nf_type` varchar(30) NOT NULL DEFAULT 'system',
+                `nf_title` varchar(200) NOT NULL DEFAULT '',
+                `nf_body` varchar(500) NOT NULL DEFAULT '',
+                `nf_link` varchar(200) NOT NULL DEFAULT '',
+                `nf_ref_type` varchar(30) NOT NULL DEFAULT '',
+                `nf_ref_id` int unsigned NOT NULL DEFAULT 0,
+                `nf_read_at` datetime DEFAULT NULL,
+                `nf_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`nf_id`),
+                KEY `idx_nf_center_user` (`nf_center`, `nf_user_id`),
+                KEY `idx_nf_type` (`nf_type`),
+                KEY `idx_nf_read` (`nf_read_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+            if ($create === false) {
+                return array(
+                    'ok'      => false,
+                    'message' => 'notifications 테이블 생성 실패: ' . lc_sql_error(),
+                );
+            }
+        }
+
+        $alog = lc_table('admin_logs');
+        if (!lc_db_table_exists($alog)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$alog}` (
+                `alog_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `mb_id` varchar(20) NOT NULL DEFAULT '',
+                `alog_action` varchar(50) NOT NULL DEFAULT '',
+                `alog_target_type` varchar(30) NOT NULL DEFAULT '',
+                `alog_target_id` int unsigned NOT NULL DEFAULT 0,
+                `alog_summary` varchar(500) NOT NULL DEFAULT '',
+                `alog_payload` text,
+                `alog_ip` varchar(45) NOT NULL DEFAULT '',
+                `alog_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`alog_id`),
+                KEY `idx_alog_action` (`alog_action`),
+                KEY `idx_alog_mb_id` (`mb_id`),
+                KEY `idx_alog_created` (`alog_created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+            if ($create === false) {
+                return array(
+                    'ok'      => false,
+                    'message' => 'admin_logs 테이블 생성 실패: ' . lc_sql_error(),
                 );
             }
         }
