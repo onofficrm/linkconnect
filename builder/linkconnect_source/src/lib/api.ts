@@ -445,22 +445,17 @@ export type AdminDashboardResponse = {
     pendingCharge: number;
     pendingPartners: number;
     pendingMerchants: number;
+    pendingSettlements?: number;
+    pendingInspections?: number;
   };
   chart7d: Array<{ date: string; received: number; approved: number; rejected: number; revenue: number }>;
-  recent: Array<{
-    id: string;
-    cvId: number;
-    date: string;
-    campaign: string;
-    partner: string;
-    advertiser: string;
-    customer: string;
-    status: string;
-    statusCode: string;
-    price: number;
-  }>;
+  recent: AdminConversion[];
   partners: { total: number; active: number; pending: number };
   merchants: { total: number; active: number; pending: number; lowBalance: number };
+  campaignTop?: Array<{ name: string; advertiser: string; total: number; approved: number; canceled: number; rate: string; revenue: number; status: string }>;
+  partnerTop5?: Array<{ code: string; total: number; approved: number; rate: string; profit: number }>;
+  advertiserTop5?: Array<{ name: string; total: number; approved: number; spend: number; balance: number }>;
+  recentCancels?: AdminInspection[];
 };
 
 export type AdminPendingCharge = {
@@ -701,4 +696,146 @@ export function fetchPublicCampaigns(filters?: { category?: string; q?: string }
     category: filters?.category ?? '',
     q: filters?.q ?? '',
   });
+}
+
+export type PartnerSettlementSummary = {
+  balance: number;
+  pendingAmount: number;
+  availableAmount: number;
+  paidTotal: number;
+  monthConfirmed: number;
+  minAmount: number;
+  bankName: string;
+  bankAccount: string;
+  bankHolder: string;
+};
+
+export type PartnerSettlementItem = {
+  id: number;
+  code: string;
+  date: string;
+  reqAmount: number;
+  appAmount: number;
+  status: string;
+  statusCode: string;
+  payDate: string;
+  memo: string;
+};
+
+export function fetchPartnerSettlements() {
+  return partnerApiGet<{ summary: PartnerSettlementSummary; items: PartnerSettlementItem[]; dbReady: boolean }>('settlements.php');
+}
+
+export function requestPartnerSettlement(payload: { amount: number; memo?: string; bankName?: string; bankAccount?: string; bankHolder?: string }) {
+  return partnerApiPost<{ message: string; settlement: PartnerSettlementItem | null; summary: PartnerSettlementSummary }>('settlements.php', payload);
+}
+
+export type PartnerAnalyticsResponse = {
+  summary: {
+    totalClicks: number;
+    totalDb: number;
+    approvedDb: number;
+    rejectedDb: number;
+    avgConvRate: number;
+    avgApprovalRate: number;
+  };
+  chart7d: Array<{ date: string; click: number; db: number; approval: number }>;
+  channels: Array<{ channel: string; clicks: number; dbs: number; approved: number; percentage: number }>;
+  campaigns: Array<{ campaign: string; clicks: number; received: number; approved: number; appRate: string; confRev: number }>;
+  dbReady: boolean;
+};
+
+export function fetchPartnerAnalytics() {
+  return partnerApiGet<PartnerAnalyticsResponse>('analytics.php');
+}
+
+export type PartnerReportResponse = {
+  summary: {
+    estRevenue: number;
+    confRevenue: number;
+    availableAmount: number;
+    rejectedAmount: number;
+  };
+  breakdown: Array<{ label: string; value: number }>;
+  monthly: Array<{ month: string; value: number; pct: number }>;
+  campaigns: Array<{ campaign: string; clicks: number; received: number; approved: number; appRate: string; confRev: number }>;
+  dbReady: boolean;
+};
+
+export function fetchPartnerReport() {
+  return partnerApiGet<PartnerReportResponse>('report.php');
+}
+
+export type AdminSettlement = {
+  id: number;
+  code: string;
+  date: string;
+  partnerCode: string;
+  partnerName: string;
+  requestAmount: number;
+  approvedAmount: number;
+  bank: string;
+  account: string;
+  accountHolder: string;
+  status: string;
+  statusCode: string;
+  memo: string;
+};
+
+export type AdminSettlementSummary = {
+  pending: number;
+  pendingAmount: number;
+  todayApproved: number;
+  monthPaid: number;
+  hold: number;
+  rejected: number;
+};
+
+export function fetchAdminSettlements(filters?: { status?: string; q?: string }) {
+  return adminApiGet<{ items: AdminSettlement[]; summary: AdminSettlementSummary; dbReady: boolean }>('settlements.php', {
+    status: filters?.status ?? '',
+    q: filters?.q ?? '',
+  });
+}
+
+export function updateAdminSettlement(payload: { action: 'review' | 'approve' | 'pay' | 'hold' | 'reject'; stId: number; approvedAmount?: number; memo?: string }) {
+  return adminApiPost<{ message: string; settlement: AdminSettlement | null; summary: AdminSettlementSummary }>('settlements.php', payload);
+}
+
+export type AdminInspection = {
+  id: string;
+  cvId: number;
+  date: string;
+  campaign: string;
+  advertiser: string;
+  partner: string;
+  customer: string;
+  phone: string;
+  reason: string;
+  comment: string;
+  objection: boolean;
+  objectionComment: string;
+  status: string;
+  statusCode: string;
+  price: number;
+};
+
+export type AdminInspectionSummary = {
+  pending: number;
+  todayCancel: number;
+  confirmed: number;
+  restored: number;
+  appeals: number;
+  cancelRate: number;
+};
+
+export function fetchAdminInspections(filters?: { status?: string; q?: string }) {
+  return adminApiGet<{ items: AdminInspection[]; summary: AdminInspectionSummary; dbReady: boolean }>('inspections.php', {
+    status: filters?.status ?? '',
+    q: filters?.q ?? '',
+  });
+}
+
+export function updateAdminInspection(payload: { action: 'confirm' | 'restore'; cvId: number; memo?: string }) {
+  return adminApiPost<{ message: string; conversion: AdminInspection | null; summary: AdminInspectionSummary }>('inspections.php', payload);
 }

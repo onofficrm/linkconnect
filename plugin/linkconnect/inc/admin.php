@@ -319,6 +319,9 @@ if (!function_exists('lc_admin_dashboard_data')) {
         $received = (int) ($today_row['received'] ?? 0);
         $approved = (int) ($today_row['approved'] ?? 0);
 
+        $settlement_summary = function_exists('lc_settlement_admin_summary') ? lc_settlement_admin_summary() : array('pending' => 0);
+        $inspection_summary = function_exists('lc_conversion_inspection_summary') ? lc_conversion_inspection_summary() : array('pending' => 0);
+
         return array(
             'summary' => array(
                 'todayReceived'  => $received,
@@ -330,12 +333,114 @@ if (!function_exists('lc_admin_dashboard_data')) {
                 'pendingCharge'  => $pending_charge,
                 'pendingPartners'=> (int) (lc_admin_partner_summary()['pending'] ?? 0),
                 'pendingMerchants'=> (int) (lc_admin_merchant_summary()['pending'] ?? 0),
+                'pendingSettlements' => (int) ($settlement_summary['pending'] ?? 0),
+                'pendingInspections' => (int) ($inspection_summary['pending'] ?? 0),
             ),
             'chart7d' => $chart,
             'recent'  => array_map('lc_admin_conversion_to_api', lc_admin_list_conversions(array(), 8)),
             'partners'=> lc_admin_partner_summary(),
             'merchants'=> lc_admin_merchant_summary(),
+            'campaignTop' => lc_admin_campaign_performance(5),
+            'partnerTop5' => lc_admin_partner_top(5),
+            'advertiserTop5' => lc_admin_advertiser_top(5),
+            'recentCancels' => array_map('lc_conversion_to_inspection_api', array_slice(lc_conversion_list_for_inspection(array('status' => 'pending')), 0, 5)),
         );
+    }
+}
+
+if (!function_exists('lc_admin_campaign_performance')) {
+    function lc_admin_campaign_performance($limit = 5)
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $limit = max(1, min(20, (int) $limit));
+        $cp_table = lc_table('campaigns');
+        $cv_table = lc_table('conversions');
+        $mt_table = lc_table('merchants');
+        $rows = array();
+        $result = lc_sql_query(" SELECT c.cp_name AS name, m.mt_company AS advertiser,
+            COUNT(cv.cv_id) AS total,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS canceled,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv.cv_price ELSE 0 END) AS revenue
+            FROM `{$cp_table}` c
+            LEFT JOIN `{$cv_table}` cv ON cv.cp_id = c.cp_id
+            LEFT JOIN `{$mt_table}` m ON m.mt_id = c.mt_id
+            GROUP BY c.cp_id
+            HAVING total > 0
+            ORDER BY revenue DESC
+            LIMIT {$limit} ", false);
+
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $total = (int) $row['total'];
+                $approved = (int) $row['approved'];
+                $rows[] = array(
+                    'name'      => (string) $row['name'],
+                    'advertiser'=> (string) ($row['advertiser'] ?? '-'),
+                    'total'     => $total,
+                    'approved'  => $approved,
+                    'canceled'  => (int) $row['canceled'],
+                    'rate'      => $total > 0 ? round(($approved / $total) * 100, 1) . '%' : '-',
+                    'revenue'   => (int) $row['revenue'],
+                    'status'    => '정상',
+                );
+            }
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('lc_admin_partner_top')) {
+    function lc_admin_partner_top($limit = 5)
+    {
+        $rows = lc_admin_list_partners(array());
+        usort($rows, function ($a, $b) {
+            return (int) ($b['confirmed_profit'] ?? 0) <=> (int) ($a['confirmed_profit'] ?? 0);
+        });
+
+        $items = array();
+        foreach (array_slice($rows, 0, $limit) as $row) {
+            $total = (int) ($row['total_db'] ?? 0);
+            $approved = (int) ($row['approved_db'] ?? 0);
+            $items[] = array(
+                'code'   => (string) $row['pt_code'],
+                'total'  => $total,
+                'approved'=> $approved,
+                'rate'   => $total > 0 ? round(($approved / $total) * 100, 1) . '%' : '-',
+                'profit' => (int) ($row['confirmed_profit'] ?? 0),
+            );
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('lc_admin_advertiser_top')) {
+    function lc_admin_advertiser_top($limit = 5)
+    {
+        $rows = lc_admin_list_merchants(array());
+        usort($rows, function ($a, $b) {
+            return (int) ($b['spend'] ?? 0) <=> (int) ($a['spend'] ?? 0);
+        });
+
+        $items = array();
+        foreach (array_slice($rows, 0, $limit) as $row) {
+            $total = (int) ($row['total_db'] ?? 0);
+            $approved = (int) ($row['approved_db'] ?? 0);
+            $items[] = array(
+                'name'    => (string) $row['mt_company'],
+                'total'   => $total,
+                'approved'=> $approved,
+                'spend'   => (int) ($row['spend'] ?? 0),
+                'balance' => (int) $row['mt_balance'],
+            );
+        }
+
+        return $items;
     }
 }
 

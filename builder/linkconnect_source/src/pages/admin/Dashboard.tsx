@@ -74,13 +74,21 @@ export function AdminDashboard() {
   });
   const [chartData, setChartData] = useState(fallbackChartData);
   const [recentItems, setRecentItems] = useState(recentDb);
+  const [campaignRows, setCampaignRows] = useState(campaignData);
+  const [partnerRows, setPartnerRows] = useState(partnerTop5);
+  const [advertiserRows, setAdvertiserRows] = useState(advertiserTop5);
+  const [cancelRows, setCancelRows] = useState(recentCancels);
   const [lowBalanceMerchants, setLowBalanceMerchants] = useState(3);
+  const [pendingInspections, setPendingInspections] = useState(0);
+  const [pendingSettlements, setPendingSettlements] = useState(0);
 
   useEffect(() => {
     fetchAdminDashboard()
       .then((data) => {
         setSummary(data.summary);
         setLowBalanceMerchants(data.merchants.lowBalance);
+        setPendingInspections(data.summary.pendingInspections ?? 0);
+        setPendingSettlements(data.summary.pendingSettlements ?? 0);
         if (data.chart7d.length) {
           setChartData(data.chart7d.map((row) => ({
             date: row.date,
@@ -97,6 +105,47 @@ export function AdminDashboard() {
             partner: row.partner,
             advertiser: row.advertiser,
             customer: row.customer,
+            status: row.status,
+          })));
+        }
+        if (data.campaignTop?.length) {
+          setCampaignRows(data.campaignTop.map((row) => ({
+            name: row.name,
+            advertiser: row.advertiser,
+            total: row.total,
+            approved: row.approved,
+            canceled: row.canceled,
+            rate: row.rate,
+            revenue: row.revenue,
+            partnerProfit: 0,
+            margin: 0,
+            status: row.status,
+          })));
+        }
+        if (data.partnerTop5?.length) {
+          setPartnerRows(data.partnerTop5.map((row) => ({
+            code: row.code,
+            total: row.total,
+            approved: row.approved,
+            rate: row.rate,
+            profit: row.profit,
+          })));
+        }
+        if (data.advertiserTop5?.length) {
+          setAdvertiserRows(data.advertiserTop5.map((row) => ({
+            name: row.name,
+            total: row.total,
+            approved: row.approved,
+            spend: row.spend,
+            balance: row.balance,
+          })));
+        }
+        if (data.recentCancels?.length) {
+          setCancelRows(data.recentCancels.map((row) => ({
+            date: row.date,
+            campaign: row.campaign,
+            advertiser: row.advertiser,
+            reason: row.reason,
             status: row.status,
           })));
         }
@@ -167,7 +216,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                   <ShieldAlert size={18} />
                 </div>
-                <span className="text-orange-900 font-medium text-sm">취소/무효 검수 대기 <strong className="text-orange-700 ml-1">{summary.pendingDb}건</strong></span>
+                <span className="text-orange-900 font-medium text-sm">취소/무효 검수 대기 <strong className="text-orange-700 ml-1">{pendingInspections}건</strong></span>
               </div>
               <button className="text-xs font-bold text-orange-700 hover:text-orange-800 bg-white px-3 py-1.5 rounded-lg border border-orange-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -238,7 +287,7 @@ export function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {campaignData.map((item, i) => (
+              {campaignRows.map((item, i) => (
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-slate-900 font-bold whitespace-nowrap">{item.name}</td>
                   <td className="px-6 py-4 text-slate-600 whitespace-nowrap">{item.advertiser}</td>
@@ -279,7 +328,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {partnerTop5.map((item, i) => (
+                {partnerRows.map((item, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-slate-900 font-bold whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -316,7 +365,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {advertiserTop5.map((item, i) => (
+                {advertiserRows.map((item, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 text-slate-900 font-bold whitespace-nowrap">
                       <div className="flex items-center gap-2">
@@ -390,7 +439,7 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recentCancels.map((item, i) => (
+                {cancelRows.map((item, i) => (
                   <tr key={i} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 text-slate-500 whitespace-nowrap">{item.date}</td>
                     <td className="px-6 py-3 text-slate-900 font-bold whitespace-nowrap">{item.campaign}</td>

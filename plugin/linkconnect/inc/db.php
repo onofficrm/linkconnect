@@ -342,10 +342,12 @@ if (!function_exists('lc_db_run_schema')) {
                 `st_code` varchar(20) NOT NULL,
                 `pt_id` int unsigned NOT NULL,
                 `st_amount` int NOT NULL DEFAULT 0,
+                `st_approved_amount` int NOT NULL DEFAULT 0,
                 `st_status` varchar(20) NOT NULL DEFAULT 'pending',
                 `st_bank_name` varchar(50) NOT NULL DEFAULT '',
                 `st_bank_account` varchar(50) NOT NULL DEFAULT '',
                 `st_bank_holder` varchar(50) NOT NULL DEFAULT '',
+                `st_memo` varchar(500) NOT NULL DEFAULT '',
                 `st_requested_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `st_processed_at` datetime DEFAULT NULL,
                 PRIMARY KEY (`st_id`),
@@ -414,6 +416,7 @@ if (!function_exists('lc_db_run_migrations')) {
         $campaigns = lc_table('campaigns');
         $conversions = lc_table('conversions');
         $inquiries = lc_table('inquiries');
+        $settlements = lc_table('settlements');
 
         $alters = array();
 
@@ -433,6 +436,24 @@ if (!function_exists('lc_db_run_migrations')) {
 
         if (lc_db_table_exists($inquiries) && !lc_db_column_exists($inquiries, 'mt_id')) {
             $alters[] = "ALTER TABLE `{$inquiries}` ADD COLUMN `mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `pt_id`";
+        }
+
+        if (lc_db_table_exists($settlements) && !lc_db_column_exists($settlements, 'st_approved_amount')) {
+            $alters[] = "ALTER TABLE `{$settlements}` ADD COLUMN `st_approved_amount` int NOT NULL DEFAULT 0 AFTER `st_amount`";
+        }
+
+        if (lc_db_table_exists($settlements) && !lc_db_column_exists($settlements, 'st_memo')) {
+            $alters[] = "ALTER TABLE `{$settlements}` ADD COLUMN `st_memo` varchar(500) NOT NULL DEFAULT '' AFTER `st_bank_holder`";
+        }
+
+        foreach (array(
+            'cv_review_status' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_comment`",
+            'cv_reject_reason' => "varchar(100) NOT NULL DEFAULT '' AFTER `cv_review_status`",
+            'cv_partner_appeal' => "varchar(500) NOT NULL DEFAULT '' AFTER `cv_reject_reason`",
+        ) as $col => $definition) {
+            if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, $col)) {
+                $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `{$col}` {$definition}";
+            }
         }
 
         foreach ($alters as $sql) {

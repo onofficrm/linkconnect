@@ -1,25 +1,77 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { 
+import {
   ShieldAlert, Clock, CheckCircle2, XCircle, AlertTriangle, Percent,
-  Search, Filter, Calendar, ChevronDown, Download, X, User, MessageSquare,
-  Building2, Users, FileText, Check, X as XIcon, RotateCcw, AlertCircle, Bot
+  Search, Calendar, ChevronDown, Download, X, User, MessageSquare,
+  Building2, Users, Check, X as XIcon, Bot,
 } from 'lucide-react';
+import {
+  AdminInspection,
+  AdminInspectionSummary,
+  fetchAdminInspections,
+  updateAdminInspection,
+} from '../../lib/api';
 
-const inspectionData = [
-  { id: 'DB-260706-001', date: '2026.07.06 10:25', campaign: '개인회생 무료상담 이벤트', advertiser: '희망법무법인', partner: '김마케터 (PT-8832)', customer: '김고객', phone: '010-1234-****', reason: '연락불가', comment: '3일 연속 부재중', objection: false, status: '검수대기' },
-  { id: 'DB-260706-002', date: '2026.07.06 09:12', campaign: '직장인 신용대출 한도조회', advertiser: '(주)성공대부', partner: '박제휴 (PT-1029)', customer: '박신용', phone: '010-2345-****', reason: '중복디비', comment: '어제 접수된 고객과 동일인', objection: true, objectionComment: '전화번호 뒷자리가 다름', status: '이의신청중' },
-  { id: 'DB-260705-089', date: '2026.07.05 16:40', campaign: '제주도 렌터카 최저가 비교', advertiser: '스피드렌터카', partner: '이수익 (PT-5591)', customer: '이여행', phone: '010-3456-****', reason: '장난접수', comment: '미성년자 접수', objection: false, status: '취소승인' },
-  { id: 'DB-260705-045', date: '2026.07.05 14:20', campaign: '종합건강검진 할인 프로모션', advertiser: '라이프보험법인', partner: '최블로그 (PT-2248)', customer: '최건강', phone: '010-4567-****', reason: '조건불일치', comment: '대상 연령 아님 (20대)', objection: false, status: '취소반려' },
-  { id: 'DB-260705-012', date: '2026.07.05 11:15', campaign: '공인중개사 100% 환급반', advertiser: '에듀스터디', partner: '정카페 (PT-7731)', customer: '정공부', phone: '010-5678-****', reason: '지역불가', comment: '제주 지역 서비스 불가', objection: false, status: '검수대기' },
-  { id: 'DB-260704-112', date: '2026.07.04 17:30', campaign: '직장인 신용대출 한도조회', advertiser: '(주)성공대부', partner: '어뷰징의심 (PT-9912)', customer: '가짜', phone: '010-9999-****', reason: '허위정보', comment: '없는 번호', objection: false, status: '취소승인' },
-];
+const emptySummary: AdminInspectionSummary = {
+  pending: 0,
+  todayCancel: 0,
+  confirmed: 0,
+  restored: 0,
+  appeals: 0,
+  cancelRate: 0,
+};
 
 export function AdminInspections() {
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [items, setItems] = useState<AdminInspection[]>([]);
+  const [summary, setSummary] = useState<AdminInspectionSummary>(emptySummary);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [adminMemo, setAdminMemo] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [isAIFiltering, setIsAIFiltering] = useState(false);
   const [showAbuseOnly, setShowAbuseOnly] = useState(false);
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.cvId === selectedId) ?? null,
+    [items, selectedId],
+  );
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchAdminInspections({ q: searchQuery, status: statusFilter });
+      setItems(data.items);
+      setSummary(data.summary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '검수 목록을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleReview = async (action: 'confirm' | 'restore') => {
+    if (!selectedItem) return;
+    setSaving(true);
+    setError('');
+    try {
+      await updateAdminInspection({ action, cvId: selectedItem.cvId, memo: adminMemo });
+      setAdminMemo('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '처리에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const getReasonStyle = (reason: string) => {
     switch(reason) {
@@ -36,15 +88,16 @@ export function AdminInspections() {
   return (
     <AdminLayout activeMenu="inspections" title="취소/무효 검수" description="광고주가 취소 또는 무효 처리한 디비를 검수하고 분쟁을 관리하세요.">
       
-      {/* 6 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <SummaryCard title="검수 대기" value="42" suffix="건" color="yellow" highlight icon={<Clock size={18} />} />
-        <SummaryCard title="오늘 취소 요청" value="18" suffix="건" icon={<ShieldAlert size={18} />} />
-        <SummaryCard title="취소 승인" value="126" suffix="건" color="emerald" highlight icon={<CheckCircle2 size={18} />} />
-        <SummaryCard title="취소 반려" value="9" suffix="건" color="red" highlight icon={<XCircle size={18} />} />
-        <SummaryCard title="이의신청" value="6" suffix="건" color="orange" highlight icon={<AlertTriangle size={18} />} />
-        <SummaryCard title="평균 취소율" value="18.4" suffix="%" dark icon={<Percent size={18} />} />
+        <SummaryCard title="검수 대기" value={summary.pending.toLocaleString()} suffix="건" color="yellow" highlight icon={<Clock size={18} />} />
+        <SummaryCard title="오늘 취소 요청" value={summary.todayCancel.toLocaleString()} suffix="건" icon={<ShieldAlert size={18} />} />
+        <SummaryCard title="취소 승인" value={summary.confirmed.toLocaleString()} suffix="건" color="emerald" highlight icon={<CheckCircle2 size={18} />} />
+        <SummaryCard title="취소 반려" value={summary.restored.toLocaleString()} suffix="건" color="red" highlight icon={<XCircle size={18} />} />
+        <SummaryCard title="이의신청" value={summary.appeals.toLocaleString()} suffix="건" color="orange" highlight icon={<AlertTriangle size={18} />} />
+        <SummaryCard title="평균 취소율" value={String(summary.cancelRate)} suffix="%" dark icon={<Percent size={18} />} />
       </div>
+
+      {error && <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="grid lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className={`flex flex-col ${selectedItem ? 'lg:col-span-2' : 'lg:col-span-3 xl:col-span-4'}`}>
@@ -91,9 +144,11 @@ export function AdminInspections() {
               <div className="flex-1 min-w-[200px]">
                 <div className="relative">
                   <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input 
-                    type="text" 
-                    placeholder="고객명, 연락처, 파트너명, 디비코드 검색" 
+                  <input
+                    type="text"
+                    placeholder="고객명, 연락처, 파트너명, 디비코드 검색"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow"
                   />
                 </div>
@@ -104,7 +159,7 @@ export function AdminInspections() {
           {/* Table Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <div className="text-sm font-medium text-slate-600">검색결과 <strong className="text-cyan-600">6</strong>건</div>
+              <div className="text-sm font-medium text-slate-600">검색결과 <strong className="text-cyan-600">{items.length}</strong>건</div>
               <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
                 <Download size={14} /> 엑셀 다운로드
               </button>
@@ -122,11 +177,13 @@ export function AdminInspections() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {inspectionData.filter(item => !showAbuseOnly || item.reason === "허위정보").map((item, i) => (
-                    <tr 
-                      key={i} 
-                      className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedItem?.id === item.id ? 'bg-cyan-50/50' : ''}`}
-                      onClick={() => setSelectedItem(item)}
+                  {loading ? (
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td></tr>
+                  ) : items.filter((item) => !showAbuseOnly || item.reason.includes('허위')).map((item) => (
+                    <tr
+                      key={item.cvId}
+                      className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedId === item.cvId ? 'bg-cyan-50/50' : ''}`}
+                      onClick={() => setSelectedId(item.cvId)}
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-medium text-slate-900 mb-0.5">{item.date}</div>
@@ -181,7 +238,7 @@ export function AdminInspections() {
                   <StatusBadge status={selectedItem.status} />
                 </div>
                 <button 
-                  onClick={() => setSelectedItem(null)}
+                  onClick={() => setSelectedId(null)}
                   className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <X size={18} />
@@ -277,23 +334,21 @@ export function AdminInspections() {
                     관리자 처리 (검수 의견)
                   </h4>
                   <div className="space-y-4">
-                    <textarea 
+                    <textarea
+                      value={adminMemo}
+                      onChange={(e) => setAdminMemo(e.target.value)}
                       className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                       placeholder="검수 결과 및 처리 사유를 메모하세요 (내부 관리용)"
-                    ></textarea>
+                    />
                     
-                    <div className="grid grid-cols-3 gap-3">
-                      <button className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600 transition-colors shadow-sm">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={() => handleReview('confirm')} disabled={saving} className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600 transition-colors shadow-sm disabled:opacity-50">
                         <CheckCircle2 size={24} />
                         <span className="font-bold text-sm">취소 승인</span>
                       </button>
-                      <button className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors shadow-sm">
+                      <button onClick={() => handleReview('restore')} disabled={saving} className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors shadow-sm disabled:opacity-50">
                         <XIcon size={24} />
                         <span className="font-bold text-sm">취소 반려</span>
-                      </button>
-                      <button className="flex flex-col items-center justify-center gap-2 py-4 rounded-xl bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors shadow-sm">
-                        <RotateCcw size={24} />
-                        <span className="font-bold text-sm">재확인 요청</span>
                       </button>
                     </div>
                   </div>
