@@ -472,11 +472,33 @@ if (!function_exists('lc_event_public_detail')) {
     }
 }
 
+if (!function_exists('lc_event_promo_cpa_for_api')) {
+    function lc_event_promo_cpa_for_api()
+    {
+        $items = function_exists('lc_sample_promo_cpa') ? lc_sample_promo_cpa() : array();
+        $out = array();
+
+        foreach ($items as $item) {
+            $out[] = array(
+                'event'          => (string) ($item['event'] ?? ''),
+                'title'          => (string) ($item['title'] ?? ''),
+                'category'       => (string) ($item['category'] ?? ''),
+                'approvalRate'   => (string) ($item['approval_rate'] ?? ($item['approvalRate'] ?? '')),
+                'oldPrice'       => (int) ($item['old_price'] ?? ($item['oldPrice'] ?? 0)),
+                'price'          => (int) ($item['price'] ?? 0),
+                'bonus'          => (string) ($item['bonus'] ?? ''),
+                'highlight'      => !empty($item['highlight']),
+            );
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('lc_events_public_payload')) {
     function lc_events_public_payload(array $filters = array())
     {
         $recommendations = function_exists('lc_sample_event_recommendations') ? lc_sample_event_recommendations() : array();
-        $promo = function_exists('lc_sample_promo_cpa') ? lc_sample_promo_cpa() : array();
         $rankingTop = function_exists('lc_sample_ranking_top') ? lc_sample_ranking_top() : array();
         $rankingList = function_exists('lc_sample_ranking_list') ? lc_sample_ranking_list() : array();
 
@@ -484,7 +506,7 @@ if (!function_exists('lc_events_public_payload')) {
             'summary'         => lc_event_public_summary(),
             'items'           => lc_event_public_items($filters),
             'recommendations' => $recommendations,
-            'promoCpa'        => $promo,
+            'promoCpa'        => lc_event_promo_cpa_for_api(),
             'rankingTop'      => $rankingTop,
             'rankingList'     => $rankingList,
             'dbReady'         => lc_db_installed(),

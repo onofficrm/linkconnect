@@ -13,7 +13,7 @@ export function CPAList() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchPublicCampaigns()
+    fetchPublicCampaigns({ type: 'cpa' })
       .then((data) => {
         if (!cancelled) {
           setItems(data.items.slice(0, 4));

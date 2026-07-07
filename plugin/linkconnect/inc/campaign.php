@@ -66,6 +66,11 @@ if (!function_exists('lc_campaign_list_active')) {
             $where .= " AND (cp_name LIKE '%{$q}%' OR cp_description LIKE '%{$q}%') ";
         }
 
+        if (!empty($filters['type'])) {
+            $type = strtolower((string) $filters['type']);
+            $where .= " AND cp_type = '" . lc_sql_escape($type) . "' ";
+        }
+
         $rows = array();
         $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY cp_recommended DESC, cp_sort ASC, cp_id DESC ", false);
 
@@ -133,10 +138,20 @@ if (!function_exists('lc_campaign_seed_defaults')) {
 if (!function_exists('lc_campaign_list_for_api')) {
     function lc_campaign_list_for_api(array $filters = array())
     {
+        $type = !empty($filters['type']) ? strtolower((string) $filters['type']) : '';
+
         if (lc_db_installed()) {
             $rows = lc_campaign_list_active($filters);
 
+            if ($type === 'cps' && count($rows) === 0 && function_exists('lc_sample_cps_items')) {
+                return lc_campaign_cps_sample_for_api($filters);
+            }
+
             return array_map('lc_campaign_to_api', $rows);
+        }
+
+        if ($type === 'cps' && function_exists('lc_sample_cps_items')) {
+            return lc_campaign_cps_sample_for_api($filters);
         }
 
         if (!function_exists('lc_sample_cpa_campaigns')) {
@@ -173,6 +188,66 @@ if (!function_exists('lc_campaign_list_for_api')) {
                 'statusCode'        => LC_STATUS_ACTIVE,
                 'badge'             => (string) ($item['badge'] ?? ''),
                 'recommended'       => !empty($item['recommended']),
+                'landingUrl'        => '',
+            );
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('lc_campaign_cps_sample_for_api')) {
+    function lc_campaign_cps_sample_for_api(array $filters = array())
+    {
+        if (!function_exists('lc_sample_cps_items')) {
+            return array();
+        }
+
+        $category_map = array(
+            '건강' => '건강',
+            '뷰티' => '뷰티',
+            '생활' => '생활',
+        );
+
+        $items = array();
+        foreach (lc_sample_cps_items() as $item) {
+            $title = (string) ($item['brand'] ?? '');
+            $category = '쇼핑몰';
+            foreach ($category_map as $needle => $cat) {
+                if (mb_strpos($title, $needle, 0, 'UTF-8') !== false) {
+                    $category = $cat;
+                    break;
+                }
+            }
+
+            if (!empty($filters['category']) && $filters['category'] !== '전체' && $category !== $filters['category']) {
+                continue;
+            }
+            if (!empty($filters['q'])) {
+                $q = mb_strtolower((string) $filters['q'], 'UTF-8');
+                $hay = mb_strtolower($title . ' ' . $category, 'UTF-8');
+                if (mb_strpos($hay, $q, 0, 'UTF-8') === false) {
+                    continue;
+                }
+            }
+
+            $items[] = array(
+                'id'                => (int) $item['id'],
+                'code'              => 'CPS-' . str_pad((string) $item['id'], 3, '0', STR_PAD_LEFT),
+                'title'             => $title,
+                'category'          => $category,
+                'type'              => 'cps',
+                'description'       => $title . ' 구매 연동 CPS 캠페인',
+                'price'             => 0,
+                'priceFormatted'    => (string) ($item['rate'] ?? ''),
+                'approvalRate'      => (string) ($item['rate'] ?? ''),
+                'avgTime'           => (string) ($item['cookie'] ?? ''),
+                'allowedChannels'   => '블로그, SNS, 유튜브, 커뮤니티',
+                'forbiddenChannels' => '스팸, 브랜드 사칭, 허위광고',
+                'status'            => (string) ($item['badge'] ?? '진행중'),
+                'statusCode'        => LC_STATUS_ACTIVE,
+                'badge'             => (string) ($item['badge'] ?? ''),
+                'recommended'       => ($item['badge'] ?? '') === '인기',
                 'landingUrl'        => '',
             );
         }

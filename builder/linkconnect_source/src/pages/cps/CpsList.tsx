@@ -1,45 +1,15 @@
-import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 
-const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+const fallbackCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
 
-type CampaignCardItem = {
-  id: number;
-  title: string;
-  category: string;
-  price: string;
-  approvalRate: string;
-  avgTime: string;
-  allowedChannels: string;
-  forbiddenChannels: string;
-  status: string;
-  badge?: string;
-  recommended?: boolean;
-};
-
-function toCardItem(campaign: PublicCampaign): CampaignCardItem {
-  return {
-    id: campaign.id,
-    title: campaign.title,
-    category: campaign.category,
-    price: campaign.priceFormatted,
-    approvalRate: campaign.approvalRate,
-    avgTime: campaign.avgTime,
-    allowedChannels: campaign.allowedChannels,
-    forbiddenChannels: campaign.forbiddenChannels,
-    status: campaign.status,
-    badge: campaign.badge || undefined,
-    recommended: campaign.recommended,
-  };
-}
-
-export function CpaList() {
+export function CpsList() {
   const [activeCategory, setActiveCategory] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState(fallbackCategories);
-  const [items, setItems] = useState<CampaignCardItem[]>([]);
+  const [items, setItems] = useState<PublicCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -53,21 +23,17 @@ export function CpaList() {
         const data = await fetchPublicCampaigns({
           category: activeCategory,
           q: searchQuery,
-          type: 'cpa',
+          type: 'cps',
         });
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
         setCategories(data.categories.length ? data.categories : fallbackCategories);
-        setItems(data.items.map(toCardItem));
+        setItems(data.items);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
+          setError(err instanceof Error ? err.message : 'CPS 캠페인을 불러오지 못했습니다.');
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -87,9 +53,12 @@ export function CpaList() {
     <div className="bg-slate-50 min-h-screen pt-32 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">CPA 광고상품</h1>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 border border-cyan-100 text-cyan-700 text-sm font-bold mb-4">
+            <ShoppingBag size={16} /> CPS (Cost Per Sale)
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">CPS 광고상품</h1>
           <p className="text-slate-600 text-lg max-w-3xl">
-            상담 신청, 회원가입, 견적 문의 등 성과가 발생한 디비 기준으로 수익을 받을 수 있는 CPA 캠페인입니다.
+            구매·결제가 발생한 실적 기준으로 수수료를 받을 수 있는 CPS 캠페인입니다. 쿠키 기간 내 구매 전환을 추적합니다.
           </p>
         </div>
 
@@ -97,6 +66,7 @@ export function CpaList() {
           {categories.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setActiveCategory(cat)}
               className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === cat
@@ -116,27 +86,22 @@ export function CpaList() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="광고상품명 검색..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              placeholder="CPS 상품명 검색..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
             />
           </div>
         </div>
 
         {error && (
-          <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
+          <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
         {recommendedItems.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-emerald-500" />
-              추천 CPA 캠페인
-            </h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-6">추천 CPS 캠페인</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendedItems.map((item) => (
-                <CampaignCard key={`rec-${item.id}`} item={item} />
+                <CpsCard key={`rec-${item.id}`} item={item} />
               ))}
             </div>
           </div>
@@ -145,17 +110,20 @@ export function CpaList() {
         <div className="h-px bg-slate-200 w-full mb-12" />
 
         <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">전체 캠페인 <span className="text-emerald-600">({items.length})</span></h2>
+          <h2 className="text-xl font-bold text-slate-900">전체 CPS <span className="text-cyan-600">({items.length})</span></h2>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-500">캠페인을 불러오는 중...</div>
+          <div className="py-16 text-center text-slate-500">CPS 캠페인을 불러오는 중...</div>
         ) : items.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">표시할 CPA 캠페인이 없습니다.</div>
+          <div className="py-16 text-center">
+            <p className="text-slate-500 mb-4">표시할 CPS 캠페인이 없습니다.</p>
+            <Link to="/cpa-list" className="text-cyan-600 font-bold">CPA 상품 보기</Link>
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {items.map((item) => (
-              <CampaignCard key={item.id} item={item} />
+              <CpsCard key={item.id} item={item} />
             ))}
           </div>
         )}
@@ -164,23 +132,23 @@ export function CpaList() {
           <div className="flex items-start gap-4">
             <Info className="w-8 h-8 text-cyan-400 shrink-0 mt-1" />
             <div>
-              <h3 className="text-xl font-bold mb-6">CPA 상품 홍보 전 꼭 확인해주세요.</h3>
+              <h3 className="text-xl font-bold mb-6">CPS 상품 홍보 전 꼭 확인해주세요.</h3>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3 text-slate-300">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>허용 채널과 금지 채널을 반드시 확인해주세요. 채널 위반 시 정산이 거절될 수 있습니다.</span>
+                  <Clock className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                  <span>쿠키(추적) 기간 내 발생한 구매만 수수료 정산 대상입니다.</span>
                 </li>
                 <li className="flex items-start gap-3 text-slate-300">
                   <AlertTriangle className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
-                  <span>허위광고, 과장광고로 발생한 디비는 전량 취소될 수 있으며 파트너 자격이 정지될 수 있습니다.</span>
+                  <span>자사 구매, 허위 클릭, 쿠폰 어뷰징 등 부정 전환은 정산에서 제외될 수 있습니다.</span>
                 </li>
                 <li className="flex items-start gap-3 text-slate-300">
                   <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <span>중복 디비, 장난 신청, 연락 불가(결번 등) 디비는 무효 처리될 수 있습니다.</span>
+                  <span>브랜드 가이드라인을 위반한 홍보는 캠페인 참여가 제한될 수 있습니다.</span>
                 </li>
                 <li className="flex items-start gap-3 text-slate-300">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>광고주가 정상적인 상담/가입으로 <strong>승인한 디비만 확정수익으로 반영</strong>됩니다.</span>
+                  <span>확정 수수료는 광고주·쇼핑몰의 <strong>구매 확정 후 정산</strong>됩니다.</span>
                 </li>
               </ul>
             </div>
@@ -191,43 +159,33 @@ export function CpaList() {
   );
 }
 
-function CampaignCard({ item }: { item: CampaignCardItem }) {
+function CpsCard({ item }: { item: PublicCampaign }) {
+  const commission = item.approvalRate || item.priceFormatted;
+  const cookie = item.avgTime;
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-cyan-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
           <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">
             {item.category}
           </span>
-          <div className="flex gap-2">
-            {item.badge && (
-              <span className={`px-2.5 py-1 text-xs font-bold rounded-md ${
-                item.badge === '추천' ? 'bg-emerald-100 text-emerald-800' :
-                item.badge === '인기' ? 'bg-cyan-100 text-cyan-800' :
-                'bg-purple-100 text-purple-800'
-              }`}>
-                {item.badge}
-              </span>
-            )}
-            <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
-              item.status === '진행중' || item.status === '마감임박' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
-            }`}>
-              {item.status}
-            </span>
-          </div>
+          {item.badge && (
+            <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-cyan-100 text-cyan-800">{item.badge}</span>
+          )}
         </div>
 
         <h3 className="text-xl font-bold text-slate-900 mb-1">{item.title}</h3>
-        <div className="text-sm text-slate-500 mb-6">유형: CPA (DB접수)</div>
+        <div className="text-sm text-slate-500 mb-6">유형: CPS (구매/결제)</div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100/50">
-            <div className="text-xs text-emerald-800 mb-1">파트너 단가</div>
-            <div className="text-lg font-bold text-emerald-600">{item.price}<span className="text-sm font-normal ml-1">원</span></div>
+          <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-100/50">
+            <div className="text-xs text-cyan-800 mb-1">수수료율</div>
+            <div className="text-lg font-bold text-cyan-600">{commission}</div>
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <div className="text-xs text-slate-500 mb-1">승인율 / 평균</div>
-            <div className="text-lg font-bold text-slate-700">{item.approvalRate} <span className="text-sm font-normal text-slate-400">({item.avgTime})</span></div>
+            <div className="text-xs text-slate-500 mb-1">쿠키 기간</div>
+            <div className="text-lg font-bold text-slate-700">{cookie || '-'}</div>
           </div>
         </div>
 
@@ -244,7 +202,7 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
       </div>
 
       <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-        <Link to="/cpa-list" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
+        <Link to="/cps" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
           상세보기
         </Link>
         <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">

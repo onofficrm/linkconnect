@@ -4,7 +4,7 @@ import {
   ChevronRight, Calendar, AlertCircle, CheckCircle2, Megaphone, Target, Briefcase, Zap, Star, Sparkles, User, HelpCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchPublicEvents, PublicEventItem, PublicEventSummaryItem } from '../lib/api';
+import { fetchPublicEvents, PublicEventItem, PublicEventPromoCpa, PublicEventSummaryItem } from '../lib/api';
 
 const SUMMARY_ICONS: Record<string, React.ReactNode> = {
   megaphone: <Megaphone size={24} />,
@@ -54,6 +54,7 @@ export function Events() {
   const [isMounted, setIsMounted] = useState(false);
   const [summaryCards, setSummaryCards] = useState<PublicEventSummaryItem[]>(DEFAULT_SUMMARY);
   const [eventItems, setEventItems] = useState<PublicEventItem[]>([]);
+  const [promoCpa, setPromoCpa] = useState<PublicEventPromoCpa[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => { setTimeout(() => setIsMounted(true), 100); }, []);
@@ -63,6 +64,7 @@ export function Events() {
       .then((data) => {
         if (data.summary?.length) setSummaryCards(data.summary);
         if (data.items?.length) setEventItems(data.items);
+        if (data.promoCpa?.length) setPromoCpa(data.promoCpa);
       })
       .catch(() => {});
   }, []);
@@ -496,60 +498,60 @@ export function Events() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* Promo Campaign 1 */}
-            <div className="bg-white rounded-2xl p-5 border-2 border-emerald-400 shadow-lg shadow-emerald-500/10 flex flex-col group relative">
-              <div className="absolute top-0 right-6 -translate-y-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
-                <Zap size={14} /> 단가 상승 중
+            {promoCpa.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+                프로모션 CPA 상품이 없습니다.
               </div>
-              <div className="flex justify-between items-start mb-4 mt-2">
-                <div>
-                  <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded mb-2 inline-block">10월 단가 상승 이벤트</div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">개인회생 상담 DB</h3>
-                  <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">법률/세무</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-emerald-500"/> 승인율 68%</span>
+            ) : promoCpa.map((item) => (
+              <div
+                key={`${item.event}-${item.title}`}
+                className={`bg-white rounded-2xl p-5 flex flex-col group relative ${
+                  item.highlight
+                    ? 'border-2 border-emerald-400 shadow-lg shadow-emerald-500/10'
+                    : 'border border-slate-200 shadow-sm hover:border-cyan-200 transition-colors'
+                }`}
+              >
+                {item.highlight && (
+                  <div className="absolute top-0 right-6 -translate-y-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <Zap size={14} /> 단가 상승 중
+                  </div>
+                )}
+                <div className="flex justify-between items-start mb-4 mt-2">
+                  <div>
+                    <div className={`text-xs font-bold px-2 py-1 rounded mb-2 inline-block ${item.highlight ? 'text-emerald-600 bg-emerald-50' : 'text-purple-600 bg-purple-50'}`}>
+                      {item.event}
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">{item.title}</h3>
+                    <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                      <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">{item.category}</span>
+                      {item.approvalRate && (
+                        <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-emerald-500"/> 승인율 {item.approvalRate}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-slate-500 line-through">기존 30,000원</div>
-                  <div className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">+10,000원 상승</div>
-                </div>
-                <div className="text-2xl font-black text-slate-900 mt-1 flex items-end justify-between">
-                  <div>40,000<span className="text-base font-bold text-slate-500 ml-1">원</span></div>
-                </div>
-              </div>
-              <button className="mt-auto w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
-                홍보 링크 생성
-              </button>
-            </div>
-            
-            {/* Promo Campaign 2 */}
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col group relative hover:border-cyan-200 transition-colors">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 inline-block">첫 승인 보너스 5만원</div>
-                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">장기렌트카 견적 신청</h3>
-                  <div className="text-sm text-slate-500 mt-1 flex items-center gap-2">
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-xs">자동차</span>
-                    <span className="flex items-center gap-1"><CheckCircle2 size={12} className="text-emerald-500"/> 승인율 82%</span>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5">
+                  {item.oldPrice > 0 && (
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-slate-500 line-through">기존 {item.oldPrice.toLocaleString()}원</div>
+                      <div className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">{item.bonus}</div>
+                    </div>
+                  )}
+                  {!item.oldPrice && item.bonus && (
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-slate-500">기본 단가</div>
+                      <div className="text-xs font-bold text-purple-600">{item.bonus}</div>
+                    </div>
+                  )}
+                  <div className="text-2xl font-black text-slate-900 mt-1">
+                    {item.price.toLocaleString()}<span className="text-base font-bold text-slate-500 ml-1">원</span>
                   </div>
                 </div>
+                <Link to="/partner/search" className={`mt-auto w-full py-3 rounded-xl text-sm font-bold transition-colors shadow-sm text-center ${item.highlight ? 'bg-slate-900 hover:bg-slate-800 text-white' : 'bg-cyan-600 hover:bg-cyan-700 text-white'}`}>
+                  홍보 링크 생성
+                </Link>
               </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5">
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-slate-500">기본 단가</div>
-                  <div className="text-xs font-bold text-purple-600">+보너스 혜택 적용</div>
-                </div>
-                <div className="text-2xl font-black text-slate-900 mt-1 flex items-end justify-between">
-                  <div>25,000<span className="text-base font-bold text-slate-500 ml-1">원</span></div>
-                </div>
-              </div>
-              <button className="mt-auto w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
-                홍보 링크 생성
-              </button>
-            </div>
+            ))}
           </div>
         </section>
 

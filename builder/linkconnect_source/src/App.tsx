@@ -8,7 +8,7 @@ import { RootLayout } from './layouts/RootLayout';
 import { Home } from './pages/Home';
 import { Events } from './pages/Events';
 import { EventDetail } from './pages/EventDetail';
-import { CpsComingSoon } from './pages/CpsComingSoon';
+import { CpsList } from './pages/cps/CpsList';
 import { CenterSelect } from './pages/CenterSelect';
 import { CpaList } from './pages/cpa/CpaList';
 import { PartnerDashboard } from './pages/partner/Dashboard';
@@ -53,7 +53,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="select-center" element={<CenterSelect />} />
           <Route path="cpa-list" element={<CpaList />} />
-          <Route path="cps" element={<CpsComingSoon />} />
+          <Route path="cps" element={<CpsList />} />
           <Route path="events" element={<Events />} />
           <Route path="events/detail" element={<EventDetail />} />
         </Route>

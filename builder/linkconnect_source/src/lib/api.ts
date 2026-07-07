@@ -695,10 +695,11 @@ async function publicApiGet<T>(endpoint: string, query?: Record<string, string>)
 
 export type PublicCampaign = PartnerCampaign;
 
-export function fetchPublicCampaigns(filters?: { category?: string; q?: string }) {
+export function fetchPublicCampaigns(filters?: { category?: string; q?: string; type?: string }) {
   return publicApiGet<{ items: PublicCampaign[]; categories: string[]; dbReady: boolean }>('campaigns.php', {
     category: filters?.category ?? '',
     q: filters?.q ?? '',
+    type: filters?.type ?? '',
   });
 }
 
@@ -1115,11 +1116,22 @@ export type PublicEventItem = {
   ribbon: string;
 };
 
+export type PublicEventPromoCpa = {
+  event: string;
+  title: string;
+  category: string;
+  approvalRate: string;
+  oldPrice: number;
+  price: number;
+  bonus: string;
+  highlight: boolean;
+};
+
 export type PublicEventsResponse = {
   summary: PublicEventSummaryItem[];
   items: PublicEventItem[];
   recommendations: Array<Record<string, unknown>>;
-  promoCpa: Array<Record<string, unknown>>;
+  promoCpa: PublicEventPromoCpa[];
   rankingTop: Array<Record<string, unknown>>;
   rankingList: Array<Record<string, unknown>>;
   dbReady: boolean;
