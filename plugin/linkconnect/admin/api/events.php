@@ -6,6 +6,30 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'GET') {
     lc_api_require_admin();
 
+    $view = isset($_GET['view']) ? (string) $_GET['view'] : '';
+
+    if ($view === 'rewards') {
+        lc_api_success(array(
+            'items'   => lc_event_rewards_admin_for_api(array(
+                'status' => isset($_GET['status']) ? (string) $_GET['status'] : '',
+                'evId'   => isset($_GET['evId']) ? (int) $_GET['evId'] : 0,
+            )),
+            'dbReady' => lc_db_installed(),
+        ));
+    }
+
+    if ($view === 'participants') {
+        $ev_id = isset($_GET['evId']) ? (int) $_GET['evId'] : 0;
+        if ($ev_id <= 0) {
+            lc_api_error('이벤트 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+
+        lc_api_success(array(
+            'items'   => lc_event_participants_admin_for_api($ev_id),
+            'dbReady' => lc_db_installed(),
+        ));
+    }
+
     $filters = array(
         'q'      => isset($_GET['q']) ? (string) $_GET['q'] : '',
         'status' => isset($_GET['status']) ? (string) $_GET['status'] : '',
@@ -68,6 +92,36 @@ if ($method === 'POST') {
             'message' => $result['message'],
             'event'   => $result['event'],
             'summary' => lc_event_admin_summary(),
+        ));
+    }
+
+    if ($action === 'create_reward') {
+        $result = lc_event_reward_create($body);
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'CREATE_FAILED', 400);
+        }
+
+        lc_api_success(array(
+            'message' => $result['message'],
+            'id'      => (int) ($result['id'] ?? 0),
+        ));
+    }
+
+    if ($action === 'pay_reward' || $action === 'reject_reward') {
+        $er_id = isset($body['erId']) ? (int) $body['erId'] : 0;
+        if ($er_id <= 0) {
+            lc_api_error('리워드 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+
+        $status = $action === 'pay_reward' ? 'paid' : 'rejected';
+        $memo = trim((string) ($body['memo'] ?? ''));
+        $result = lc_event_reward_update_status($er_id, $status, $memo);
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'UPDATE_FAILED', 400);
+        }
+
+        lc_api_success(array(
+            'message' => $result['message'],
         ));
     }
 

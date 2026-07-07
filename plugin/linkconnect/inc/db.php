@@ -209,6 +209,8 @@ if (!function_exists('lc_db_run_schema')) {
             lc_table('api_clients'),
             lc_table('api_logs'),
             lc_table('events'),
+            lc_table('event_participants'),
+            lc_table('event_rewards'),
         );
 
         $queries = array(
@@ -450,6 +452,36 @@ if (!function_exists('lc_db_run_schema')) {
                 KEY `idx_ev_status` (`ev_status`),
                 KEY `idx_ev_sort` (`ev_sort`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('event_participants') . "` (
+                `ep_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_id` int unsigned NOT NULL,
+                `pt_id` int unsigned NOT NULL,
+                `ep_status` varchar(20) NOT NULL DEFAULT 'joined',
+                `ep_approved_cnt` int NOT NULL DEFAULT 0,
+                `ep_joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ep_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ep_id`),
+                UNIQUE KEY `uk_ev_pt` (`ev_id`, `pt_id`),
+                KEY `idx_ep_ev_id` (`ev_id`),
+                KEY `idx_ep_pt_id` (`pt_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('event_rewards') . "` (
+                `er_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_id` int unsigned NOT NULL DEFAULT 0,
+                `pt_id` int unsigned NOT NULL,
+                `er_amount` int NOT NULL DEFAULT 0,
+                `er_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `er_condition` varchar(200) NOT NULL DEFAULT '',
+                `er_memo` varchar(500) NOT NULL DEFAULT '',
+                `er_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `er_paid_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`er_id`),
+                KEY `idx_er_ev_id` (`ev_id`),
+                KEY `idx_er_pt_id` (`pt_id`),
+                KEY `idx_er_status` (`er_status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         );
 
         foreach ($queries as $sql) {
@@ -590,6 +622,56 @@ if (!function_exists('lc_db_run_migrations')) {
                 return array(
                     'ok'      => false,
                     'message' => 'events 테이블 생성 실패: ' . lc_sql_error(),
+                );
+            }
+        }
+
+        $ep = lc_table('event_participants');
+        if (!lc_db_table_exists($ep)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$ep}` (
+                `ep_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_id` int unsigned NOT NULL,
+                `pt_id` int unsigned NOT NULL,
+                `ep_status` varchar(20) NOT NULL DEFAULT 'joined',
+                `ep_approved_cnt` int NOT NULL DEFAULT 0,
+                `ep_joined_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `ep_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ep_id`),
+                UNIQUE KEY `uk_ev_pt` (`ev_id`, `pt_id`),
+                KEY `idx_ep_ev_id` (`ev_id`),
+                KEY `idx_ep_pt_id` (`pt_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+            if ($create === false) {
+                return array(
+                    'ok'      => false,
+                    'message' => 'event_participants 테이블 생성 실패: ' . lc_sql_error(),
+                );
+            }
+        }
+
+        $er = lc_table('event_rewards');
+        if (!lc_db_table_exists($er)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$er}` (
+                `er_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ev_id` int unsigned NOT NULL DEFAULT 0,
+                `pt_id` int unsigned NOT NULL,
+                `er_amount` int NOT NULL DEFAULT 0,
+                `er_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `er_condition` varchar(200) NOT NULL DEFAULT '',
+                `er_memo` varchar(500) NOT NULL DEFAULT '',
+                `er_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `er_paid_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`er_id`),
+                KEY `idx_er_ev_id` (`ev_id`),
+                KEY `idx_er_pt_id` (`pt_id`),
+                KEY `idx_er_status` (`er_status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+            if ($create === false) {
+                return array(
+                    'ok'      => false,
+                    'message' => 'event_rewards 테이블 생성 실패: ' . lc_sql_error(),
                 );
             }
         }

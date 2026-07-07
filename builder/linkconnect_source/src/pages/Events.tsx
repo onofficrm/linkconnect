@@ -4,7 +4,7 @@ import {
   ChevronRight, Calendar, AlertCircle, CheckCircle2, Megaphone, Target, Briefcase, Zap, Star, Sparkles, User, HelpCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchPublicEvents, PublicEventItem, PublicEventPromoCpa, PublicEventSummaryItem } from '../lib/api';
+import { fetchPublicEvents, PublicEventItem, PublicEventPromoCpa, PublicEventSummaryItem, PublicRanking } from '../lib/api';
 
 const SUMMARY_ICONS: Record<string, React.ReactNode> = {
   megaphone: <Megaphone size={24} />,
@@ -28,6 +28,71 @@ const DEFAULT_SUMMARY: PublicEventSummaryItem[] = [
   { label: '단가 상승 상품', value: '8', suffix: '개', icon: 'trending' },
   { label: '마감 임박 이벤트', value: '3', suffix: '개', icon: 'clock' },
 ];
+
+const DEFAULT_RANKING: PublicRanking = {
+  summary: { topDbs: 128, myRank: 0, remainingToTop10: 7, myBonus: '0원', top10BonusHint: 'TOP 10 진입 시 100,000원' },
+  top: [
+    { rank: 2, partner: 'PTN-54**', dbs: 96, reward: '500,000원', tone: 'silver' },
+    { rank: 1, partner: 'PTN-8291', dbs: 128, reward: '1,000,000원', earnings: '3,840,000원', tone: 'gold' },
+    { rank: 3, partner: 'PTN-30**', dbs: 74, reward: '300,000원', tone: 'bronze' },
+  ],
+  list: [
+    { rank: 4, partner: 'PTN-91**', dbs: 68, reward: '10만원' },
+    { rank: 5, partner: 'PTN-12**', dbs: 61, reward: '10만원' },
+    { rank: 6, partner: 'PTN-84**', dbs: 55, reward: '10만원' },
+    { rank: 7, partner: 'PTN-33**', dbs: 52, reward: '10만원' },
+  ],
+  my: null,
+  tiers: [
+    { label: '1위', reward: '1,000,000원', tone: 'amber' },
+    { label: '2위', reward: '500,000원', tone: 'slate' },
+    { label: '3위', reward: '300,000원', tone: 'orange' },
+    { label: '4~10위', reward: '100,000원', tone: 'cyan' },
+  ],
+};
+
+function podiumStyles(tone?: string) {
+  if (tone === 'gold') {
+    return {
+      wrap: 'bg-gradient-to-b from-amber-500/20 to-transparent p-1 rounded-2xl border border-amber-500/30 md:-mt-6 md:order-2 order-1 shadow-2xl shadow-amber-500/10',
+      inner: 'bg-slate-900/90 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center',
+      badge: 'w-16 h-16 bg-gradient-to-br from-amber-300 to-amber-500 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-amber-500/30 mb-3 border-4 border-slate-900 relative',
+      rankText: 'font-black text-2xl',
+      name: 'text-xl font-bold text-amber-400 mb-1',
+      earnings: 'text-sm text-amber-500/80 font-bold mb-1',
+      dbs: 'text-sm text-slate-300 mb-4',
+      rewardBox: 'mt-auto w-full bg-amber-500/10 border border-amber-500/30 rounded-lg p-3',
+      rewardLabel: 'text-[10px] text-amber-500 font-bold mb-1',
+      rewardValue: 'text-2xl font-black text-amber-400',
+    };
+  }
+  if (tone === 'silver') {
+    return {
+      wrap: 'bg-gradient-to-b from-slate-300/10 to-transparent p-1 rounded-2xl border border-slate-300/20 md:order-1 order-2',
+      inner: 'bg-slate-900/80 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center',
+      badge: 'w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-400 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-slate-300/20 mb-3 border-4 border-slate-900',
+      rankText: 'font-black text-lg',
+      name: 'text-lg font-bold text-white mb-1',
+      earnings: '',
+      dbs: 'text-sm text-slate-400 mb-4',
+      rewardBox: 'mt-auto w-full bg-slate-300/10 border border-slate-300/20 rounded-lg p-3',
+      rewardLabel: 'text-[10px] text-slate-400 font-bold mb-1',
+      rewardValue: 'text-lg font-black text-white',
+    };
+  }
+  return {
+    wrap: 'bg-gradient-to-b from-orange-600/20 to-transparent p-1 rounded-2xl border border-orange-600/30 md:order-3 order-3 md:mt-4',
+    inner: 'bg-slate-900/80 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center',
+    badge: 'w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-700 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-3 border-4 border-slate-900',
+    rankText: 'font-black text-lg',
+    name: 'text-lg font-bold text-white mb-1',
+    earnings: '',
+    dbs: 'text-sm text-slate-400 mb-4',
+    rewardBox: 'mt-auto w-full bg-orange-600/10 border border-orange-600/20 rounded-lg p-3',
+    rewardLabel: 'text-[10px] text-orange-400 font-bold mb-1',
+    rewardValue: 'text-lg font-black text-orange-400',
+  };
+}
 
 const BADGE_STYLES: Record<string, string> = {
   '진행중': 'bg-cyan-50 text-cyan-700 border-cyan-200',
@@ -55,6 +120,7 @@ export function Events() {
   const [summaryCards, setSummaryCards] = useState<PublicEventSummaryItem[]>(DEFAULT_SUMMARY);
   const [eventItems, setEventItems] = useState<PublicEventItem[]>([]);
   const [promoCpa, setPromoCpa] = useState<PublicEventPromoCpa[]>([]);
+  const [ranking, setRanking] = useState<PublicRanking>(DEFAULT_RANKING);
   const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => { setTimeout(() => setIsMounted(true), 100); }, []);
@@ -65,6 +131,7 @@ export function Events() {
         if (data.summary?.length) setSummaryCards(data.summary);
         if (data.items?.length) setEventItems(data.items);
         if (data.promoCpa?.length) setPromoCpa(data.promoCpa);
+        if (data.ranking) setRanking(data.ranking);
       })
       .catch(() => {});
   }, []);
@@ -575,113 +642,89 @@ export function Events() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 relative z-10">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700 flex flex-col items-center justify-center text-center shadow-sm">
               <div className="text-sm font-medium text-slate-400 mb-1">현재 1위 승인 DB</div>
-              <div className="text-2xl md:text-3xl font-black text-white">128<span className="text-sm font-bold text-slate-500 ml-1">건</span></div>
+              <div className="text-2xl md:text-3xl font-black text-white">{ranking.summary.topDbs}<span className="text-sm font-bold text-slate-500 ml-1">건</span></div>
             </div>
             <div className="bg-cyan-900/30 backdrop-blur-sm rounded-2xl p-5 border border-cyan-800 flex flex-col items-center justify-center text-center shadow-sm">
               <div className="text-sm font-medium text-cyan-400 mb-1">내 현재 순위</div>
-              <div className="text-2xl md:text-3xl font-black text-cyan-400">18<span className="text-sm font-bold text-cyan-600 ml-1">위</span></div>
+              <div className="text-2xl md:text-3xl font-black text-cyan-400">
+                {ranking.summary.myRank > 0 ? ranking.summary.myRank : '—'}
+                {ranking.summary.myRank > 0 && <span className="text-sm font-bold text-cyan-600 ml-1">위</span>}
+              </div>
             </div>
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700 flex flex-col items-center justify-center text-center shadow-sm">
               <div className="text-sm font-medium text-slate-400 mb-1">TOP 10까지 남은 DB</div>
-              <div className="text-2xl md:text-3xl font-black text-white">7<span className="text-sm font-bold text-slate-500 ml-1">건</span></div>
+              <div className="text-2xl md:text-3xl font-black text-white">{ranking.summary.remainingToTop10}<span className="text-sm font-bold text-slate-500 ml-1">건</span></div>
             </div>
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700 flex flex-col items-center justify-center text-center shadow-sm">
               <div className="text-sm font-medium text-slate-400 mb-1">내 예상 보너스</div>
-              <div className="text-2xl md:text-3xl font-black text-white">0<span className="text-sm font-bold text-slate-500 ml-1">원</span></div>
-              <div className="text-[10px] text-emerald-400 mt-1">TOP 10 진입 시 100,000원</div>
+              <div className="text-2xl md:text-3xl font-black text-white">{ranking.summary.myBonus}</div>
+              <div className="text-[10px] text-emerald-400 mt-1">{ranking.summary.top10BonusHint}</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 relative z-10">
             <div className="xl:col-span-2 space-y-8">
-              {/* Top 3 Podium Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 2nd Place */}
-                <div className="bg-gradient-to-b from-slate-300/10 to-transparent p-1 rounded-2xl border border-slate-300/20 md:order-1 order-2">
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-400 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-slate-300/20 mb-3 border-4 border-slate-900">
-                      <span className="font-black text-lg">2</span>
+                {ranking.top.map((item) => {
+                  const styles = podiumStyles(item.tone);
+                  return (
+                    <div key={item.rank} className={styles.wrap}>
+                      <div className={styles.inner}>
+                        <div className={styles.badge}>
+                          {item.tone === 'gold' && <div className="absolute -top-3 text-amber-300"><Trophy size={20} fill="currentColor" /></div>}
+                          <span className={styles.rankText}>{item.rank}</span>
+                        </div>
+                        <div className={styles.name}>{item.partner}</div>
+                        {item.earnings && <div className={styles.earnings}>확정수익 {item.earnings}</div>}
+                        <div className={styles.dbs}>승인 DB {item.dbs}건</div>
+                        <div className={styles.rewardBox}>
+                          <div className={styles.rewardLabel}>예상 리워드</div>
+                          <div className={styles.rewardValue}>{item.reward}</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-lg font-bold text-white mb-1">PTN-54**</div>
-                    <div className="text-sm text-slate-400 mb-4">승인 DB 96건</div>
-                    <div className="mt-auto w-full bg-slate-300/10 border border-slate-300/20 rounded-lg p-3">
-                      <div className="text-[10px] text-slate-400 font-bold mb-1">예상 리워드</div>
-                      <div className="text-lg font-black text-white">500,000원</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 1st Place */}
-                <div className="bg-gradient-to-b from-amber-500/20 to-transparent p-1 rounded-2xl border border-amber-500/30 md:-mt-6 md:order-2 order-1 shadow-2xl shadow-amber-500/10">
-                  <div className="bg-slate-900/90 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-gradient-to-br from-amber-300 to-amber-500 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-amber-500/30 mb-3 border-4 border-slate-900 relative">
-                      <div className="absolute -top-3 text-amber-300"><Trophy size={20} fill="currentColor" /></div>
-                      <span className="font-black text-2xl">1</span>
-                    </div>
-                    <div className="text-xl font-bold text-amber-400 mb-1">PTN-8291</div>
-                    <div className="text-sm text-amber-500/80 font-bold mb-1">확정수익 3,840,000원</div>
-                    <div className="text-sm text-slate-300 mb-4">승인 DB 128건</div>
-                    <div className="mt-auto w-full bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
-                      <div className="text-[10px] text-amber-500 font-bold mb-1">예상 리워드</div>
-                      <div className="text-2xl font-black text-amber-400">1,000,000원</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3rd Place */}
-                <div className="bg-gradient-to-b from-orange-600/20 to-transparent p-1 rounded-2xl border border-orange-600/30 md:order-3 order-3 md:mt-4">
-                  <div className="bg-slate-900/80 backdrop-blur-sm p-5 rounded-xl h-full flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-700 rounded-full flex items-center justify-center text-white shadow-lg shadow-orange-600/20 mb-3 border-4 border-slate-900">
-                      <span className="font-black text-lg">3</span>
-                    </div>
-                    <div className="text-lg font-bold text-white mb-1">PTN-30**</div>
-                    <div className="text-sm text-slate-400 mb-4">승인 DB 74건</div>
-                    <div className="mt-auto w-full bg-orange-600/10 border border-orange-600/20 rounded-lg p-3">
-                      <div className="text-[10px] text-orange-400 font-bold mb-1">예상 리워드</div>
-                      <div className="text-lg font-black text-orange-400">300,000원</div>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
 
-              {/* My Rank Card */}
-              <div className="bg-cyan-950/30 border border-cyan-900 rounded-2xl p-6 shadow-inner">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2"><Target size={18}/> 내 현재 순위</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                      <div>
-                        <div className="text-xs text-slate-400 mb-1">현재 순위</div>
-                        <div className="text-xl font-bold text-white">18위</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-400 mb-1">승인 DB</div>
-                        <div className="text-xl font-bold text-white">42건</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-400 mb-1">10위까지 남은 DB</div>
-                        <div className="text-xl font-bold text-rose-400">7건</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-400 mb-1">현재 확정수익</div>
-                        <div className="text-xl font-bold text-white">1,260,000<span className="text-sm text-slate-400 ml-0.5">원</span></div>
+              {ranking.my && (
+                <div className="bg-cyan-950/30 border border-cyan-900 rounded-2xl p-6 shadow-inner">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2"><Target size={18}/> 내 현재 순위</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                        <div>
+                          <div className="text-xs text-slate-400 mb-1">현재 순위</div>
+                          <div className="text-xl font-bold text-white">{ranking.my.rank > 0 ? `${ranking.my.rank}위` : '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-400 mb-1">승인 DB</div>
+                          <div className="text-xl font-bold text-white">{ranking.my.dbs}건</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-400 mb-1">10위까지 남은 DB</div>
+                          <div className="text-xl font-bold text-rose-400">{ranking.my.remainingToTop10}건</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-slate-400 mb-1">현재 확정수익</div>
+                          <div className="text-xl font-bold text-white">{ranking.my.earnings.toLocaleString()}<span className="text-sm text-slate-400 ml-0.5">원</span></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="w-full md:w-auto shrink-0 flex flex-col gap-2">
-                    <button className="w-full px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-bold transition-colors shadow-sm">
-                      순위 올리기 좋은 캠페인
-                    </button>
-                    <button className="w-full px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-900 rounded-xl text-sm font-bold transition-colors">
-                      이벤트 상품 홍보하기
-                    </button>
+                    <div className="w-full md:w-auto shrink-0 flex flex-col gap-2">
+                      <Link to="/partner/search" className="w-full px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-bold transition-colors shadow-sm text-center">
+                        순위 올리기 좋은 캠페인
+                      </Link>
+                      <Link to="/partner/search" className="w-full px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-900 rounded-xl text-sm font-bold transition-colors text-center">
+                        이벤트 상품 홍보하기
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="xl:col-span-1 space-y-6">
-              {/* TOP 10 List */}
               <div className="bg-slate-800/40 border border-slate-700 rounded-2xl overflow-hidden">
                 <div className="p-4 border-b border-slate-700 bg-slate-800/60">
                   <h3 className="text-sm font-bold text-white">TOP 4 ~ 10 순위</h3>
@@ -697,73 +740,28 @@ export function Events() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/50">
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">4</td>
-                        <td className="px-4 py-3">PTN-91**</td>
-                        <td className="px-4 py-3 text-right font-medium">68건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">5</td>
-                        <td className="px-4 py-3">PTN-12**</td>
-                        <td className="px-4 py-3 text-right font-medium">61건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">6</td>
-                        <td className="px-4 py-3">PTN-84**</td>
-                        <td className="px-4 py-3 text-right font-medium">55건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">7</td>
-                        <td className="px-4 py-3">PTN-33**</td>
-                        <td className="px-4 py-3 text-right font-medium">52건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">8</td>
-                        <td className="px-4 py-3">PTN-76**</td>
-                        <td className="px-4 py-3 text-right font-medium">51건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">9</td>
-                        <td className="px-4 py-3">PTN-21**</td>
-                        <td className="px-4 py-3 text-right font-medium">49건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
-                      <tr className="hover:bg-slate-700/30">
-                        <td className="px-4 py-3 font-bold text-slate-300">10</td>
-                        <td className="px-4 py-3">PTN-65**</td>
-                        <td className="px-4 py-3 text-right font-medium">49건</td>
-                        <td className="px-4 py-3 text-right text-cyan-400 font-bold">10만원</td>
-                      </tr>
+                      {ranking.list.map((row) => (
+                        <tr key={row.rank} className="hover:bg-slate-700/30">
+                          <td className="px-4 py-3 font-bold text-slate-300">{row.rank}</td>
+                          <td className="px-4 py-3">{row.partner}</td>
+                          <td className="px-4 py-3 text-right font-medium">{row.dbs}건</td>
+                          <td className="px-4 py-3 text-right text-cyan-400 font-bold">{row.reward}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              {/* Reward Structure */}
               <div className="bg-slate-800/40 border border-slate-700 rounded-2xl p-5">
                 <h3 className="text-sm font-bold text-white mb-3">리워드 지급 기준</h3>
                 <ul className="space-y-2 text-sm">
-                  <li className="flex justify-between items-center pb-2 border-b border-slate-700/50">
-                    <span className="text-amber-400 font-bold">1위</span>
-                    <span className="text-white font-bold">1,000,000원</span>
-                  </li>
-                  <li className="flex justify-between items-center pb-2 border-b border-slate-700/50">
-                    <span className="text-slate-300 font-bold">2위</span>
-                    <span className="text-white font-bold">500,000원</span>
-                  </li>
-                  <li className="flex justify-between items-center pb-2 border-b border-slate-700/50">
-                    <span className="text-orange-400 font-bold">3위</span>
-                    <span className="text-white font-bold">300,000원</span>
-                  </li>
-                  <li className="flex justify-between items-center pt-1">
-                    <span className="text-cyan-400 font-bold">4~10위</span>
-                    <span className="text-white font-bold">100,000원</span>
-                  </li>
+                  {ranking.tiers.map((tier, idx) => (
+                    <li key={tier.label} className={`flex justify-between items-center ${idx < ranking.tiers.length - 1 ? 'pb-2 border-b border-slate-700/50' : 'pt-1'}`}>
+                      <span className={`font-bold ${tier.tone === 'amber' ? 'text-amber-400' : tier.tone === 'orange' ? 'text-orange-400' : tier.tone === 'cyan' ? 'text-cyan-400' : 'text-slate-300'}`}>{tier.label}</span>
+                      <span className="text-white font-bold">{tier.reward}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>

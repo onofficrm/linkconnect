@@ -6,7 +6,7 @@ import {
   ShieldAlert, ListChecks, XCircle, Ban, AlertTriangle
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchPublicEventDetail, PublicEventDetail } from '../lib/api';
+import { fetchPublicEventDetail, joinPartnerEvent, PublicEventDetail } from '../lib/api';
 
 function Badge({ children, type }: { children: React.ReactNode, type: string }) {
   const BADGE_STYLES: Record<string, string> = {
@@ -35,6 +35,8 @@ export function EventDetail() {
   const [activeTab, setActiveTab] = useState('블로그 제목');
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [isAgreed, setIsAgreed] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinMessage, setJoinMessage] = useState('');
 
   useEffect(() => {
     if (!eventId) {
@@ -65,6 +67,22 @@ export function EventDetail() {
     navigator.clipboard.writeText(text).catch(() => {});
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleJoinEvent = async () => {
+    if (!eventId || !isAgreed || joining) return;
+    setJoining(true);
+    setJoinMessage('');
+    try {
+      const result = await joinPartnerEvent({ evCode: eventId });
+      setJoinMessage(result.message);
+      const refreshed = await fetchPublicEventDetail(eventId);
+      setDetail(refreshed);
+    } catch (err) {
+      setJoinMessage(err instanceof Error ? err.message : '이벤트 참여에 실패했습니다.');
+    } finally {
+      setJoining(false);
+    }
   };
 
   if (!eventId) {
@@ -545,13 +563,22 @@ export function EventDetail() {
               </label>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-                <Link to="/partner/search" className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all text-center ${isAgreed ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/50' : 'bg-slate-800 text-slate-500 pointer-events-none'}`}>
-                  확인 후 이벤트 참여하기
-                </Link>
+                <button
+                  type="button"
+                  onClick={handleJoinEvent}
+                  disabled={!isAgreed || joining || progress.joined}
+                  className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all text-center ${isAgreed && !progress.joined ? 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/50' : 'bg-slate-800 text-slate-500'} disabled:opacity-70`}
+                >
+                  {progress.joined ? '참여 완료' : joining ? '참여 처리 중…' : '확인 후 이벤트 참여하기'}
+                </button>
                 <Link to="/partner/search" className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all border text-center ${isAgreed ? 'bg-transparent hover:bg-slate-800 text-white border-slate-600' : 'bg-transparent text-slate-600 border-slate-800 pointer-events-none'}`}>
                   홍보 링크 만들기
                 </Link>
               </div>
+
+              {joinMessage && (
+                <p className="text-cyan-300 text-sm mt-4">{joinMessage}</p>
+              )}
 
               <p className="text-slate-500 text-xs mt-6">
                 금지사항 위반이 반복될 경우 이벤트 참여 제한 또는 파트너 계정 검수가 진행될 수 있습니다.

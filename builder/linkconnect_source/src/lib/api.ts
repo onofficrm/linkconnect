@@ -1127,13 +1127,53 @@ export type PublicEventPromoCpa = {
   highlight: boolean;
 };
 
+export type PublicRankingItem = {
+  rank: number;
+  partner: string;
+  dbs: number;
+  reward: string;
+  earnings?: string;
+  tone?: string;
+};
+
+export type PublicRankingSummary = {
+  topDbs: number;
+  myRank: number;
+  remainingToTop10: number;
+  myBonus: string;
+  top10BonusHint: string;
+};
+
+export type PublicRankingMy = {
+  rank: number;
+  dbs: number;
+  earnings: number;
+  remainingToTop10: number;
+  bonus: string;
+};
+
+export type PublicRankingTier = {
+  label: string;
+  reward: string;
+  tone?: string;
+};
+
+export type PublicRanking = {
+  summary: PublicRankingSummary;
+  top: PublicRankingItem[];
+  list: PublicRankingItem[];
+  my: PublicRankingMy | null;
+  tiers: PublicRankingTier[];
+};
+
 export type PublicEventsResponse = {
   summary: PublicEventSummaryItem[];
   items: PublicEventItem[];
   recommendations: Array<Record<string, unknown>>;
   promoCpa: PublicEventPromoCpa[];
-  rankingTop: Array<Record<string, unknown>>;
-  rankingList: Array<Record<string, unknown>>;
+  ranking: PublicRanking;
+  rankingTop: PublicRankingItem[];
+  rankingList: PublicRankingItem[];
   dbReady: boolean;
 };
 
@@ -1169,6 +1209,60 @@ export function fetchPublicEvents(q?: string) {
 
 export function fetchPublicEventDetail(code: string) {
   return publicApiGet<PublicEventDetail>('events.php', { code });
+}
+
+export function joinPartnerEvent(payload: { evCode?: string; evId?: number }) {
+  return partnerApiPost<{ message: string; joined: boolean }>('events.php', { action: 'join', ...payload });
+}
+
+export type AdminEventReward = {
+  id: number;
+  evId: number;
+  eventCode: string;
+  eventTitle: string;
+  ptId: number;
+  partner: string;
+  name: string;
+  amount: number;
+  status: string;
+  condition: string;
+  memo: string;
+  createdAt: string;
+  paidAt: string;
+};
+
+export type AdminEventParticipant = {
+  id: number;
+  evId: number;
+  ptId: number;
+  partner: string;
+  name: string;
+  status: string;
+  approved: number;
+  joinedAt: string;
+};
+
+export function fetchAdminEventRewards(filters?: { status?: string; evId?: number }) {
+  return adminApiGet<{ items: AdminEventReward[]; dbReady: boolean }>('events.php', {
+    view: 'rewards',
+    status: filters?.status ?? '',
+    evId: String(filters?.evId ?? ''),
+  });
+}
+
+export function fetchAdminEventParticipants(evId: number) {
+  return adminApiGet<{ items: AdminEventParticipant[]; dbReady: boolean }>('events.php', {
+    view: 'participants',
+    evId: String(evId),
+  });
+}
+
+export function createAdminEventReward(payload: { evId?: number; ptId: number; amount: number; condition?: string }) {
+  return adminApiPost<{ message: string; id: number }>('events.php', { action: 'create_reward', ...payload });
+}
+
+export function updateAdminEventReward(payload: { action: 'pay_reward' | 'reject_reward'; erId: number; memo?: string }) {
+  return adminApiPost<{ message: string }>('events.php', payload);
 }
 
 export type AdminEventSummary = {
