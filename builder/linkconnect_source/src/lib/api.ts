@@ -1648,3 +1648,151 @@ export function fetchAdminAiSummary() {
 export function fetchMerchantAiSummary() {
   return merchantApiPost<{ summary: string; fallback: boolean }>('ai.php', { action: 'summary' });
 }
+
+/* ─────────────────────────── 콜디비 (Call DB) ─────────────────────────── */
+
+export type CallNumber = {
+  cnId: number;
+  number: string;
+  provider: string;
+  status: string;
+  memo: string;
+  createdAt: string;
+};
+
+export type CallRequest = {
+  carId: number;
+  ptId: number;
+  partner: string;
+  cpId: number;
+  campaign: string;
+  status: string;
+  virtualNumber: string;
+  requestMemo: string;
+  adminMemo: string;
+  createdAt: string;
+  processedAt: string;
+};
+
+export type CallLog = {
+  clogId: number;
+  virtualNumber: string;
+  caller: string;
+  campaign: string;
+  partner: string;
+  startedAt: string;
+  duration: number;
+  result: string;
+  cvId: number;
+  hasRecording: boolean;
+  recordingUrl?: string;
+};
+
+export type CallSettings = {
+  cpId: number;
+  enabled: boolean;
+  alias: string;
+  forward1: string;
+  forward2: string;
+  adminEnabled: boolean;
+  recordingMode: string;
+};
+
+// 관리자
+export function fetchAdminCallNumbers(filters?: { status?: string; q?: string }) {
+  return adminApiGet<{ items: CallNumber[]; dbReady: boolean }>('call.php', {
+    view: 'numbers',
+    status: filters?.status ?? '',
+    q: filters?.q ?? '',
+  });
+}
+
+export function fetchAdminCallRequests(status?: string) {
+  return adminApiGet<{ items: CallRequest[]; dbReady: boolean }>('call.php', { view: 'requests', status: status ?? '' });
+}
+
+export function fetchAdminCallLogs(filters?: { result?: string; unmatched?: boolean }) {
+  return adminApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', {
+    view: 'logs',
+    result: filters?.result ?? '',
+    unmatched: filters?.unmatched ? '1' : '',
+  });
+}
+
+export function createAdminCallNumber(payload: { number: string; provider?: string; providerNumberId?: string; memo?: string }) {
+  return adminApiPost<{ message: string; cnId?: number }>('call.php', { action: 'create_number', ...payload });
+}
+
+export function provisionAdminCallNumber(payload?: { areaCode?: string; memo?: string }) {
+  return adminApiPost<{ message: string; cnId?: number }>('call.php', { action: 'provision_number', ...(payload ?? {}) });
+}
+
+export function updateAdminCallNumber(payload: { cnId: number; status?: string; memo?: string }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'update_number', ...payload });
+}
+
+export function assignAdminCallRequest(payload: { carId: number; cnId: number; adminMemo?: string }) {
+  return adminApiPost<{ message: string; number?: string }>('call.php', { action: 'assign_request', ...payload });
+}
+
+export function rejectAdminCallRequest(payload: { carId: number; adminMemo?: string }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'reject_request', ...payload });
+}
+
+export function revokeAdminCallRequest(payload: { carId: number; adminMemo?: string }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'revoke_request', ...payload });
+}
+
+export function fetchAdminCallSettings(cpId: number) {
+  return adminApiGet<{ settings: Record<string, unknown> }>('call.php', { view: 'settings', cpId: String(cpId) });
+}
+
+export function saveAdminCallSettings(payload: Record<string, unknown> & { cpId: number }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'save_settings', ...payload });
+}
+
+export function fetchAdminCallRecording(clogId: number) {
+  return adminApiGet<{ url: string }>('call.php', { view: 'recording', clogId: String(clogId) });
+}
+
+export function finalizeAdminConversion(payload: { cvId: number; finalAction: 'approve' | 'reject' | 'lock' | 'unlock'; memo?: string }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'final_status', ...payload });
+}
+
+// 광고주
+export type MerchantCallCampaign = {
+  cpId: number;
+  campaign: string;
+  code: string;
+  enabled: boolean;
+  adminEnabled: boolean;
+  alias: string;
+  forward1: string;
+  forward2: string;
+  recordingMode: string;
+};
+
+export function fetchMerchantCallCampaigns() {
+  return merchantApiGet<{ items: MerchantCallCampaign[]; dbReady: boolean }>('call.php', { view: 'campaigns' });
+}
+
+export function saveMerchantCallSettings(payload: { cpId: number; enabled: boolean; alias?: string; forward1?: string; forward2?: string }) {
+  return merchantApiPost<{ message: string }>('call.php', { action: 'save_settings', ...payload });
+}
+
+export function toggleMerchantCall(payload: { cpId: number; enabled: boolean }) {
+  return merchantApiPost<{ message: string }>('call.php', { action: 'toggle', ...payload });
+}
+
+// 파트너
+export function fetchPartnerCallRequests() {
+  return partnerApiGet<{ items: CallRequest[]; dbReady: boolean }>('call.php', { view: 'requests' });
+}
+
+export function fetchPartnerCallLogs() {
+  return partnerApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', { view: 'logs' });
+}
+
+export function requestPartnerCallNumber(payload: { cpId: number; memo?: string }) {
+  return partnerApiPost<{ message: string; carId?: number }>('call.php', { action: 'request', ...payload });
+}

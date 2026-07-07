@@ -583,6 +583,12 @@ if (!function_exists('lc_db_run_migrations')) {
             'cv_ip' => "varchar(45) NOT NULL DEFAULT '' AFTER `cv_partner_visible`",
             'cv_abuse_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `cv_ip`",
             'cv_is_duplicate' => "tinyint(1) NOT NULL DEFAULT 0 AFTER `cv_abuse_score`",
+            'cv_source' => "varchar(20) NOT NULL DEFAULT 'form' AFTER `cv_is_duplicate`",
+            'cv_call_id' => "bigint unsigned NOT NULL DEFAULT 0 AFTER `cv_source`",
+            'cv_call_duration' => "int unsigned NOT NULL DEFAULT 0 AFTER `cv_call_id`",
+            'cv_call_result' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_call_duration`",
+            'cv_final_status' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_call_result`",
+            'cv_final_locked' => "tinyint(1) NOT NULL DEFAULT 0 AFTER `cv_final_status`",
         ) as $col => $definition) {
             if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, $col)) {
                 $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `{$col}` {$definition}";
@@ -801,6 +807,118 @@ if (!function_exists('lc_db_run_migrations')) {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
             if ($create === false) {
                 return array('ok' => false, 'message' => 'channel_reports 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        // ── 콜디비 ──────────────────────────────────────────────
+        $call_numbers = lc_table('call_numbers');
+        if (!lc_db_table_exists($call_numbers)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$call_numbers}` (
+                `cn_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `cn_number` varchar(30) NOT NULL,
+                `cn_provider` varchar(50) NOT NULL DEFAULT '',
+                `cn_provider_number_id` varchar(100) NOT NULL DEFAULT '',
+                `cn_status` varchar(20) NOT NULL DEFAULT 'available',
+                `cn_memo` varchar(500) NOT NULL DEFAULT '',
+                `cn_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `cn_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`cn_id`),
+                UNIQUE KEY `uk_cn_number` (`cn_number`),
+                KEY `idx_cn_status` (`cn_status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'call_numbers 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $call_settings = lc_table('call_settings');
+        if (!lc_db_table_exists($call_settings)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$call_settings}` (
+                `cs_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `cp_id` int unsigned NOT NULL,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `cs_enabled` tinyint(1) NOT NULL DEFAULT 0,
+                `cs_alias` varchar(200) NOT NULL DEFAULT '',
+                `cs_forward1` varchar(30) NOT NULL DEFAULT '',
+                `cs_forward2` varchar(30) NOT NULL DEFAULT '',
+                `cs_admin_enabled` tinyint(1) NOT NULL DEFAULT 1,
+                `cs_recording_mode` varchar(20) NOT NULL DEFAULT 'normal',
+                `cs_coloring` varchar(100) NOT NULL DEFAULT '',
+                `cs_call_ment` varchar(200) NOT NULL DEFAULT '',
+                `cs_business_start` varchar(5) NOT NULL DEFAULT '00:00',
+                `cs_business_end` varchar(5) NOT NULL DEFAULT '23:59',
+                `cs_holiday_weeks` varchar(50) NOT NULL DEFAULT '',
+                `cs_holiday_days` varchar(50) NOT NULL DEFAULT '',
+                `cs_price` int unsigned NOT NULL DEFAULT 0,
+                `cs_min_duration` int unsigned NOT NULL DEFAULT 0,
+                `cs_memo` varchar(500) NOT NULL DEFAULT '',
+                `cs_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `cs_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`cs_id`),
+                UNIQUE KEY `uk_cs_cp_id` (`cp_id`),
+                KEY `idx_cs_mt_id` (`mt_id`),
+                KEY `idx_cs_enabled` (`cs_enabled`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'call_settings 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $call_requests = lc_table('call_requests');
+        if (!lc_db_table_exists($call_requests)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$call_requests}` (
+                `car_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `pt_id` int unsigned NOT NULL,
+                `cp_id` int unsigned NOT NULL,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `car_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `cn_id` int unsigned NOT NULL DEFAULT 0,
+                `car_virtual_number` varchar(30) NOT NULL DEFAULT '',
+                `car_request_memo` varchar(500) NOT NULL DEFAULT '',
+                `car_admin_memo` varchar(500) NOT NULL DEFAULT '',
+                `car_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `car_processed_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`car_id`),
+                KEY `idx_car_pt_id` (`pt_id`),
+                KEY `idx_car_cp_id` (`cp_id`),
+                KEY `idx_car_status` (`car_status`),
+                KEY `idx_car_number` (`car_virtual_number`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'call_requests 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $call_logs = lc_table('call_logs');
+        if (!lc_db_table_exists($call_logs)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$call_logs}` (
+                `clog_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `clog_provider_call_id` varchar(100) NOT NULL DEFAULT '',
+                `cn_id` int unsigned NOT NULL DEFAULT 0,
+                `car_id` int unsigned NOT NULL DEFAULT 0,
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `cp_id` int unsigned NOT NULL DEFAULT 0,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `clog_virtual_number` varchar(30) NOT NULL DEFAULT '',
+                `clog_caller` varchar(30) NOT NULL DEFAULT '',
+                `clog_callee` varchar(30) NOT NULL DEFAULT '',
+                `clog_started_at` datetime DEFAULT NULL,
+                `clog_duration` int unsigned NOT NULL DEFAULT 0,
+                `clog_result` varchar(20) NOT NULL DEFAULT '',
+                `clog_recording_url` varchar(500) NOT NULL DEFAULT '',
+                `clog_recording_id` varchar(100) NOT NULL DEFAULT '',
+                `cv_id` bigint unsigned NOT NULL DEFAULT 0,
+                `clog_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`clog_id`),
+                UNIQUE KEY `uk_clog_provider_call_id` (`clog_provider_call_id`),
+                KEY `idx_clog_number` (`clog_virtual_number`),
+                KEY `idx_clog_pt_id` (`pt_id`),
+                KEY `idx_clog_cp_id` (`cp_id`),
+                KEY `idx_clog_started` (`clog_started_at`),
+                KEY `idx_clog_cv_id` (`cv_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'call_logs 테이블 생성 실패: ' . lc_sql_error());
             }
         }
 

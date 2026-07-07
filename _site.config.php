@@ -20,6 +20,8 @@ $site_config = array(
     'primary_color'       => '#2563eb',
     'secondary_color'     => '#64748b',
     'logo_path'           => '/img/logo/logo.svg',
+    /* 회원 스킨 강제 적용 (DB cf_member_skin 무관) — onoff = LinkConnect 톤 회원 페이지 */
+    'platform_member_skin' => 'onoff',
     'og_image'            => '/img/common/og-image.jpg',
     /* SEO (components/seo-meta.php) */
     'seo_title'           => '',

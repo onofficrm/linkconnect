@@ -122,3 +122,6 @@ if (is_file(LC_PLUGIN_PATH . '/inc/event_roi.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/channel_report.php')) {
     require_once LC_PLUGIN_PATH . '/inc/channel_report.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/call.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/call.php';
+}

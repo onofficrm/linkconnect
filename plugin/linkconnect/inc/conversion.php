@@ -317,6 +317,10 @@ if (!function_exists('lc_conversion_update_status')) {
             return array('ok' => false, 'message' => '접근 권한이 없습니다.');
         }
 
+        if (!empty($conversion['cv_final_locked'])) {
+            return array('ok' => false, 'message' => '관리자 최종확정으로 잠긴 디비입니다.');
+        }
+
         if ($conversion['cv_status'] !== LC_STATUS_PENDING) {
             return array('ok' => false, 'message' => '이미 처리된 디비입니다.');
         }
@@ -404,6 +408,114 @@ if (!function_exists('lc_conversion_update_status')) {
     }
 }
 
+if (!function_exists('lc_conversion_admin_final_status')) {
+    /**
+     * 관리자 최종확정 — 광고주 승인/취소 위에서 최종 승인/취소불가(락) 처리.
+     *
+     * @param string $action approve|reject|lock|unlock
+     * @return array{ok:bool,message:string,conversion?:array}
+     */
+    function lc_conversion_admin_final_status($cv_id, $action, $memo = '')
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $cv_id = (int) $cv_id;
+        $conversion = lc_conversion_get_by_id($cv_id);
+        if (!$conversion) {
+            return array('ok' => false, 'message' => '디비를 찾을 수 없습니다.');
+        }
+
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT mt_id FROM `{$cp_table}` WHERE cp_id = '" . (int) $conversion['cp_id'] . "' LIMIT 1 ");
+        $mt_id = $campaign ? (int) $campaign['mt_id'] : 0;
+
+        $table = lc_table('conversions');
+
+        if ($action === 'unlock') {
+            lc_sql_query(" UPDATE `{$table}` SET cv_final_locked = '0', cv_updated_at = NOW() WHERE cv_id = '{$cv_id}' ", false);
+
+            return array('ok' => true, 'message' => '잠금을 해제했습니다.', 'conversion' => lc_conversion_get_by_id($cv_id));
+        }
+
+        if ($action === 'lock') {
+            $final = $conversion['cv_status'] === LC_STATUS_APPROVED ? LC_FINAL_APPROVED : ($conversion['cv_status'] === LC_STATUS_REJECTED ? LC_FINAL_REJECTED : '');
+            lc_sql_query(" UPDATE `{$table}` SET cv_final_status = '" . lc_sql_escape($final) . "', cv_final_locked = '1', cv_updated_at = NOW() WHERE cv_id = '{$cv_id}' ", false);
+
+            return array('ok' => true, 'message' => '현재 상태로 최종확정(잠금)했습니다.', 'conversion' => lc_conversion_get_by_id($cv_id));
+        }
+
+        if ($action !== 'approve' && $action !== 'reject') {
+            return array('ok' => false, 'message' => '유효하지 않은 최종확정 action입니다.');
+        }
+
+        $current = (string) $conversion['cv_status'];
+        $target_status = $action === 'approve' ? LC_STATUS_APPROVED : LC_STATUS_REJECTED;
+        $final_status = $action === 'approve' ? LC_FINAL_APPROVED : LC_FINAL_REJECTED;
+        $memo_text = $memo !== '' ? $memo : '관리자 최종확정';
+        $price = (int) $conversion['cv_price'];
+
+        // 이미 목표 상태와 동일하면 정산 이동 없이 최종확정(잠금)만.
+        if ($current === $target_status) {
+            lc_sql_query(" UPDATE `{$table}` SET
+                cv_final_status = '" . lc_sql_escape($final_status) . "',
+                cv_final_locked = '1',
+                cv_updated_at = NOW()
+                WHERE cv_id = '{$cv_id}' ", false);
+
+            return array(
+                'ok'         => true,
+                'message'    => $action === 'approve' ? '최종 승인(잠금) 처리했습니다.' : '최종 취소불가(잠금) 처리했습니다.',
+                'conversion' => lc_conversion_get_by_id($cv_id),
+            );
+        }
+
+        // 검수중(pending)에서의 전환은 정식 파이프라인(지갑 차감·파트너 적립·알림)을 태운다.
+        if ($current === LC_STATUS_PENDING && $mt_id > 0) {
+            $result = lc_conversion_update_status($cv_id, $mt_id, $target_status, $memo_text);
+            if (!$result['ok']) {
+                return $result;
+            }
+        } elseif ($action === 'approve') {
+            // 취소/무효 → 승인: 광고비 차감 + 파트너 적립
+            if ($mt_id > 0) {
+                $deduct = lc_wallet_deduct_for_conversion($mt_id, $cv_id, $price, $conversion['cv_code'] . ' 관리자 최종승인 차감');
+                if (!$deduct['ok']) {
+                    return $deduct;
+                }
+            }
+            if (function_exists('lc_partner_credit_for_conversion')) {
+                lc_partner_credit_for_conversion($conversion);
+            }
+            lc_sql_query(" UPDATE `{$table}` SET cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "', cv_comment = '" . lc_sql_escape($memo_text) . "', cv_review_status = '', cv_reject_reason = '', cv_updated_at = NOW() WHERE cv_id = '{$cv_id}' ", false);
+        } else {
+            // 승인 → 취소/무효: 광고비 환급 + 파트너 적립 회수
+            if ($current === LC_STATUS_APPROVED) {
+                if ($mt_id > 0 && function_exists('lc_wallet_record')) {
+                    lc_wallet_record($mt_id, 'refund', abs($price), $conversion['cv_code'] . ' 관리자 최종취소 환급', 'conversion', $cv_id);
+                }
+                if (function_exists('lc_partner_debit_for_conversion')) {
+                    lc_partner_debit_for_conversion($conversion);
+                }
+            }
+            lc_sql_query(" UPDATE `{$table}` SET cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "', cv_comment = '" . lc_sql_escape($memo_text) . "', cv_reject_reason = '" . lc_sql_escape($memo_text) . "', cv_updated_at = NOW() WHERE cv_id = '{$cv_id}' ", false);
+        }
+
+        lc_sql_query(" UPDATE `{$table}` SET
+            cv_final_status = '" . lc_sql_escape($final_status) . "',
+            cv_final_locked = '1',
+            cv_updated_at = NOW()
+            WHERE cv_id = '{$cv_id}' ", false);
+
+        return array(
+            'ok'         => true,
+            'message'    => $action === 'approve' ? '최종 승인(잠금) 처리했습니다.' : '최종 취소불가(잠금) 처리했습니다.',
+            'conversion' => lc_conversion_get_by_id($cv_id),
+        );
+    }
+}
+
 if (!function_exists('lc_partner_credit_for_conversion')) {
     function lc_partner_credit_for_conversion(array $conversion)
     {
@@ -426,6 +538,36 @@ if (!function_exists('lc_partner_credit_for_conversion')) {
         $table = lc_table('partners');
 
         lc_sql_query(" UPDATE `{$table}` SET pt_balance = pt_balance + '{$amount}', pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
+    }
+}
+
+if (!function_exists('lc_partner_debit_for_conversion')) {
+    /**
+     * 파트너 적립 역처리 — 승인이 최종 취소로 뒤집힐 때 적립금 회수.
+     * (적립 당시와 동일한 등급 보너스 기준으로 계산; 등급 변동 시 오차 가능)
+     */
+    function lc_partner_debit_for_conversion(array $conversion)
+    {
+        if (!lc_db_installed() || empty($conversion['pt_id'])) {
+            return;
+        }
+
+        $pt_id = (int) $conversion['pt_id'];
+        $amount = (int) $conversion['cv_price'];
+        if (function_exists('lc_get_partner_by_id')) {
+            $partner = lc_get_partner_by_id($pt_id);
+            if (is_array($partner) && function_exists('lc_partner_tier_bonus_rate')) {
+                $tier = lc_partner_tier_label($partner);
+                $bonus = lc_partner_tier_bonus_rate($tier);
+                if ($bonus > 0) {
+                    $amount += (int) round($amount * $bonus);
+                }
+            }
+        }
+        $table = lc_table('partners');
+
+        // 잔액이 음수로 내려가지 않도록 보호
+        lc_sql_query(" UPDATE `{$table}` SET pt_balance = GREATEST(0, pt_balance - '{$amount}'), pt_updated_at = NOW() WHERE pt_id = '{$pt_id}' ", false);
     }
 }
 

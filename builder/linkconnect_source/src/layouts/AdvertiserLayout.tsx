@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
 import { getLcAuth } from '../lib/auth';
@@ -43,6 +43,7 @@ export function AdvertiserLayout({
             <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" />
             <NavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" />
             <NavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" />
+            <NavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" />
             <NavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" />
             <NavItem icon={<BarChart3 size={20} />} label="성과 리포트" active={activeMenu === 'reports'} to="/advertiser/reports" />
             <NavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" />

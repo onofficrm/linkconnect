@@ -20,9 +20,11 @@ import { PartnerAnalytics } from './pages/partner/PartnerAnalytics';
 import { PartnerSettlement } from './pages/partner/PartnerSettlement';
 import { PartnerSupport } from './pages/partner/PartnerSupport';
 import { PartnerReport } from './pages/partner/PartnerReport';
+import { PartnerCall } from './pages/partner/PartnerCall';
 
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
+import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
 import { AdvertiserReports } from './pages/advertiser/AdvertiserReports';
 import { AdvertiserSupport } from './pages/advertiser/AdvertiserSupport';
@@ -43,6 +45,7 @@ import { AdminEvents } from './pages/admin/AdminEvents';
 import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminReviewQueue } from './pages/admin/AdminReviewQueue';
 import { AdminChannelReports } from './pages/admin/AdminChannelReports';
+import { AdminCallDb } from './pages/admin/AdminCallDb';
 import { NoticeList } from './pages/notice/NoticeList';
 import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
@@ -75,6 +78,7 @@ export default function App() {
           <Route path="partner/search" element={<PartnerSearch />} />
           <Route path="partner/links" element={<PartnerLinks />} />
           <Route path="partner/db-status" element={<PartnerDbStatus />} />
+          <Route path="partner/call" element={<PartnerCall />} />
           <Route path="partner/db-cancel" element={<PartnerDbCancel />} />
           <Route path="partner/analytics" element={<PartnerAnalytics />} />
           <Route path="partner/report" element={<PartnerReport />} />
@@ -85,6 +89,7 @@ export default function App() {
           <Route path="advertiser" element={<AdvertiserDashboard />} />
           <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
           <Route path="advertiser/db" element={<AdvertiserDb />} />
+          <Route path="advertiser/call" element={<AdvertiserCall />} />
           <Route path="advertiser/billing" element={<AdvertiserBilling />} />
           <Route path="advertiser/reports" element={<AdvertiserReports />} />
           <Route path="advertiser/support" element={<AdvertiserSupport />} />
@@ -95,6 +100,7 @@ export default function App() {
           <Route path="admin/advertisers" element={<AdminAdvertisers />} />
           <Route path="admin/campaigns" element={<AdminCampaigns />} />
           <Route path="admin/conversions" element={<AdminConversions />} />
+          <Route path="admin/call" element={<AdminCallDb />} />
           <Route path="admin/inspections" element={<AdminInspections />} />
           <Route path="admin/billing" element={<AdminBilling />} />
           <Route path="admin/settlements" element={<AdminSettlements />} />

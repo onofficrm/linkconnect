@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Settings, Save, RotateCcw, Check, Sparkles } from 'lucide-react';
+import { Settings, Save, RotateCcw, Check, Sparkles, PhoneCall } from 'lucide-react';
 import { fetchAdminSettings, resetAdminSettings, saveAdminSettings } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -29,6 +29,16 @@ const defaultRaw: RawSettings = {
   notifyLowBalanceEmailTpl: '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.',
   notifyLowBalanceSmsTpl: '[{site}] 광고비 잔액 {balance}원. 충전 필요.',
   notifyLowBalanceKakaoTpl: '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.',
+  callEnabled: '0',
+  callProvider: '',
+  callApiBaseUrl: '',
+  callApiKeySet: '0',
+  callApiSecretSet: '0',
+  callWebhookTokenSet: '0',
+  callDefaultPrice: '0',
+  callMinDuration: '0',
+  callCreateOnMissed: '0',
+  callRecordingMode: 'normal',
 };
 
 function boolVal(raw: RawSettings, key: string) {
@@ -42,6 +52,9 @@ function setBool(raw: RawSettings, key: string, value: boolean): RawSettings {
 export function AdminSettings() {
   const [raw, setRaw] = useState<RawSettings>(defaultRaw);
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [callApiKeyInput, setCallApiKeyInput] = useState('');
+  const [callApiSecretInput, setCallApiSecretInput] = useState('');
+  const [callWebhookTokenInput, setCallWebhookTokenInput] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -117,9 +130,24 @@ export function AdminSettings() {
           aiPromoDailyLimit: Number(raw.aiPromoDailyLimit || 20),
           aiSummaryDailyLimit: Number(raw.aiSummaryDailyLimit || 10),
         },
+        call: {
+          callEnabled: boolVal(raw, 'callEnabled'),
+          callProvider: raw.callProvider || '',
+          callApiBaseUrl: raw.callApiBaseUrl || '',
+          callApiKey: callApiKeyInput.trim(),
+          callApiSecret: callApiSecretInput.trim(),
+          callWebhookToken: callWebhookTokenInput.trim(),
+          callDefaultPrice: Number(raw.callDefaultPrice || 0),
+          callMinDuration: Number(raw.callMinDuration || 0),
+          callCreateOnMissed: boolVal(raw, 'callCreateOnMissed'),
+          callRecordingMode: raw.callRecordingMode || 'normal',
+        },
       });
       setRaw({ ...defaultRaw, ...data.raw });
       setGeminiKeyInput('');
+      setCallApiKeyInput('');
+      setCallApiSecretInput('');
+      setCallWebhookTokenInput('');
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -224,6 +252,49 @@ export function AdminSettings() {
             <TextAreaField label="문자 템플릿" value={raw.notifyLowBalanceSmsTpl || ''} onChange={(v) => update('notifyLowBalanceSmsTpl', v)} />
             <Toggle label="카카오 알림톡 발송" checked={boolVal(raw, 'notifyLowBalanceKakao')} onChange={(v) => setRaw((prev) => setBool(prev, 'notifyLowBalanceKakao', v))} />
             <TextAreaField label="카카오 템플릿" value={raw.notifyLowBalanceKakaoTpl || ''} onChange={(v) => update('notifyLowBalanceKakaoTpl', v)} />
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-emerald-600 to-cyan-600 flex items-center gap-2">
+            <PhoneCall className="w-5 h-5 text-white" />
+            <h3 className="font-bold text-white">콜디비 · 콜업체 연동</h3>
+          </div>
+          <div className="p-6 space-y-6">
+            <Toggle label="콜디비 기능 사용" checked={boolVal(raw, 'callEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'callEnabled', v))} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="콜업체명" value={raw.callProvider} onChange={(v) => update('callProvider', v)} />
+              <Field label="콜업체 API Base URL" value={raw.callApiBaseUrl} onChange={(v) => update('callApiBaseUrl', v)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">콜업체 API Key</label>
+              {raw.callApiKeySet === '1' ? (
+                <p className="text-xs text-emerald-600 mb-2">등록됨 (********)</p>
+              ) : (
+                <p className="text-xs text-amber-600 mb-2">API 키가 설정되지 않았습니다.</p>
+              )}
+              <input type="password" value={callApiKeyInput} onChange={(e) => setCallApiKeyInput(e.target.value)} placeholder="새 API Key 입력 (변경 시에만)"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">콜업체 API Secret</label>
+              {raw.callApiSecretSet === '1' ? <p className="text-xs text-emerald-600 mb-2">등록됨 (********)</p> : <p className="text-xs text-slate-400 mb-2">선택 사항</p>}
+              <input type="password" value={callApiSecretInput} onChange={(e) => setCallApiSecretInput(e.target.value)} placeholder="새 API Secret 입력 (변경 시에만)"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">통화 웹훅 인증 토큰</label>
+              {raw.callWebhookTokenSet === '1' ? <p className="text-xs text-emerald-600 mb-2">등록됨 (********)</p> : <p className="text-xs text-slate-400 mb-2">콜업체가 통화결과를 보낼 때 X-CALL-TOKEN 헤더로 검증합니다.</p>}
+              <input type="password" value={callWebhookTokenInput} onChange={(e) => setCallWebhookTokenInput(e.target.value)} placeholder="새 웹훅 토큰 입력 (변경 시에만)"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none" />
+              <p className="text-[11px] text-slate-400 mt-2">수신 URL: <code>/plugin/linkconnect/api/call_receive.php</code></p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Field label="기본 콜 단가 (원)" value={raw.callDefaultPrice} onChange={(v) => update('callDefaultPrice', v)} type="number" />
+              <Field label="최소 통화시간 (초)" value={raw.callMinDuration} onChange={(v) => update('callMinDuration', v)} type="number" />
+              <SelectField label="기본 녹음 방식" value={raw.callRecordingMode} onChange={(v) => update('callRecordingMode', v)} options={[['normal', '녹음'], ['none', '녹음 안함'], ['both', '양방향 녹음']]} />
+            </div>
+            <Toggle label="부재중 통화도 콜DB로 집계" checked={boolVal(raw, 'callCreateOnMissed')} onChange={(v) => setRaw((prev) => setBool(prev, 'callCreateOnMissed', v))} />
           </div>
         </section>
 

@@ -79,6 +79,29 @@ if (!defined('LC_MYSQL_PASSWORD')) {
     define('LC_MYSQL_PASSWORD', '');
 }
 
+/* ── 콜디비 ── */
+/** 전환 유입 유형 */
+define('LC_SOURCE_FORM', 'form');
+define('LC_SOURCE_CALL', 'call');
+/** 가상번호 상태 */
+define('LC_CALL_NUMBER_AVAILABLE', 'available');
+define('LC_CALL_NUMBER_ASSIGNED', 'assigned');
+define('LC_CALL_NUMBER_PAUSED', 'paused');
+define('LC_CALL_NUMBER_RELEASED', 'released');
+/** 번호 신청 상태 */
+define('LC_CALL_REQ_PENDING', 'pending');
+define('LC_CALL_REQ_ASSIGNED', 'assigned');
+define('LC_CALL_REQ_REJECTED', 'rejected');
+define('LC_CALL_REQ_REVOKED', 'revoked');
+/** 통화 결과 */
+define('LC_CALL_RESULT_SUCCESS', 'success');
+define('LC_CALL_RESULT_MISSED', 'missed');
+define('LC_CALL_RESULT_BUSY', 'busy');
+define('LC_CALL_RESULT_FAIL', 'fail');
+/** 관리자 최종확정 상태 */
+define('LC_FINAL_APPROVED', 'approved');
+define('LC_FINAL_REJECTED', 'rejected');
+
 /* ── 샘플 UI 상태값 (실제 DB 연동 전) ── */
 define('LC_STATUS_DRAFT', 'draft');
 define('LC_STATUS_ACTIVE', 'active');

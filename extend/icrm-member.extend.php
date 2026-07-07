@@ -41,6 +41,7 @@ if (!function_exists('icrm_member_site_nav')) {
     }
 }
 
-if (function_exists('add_event')) {
-    add_event('tail_sub', 'icrm_member_site_nav', 35, 0);
-}
+// iCRM 관리 진입 띠(디자인 배포 · 사이트 업데이트) 노출 비활성화
+// if (function_exists('add_event')) {
+//     add_event('tail_sub', 'icrm_member_site_nav', 35, 0);
+// }

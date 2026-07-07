@@ -50,6 +50,16 @@ if (!function_exists('lc_settings_defaults')) {
             'notifyLowBalanceEmailTpl' => '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.',
             'notifyLowBalanceSmsTpl'   => '[{site}] 광고비 잔액 {balance}원. 충전 필요.',
             'notifyLowBalanceKakaoTpl' => '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.',
+            'callEnabled'           => '0',
+            'callProvider'          => '',
+            'callApiBaseUrl'        => '',
+            'callApiKey'            => '',
+            'callApiSecret'         => '',
+            'callWebhookToken'      => '',
+            'callDefaultPrice'      => 0,
+            'callMinDuration'       => 0,
+            'callCreateOnMissed'    => '0',
+            'callRecordingMode'     => 'normal',
         );
     }
 }
@@ -122,7 +132,7 @@ if (!function_exists('lc_settings_save')) {
             if (!array_key_exists($key, $defaults)) {
                 continue;
             }
-            if ($key === 'geminiApiKey') {
+            if ($key === 'geminiApiKey' || $key === 'callApiKey' || $key === 'callApiSecret' || $key === 'callWebhookToken') {
                 $key_val = trim((string) $value);
                 if ($key_val !== '') {
                     $key_esc = lc_sql_escape($key);
@@ -207,6 +217,18 @@ if (!function_exists('lc_settings_to_api')) {
                 'aiChatDailyLimit'    => (int) ($settings['aiChatDailyLimit'] ?? 30),
                 'aiPromoDailyLimit'   => (int) ($settings['aiPromoDailyLimit'] ?? 20),
                 'aiSummaryDailyLimit' => (int) ($settings['aiSummaryDailyLimit'] ?? 10),
+            ),
+            'call' => array(
+                'callEnabled'        => lc_settings_get_bool('callEnabled'),
+                'callProvider'       => (string) ($settings['callProvider'] ?? ''),
+                'callApiBaseUrl'     => (string) ($settings['callApiBaseUrl'] ?? ''),
+                'callApiKeySet'      => trim((string) ($settings['callApiKey'] ?? '')) !== '',
+                'callApiSecretSet'   => trim((string) ($settings['callApiSecret'] ?? '')) !== '',
+                'callWebhookTokenSet' => trim((string) ($settings['callWebhookToken'] ?? '')) !== '',
+                'callDefaultPrice'   => (int) ($settings['callDefaultPrice'] ?? 0),
+                'callMinDuration'    => (int) ($settings['callMinDuration'] ?? 0),
+                'callCreateOnMissed' => lc_settings_get_bool('callCreateOnMissed'),
+                'callRecordingMode'  => (string) ($settings['callRecordingMode'] ?? 'normal'),
             ),
         );
     }

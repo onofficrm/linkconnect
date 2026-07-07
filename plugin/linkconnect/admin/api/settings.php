@@ -80,6 +80,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if (isset($values['call']) && is_array($values['call'])) {
+        foreach ($values['call'] as $key => $value) {
+            if (in_array($key, array('callApiKey', 'callApiSecret', 'callWebhookToken'), true)) {
+                $key_val = trim((string) $value);
+                if ($key_val !== '' && strpos($key_val, '*') === false) {
+                    $flat[$key] = $key_val;
+                }
+                continue;
+            }
+            if (in_array($key, array('callApiKeySet', 'callApiSecretSet', 'callWebhookTokenSet'), true)) {
+                continue;
+            }
+            $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
+        }
+    }
+
     foreach ($body as $key => $value) {
         if (is_string($key) && array_key_exists($key, lc_settings_defaults())) {
             $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
