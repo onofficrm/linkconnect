@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
-import { CenterHomeLink } from '../components/CenterHomeLink';
+import { CenterTopBar } from '../components/CenterTopBar';
 import { getLcAuth } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
@@ -31,6 +31,7 @@ export function AdvertiserLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <SuperAdminWidget />
+      <CenterTopBar center="advertiser" />
       <div className="flex flex-col md:flex-row flex-1">
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-slate-950 text-slate-300 shrink-0 border-r border-slate-800 overflow-x-auto md:overflow-visible z-10">
@@ -57,7 +58,6 @@ export function AdvertiserLayout({
             <p className="text-slate-500">{displayCompany}</p>
           </div>
           <div className="flex items-center gap-4">
-            <CenterHomeLink accent="cyan" />
             <SuperAdminHeaderButton />
             <div className="flex flex-col items-end bg-white px-4 py-1.5 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-xs text-slate-500">현재 광고비 잔액</span>

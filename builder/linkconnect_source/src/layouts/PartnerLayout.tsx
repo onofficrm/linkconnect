@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
-import { CenterHomeLink } from '../components/CenterHomeLink';
+import { CenterTopBar } from '../components/CenterTopBar';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { getLcAuth } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
@@ -47,6 +47,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <SuperAdminWidget />
+      <CenterTopBar center="partner" />
       <div className="flex flex-col md:flex-row flex-1">
       <aside className="w-full md:w-64 bg-slate-900 text-slate-300 md:min-h-screen shrink-0 overflow-x-auto md:overflow-visible flex flex-col">
         <div className="p-4 md:p-6 flex md:flex-col gap-2 md:gap-0 flex-1">
@@ -80,7 +81,6 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
             <p className="text-slate-500">{dateLabel}</p>
           </div>
           <div className="flex items-center gap-4">
-            <CenterHomeLink accent="emerald" />
             <SuperAdminHeaderButton />
             <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
               <span className="text-sm text-slate-500">파트너 코드</span>
