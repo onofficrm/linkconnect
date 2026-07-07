@@ -205,6 +205,9 @@ if (!function_exists('lc_db_run_schema')) {
             lc_table('wallet_transactions'),
             lc_table('settlements'),
             lc_table('inquiries'),
+            lc_table('settings'),
+            lc_table('api_clients'),
+            lc_table('api_logs'),
         );
 
         $queries = array(
@@ -361,14 +364,65 @@ if (!function_exists('lc_db_run_schema')) {
                 `pt_id` int unsigned NOT NULL DEFAULT 0,
                 `mt_id` int unsigned NOT NULL DEFAULT 0,
                 `mb_id` varchar(20) NOT NULL DEFAULT '',
+                `iq_center` varchar(20) NOT NULL DEFAULT '',
                 `iq_category` varchar(50) NOT NULL DEFAULT '',
                 `iq_subject` varchar(200) NOT NULL DEFAULT '',
                 `iq_body` text,
-                `iq_status` varchar(20) NOT NULL DEFAULT 'open',
+                `iq_campaign` varchar(200) NOT NULL DEFAULT '',
+                `iq_cv_code` varchar(30) NOT NULL DEFAULT '',
+                `iq_reply` text,
+                `iq_admin_memo` varchar(500) NOT NULL DEFAULT '',
+                `iq_status` varchar(20) NOT NULL DEFAULT 'waiting',
                 `iq_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `iq_replied_at` datetime DEFAULT NULL,
                 PRIMARY KEY (`iq_id`),
                 UNIQUE KEY `uk_iq_code` (`iq_code`),
-                KEY `idx_pt_id` (`pt_id`)
+                KEY `idx_pt_id` (`pt_id`),
+                KEY `idx_mt_id` (`mt_id`),
+                KEY `idx_iq_status` (`iq_status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('settings') . "` (
+                `st_key` varchar(100) NOT NULL,
+                `st_value` text,
+                `st_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`st_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('api_clients') . "` (
+                `ac_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ac_code` varchar(30) NOT NULL,
+                `ac_name` varchar(100) NOT NULL DEFAULT '',
+                `ac_type` varchar(30) NOT NULL DEFAULT 'landing',
+                `ac_api_key` varchar(64) NOT NULL DEFAULT '',
+                `ac_api_secret` varchar(64) NOT NULL DEFAULT '',
+                `ac_allowed_ips` varchar(500) NOT NULL DEFAULT '',
+                `ac_status` varchar(20) NOT NULL DEFAULT 'active',
+                `ac_last_call_at` datetime DEFAULT NULL,
+                `ac_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ac_id`),
+                UNIQUE KEY `uk_ac_code` (`ac_code`),
+                UNIQUE KEY `uk_ac_api_key` (`ac_api_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS `" . lc_table('api_logs') . "` (
+                `al_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ac_id` int unsigned NOT NULL DEFAULT 0,
+                `al_client_name` varchar(100) NOT NULL DEFAULT '',
+                `al_direction` varchar(30) NOT NULL DEFAULT 'receive',
+                `al_endpoint` varchar(200) NOT NULL DEFAULT '',
+                `al_ext_id` varchar(100) NOT NULL DEFAULT '',
+                `al_int_code` varchar(30) NOT NULL DEFAULT '',
+                `al_status_code` int NOT NULL DEFAULT 200,
+                `al_status` varchar(30) NOT NULL DEFAULT 'success',
+                `al_error` varchar(500) NOT NULL DEFAULT '',
+                `al_request_body` text,
+                `al_response_body` text,
+                `al_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`al_id`),
+                KEY `idx_ac_id` (`ac_id`),
+                KEY `idx_al_created_at` (`al_created_at`),
+                KEY `idx_al_status` (`al_status`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
         );
 
@@ -436,6 +490,19 @@ if (!function_exists('lc_db_run_migrations')) {
 
         if (lc_db_table_exists($inquiries) && !lc_db_column_exists($inquiries, 'mt_id')) {
             $alters[] = "ALTER TABLE `{$inquiries}` ADD COLUMN `mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `pt_id`";
+        }
+
+        foreach (array(
+            'iq_center'     => "varchar(20) NOT NULL DEFAULT '' AFTER `mb_id`",
+            'iq_campaign'   => "varchar(200) NOT NULL DEFAULT '' AFTER `iq_body`",
+            'iq_cv_code'    => "varchar(30) NOT NULL DEFAULT '' AFTER `iq_campaign`",
+            'iq_reply'      => "text AFTER `iq_cv_code`",
+            'iq_admin_memo' => "varchar(500) NOT NULL DEFAULT '' AFTER `iq_reply`",
+            'iq_replied_at' => "datetime DEFAULT NULL AFTER `iq_status`",
+        ) as $col => $definition) {
+            if (lc_db_table_exists($inquiries) && !lc_db_column_exists($inquiries, $col)) {
+                $alters[] = "ALTER TABLE `{$inquiries}` ADD COLUMN `{$col}` {$definition}";
+            }
         }
 
         if (lc_db_table_exists($settlements) && !lc_db_column_exists($settlements, 'st_approved_amount')) {

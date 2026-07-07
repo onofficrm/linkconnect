@@ -541,6 +541,9 @@ if (!function_exists('lc_conversion_to_api_partner')) {
             'estRevenue'  => $status === LC_STATUS_REJECTED ? 0 : $price,
             'confRevenue' => $approved ? $price : 0,
             'comment'     => (string) $row['cv_comment'],
+            'reason'      => (string) ($row['cv_reject_reason'] ?? ''),
+            'appeal'      => (string) ($row['cv_partner_appeal'] ?? ''),
+            'hasAppeal'   => trim((string) ($row['cv_partner_appeal'] ?? '')) !== '',
         );
     }
 }
@@ -1073,6 +1076,118 @@ if (!function_exists('lc_conversion_partner_report_for_api')) {
             ),
             'monthly'   => $monthly,
             'campaigns' => lc_conversion_partner_campaign_stats($pt_id, 5),
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_partner_cancel_summary')) {
+    function lc_conversion_partner_cancel_summary($pt_id)
+    {
+        if (!lc_db_installed()) {
+            return array('total' => 0, 'week' => 0, 'monthRate' => 0, 'topReason' => '-', 'reasons' => array());
+        }
+
+        $pt_id = (int) $pt_id;
+        $cv_table = lc_table('conversions');
+        $week_start = date('Y-m-d', strtotime('-7 days'));
+        $month_start = date('Y-m-01');
+
+        $total_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}`
+            WHERE pt_id = '{$pt_id}' AND cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' ");
+        $week_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}`
+            WHERE pt_id = '{$pt_id}' AND cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "'
+            AND DATE(cv_created_at) >= '{$week_start}' ");
+        $month_total = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}`
+            WHERE pt_id = '{$pt_id}' AND DATE(cv_created_at) >= '{$month_start}' ");
+        $month_rejected = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}`
+            WHERE pt_id = '{$pt_id}' AND cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "'
+            AND DATE(cv_created_at) >= '{$month_start}' ");
+
+        $reasons = array();
+        $top_reason = '-';
+        $result = lc_sql_query(" SELECT cv_reject_reason AS reason, COUNT(*) AS cnt FROM `{$cv_table}`
+            WHERE pt_id = '{$pt_id}' AND cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "'
+            AND cv_reject_reason != ''
+            GROUP BY cv_reject_reason ORDER BY cnt DESC LIMIT 5 ", false);
+        if ($result) {
+            $total_reason = 0;
+            while ($row = sql_fetch_array($result)) {
+                $cnt = (int) ($row['cnt'] ?? 0);
+                $total_reason += $cnt;
+                $reasons[] = array(
+                    'reason' => (string) ($row['reason'] ?? ''),
+                    'count'  => $cnt,
+                );
+            }
+            if ($reasons) {
+                $top_reason = $reasons[0]['reason'];
+                foreach ($reasons as &$item) {
+                    $item['percentage'] = $total_reason > 0 ? (int) round(($item['count'] / $total_reason) * 100) : 0;
+                }
+                unset($item);
+            }
+        }
+
+        $month_total_cnt = (int) ($month_total['cnt'] ?? 0);
+        $month_rejected_cnt = (int) ($month_rejected['cnt'] ?? 0);
+
+        return array(
+            'total'     => (int) ($total_row['cnt'] ?? 0),
+            'week'      => (int) ($week_row['cnt'] ?? 0),
+            'monthRate' => $month_total_cnt > 0 ? round(($month_rejected_cnt / $month_total_cnt) * 100, 1) : 0,
+            'topReason' => $top_reason,
+            'reasons'   => $reasons,
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_partner_appeal')) {
+    /**
+     * @return array{ok:bool,message:string,conversion:array|null}
+     */
+    function lc_conversion_partner_appeal($pt_id, $cv_id, $appeal)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'conversion' => null);
+        }
+
+        if (!lc_settings_get_bool('partnerAppealAllowed', true)) {
+            return array('ok' => false, 'message' => '현재 이의신청이 허용되지 않습니다.', 'conversion' => null);
+        }
+
+        $appeal = trim((string) $appeal);
+        if ($appeal === '') {
+            return array('ok' => false, 'message' => '이의신청 사유를 입력해주세요.', 'conversion' => null);
+        }
+
+        $pt_id = (int) $pt_id;
+        $cv_id = (int) $cv_id;
+        $table = lc_table('conversions');
+        $row = lc_sql_fetch(" SELECT * FROM `{$table}` WHERE cv_id = '{$cv_id}' AND pt_id = '{$pt_id}' LIMIT 1 ");
+        if (!$row) {
+            return array('ok' => false, 'message' => '디비를 찾을 수 없습니다.', 'conversion' => null);
+        }
+        if ((string) $row['cv_status'] !== LC_STATUS_REJECTED) {
+            return array('ok' => false, 'message' => '취소/무효 디비만 이의신청할 수 있습니다.', 'conversion' => null);
+        }
+        if (trim((string) ($row['cv_partner_appeal'] ?? '')) !== '') {
+            return array('ok' => false, 'message' => '이미 이의신청이 접수된 디비입니다.', 'conversion' => null);
+        }
+
+        lc_sql_query(" UPDATE `{$table}` SET
+            cv_partner_appeal = '" . lc_sql_escape($appeal) . "',
+            cv_updated_at = NOW()
+            WHERE cv_id = '{$cv_id}' LIMIT 1 ", false);
+
+        $updated = lc_conversion_get_by_id($cv_id);
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT cp_name FROM `{$cp_table}` WHERE cp_id = '" . (int) $updated['cp_id'] . "' LIMIT 1 ");
+        $updated['cp_name'] = $campaign['cp_name'] ?? '';
+
+        return array(
+            'ok'         => true,
+            'message'    => '이의신청이 접수되었습니다.',
+            'conversion' => lc_conversion_to_api_partner($updated),
         );
     }
 }

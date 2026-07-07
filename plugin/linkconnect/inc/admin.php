@@ -344,6 +344,15 @@ if (!function_exists('lc_admin_dashboard_data')) {
             'partnerTop5' => lc_admin_partner_top(5),
             'advertiserTop5' => lc_admin_advertiser_top(5),
             'recentCancels' => array_map('lc_conversion_to_inspection_api', array_slice(lc_conversion_list_for_inspection(array('status' => 'pending')), 0, 5)),
+            'apiErrors' => function_exists('lc_api_log_list') ? array_map(function ($row) {
+                return array(
+                    'time' => date('H:i:s', strtotime($row['al_created_at'] ?? 'now')),
+                    'name' => (string) ($row['al_client_name'] ?? ''),
+                    'code' => (string) ($row['al_status'] ?? ''),
+                    'msg'  => (string) ($row['al_error'] ?? ''),
+                    'alId' => (int) ($row['al_id'] ?? 0),
+                );
+            }, lc_api_log_list(array('errors_only' => true, 'since_hours' => 24), 5)) : array(),
         );
     }
 }

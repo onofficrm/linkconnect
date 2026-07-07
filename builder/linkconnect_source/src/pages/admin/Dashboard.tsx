@@ -55,7 +55,7 @@ const recentCancels = [
   { date: '10.07 11:30', campaign: '개인회생 상담', advertiser: '희망법무법인', reason: '조건미달(나이)', status: '검수반려' },
 ];
 
-const apiErrors = [
+const apiErrorsFallback = [
   { time: '14:25:33', name: '희망법무법인 CRM', code: 'ERR_TIMEOUT', msg: '응답시간 초과 (5000ms)' },
   { time: '13:10:12', name: '스피드렌터카 ERP', code: 'ERR_AUTH', msg: '유효하지 않은 API 토큰' },
 ];
@@ -81,6 +81,7 @@ export function AdminDashboard() {
   const [lowBalanceMerchants, setLowBalanceMerchants] = useState(3);
   const [pendingInspections, setPendingInspections] = useState(0);
   const [pendingSettlements, setPendingSettlements] = useState(0);
+  const [apiErrorRows, setApiErrorRows] = useState(apiErrorsFallback);
 
   useEffect(() => {
     fetchAdminDashboard()
@@ -148,6 +149,16 @@ export function AdminDashboard() {
             reason: row.reason,
             status: row.status,
           })));
+        }
+        if (data.apiErrors?.length) {
+          setApiErrorRows(data.apiErrors.map((row) => ({
+            time: row.time,
+            name: row.name,
+            code: row.code,
+            msg: row.msg,
+          })));
+        } else {
+          setApiErrorRows([]);
         }
       })
       .catch(() => {
@@ -246,7 +257,7 @@ export function AdminDashboard() {
                 <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
                   <ServerCrash size={18} />
                 </div>
-                <span className="text-rose-900 font-medium text-sm">API 오류 <strong className="text-rose-700 ml-1">2건</strong></span>
+                <span className="text-rose-900 font-medium text-sm">API 오류 <strong className="text-rose-700 ml-1">{apiErrorRows.length}건</strong></span>
               </div>
               <button className="text-xs font-bold text-rose-700 hover:text-rose-800 bg-white px-3 py-1.5 rounded-lg border border-rose-200 transition-colors shadow-sm">바로가기</button>
             </div>
@@ -479,7 +490,9 @@ export function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {apiErrors.map((item, i) => (
+              {apiErrorRows.length === 0 ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">최근 24시간 API 오류가 없습니다.</td></tr>
+              ) : apiErrorRows.map((item, i) => (
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{item.time}</td>
                   <td className="px-6 py-4 text-slate-900 font-bold whitespace-nowrap">{item.name}</td>

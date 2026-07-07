@@ -62,6 +62,15 @@ if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
     require_once LC_PLUGIN_PATH . '/inc/settlement.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/inquiry.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/inquiry.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/settings.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/settings.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/api_client.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/api_client.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
     require_once LC_PLUGIN_PATH . '/inc/link.php';
 }

@@ -177,6 +177,9 @@ export type PartnerConversion = {
   estRevenue: number;
   confRevenue: number;
   comment: string;
+  reason?: string;
+  appeal?: string;
+  hasAppeal?: boolean;
 };
 
 export type PartnerDashboardResponse = {
@@ -456,6 +459,7 @@ export type AdminDashboardResponse = {
   partnerTop5?: Array<{ code: string; total: number; approved: number; rate: string; profit: number }>;
   advertiserTop5?: Array<{ name: string; total: number; approved: number; spend: number; balance: number }>;
   recentCancels?: AdminInspection[];
+  apiErrors?: Array<{ time: string; name: string; code: string; msg: string; alId?: number }>;
 };
 
 export type AdminPendingCharge = {
@@ -838,4 +842,161 @@ export function fetchAdminInspections(filters?: { status?: string; q?: string })
 
 export function updateAdminInspection(payload: { action: 'confirm' | 'restore'; cvId: number; memo?: string }) {
   return adminApiPost<{ message: string; conversion: AdminInspection | null; summary: AdminInspectionSummary }>('inspections.php', payload);
+}
+
+export type InquiryItem = {
+  id: string;
+  iqId: number;
+  date: string;
+  center: string;
+  centerCode: string;
+  author: string;
+  category: string;
+  title: string;
+  campaign: string;
+  cvCode: string;
+  status: string;
+  statusCode: string;
+  replyDate: string;
+  content?: string;
+  reply?: string;
+  adminMemo?: string;
+};
+
+export type InquirySummary = {
+  total: number;
+  waiting: number;
+  processing: number;
+  closed: number;
+  today: number;
+};
+
+export function fetchPartnerInquiries() {
+  return partnerApiGet<{ summary: InquirySummary; items: InquiryItem[]; dbReady: boolean }>('inquiries.php');
+}
+
+export function createPartnerInquiry(payload: { category: string; subject: string; body: string; campaign?: string; cvCode?: string }) {
+  return partnerApiPost<{ message: string; item: InquiryItem; summary: InquirySummary }>('inquiries.php', payload);
+}
+
+export function fetchMerchantInquiries() {
+  return merchantApiGet<{ summary: InquirySummary; items: InquiryItem[]; dbReady: boolean }>('inquiries.php');
+}
+
+export function createMerchantInquiry(payload: { category: string; subject: string; body: string; campaign?: string; cvCode?: string }) {
+  return merchantApiPost<{ message: string; item: InquiryItem; summary: InquirySummary }>('inquiries.php', payload);
+}
+
+export function fetchAdminInquiries(filters?: { center?: string; status?: string; q?: string }) {
+  return adminApiGet<{ summary: InquirySummary; items: InquiryItem[]; dbReady: boolean }>('inquiries.php', {
+    center: filters?.center ?? '',
+    status: filters?.status ?? '',
+    q: filters?.q ?? '',
+  });
+}
+
+export function fetchAdminInquiryDetail(iqId: number) {
+  return adminApiGet<{ item: InquiryItem }>('inquiries.php', { id: String(iqId) });
+}
+
+export function updateAdminInquiry(payload: { iqId: number; action: 'reply' | 'status' | 'close'; reply?: string; status?: string; adminMemo?: string }) {
+  return adminApiPost<{ message: string; item: InquiryItem; summary: InquirySummary }>('inquiries.php', payload);
+}
+
+export type AdminSettingsData = {
+  general: Record<string, string>;
+  cpa: Record<string, string | number | boolean>;
+  billing: Record<string, string | number>;
+  partner: Record<string, string | number | boolean>;
+  cancel: Record<string, boolean>;
+  api: Record<string, string | number | boolean>;
+};
+
+export function fetchAdminSettings() {
+  return adminApiGet<{ settings: AdminSettingsData; raw: Record<string, string>; dbReady: boolean }>('settings.php');
+}
+
+export function saveAdminSettings(settings: AdminSettingsData | Record<string, unknown>) {
+  return adminApiPost<{ message: string; settings: AdminSettingsData; raw: Record<string, string> }>('settings.php', { settings });
+}
+
+export function resetAdminSettings() {
+  return adminApiPost<{ message: string; settings: AdminSettingsData; raw: Record<string, string> }>('settings.php', { action: 'reset' });
+}
+
+export type ApiLogItem = {
+  id: string;
+  alId: number;
+  time: string;
+  client: string;
+  direction: string;
+  endpoint: string;
+  extId: string;
+  intId: string;
+  statusCode: number;
+  status: string;
+  statusCodeRaw: string;
+  error: string;
+  requestBody?: string;
+  responseBody?: string;
+};
+
+export type ApiClientItem = {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  apiKey: string;
+  allowedIps: string;
+  status: string;
+  statusCode: string;
+  lastCallAt: string;
+};
+
+export type ApiIntegrationSummary = {
+  todayTotal: number;
+  todaySuccess: number;
+  todayFailed: number;
+  todayDuplicate: number;
+  dbshareTotal: number;
+  lastReceiveTime: string;
+};
+
+export function fetchAdminIntegrations(filters?: { status?: string; client?: string; q?: string; errors?: boolean }) {
+  return adminApiGet<{ summary: ApiIntegrationSummary; clients: ApiClientItem[]; dbshare: ApiClientItem | null; items: ApiLogItem[]; dbReady: boolean }>(
+    'integrations.php',
+    {
+      status: filters?.status ?? '',
+      client: filters?.client ?? '',
+      q: filters?.q ?? '',
+      errors: filters?.errors ? '1' : '',
+    },
+  );
+}
+
+export function fetchAdminIntegrationDetail(alId: number) {
+  return adminApiGet<{ item: ApiLogItem }>('integrations.php', { id: String(alId) });
+}
+
+export function updateAdminIntegration(payload: { action: string; acId?: number; name?: string; type?: string; allowedIps?: string }) {
+  return adminApiPost<{ message: string; client?: ApiClientItem }>('integrations.php', payload);
+}
+
+export type PartnerCancelSummary = {
+  total: number;
+  week: number;
+  monthRate: number;
+  topReason: string;
+  reasons: Array<{ reason: string; count: number; percentage: number }>;
+};
+
+export function fetchPartnerCanceledDbs(filters?: { q?: string }) {
+  return partnerApiGet<{ items: PartnerConversion[]; summary: PartnerDashboardResponse['summary']; cancelSummary: PartnerCancelSummary; total: number }>(
+    'conversions.php',
+    { rejected: '1', q: filters?.q ?? '' },
+  );
+}
+
+export function submitPartnerAppeal(payload: { cvId: number; appeal: string }) {
+  return partnerApiPost<{ message: string; conversion: PartnerConversion | null }>('conversions.php', { action: 'appeal', ...payload });
 }
