@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
@@ -30,7 +31,8 @@ export function AdvertiserLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <SuperAdminWidget />
+      {!auth.isImpersonating ? <SuperAdminWidget /> : null}
+      <ImpersonateBanner />
       <CenterTopBar center="advertiser" />
       <div className="flex flex-col md:flex-row flex-1">
       {/* Sidebar */}

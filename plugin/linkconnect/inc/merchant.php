@@ -54,6 +54,13 @@ if (!function_exists('lc_get_merchant_by_id')) {
 if (!function_exists('lc_get_current_merchant')) {
     function lc_get_current_merchant()
     {
+        if (function_exists('lc_impersonate_is_active') && lc_impersonate_is_active('merchant')) {
+            $record = lc_impersonate_record();
+            if (is_array($record)) {
+                return $record;
+            }
+        }
+
         global $member;
 
         if (!lc_is_logged_in() || !isset($member['mb_id'])) {

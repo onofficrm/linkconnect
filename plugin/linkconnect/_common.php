@@ -101,3 +101,6 @@ if (is_file(LC_PLUGIN_PATH . '/inc/notification.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/admin_log.php')) {
     require_once LC_PLUGIN_PATH . '/inc/admin_log.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/impersonate.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/impersonate.php';
+}

@@ -1,6 +1,10 @@
 export type LcAuth = {
   loggedIn: boolean;
   isSuperAdmin: boolean;
+  isImpersonating?: boolean;
+  impersonateType?: string | null;
+  impersonateId?: number | null;
+  impersonateLabel?: string;
   isPartner: boolean;
   isActivePartner: boolean;
   partnerId: number | null;
@@ -33,6 +37,10 @@ declare global {
 const defaultAuth: LcAuth = {
   loggedIn: false,
   isSuperAdmin: false,
+  isImpersonating: false,
+  impersonateType: null,
+  impersonateId: null,
+  impersonateLabel: '',
   isPartner: false,
   isActivePartner: false,
   partnerId: null,
@@ -81,6 +89,9 @@ export function isLcActivePartner(): boolean {
 
 export function canAccessPartnerCenter(): boolean {
   const auth = getLcAuth();
+  if (auth.isImpersonating && auth.impersonateType === 'partner') {
+    return true;
+  }
   if (auth.isSuperAdmin) {
     return true;
   }
@@ -100,6 +111,9 @@ export function isLcActiveMerchant(): boolean {
 
 export function canAccessAdvertiserCenter(): boolean {
   const auth = getLcAuth();
+  if (auth.isImpersonating && auth.impersonateType === 'merchant') {
+    return true;
+  }
   if (auth.isSuperAdmin) {
     return true;
   }

@@ -541,6 +541,33 @@ export function updateAdminMerchant(payload: { action: 'activate' | 'suspend' | 
   );
 }
 
+export type ImpersonateState = {
+  active: boolean;
+  type: string | null;
+  id: number | null;
+  label: string;
+};
+
+export function viewAsPartner(ptId: number) {
+  return adminApiPost<{ message: string; impersonate: ImpersonateState; redirect: string }>('impersonate.php', {
+    action: 'view_partner',
+    ptId,
+  });
+}
+
+export function viewAsMerchant(mtId: number) {
+  return adminApiPost<{ message: string; impersonate: ImpersonateState; redirect: string }>('impersonate.php', {
+    action: 'view_merchant',
+    mtId,
+  });
+}
+
+export function exitImpersonate() {
+  return adminApiPost<{ message: string; impersonate: ImpersonateState; redirect: string }>('impersonate.php', {
+    action: 'exit',
+  });
+}
+
 export function fetchAdminPendingCharges() {
   return adminApiGet<{ items: AdminPendingCharge[]; pending: number; dbReady: boolean }>('wallet.php');
 }

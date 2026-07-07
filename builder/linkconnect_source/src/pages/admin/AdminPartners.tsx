@@ -3,9 +3,10 @@ import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   Users, Activity, Database, CreditCard, Receipt, 
-  Search, Calendar, ChevronDown, Download, ShieldAlert, X
+  Search, Calendar, ChevronDown, Download, ShieldAlert, X, Eye
 } from 'lucide-react';
-import { AdminPartner, fetchAdminPartners, updateAdminPartner } from '../../lib/api';
+import { AdminPartner, fetchAdminPartners, updateAdminPartner, viewAsPartner } from '../../lib/api';
+import { isLcSuperAdmin } from '../../lib/auth';
 
 export function AdminPartners() {
   const [partners, setPartners] = useState<AdminPartner[]>([]);
@@ -14,7 +15,9 @@ export function AdminPartners() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [viewingAs, setViewingAs] = useState(false);
   const [actionError, setActionError] = useState('');
+  const isSuperAdmin = isLcSuperAdmin();
 
   const loadPartners = useCallback(() => {
     fetchAdminPartners({ q: search, status: statusFilter })
@@ -52,6 +55,22 @@ export function AdminPartners() {
       setActionError(error instanceof Error ? error.message : '상태 변경에 실패했습니다.');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleViewAs = async (partner: AdminPartner, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    if (!partner.id) {
+      return;
+    }
+    setViewingAs(true);
+    setActionError('');
+    try {
+      const result = await viewAsPartner(partner.id);
+      window.location.href = result.redirect || '/partner';
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '계정 전환에 실패했습니다.');
+      setViewingAs(false);
     }
   };
 
@@ -178,7 +197,19 @@ export function AdminPartners() {
                         <StatusBadge status={partner.status === '활성' ? '정상' : partner.status === '차단' ? '정지' : partner.status} />
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <button className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">상세</button>
+                        <div className="flex items-center justify-center gap-1">
+                          {isSuperAdmin && partner.id ? (
+                            <button
+                              type="button"
+                              onClick={(e) => handleViewAs(partner, e)}
+                              disabled={viewingAs}
+                              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <Eye size={12} /> 이 계정으로 보기
+                            </button>
+                          ) : null}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleRowClick(partner); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">상세</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -298,6 +329,17 @@ export function AdminPartners() {
               {actionError && <p className="px-6 text-sm text-red-600">{actionError}</p>}
 
               <div className="p-4 border-t border-slate-200 bg-slate-50 grid grid-cols-2 gap-2">
+                {isSuperAdmin && selectedPartner.id ? (
+                  <button
+                    type="button"
+                    disabled={viewingAs}
+                    onClick={() => handleViewAs(selectedPartner)}
+                    className="col-span-2 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 disabled:opacity-60 transition-colors shadow-sm inline-flex items-center justify-center gap-2"
+                  >
+                    <Eye size={16} />
+                    {viewingAs ? '전환 중...' : '이 계정으로 보기'}
+                  </button>
+                ) : null}
                 {selectedPartner.statusCode === 'pending' && (
                   <button
                     type="button"

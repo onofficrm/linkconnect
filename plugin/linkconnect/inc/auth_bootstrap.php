@@ -31,10 +31,15 @@ if (!function_exists('lc_auth_state')) {
         $logged_in = function_exists('lc_is_logged_in') ? lc_is_logged_in() : false;
         $partner = function_exists('lc_get_current_partner') ? lc_get_current_partner() : null;
         $merchant = function_exists('lc_get_current_merchant') ? lc_get_current_merchant() : null;
+        $impersonate = function_exists('lc_impersonate_state_for_api') ? lc_impersonate_state_for_api() : array('active' => false);
 
         return array(
             'loggedIn'          => $logged_in,
             'isSuperAdmin'      => function_exists('lc_is_super_admin') ? lc_is_super_admin() : false,
+            'isImpersonating'   => !empty($impersonate['active']),
+            'impersonateType'   => !empty($impersonate['active']) ? (string) ($impersonate['type'] ?? '') : null,
+            'impersonateId'     => !empty($impersonate['active']) ? (int) ($impersonate['id'] ?? 0) : null,
+            'impersonateLabel'  => !empty($impersonate['active']) ? (string) ($impersonate['label'] ?? '') : '',
             'isPartner'         => is_array($partner),
             'isActivePartner'   => function_exists('lc_is_active_partner') ? lc_is_active_partner() : false,
             'partnerId'         => is_array($partner) ? (int) $partner['pt_id'] : null,

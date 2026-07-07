@@ -4,9 +4,10 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   Building2, Activity, AlertCircle, Clock,
   Search, Download, X, ShieldAlert,
-  Wallet
+  Wallet, Eye
 } from 'lucide-react';
-import { AdminMerchant, fetchAdminMerchants, updateAdminMerchant } from '../../lib/api';
+import { AdminMerchant, fetchAdminMerchants, updateAdminMerchant, viewAsMerchant } from '../../lib/api';
+import { isLcSuperAdmin } from '../../lib/auth';
 
 export function AdminAdvertisers() {
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
@@ -15,7 +16,9 @@ export function AdminAdvertisers() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [viewingAs, setViewingAs] = useState(false);
   const [actionError, setActionError] = useState('');
+  const isSuperAdmin = isLcSuperAdmin();
 
   const loadMerchants = useCallback(() => {
     fetchAdminMerchants({ q: search, status: statusFilter })
@@ -53,6 +56,22 @@ export function AdminAdvertisers() {
       setActionError(error instanceof Error ? error.message : '상태 변경에 실패했습니다.');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleViewAs = async (advertiser: AdminMerchant, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    if (!advertiser.id) {
+      return;
+    }
+    setViewingAs(true);
+    setActionError('');
+    try {
+      const result = await viewAsMerchant(advertiser.id);
+      window.location.href = result.redirect || '/advertiser';
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '계정 전환에 실패했습니다.');
+      setViewingAs(false);
     }
   };
 
@@ -173,7 +192,19 @@ export function AdminAdvertisers() {
                         <StatusBadge status={advertiser.status} />
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <button className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">상세</button>
+                        <div className="flex items-center justify-center gap-1">
+                          {isSuperAdmin && advertiser.id ? (
+                            <button
+                              type="button"
+                              onClick={(e) => handleViewAs(advertiser, e)}
+                              disabled={viewingAs}
+                              className="px-3 py-1.5 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded text-xs font-bold transition-colors inline-flex items-center gap-1"
+                            >
+                              <Eye size={12} /> 이 계정으로 보기
+                            </button>
+                          ) : null}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleRowClick(advertiser); }} className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">상세</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -312,6 +343,17 @@ export function AdminAdvertisers() {
               {actionError && <p className="px-6 text-sm text-red-600">{actionError}</p>}
 
               <div className="p-4 border-t border-slate-200 bg-slate-50 grid grid-cols-2 gap-2">
+                {isSuperAdmin && selectedAdvertiser.id ? (
+                  <button
+                    type="button"
+                    disabled={viewingAs}
+                    onClick={() => handleViewAs(selectedAdvertiser)}
+                    className="col-span-2 py-2.5 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:bg-cyan-700 disabled:opacity-60 transition-colors shadow-sm inline-flex items-center justify-center gap-2"
+                  >
+                    <Eye size={16} />
+                    {viewingAs ? '전환 중...' : '이 계정으로 보기'}
+                  </button>
+                ) : null}
                 {selectedAdvertiser.statusCode === 'pending' && (
                   <button
                     type="button"

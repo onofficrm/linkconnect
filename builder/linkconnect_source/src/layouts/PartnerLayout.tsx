@@ -14,6 +14,7 @@ import {
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
+import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
 import { getLcAuth } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
@@ -46,7 +47,8 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <SuperAdminWidget />
+      {!auth.isImpersonating ? <SuperAdminWidget /> : null}
+      <ImpersonateBanner />
       <CenterTopBar center="partner" />
       <div className="flex flex-col md:flex-row flex-1">
       <aside className="w-full md:w-64 bg-slate-900 text-slate-300 md:min-h-screen shrink-0 overflow-x-auto md:overflow-visible flex flex-col">
