@@ -1,9 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Gift, TrendingUp, Clock, Trophy, ArrowRight, Search, Filter, 
   ChevronRight, Calendar, AlertCircle, CheckCircle2, Megaphone, Target, Briefcase, Zap, Star, Sparkles, User, HelpCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { fetchPublicEvents, PublicEventSummaryItem } from '../lib/api';
+
+const SUMMARY_ICONS: Record<string, React.ReactNode> = {
+  megaphone: <Megaphone size={24} />,
+  gift: <Gift size={24} />,
+  trending: <TrendingUp size={24} />,
+  clock: <Clock size={24} />,
+};
+
+const SUMMARY_COLORS: Record<string, string> = {
+  megaphone: 'bg-cyan-50 text-cyan-600',
+  gift: 'bg-purple-50 text-purple-600',
+  trending: 'bg-emerald-50 text-emerald-600',
+  clock: 'bg-orange-50 text-orange-600',
+};
+
+const DEFAULT_SUMMARY: PublicEventSummaryItem[] = [
+  { label: '진행 중 이벤트', value: '12', suffix: '개', icon: 'megaphone' },
+  { label: '보너스 지급 캠페인', value: '5', suffix: '개', icon: 'gift' },
+  { label: '단가 상승 상품', value: '8', suffix: '개', icon: 'trending' },
+  { label: '마감 임박 이벤트', value: '3', suffix: '개', icon: 'clock' },
+];
 
 const BADGE_STYLES: Record<string, string> = {
   '진행중': 'bg-cyan-50 text-cyan-700 border-cyan-200',
@@ -28,7 +50,17 @@ function Badge({ children, type }: { children: React.ReactNode, type: string }) 
 export function Events() {
   const [activeTab, setActiveTab] = useState('전체');
   const [isMounted, setIsMounted] = useState(false);
+  const [summaryCards, setSummaryCards] = useState<PublicEventSummaryItem[]>(DEFAULT_SUMMARY);
+
   React.useEffect(() => { setTimeout(() => setIsMounted(true), 100); }, []);
+
+  useEffect(() => {
+    fetchPublicEvents()
+      .then((data) => {
+        if (data.summary?.length) setSummaryCards(data.summary);
+      })
+      .catch(() => {});
+  }, []);
 
   const tabs = ['전체', '파트너 이벤트', '광고주 프로모션', '단가 상승', '신규 캠페인', '마감 임박', '리워드 랭킹'];
 
@@ -66,34 +98,15 @@ export function Events() {
       {/* Summary Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-200 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center mb-3">
-              <Megaphone size={24} />
+          {summaryCards.map((card) => (
+            <div key={card.label} className="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-200 flex flex-col items-center justify-center text-center">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${SUMMARY_COLORS[card.icon] ?? 'bg-slate-50 text-slate-600'}`}>
+                {SUMMARY_ICONS[card.icon] ?? <Megaphone size={24} />}
+              </div>
+              <div className="text-3xl font-bold text-slate-900">{card.value}<span className="text-sm font-medium text-slate-500 ml-1">{card.suffix}</span></div>
+              <div className="text-sm font-medium text-slate-600 mt-1">{card.label}</div>
             </div>
-            <div className="text-3xl font-bold text-slate-900">12<span className="text-sm font-medium text-slate-500 ml-1">개</span></div>
-            <div className="text-sm font-medium text-slate-600 mt-1">진행 중 이벤트</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-200 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-3">
-              <Gift size={24} />
-            </div>
-            <div className="text-3xl font-bold text-slate-900">5<span className="text-sm font-medium text-slate-500 ml-1">개</span></div>
-            <div className="text-sm font-medium text-slate-600 mt-1">보너스 지급 캠페인</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-200 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-3">
-              <TrendingUp size={24} />
-            </div>
-            <div className="text-3xl font-bold text-slate-900">8<span className="text-sm font-medium text-slate-500 ml-1">개</span></div>
-            <div className="text-sm font-medium text-slate-600 mt-1">단가 상승 상품</div>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-lg shadow-slate-200/50 border border-slate-200 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center mb-3">
-              <Clock size={24} />
-            </div>
-            <div className="text-3xl font-bold text-slate-900">3<span className="text-sm font-medium text-slate-500 ml-1">개</span></div>
-            <div className="text-sm font-medium text-slate-600 mt-1">마감 임박 이벤트</div>
-          </div>
+          ))}
         </div>
       </div>
 

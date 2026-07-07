@@ -7,36 +7,58 @@ import {
   PlusCircle, MinusCircle, X, Check,
   AlertTriangle
 } from 'lucide-react';
-import { AdminPendingCharge, fetchAdminPendingCharges, updateAdminCharge } from '../../lib/api';
+import { AdminPendingCharge, AdminMerchantBalance, AdminWalletSummary, AdminWalletTransaction, adjustAdminWallet, fetchAdminPendingCharges, fetchAdminWalletBalances, fetchAdminWalletHistory, fetchAdminWalletSummary, updateAdminCharge } from '../../lib/api';
 
-const advertiserBalanceData = [
-  { name: '희망법무법인', balance: 15400000, pending: 2500000, available: 12900000, totalCharged: 50000000, totalUsed: 34600000, totalRefund: 0, lastCharged: '2026.07.01', status: '정상' },
-  { name: '(주)성공대부', balance: 500000, pending: 800000, available: -300000, totalCharged: 10000000, totalUsed: 9500000, totalRefund: 0, lastCharged: '2026.06.15', status: '광고비부족' },
-  { name: '스피드렌터카', balance: 8500000, pending: 500000, available: 8000000, totalCharged: 12000000, totalUsed: 3500000, totalRefund: 0, lastCharged: '2026.07.05', status: '정상' },
-  { name: '라이프보험법인', balance: 0, pending: 0, available: 0, totalCharged: 5000000, totalUsed: 4000000, totalRefund: 1000000, lastCharged: '2026.05.20', status: '사용중지' },
-  { name: '에듀스터디', balance: 3200000, pending: 1500000, available: 1700000, totalCharged: 20000000, totalUsed: 16800000, totalRefund: 0, lastCharged: '2026.07.06', status: '정상' },
-];
-
-const chargeRequestsData = [
-  { date: '2026.07.06 14:30', advertiser: '에듀스터디', amount: 5000000, depositor: '에듀스터디(주)', taxInvoice: '발행요청', status: '충전대기' },
-  { date: '2026.07.06 11:20', advertiser: '희망법무법인', amount: 10000000, depositor: '희망법무법인', taxInvoice: '미요청', status: '충전대기' },
-];
-
-const transactionHistoryData = [
-  { date: '2026.07.06 15:42', advertiser: '(주)성공대부', type: '가차감', dbCode: 'DB-260706-002', campaign: '직장인 신용대출 한도조회', amount: -35000, balance: 500000, processor: '시스템', memo: '접수 완료' },
-  { date: '2026.07.06 14:35', advertiser: '에듀스터디', type: '충전', dbCode: '-', campaign: '-', amount: 5000000, balance: 8200000, processor: '최고관리자', memo: '무통장 입금 확인' },
-  { date: '2026.07.06 13:10', advertiser: '희망법무법인', type: '확정차감', dbCode: 'DB-260705-099', campaign: '개인회생 무료상담 이벤트', amount: -50000, balance: 15400000, processor: '시스템', memo: '검수 완료 (정상)' },
-  { date: '2026.07.06 10:05', advertiser: '스피드렌터카', type: '수동조정', dbCode: '-', campaign: '-', amount: 100000, balance: 8500000, processor: '최고관리자', memo: '이벤트 당첨금 지급' },
-  { date: '2026.07.05 16:40', advertiser: '라이프보험법인', type: '환급', dbCode: '-', campaign: '-', amount: -1000000, balance: 0, processor: '최고관리자', memo: '계약 종료 환급' },
-];
+const emptySummary: AdminWalletSummary = {
+  totalBalance: 0,
+  totalPending: 0,
+  todayCharge: 0,
+  todaySpend: 0,
+  todayRefund: 0,
+  lowBalance: 0,
+};
 
 export function AdminBilling() {
   const [activeTab, setActiveTab] = useState<'balance' | 'requests' | 'history'>('balance');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'충전' | '차감' | '환급' | '조정'>('충전');
+  const [selectedMerchant, setSelectedMerchant] = useState<AdminMerchantBalance | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState('');
+  const [adjustMemo, setAdjustMemo] = useState('');
+  const [summary, setSummary] = useState<AdminWalletSummary>(emptySummary);
+  const [balances, setBalances] = useState<AdminMerchantBalance[]>([]);
+  const [history, setHistory] = useState<AdminWalletTransaction[]>([]);
   const [chargeRequests, setChargeRequests] = useState<AdminPendingCharge[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [searchQ, setSearchQ] = useState('');
+
+  const loadSummary = useCallback(() => {
+    fetchAdminWalletSummary()
+      .then((data) => {
+        setSummary(data.summary);
+        setPendingCount(data.pending);
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadBalances = useCallback((q = searchQ) => {
+    fetchAdminWalletBalances(q)
+      .then((data) => {
+        setBalances(data.items);
+        setSummary(data.summary);
+      })
+      .catch(() => {});
+  }, [searchQ]);
+
+  const loadHistory = useCallback((q = searchQ) => {
+    fetchAdminWalletHistory({ q })
+      .then((data) => {
+        setHistory(data.items);
+        setSummary(data.summary);
+      })
+      .catch(() => {});
+  }, [searchQ]);
 
   const loadPendingCharges = useCallback(() => {
     fetchAdminPendingCharges()
@@ -44,16 +66,18 @@ export function AdminBilling() {
         setChargeRequests(data.items);
         setPendingCount(data.pending);
       })
-      .catch(() => {
-        // 샘플 UI fallback
-      });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'requests') {
-      loadPendingCharges();
-    }
-  }, [activeTab, loadPendingCharges]);
+    loadSummary();
+  }, [loadSummary]);
+
+  useEffect(() => {
+    if (activeTab === 'balance') loadBalances();
+    if (activeTab === 'requests') loadPendingCharges();
+    if (activeTab === 'history') loadHistory();
+  }, [activeTab, loadBalances, loadHistory, loadPendingCharges]);
 
   const handleApproveCharge = async (wtId: number) => {
     setProcessingId(wtId);
@@ -79,37 +103,49 @@ export function AdminBilling() {
     }
   };
 
-  const openModal = (type: '충전' | '차감' | '환급' | '조정') => {
+  const openModal = (type: '충전' | '차감' | '환급' | '조정', merchant?: AdminMerchantBalance) => {
     setModalType(type);
+    setSelectedMerchant(merchant ?? null);
+    setAdjustAmount('');
+    setAdjustMemo('');
     setIsModalOpen(true);
   };
 
-  const displayRequests = chargeRequests.length
-    ? chargeRequests
-    : chargeRequestsData.map((item, index) => ({
-        id: index,
-        date: item.date,
-        merchant: item.advertiser,
-        merchantCode: '',
-        mtId: 0,
-        amount: item.amount,
-        memo: item.depositor,
-        status: item.status,
-      }));
+  const handleAdjust = async () => {
+    if (!selectedMerchant || !adjustAmount) return;
+    const typeMap = { '충전': 'charge', '차감': 'deduct', '환급': 'refund', '조정': 'adjust' } as const;
+    try {
+      await adjustAdminWallet({
+        mtId: selectedMerchant.id,
+        type: typeMap[modalType],
+        amount: Number(adjustAmount),
+        memo: adjustMemo,
+      });
+      setIsModalOpen(false);
+      loadSummary();
+      if (activeTab === 'balance') loadBalances();
+      if (activeTab === 'history') loadHistory();
+    } catch {
+      // ignore
+    }
+  };
 
-  const requestCount = chargeRequests.length ? pendingCount : chargeRequestsData.length;
+  const displayRequests = chargeRequests;
+  const requestCount = pendingCount;
+  const balanceRows = balances;
+  const historyRows = history;
 
   return (
     <AdminLayout activeMenu="billing" title="광고비 관리" description="광고주별 광고비 잔액과 충전/차감/환급 내역을 관리하세요.">
       
       {/* 6 Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <SummaryCard title="전체 광고비 잔액" value="186,400,000" suffix="원" dark icon={<Wallet size={18} />} />
-        <SummaryCard title="전체 가차감 금액" value="24,800,000" suffix="원" color="yellow" highlight icon={<MinusCircle size={18} />} />
-        <SummaryCard title="오늘 충전액" value="15,000,000" suffix="원" color="cyan" highlight icon={<ArrowUpCircle size={18} />} />
-        <SummaryCard title="오늘 사용액" value="8,650,000" suffix="원" icon={<ArrowDownCircle size={18} />} />
-        <SummaryCard title="환급 처리액" value="1,200,000" suffix="원" color="emerald" highlight icon={<RefreshCcw size={18} />} />
-        <SummaryCard title="광고비 부족 광고주" value="7" suffix="곳" color="red" highlight icon={<AlertCircle size={18} />} />
+        <SummaryCard title="전체 광고비 잔액" value={summary.totalBalance.toLocaleString()} suffix="원" dark icon={<Wallet size={18} />} />
+        <SummaryCard title="충전 대기" value={summary.totalPending.toLocaleString()} suffix="원" color="yellow" highlight icon={<MinusCircle size={18} />} />
+        <SummaryCard title="오늘 충전액" value={summary.todayCharge.toLocaleString()} suffix="원" color="cyan" highlight icon={<ArrowUpCircle size={18} />} />
+        <SummaryCard title="오늘 사용액" value={summary.todaySpend.toLocaleString()} suffix="원" icon={<ArrowDownCircle size={18} />} />
+        <SummaryCard title="환급 처리액" value={summary.todayRefund.toLocaleString()} suffix="원" color="emerald" highlight icon={<RefreshCcw size={18} />} />
+        <SummaryCard title="광고비 부족 광고주" value={String(summary.lowBalance)} suffix="곳" color="red" highlight icon={<AlertCircle size={18} />} />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
@@ -143,13 +179,16 @@ export function AdminBilling() {
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
                 <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="text" 
-                  placeholder="광고주명 검색" 
+                <input
+                  type="text"
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  placeholder="광고주명 검색"
                   className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow"
                 />
               </div>
             </div>
+            <button type="button" onClick={() => { if (activeTab === 'balance') loadBalances(searchQ); if (activeTab === 'history') loadHistory(searchQ); }} className="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold">조회</button>
             
             <div className="flex flex-wrap items-center gap-2">
               <select className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500">
@@ -196,36 +235,26 @@ export function AdminBilling() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {advertiserBalanceData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">
-                        {item.name}
-                      </td>
-                      <td className="px-4 py-4 text-right font-bold text-slate-900 whitespace-nowrap">
-                        {item.balance.toLocaleString()}원
-                      </td>
-                      <td className="px-4 py-4 text-right font-medium text-yellow-600 whitespace-nowrap">
-                        {item.pending > 0 ? `-${item.pending.toLocaleString()}` : 0}원
-                      </td>
-                      <td className={`px-4 py-4 text-right font-bold whitespace-nowrap ${item.available < 0 ? 'text-red-500' : 'text-cyan-600'}`}>
-                        {item.available.toLocaleString()}원
-                      </td>
+                  {balanceRows.length === 0 ? (
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">광고주 데이터가 없습니다.</td></tr>
+                  ) : balanceRows.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">{item.name}</td>
+                      <td className="px-4 py-4 text-right font-bold text-slate-900 whitespace-nowrap">{item.balance.toLocaleString()}원</td>
+                      <td className="px-4 py-4 text-right font-medium text-yellow-600 whitespace-nowrap">{item.pending > 0 ? `-${item.pending.toLocaleString()}` : 0}원</td>
+                      <td className={`px-4 py-4 text-right font-bold whitespace-nowrap ${item.available < 0 ? 'text-red-500' : 'text-cyan-600'}`}>{item.available.toLocaleString()}원</td>
                       <td className="px-4 py-4 text-right whitespace-nowrap text-xs text-slate-500 space-y-1">
                         <div>충전: <span className="font-medium text-slate-700">{item.totalCharged.toLocaleString()}</span></div>
                         <div>사용: <span className="font-medium text-slate-700">{item.totalUsed.toLocaleString()}</span></div>
                         <div>환급: <span className="font-medium text-slate-700">{item.totalRefund.toLocaleString()}</span></div>
                       </td>
-                      <td className="px-4 py-4 text-center font-medium text-slate-600 whitespace-nowrap">
-                        {item.lastCharged}
-                      </td>
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <StatusBadge status={item.status} />
-                      </td>
+                      <td className="px-4 py-4 text-center font-medium text-slate-600 whitespace-nowrap">{item.lastCharged}</td>
+                      <td className="px-4 py-4 text-center whitespace-nowrap"><StatusBadge status={item.status} /></td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
-                          <button onClick={() => openModal('충전')} className="px-2 py-1 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded text-xs font-bold transition-colors">충전</button>
-                          <button onClick={() => openModal('차감')} className="px-2 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">차감</button>
-                          <button onClick={() => openModal('환급')} className="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-bold transition-colors">환급</button>
+                          <button type="button" onClick={() => openModal('충전', item)} className="px-2 py-1 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded text-xs font-bold">충전</button>
+                          <button type="button" onClick={() => openModal('차감', item)} className="px-2 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded text-xs font-bold">차감</button>
+                          <button type="button" onClick={() => openModal('환급', item)} className="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded text-xs font-bold">환급</button>
                         </div>
                       </td>
                     </tr>
@@ -308,13 +337,13 @@ export function AdminBilling() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {transactionHistoryData.map((item, i) => (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  {historyRows.length === 0 ? (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">거래 내역이 없습니다.</td></tr>
+                  ) : historyRows.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-4 font-medium text-slate-600 whitespace-nowrap">{item.date}</td>
-                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">{item.advertiser}</td>
-                      <td className="px-4 py-4 text-center whitespace-nowrap">
-                        <StatusBadge status={item.type} />
-                      </td>
+                      <td className="px-4 py-4 font-bold text-slate-900 whitespace-nowrap">{item.merchant}</td>
+                      <td className="px-4 py-4 text-center whitespace-nowrap"><StatusBadge status={item.type} /></td>
                       <td className="px-4 py-4">
                         <div className="text-xs text-slate-500 mb-0.5">{item.dbCode}</div>
                         <div className="font-medium text-slate-800 truncate max-w-[200px]">{item.campaign}</div>
@@ -322,13 +351,8 @@ export function AdminBilling() {
                       <td className={`px-4 py-4 text-right font-bold whitespace-nowrap ${item.amount > 0 ? 'text-cyan-600' : 'text-slate-900'}`}>
                         {item.amount > 0 ? '+' : ''}{item.amount.toLocaleString()}원
                       </td>
-                      <td className="px-4 py-4 text-right font-medium text-slate-700 whitespace-nowrap">
-                        {item.balance.toLocaleString()}원
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-xs font-medium text-slate-500 mb-0.5">{item.processor}</div>
-                        <div className="text-xs text-slate-700">{item.memo}</div>
-                      </td>
+                      <td className="px-4 py-4 text-right font-medium text-slate-700 whitespace-nowrap">{item.balance.toLocaleString()}원</td>
+                      <td className="px-4 py-4 text-xs text-slate-500">{item.processor} / {item.memo}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -356,9 +380,18 @@ export function AdminBilling() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">광고주 선택</label>
-                <select className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500">
-                  <option>희망법무법인 (잔액: 15,400,000원)</option>
-                  <option>(주)성공대부 (잔액: 500,000원)</option>
+                <select
+                  value={selectedMerchant?.id ?? ''}
+                  onChange={(e) => {
+                    const id = Number(e.target.value);
+                    setSelectedMerchant(balances.find((m) => m.id === id) ?? null);
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                >
+                  <option value="">광고주 선택</option>
+                  {balances.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name} (잔액: {m.balance.toLocaleString()}원)</option>
+                  ))}
                 </select>
               </div>
 
@@ -378,6 +411,8 @@ export function AdminBilling() {
                   <input 
                     type="number" 
                     placeholder="0"
+                    value={adjustAmount}
+                    onChange={(e) => setAdjustAmount(e.target.value)}
                     className="w-full pl-3 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-lg font-bold focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">원</span>
@@ -388,6 +423,8 @@ export function AdminBilling() {
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">처리 사유 및 메모 (관리자용)</label>
                 <textarea 
                   placeholder={`${modalType} 사유를 상세히 기록해주세요.`}
+                  value={adjustMemo}
+                  onChange={(e) => setAdjustMemo(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm h-20 resize-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                 ></textarea>
               </div>
@@ -406,7 +443,10 @@ export function AdminBilling() {
                 취소
               </button>
               <button 
-                className="py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                type="button"
+                onClick={handleAdjust}
+                disabled={!selectedMerchant || !adjustAmount}
+                className="py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Check size={16} /> 처리 완료
               </button>

@@ -1000,3 +1000,131 @@ export function fetchPartnerCanceledDbs(filters?: { q?: string }) {
 export function submitPartnerAppeal(payload: { cvId: number; appeal: string }) {
   return partnerApiPost<{ message: string; conversion: PartnerConversion | null }>('conversions.php', { action: 'appeal', ...payload });
 }
+
+export type MerchantReportResponse = {
+  summary: {
+    total: number;
+    approved: number;
+    rejected: number;
+    avgRate: number;
+    totalSpend: number;
+    avgPrice: number;
+  };
+  dbChart7d: Array<{ date: string; received: number; approved: number; rejected: number }>;
+  spendChart7d: Array<{ date: string; holdSpend: number; confSpend: number; refund: number }>;
+  campaigns: Array<{
+    id: number;
+    name: string;
+    total: number;
+    approved: number;
+    canceled: number;
+    approvalRate: number;
+    cancelRate: number;
+    spend: number;
+    avgPrice: number;
+    status: string;
+  }>;
+  partners: Array<{
+    code: string;
+    name: string;
+    total: number;
+    approved: number;
+    canceled: number;
+    approvalRate: number;
+    spend: number;
+    note: string;
+  }>;
+  dbReady: boolean;
+};
+
+export function fetchMerchantReports() {
+  return merchantApiGet<MerchantReportResponse>('reports.php');
+}
+
+export type AdminWalletSummary = {
+  totalBalance: number;
+  totalPending: number;
+  todayCharge: number;
+  todaySpend: number;
+  todayRefund: number;
+  lowBalance: number;
+};
+
+export type AdminMerchantBalance = {
+  id: number;
+  name: string;
+  code: string;
+  balance: number;
+  pending: number;
+  available: number;
+  totalCharged: number;
+  totalUsed: number;
+  totalRefund: number;
+  lastCharged: string;
+  status: string;
+};
+
+export type AdminWalletTransaction = {
+  id: number;
+  date: string;
+  merchant: string;
+  mtId: number;
+  type: string;
+  typeCode: string;
+  dbCode: string;
+  campaign: string;
+  amount: number;
+  balance: number;
+  processor: string;
+  memo: string;
+  status: string;
+};
+
+export function fetchAdminWalletSummary() {
+  return adminApiGet<{ summary: AdminWalletSummary; items: AdminPendingCharge[]; pending: number; dbReady: boolean }>('wallet.php');
+}
+
+export function fetchAdminWalletBalances(q?: string) {
+  return adminApiGet<{ items: AdminMerchantBalance[]; summary: AdminWalletSummary; dbReady: boolean }>('wallet.php', {
+    view: 'balances',
+    q: q ?? '',
+  });
+}
+
+export function fetchAdminWalletHistory(filters?: { q?: string; type?: string }) {
+  return adminApiGet<{ items: AdminWalletTransaction[]; summary: AdminWalletSummary; dbReady: boolean }>('wallet.php', {
+    view: 'history',
+    q: filters?.q ?? '',
+    type: filters?.type ?? '',
+  });
+}
+
+export function adjustAdminWallet(payload: { mtId: number; type: string; amount: number; memo?: string }) {
+  return adminApiPost<{ message: string; summary: AdminWalletSummary }>('wallet.php', { action: 'adjust', ...payload });
+}
+
+export type PublicEventSummaryItem = { label: string; value: string; suffix: string; icon: string };
+export type PublicEventItem = {
+  id: string;
+  badges: string[];
+  title: string;
+  desc: string;
+  period: string;
+  product: string;
+  benefit: string;
+  ribbon: string;
+};
+
+export type PublicEventsResponse = {
+  summary: PublicEventSummaryItem[];
+  items: PublicEventItem[];
+  recommendations: Array<Record<string, unknown>>;
+  promoCpa: Array<Record<string, unknown>>;
+  rankingTop: Array<Record<string, unknown>>;
+  rankingList: Array<Record<string, unknown>>;
+  dbReady: boolean;
+};
+
+export function fetchPublicEvents() {
+  return publicApiGet<PublicEventsResponse>('events.php');
+}

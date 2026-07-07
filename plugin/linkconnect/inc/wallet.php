@@ -310,3 +310,187 @@ if (!function_exists('lc_wallet_reject_transaction')) {
         return array('ok' => true, 'message' => '충전 신청이 반려되었습니다.');
     }
 }
+
+if (!function_exists('lc_wallet_admin_summary')) {
+    function lc_wallet_admin_summary()
+    {
+        if (!lc_db_installed()) {
+            return array(
+                'totalBalance' => 0,
+                'totalPending' => 0,
+                'todayCharge'  => 0,
+                'todaySpend'   => 0,
+                'todayRefund'  => 0,
+                'lowBalance'   => 0,
+            );
+        }
+
+        $mt_table = lc_table('merchants');
+        $wt_table = lc_table('wallet_transactions');
+        $today = date('Y-m-d');
+
+        $balance_row = lc_sql_fetch(" SELECT COALESCE(SUM(mt_balance), 0) AS total FROM `{$mt_table}` WHERE mt_status = '" . lc_sql_escape(LC_MERCHANT_STATUS_ACTIVE) . "' ");
+        $low_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$mt_table}` WHERE mt_status = '" . lc_sql_escape(LC_MERCHANT_STATUS_ACTIVE) . "' AND mt_balance < 500000 ");
+        $today_charge = lc_sql_fetch(" SELECT COALESCE(SUM(wt_amount), 0) AS total FROM `{$wt_table}` WHERE wt_type = 'charge' AND wt_status = 'completed' AND DATE(wt_created_at) = '{$today}' ");
+        $today_spend = lc_sql_fetch(" SELECT COALESCE(SUM(ABS(wt_amount)), 0) AS total FROM `{$wt_table}` WHERE wt_type = 'deduct' AND wt_status = 'completed' AND DATE(wt_created_at) = '{$today}' ");
+        $today_refund = lc_sql_fetch(" SELECT COALESCE(SUM(wt_amount), 0) AS total FROM `{$wt_table}` WHERE wt_type = 'refund' AND wt_status = 'completed' AND DATE(wt_created_at) = '{$today}' ");
+        $pending_row = lc_sql_fetch(" SELECT COALESCE(SUM(wt_amount), 0) AS total FROM `{$wt_table}` WHERE wt_type = 'charge' AND wt_status = 'pending' ");
+
+        return array(
+            'totalBalance' => (int) ($balance_row['total'] ?? 0),
+            'totalPending' => (int) ($pending_row['total'] ?? 0),
+            'todayCharge'  => (int) ($today_charge['total'] ?? 0),
+            'todaySpend'   => (int) ($today_spend['total'] ?? 0),
+            'todayRefund'  => (int) ($today_refund['total'] ?? 0),
+            'lowBalance'   => (int) ($low_row['cnt'] ?? 0),
+        );
+    }
+}
+
+if (!function_exists('lc_wallet_admin_merchant_balances')) {
+    function lc_wallet_admin_merchant_balances($q = '')
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $mt_table = lc_table('merchants');
+        $wt_table = lc_table('wallet_transactions');
+        $where = " 1=1 ";
+        if ($q !== '') {
+            $q_esc = lc_sql_escape($q);
+            $where .= " AND (m.mt_company LIKE '%{$q_esc}%' OR m.mt_code LIKE '%{$q_esc}%') ";
+        }
+
+        $rows = array();
+        $sql = " SELECT m.*,
+            (SELECT COALESCE(SUM(wt_amount), 0) FROM `{$wt_table}` wt WHERE wt.mt_id = m.mt_id AND wt_type = 'charge' AND wt_status = 'completed') AS total_charged,
+            (SELECT COALESCE(SUM(ABS(wt_amount)), 0) FROM `{$wt_table}` wt WHERE wt.mt_id = m.mt_id AND wt_type = 'deduct' AND wt_status = 'completed') AS total_used,
+            (SELECT COALESCE(SUM(wt_amount), 0) FROM `{$wt_table}` wt WHERE wt.mt_id = m.mt_id AND wt_type = 'refund' AND wt_status = 'completed') AS total_refund,
+            (SELECT MAX(wt_created_at) FROM `{$wt_table}` wt WHERE wt.mt_id = m.mt_id AND wt_type = 'charge' AND wt_status = 'completed') AS last_charged
+            FROM `{$mt_table}` m
+            WHERE {$where}
+            ORDER BY m.mt_balance DESC
+            LIMIT 100 ";
+        $result = lc_sql_query($sql, false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $balance = (int) ($row['mt_balance'] ?? 0);
+                $status = '정상';
+                if ($row['mt_status'] !== LC_MERCHANT_STATUS_ACTIVE) {
+                    $status = '사용중지';
+                } elseif ($balance < 500000) {
+                    $status = '광고비부족';
+                }
+                $rows[] = array(
+                    'id'           => (int) $row['mt_id'],
+                    'name'         => (string) $row['mt_company'],
+                    'code'         => (string) $row['mt_code'],
+                    'balance'      => $balance,
+                    'pending'      => 0,
+                    'available'    => $balance,
+                    'totalCharged' => (int) ($row['total_charged'] ?? 0),
+                    'totalUsed'    => (int) ($row['total_used'] ?? 0),
+                    'totalRefund'  => (int) ($row['total_refund'] ?? 0),
+                    'lastCharged'  => !empty($row['last_charged']) ? date('Y.m.d', strtotime($row['last_charged'])) : '-',
+                    'status'       => $status,
+                );
+            }
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('lc_wallet_admin_transactions')) {
+    function lc_wallet_admin_transactions(array $filters = array(), $limit = 50)
+    {
+        if (!lc_db_installed()) {
+            return array();
+        }
+
+        $wt_table = lc_table('wallet_transactions');
+        $mt_table = lc_table('merchants');
+        $cv_table = lc_table('conversions');
+        $cp_table = lc_table('campaigns');
+        $where = ' 1=1 ';
+        if (!empty($filters['type'])) {
+            $where .= " AND wt.wt_type = '" . lc_sql_escape($filters['type']) . "' ";
+        }
+        if (!empty($filters['q'])) {
+            $q = lc_sql_escape($filters['q']);
+            $where .= " AND m.mt_company LIKE '%{$q}%' ";
+        }
+
+        $limit = max(1, min(200, (int) $limit));
+        $rows = array();
+        $sql = " SELECT wt.*, m.mt_company,
+            cv.cv_code, c.cp_name
+            FROM `{$wt_table}` wt
+            INNER JOIN `{$mt_table}` m ON m.mt_id = wt.mt_id
+            LEFT JOIN `{$cv_table}` cv ON wt.wt_ref_type = 'conversion' AND cv.cv_id = wt.wt_ref_id
+            LEFT JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
+            WHERE {$where}
+            ORDER BY wt.wt_id DESC
+            LIMIT {$limit} ";
+        $result = lc_sql_query($sql, false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $type_labels = array(
+                    'charge' => '충전',
+                    'deduct' => '차감',
+                    'refund' => '환급',
+                    'adjust' => '수동조정',
+                );
+                $rows[] = array(
+                    'id'       => (int) $row['wt_id'],
+                    'date'     => date('Y.m.d H:i', strtotime($row['wt_created_at'])),
+                    'merchant' => (string) ($row['mt_company'] ?? ''),
+                    'mtId'     => (int) $row['mt_id'],
+                    'type'     => isset($type_labels[$row['wt_type']]) ? $type_labels[$row['wt_type']] : (string) $row['wt_type'],
+                    'typeCode' => (string) $row['wt_type'],
+                    'dbCode'   => (string) ($row['cv_code'] ?? '-'),
+                    'campaign' => (string) ($row['cp_name'] ?? '-'),
+                    'amount'   => (int) $row['wt_amount'],
+                    'balance'  => (int) $row['wt_balance_after'],
+                    'processor'=> '시스템',
+                    'memo'     => (string) $row['wt_memo'],
+                    'status'   => (string) $row['wt_status'],
+                );
+            }
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('lc_wallet_admin_adjust')) {
+    /**
+     * @return array{ok:bool,message:string}
+     */
+    function lc_wallet_admin_adjust($mt_id, $type, $amount, $memo = '')
+    {
+        $amount = (int) $amount;
+        if ($amount === 0) {
+            return array('ok' => false, 'message' => '금액을 입력해주세요.');
+        }
+
+        $type_map = array(
+            'charge' => array('charge', abs($amount)),
+            'deduct' => array('deduct', -1 * abs($amount)),
+            'refund' => array('refund', abs($amount)),
+            'adjust' => array('adjust', $amount),
+        );
+        if (!isset($type_map[$type])) {
+            return array('ok' => false, 'message' => '유효하지 않은 유형입니다.');
+        }
+
+        list($wt_type, $signed) = $type_map[$type];
+        $result = lc_wallet_record($mt_id, $wt_type, $signed, $memo !== '' ? $memo : '관리자 수동 처리', 'admin_adjust', 0, 'completed');
+
+        return array(
+            'ok'      => $result['ok'],
+            'message' => $result['ok'] ? '거래가 처리되었습니다.' : $result['message'],
+        );
+    }
+}

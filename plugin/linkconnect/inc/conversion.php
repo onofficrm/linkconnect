@@ -1191,3 +1191,152 @@ if (!function_exists('lc_conversion_partner_appeal')) {
         );
     }
 }
+
+if (!function_exists('lc_conversion_merchant_report_for_api')) {
+    function lc_conversion_merchant_report_for_api($mt_id, array $filters = array())
+    {
+        if (!lc_db_installed()) {
+            return array(
+                'summary'   => array('total' => 0, 'approved' => 0, 'rejected' => 0, 'avgRate' => 0, 'totalSpend' => 0, 'avgPrice' => 0),
+                'dbChart7d' => array(),
+                'spendChart7d' => array(),
+                'campaigns' => array(),
+                'partners'  => array(),
+            );
+        }
+
+        $mt_id = (int) $mt_id;
+        $campaign_ids = lc_conversion_merchant_campaign_ids($mt_id);
+        if (!$campaign_ids) {
+            return array(
+                'summary'   => array('total' => 0, 'approved' => 0, 'rejected' => 0, 'avgRate' => 0, 'totalSpend' => 0, 'avgPrice' => 0),
+                'dbChart7d' => lc_conversion_merchant_chart_7d($mt_id),
+                'spendChart7d' => array(),
+                'campaigns' => array(),
+                'partners'  => array(),
+            );
+        }
+
+        $cv_table = lc_table('conversions');
+        $cp_table = lc_table('campaigns');
+        $pt_table = lc_table('partners');
+        $in = implode(',', array_map('intval', $campaign_ids));
+
+        $summary_row = lc_sql_fetch(" SELECT
+            COUNT(*) AS total_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected_cnt,
+            SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv_price ELSE 0 END) AS spend_total
+            FROM `{$cv_table}` WHERE cp_id IN ({$in}) ");
+
+        $total = (int) ($summary_row['total_cnt'] ?? 0);
+        $approved = (int) ($summary_row['approved_cnt'] ?? 0);
+        $rejected = (int) ($summary_row['rejected_cnt'] ?? 0);
+        $spend = (int) ($summary_row['spend_total'] ?? 0);
+
+        $db_chart = array();
+        $spend_chart = array();
+        for ($i = 6; $i >= 0; $i--) {
+            $day = date('Y-m-d', strtotime('-' . $i . ' days'));
+            $label = date('m.d', strtotime($day));
+            $row = lc_sql_fetch(" SELECT
+                COUNT(*) AS db_cnt,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approval_cnt,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS cancel_cnt,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' THEN cv_price ELSE 0 END) AS hold_spend,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv_price ELSE 0 END) AS conf_spend,
+                SUM(CASE WHEN cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN cv_price ELSE 0 END) AS refund_spend
+                FROM `{$cv_table}` WHERE cp_id IN ({$in}) AND DATE(cv_created_at) = '{$day}' ");
+            $db_chart[] = array(
+                'date'    => $label,
+                'received'=> (int) ($row['db_cnt'] ?? 0),
+                'approved'=> (int) ($row['approval_cnt'] ?? 0),
+                'rejected'=> (int) ($row['cancel_cnt'] ?? 0),
+            );
+            $spend_chart[] = array(
+                'date'     => $label,
+                'holdSpend'=> (int) ($row['hold_spend'] ?? 0),
+                'confSpend'=> (int) ($row['conf_spend'] ?? 0),
+                'refund'   => (int) ($row['refund_spend'] ?? 0),
+            );
+        }
+
+        $campaigns = array();
+        $result = lc_sql_query(" SELECT c.cp_id, c.cp_name, c.cp_status,
+            COUNT(cv.cv_id) AS total_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv.cv_price ELSE 0 END) AS spend_total,
+            AVG(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv.cv_price ELSE NULL END) AS avg_price
+            FROM `{$cp_table}` c
+            LEFT JOIN `{$cv_table}` cv ON cv.cp_id = c.cp_id
+            WHERE c.mt_id = '{$mt_id}'
+            GROUP BY c.cp_id
+            ORDER BY spend_total DESC ", false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $c_total = (int) ($row['total_cnt'] ?? 0);
+                $c_approved = (int) ($row['approved_cnt'] ?? 0);
+                $c_rejected = (int) ($row['rejected_cnt'] ?? 0);
+                $campaigns[] = array(
+                    'id'           => (int) $row['cp_id'],
+                    'name'         => (string) $row['cp_name'],
+                    'total'        => $c_total,
+                    'approved'     => $c_approved,
+                    'canceled'     => $c_rejected,
+                    'approvalRate' => $c_total > 0 ? round(($c_approved / $c_total) * 100, 1) : 0,
+                    'cancelRate'   => $c_total > 0 ? round(($c_rejected / $c_total) * 100, 1) : 0,
+                    'spend'        => (int) ($row['spend_total'] ?? 0),
+                    'avgPrice'     => (int) round((float) ($row['avg_price'] ?? 0)),
+                    'status'       => (string) $row['cp_status'] === LC_STATUS_ACTIVE ? '진행중' : '일시중지',
+                );
+            }
+        }
+
+        $partners = array();
+        $result = lc_sql_query(" SELECT p.pt_code, p.pt_name,
+            COUNT(cv.cv_id) AS total_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN 1 ELSE 0 END) AS approved_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_REJECTED) . "' THEN 1 ELSE 0 END) AS rejected_cnt,
+            SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv.cv_price ELSE 0 END) AS spend_total
+            FROM `{$cv_table}` cv
+            INNER JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
+            INNER JOIN `{$pt_table}` p ON p.pt_id = cv.pt_id
+            WHERE c.mt_id = '{$mt_id}'
+            GROUP BY p.pt_id
+            ORDER BY spend_total DESC
+            LIMIT 10 ", false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $p_total = (int) ($row['total_cnt'] ?? 0);
+                $p_approved = (int) ($row['approved_cnt'] ?? 0);
+                $p_rejected = (int) ($row['rejected_cnt'] ?? 0);
+                $partners[] = array(
+                    'code'         => (string) $row['pt_code'],
+                    'name'         => (string) $row['pt_name'],
+                    'total'        => $p_total,
+                    'approved'     => $p_approved,
+                    'canceled'     => $p_rejected,
+                    'approvalRate' => $p_total > 0 ? round(($p_approved / $p_total) * 100, 1) : 0,
+                    'spend'        => (int) ($row['spend_total'] ?? 0),
+                    'note'         => $p_rejected > 0 && $p_total > 0 && ($p_rejected / $p_total) > 0.25 ? '취소율 모니터링' : '-',
+                );
+            }
+        }
+
+        return array(
+            'summary' => array(
+                'total'      => $total,
+                'approved'   => $approved,
+                'rejected'   => $rejected,
+                'avgRate'    => $total > 0 ? round(($approved / $total) * 100, 1) : 0,
+                'totalSpend' => $spend,
+                'avgPrice'   => $approved > 0 ? (int) round($spend / $approved) : 0,
+            ),
+            'dbChart7d'    => $db_chart,
+            'spendChart7d' => $spend_chart,
+            'campaigns'    => $campaigns,
+            'partners'     => $partners,
+        );
+    }
+}
