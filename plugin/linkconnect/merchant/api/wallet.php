@@ -14,7 +14,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     lc_api_success(array(
         'balance'          => $mt_id > 0 ? lc_wallet_get_balance($mt_id) : 2350000,
         'balanceFormatted' => number_format($mt_id > 0 ? lc_wallet_get_balance($mt_id) : 2350000),
+        'summary'          => $mt_id > 0 ? lc_wallet_merchant_summary($mt_id) : array(
+            'balance'          => 2350000,
+            'monthlyCharge'    => 5000000,
+            'monthlySpend'     => 2650000,
+            'availableBalance' => 1900000,
+        ),
         'items'            => lc_wallet_list_for_api($mt_id),
+        'dbReady'          => lc_db_installed(),
     ));
 }
 

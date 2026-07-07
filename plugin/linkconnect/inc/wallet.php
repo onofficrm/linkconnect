@@ -128,6 +128,46 @@ if (!function_exists('lc_wallet_request_charge')) {
     }
 }
 
+if (!function_exists('lc_wallet_merchant_summary')) {
+    function lc_wallet_merchant_summary($mt_id)
+    {
+        if (!lc_db_installed()) {
+            return array(
+                'balance'          => 0,
+                'monthlyCharge'    => 0,
+                'monthlySpend'     => 0,
+                'availableBalance' => 0,
+            );
+        }
+
+        $mt_id = (int) $mt_id;
+        $balance = lc_wallet_get_balance($mt_id);
+        $table = lc_table('wallet_transactions');
+        $month_start = date('Y-m-01');
+
+        $charge_row = lc_sql_fetch(" SELECT COALESCE(SUM(wt_amount), 0) AS total
+            FROM `{$table}`
+            WHERE mt_id = '{$mt_id}'
+              AND wt_type = 'charge'
+              AND wt_status = 'completed'
+              AND wt_created_at >= '{$month_start}' ");
+
+        $spend_row = lc_sql_fetch(" SELECT COALESCE(SUM(ABS(wt_amount)), 0) AS total
+            FROM `{$table}`
+            WHERE mt_id = '{$mt_id}'
+              AND wt_type = 'deduct'
+              AND wt_status = 'completed'
+              AND wt_created_at >= '{$month_start}' ");
+
+        return array(
+            'balance'          => $balance,
+            'monthlyCharge'    => (int) ($charge_row['total'] ?? 0),
+            'monthlySpend'     => (int) ($spend_row['total'] ?? 0),
+            'availableBalance' => $balance,
+        );
+    }
+}
+
 if (!function_exists('lc_wallet_list_for_api')) {
     function lc_wallet_list_for_api($mt_id)
     {

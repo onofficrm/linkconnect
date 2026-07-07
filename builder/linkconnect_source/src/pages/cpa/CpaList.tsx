@@ -1,78 +1,90 @@
-import React from "react";
 import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 
-const categories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
-const cpaItems = [
-  {
-    id: 1,
-    title: '개인회생 상담 DB',
-    category: '법률',
-    price: '30,000',
-    approvalRate: '68%',
-    avgTime: '1.8일',
-    allowedChannels: '블로그, 카페, 검색광고, SNS',
-    forbiddenChannels: '허위광고, 브랜드 사칭, 스팸문자',
-    status: '진행중',
-    badge: '추천',
-  },
-  {
-    id: 2,
-    title: '자동차 렌트 상담 DB',
-    category: '렌탈',
-    price: '25,000',
-    approvalRate: '72%',
-    avgTime: '1.2일',
-    allowedChannels: '블로그, SNS, 커뮤니티',
-    forbiddenChannels: '보상형 리워드, 강제 가입',
-    status: '진행중',
-    badge: '인기',
-  },
-  {
-    id: 3,
-    title: '어린이 영어캠프 상담',
-    category: '교육',
-    price: '35,000',
-    approvalRate: '55%',
-    avgTime: '2.5일',
-    allowedChannels: '맘카페, 교육 블로그, 인스타그램',
-    forbiddenChannels: '과장광고, 관련없는 타겟팅',
-    status: '진행중',
-    badge: '신규',
-  },
-  {
-    id: 4,
-    title: '임플란트/치아교정 상담',
-    category: '병원',
-    price: '40,000',
-    approvalRate: '45%',
-    avgTime: '3.0일',
-    allowedChannels: '블로그, 건강카페',
-    forbiddenChannels: '의료법 위반 문구, 허위 후기',
-    status: '진행중',
-  },
-  {
-    id: 5,
-    title: '소상공인 대출 상담',
-    category: '금융',
-    price: '32,000',
-    approvalRate: '60%',
-    avgTime: '1.5일',
-    allowedChannels: '자영업 커뮤니티, 블로그',
-    forbiddenChannels: '불법 스팸, 사칭',
-    status: '마감임박',
-  },
-];
+type CampaignCardItem = {
+  id: number;
+  title: string;
+  category: string;
+  price: string;
+  approvalRate: string;
+  avgTime: string;
+  allowedChannels: string;
+  forbiddenChannels: string;
+  status: string;
+  badge?: string;
+  recommended?: boolean;
+};
+
+function toCardItem(campaign: PublicCampaign): CampaignCardItem {
+  return {
+    id: campaign.id,
+    title: campaign.title,
+    category: campaign.category,
+    price: campaign.priceFormatted,
+    approvalRate: campaign.approvalRate,
+    avgTime: campaign.avgTime,
+    allowedChannels: campaign.allowedChannels,
+    forbiddenChannels: campaign.forbiddenChannels,
+    status: campaign.status,
+    badge: campaign.badge || undefined,
+    recommended: campaign.recommended,
+  };
+}
 
 export function CpaList() {
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState(fallbackCategories);
+  const [items, setItems] = useState<CampaignCardItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await fetchPublicCampaigns({
+          category: activeCategory,
+          q: searchQuery,
+        });
+        if (cancelled) {
+          return;
+        }
+        setCategories(data.categories.length ? data.categories : fallbackCategories);
+        setItems(data.items.map(toCardItem));
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const timer = window.setTimeout(load, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeCategory, searchQuery]);
+
+  const recommendedItems = useMemo(
+    () => items.filter((item) => item.recommended || item.badge).slice(0, 3),
+    [items],
+  );
 
   return (
     <div className="bg-slate-50 min-h-screen pt-32 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header Section */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900 mb-4">CPA 광고상품</h1>
           <p className="text-slate-600 text-lg max-w-3xl">
@@ -80,7 +92,6 @@ export function CpaList() {
           </p>
         </div>
 
-        {/* Categories */}
         <div className="flex flex-wrap gap-2 mb-8">
           {categories.map((cat) => (
             <button
@@ -97,51 +108,57 @@ export function CpaList() {
           ))}
         </div>
 
-        {/* Search & Sort Filters */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center mb-10 shadow-sm">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="광고상품명 검색..." 
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="광고상품명 검색..."
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
           </div>
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-            {['단가 높은순', '승인율 높은순', '신규 캠페인', '인기 캠페인'].map((filter) => (
-              <button key={filter} className="whitespace-nowrap px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                {filter} <Filter className="w-3.5 h-3.5" />
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Recommended Section (First 3) */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-emerald-500" />
-            추천 CPA 캠페인
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cpaItems.slice(0, 3).map(item => (
-              <CampaignCard key={`rec-${item.id}`} item={item} />
-            ))}
+        {error && (
+          <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
           </div>
-        </div>
+        )}
 
-        <div className="h-px bg-slate-200 w-full mb-12"></div>
+        {recommendedItems.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
+              추천 CPA 캠페인
+            </h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedItems.map((item) => (
+                <CampaignCard key={`rec-${item.id}`} item={item} />
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Main List */}
+        <div className="h-px bg-slate-200 w-full mb-12" />
+
         <div className="mb-8 flex items-center justify-between">
-           <h2 className="text-xl font-bold text-slate-900">전체 캠페인 <span className="text-emerald-600">({cpaItems.length})</span></h2>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {cpaItems.map(item => (
-            <CampaignCard key={item.id} item={item} />
-          ))}
+          <h2 className="text-xl font-bold text-slate-900">전체 캠페인 <span className="text-emerald-600">({items.length})</span></h2>
         </div>
 
-        {/* Notice Section */}
+        {loading ? (
+          <div className="py-16 text-center text-slate-500">캠페인을 불러오는 중...</div>
+        ) : items.length === 0 ? (
+          <div className="py-16 text-center text-slate-500">표시할 CPA 캠페인이 없습니다.</div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {items.map((item) => (
+              <CampaignCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+
         <div className="bg-slate-900 rounded-2xl p-8 md:p-10 text-white shadow-xl">
           <div className="flex items-start gap-4">
             <Info className="w-8 h-8 text-cyan-400 shrink-0 mt-1" />
@@ -168,13 +185,12 @@ export function CpaList() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-function CampaignCard({ item }: any) {
+function CampaignCard({ item }: { item: CampaignCardItem }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
@@ -193,13 +209,13 @@ function CampaignCard({ item }: any) {
               </span>
             )}
             <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
-              item.status === '진행중' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
+              item.status === '진행중' || item.status === '마감임박' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
             }`}>
               {item.status}
             </span>
           </div>
         </div>
-        
+
         <h3 className="text-xl font-bold text-slate-900 mb-1">{item.title}</h3>
         <div className="text-sm text-slate-500 mb-6">유형: CPA (DB접수)</div>
 
@@ -217,23 +233,23 @@ function CampaignCard({ item }: any) {
         <div className="space-y-3 text-sm">
           <div>
             <span className="inline-block w-16 text-slate-400 font-medium">허용채널</span>
-            <span className="text-slate-700">{item.allowedChannels}</span>
+            <span className="text-slate-700">{item.allowedChannels || '-'}</span>
           </div>
           <div>
             <span className="inline-block w-16 text-slate-400 font-medium">금지채널</span>
-            <span className="text-red-500">{item.forbiddenChannels}</span>
+            <span className="text-red-500">{item.forbiddenChannels || '-'}</span>
           </div>
         </div>
       </div>
-      
+
       <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-        <button className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
+        <Link to="/cpa-list" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
           상세보기
-        </button>
-        <button className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
+        </Link>
+        <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
           <LinkIcon className="w-4 h-4" />
           홍보하기
-        </button>
+        </Link>
       </div>
     </div>
   );

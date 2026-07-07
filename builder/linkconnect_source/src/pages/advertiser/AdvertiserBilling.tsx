@@ -1,16 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
-import { Wallet, CreditCard, Receipt, AlertTriangle, ArrowRight, Check, History, Download, Filter, Search } from 'lucide-react';
-
-const billingHistory = [
-  { id: 'TX-20261007-03', date: '2026.10.07 14:22', type: '가차감', campaign: '개인회생 상담 DB', dbId: 'DB241007-001', amount: -50000, balance: 1900000, status: '차감완료', memo: '신규 DB 접수 가차감' },
-  { id: 'TX-20261007-02', date: '2026.10.07 14:10', type: '확정차감', campaign: '어린이 영어캠프', dbId: 'DB241007-002', amount: 0, balance: 1950000, status: '차감완료', memo: 'DB 승인 (가차감 확정)' },
-  { id: 'TX-20261007-01', date: '2026.10.07 11:00', type: '환급', campaign: '자동차 렌트 상담', dbId: 'DB241007-004', amount: +45000, balance: 1950000, status: '환급완료', memo: '취소/무효 처리 (연락처 결번)' },
-  { id: 'TX-20261006-05', date: '2026.10.06 18:30', type: '가차감', campaign: '소상공인 대출 상담', dbId: 'DB241006-005', amount: -25000, balance: 1905000, status: '차감완료', memo: '신규 DB 접수 가차감' },
-  { id: 'TX-20261001-01', date: '2026.10.01 10:00', type: '충전', campaign: '-', dbId: '-', amount: +5000000, balance: 5000000, status: '충전완료', memo: '10월 정기 충전' },
-  { id: 'TX-20260930-01', date: '2026.09.30 15:20', type: '조정', campaign: '-', dbId: '-', amount: +50000, balance: 0, status: '충전완료', memo: '이벤트 캐시 지급' },
-];
+import { Wallet, CreditCard, ArrowRight, History, Download, Filter, AlertTriangle } from 'lucide-react';
+import { fetchMerchantWallet, MerchantWalletTransaction, requestMerchantCharge } from '../../lib/api';
 
 const TypeBadge = ({ type }: { type: string }) => {
   const styles: Record<string, string> = {
@@ -31,14 +23,76 @@ const TypeBadge = ({ type }: { type: string }) => {
 
 export function AdvertiserBilling() {
   const [chargeAmount, setChargeAmount] = useState<number | ''>('');
+  const [chargeMemo, setChargeMemo] = useState('');
   const [activeTab, setActiveTab] = useState('전체');
-  
-  const tabs = ['전체', '충전', '가차감', '확정차감', '환급', '조정'];
+  const [history, setHistory] = useState<MerchantWalletTransaction[]>([]);
+  const [balance, setBalance] = useState(0);
+  const [summary, setSummary] = useState({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
-  const filteredHistory = activeTab === '전체' ? billingHistory : billingHistory.filter(h => h.type === activeTab);
+  const tabs = ['전체', '충전', '차감', '환급'];
+
+  const loadWallet = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchMerchantWallet();
+      setHistory(data.items);
+      setBalance(data.balance);
+      setSummary(data.summary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '광고비 내역을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadWallet();
+  }, []);
+
+  const filteredHistory = useMemo(
+    () => (activeTab === '전체' ? history : history.filter((item) => item.type === activeTab)),
+    [activeTab, history],
+  );
 
   const handleQuickAmount = (amount: number) => {
     setChargeAmount(amount);
+  };
+
+  const handleChargeSubmit = async () => {
+    if (!chargeAmount || chargeAmount <= 0) {
+      setError('충전 금액을 입력해주세요.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await requestMerchantCharge({
+        amount: Number(chargeAmount),
+        memo: chargeMemo,
+      });
+      setMessage(result.message);
+      setChargeAmount('');
+      setChargeMemo('');
+      await loadWallet();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '충전 신청에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const statusLabel = (status: string) => {
+    if (status === 'completed') return '처리완료';
+    if (status === 'pending') return '승인대기';
+    if (status === 'rejected') return '반려';
+    return status;
   };
 
   return (
@@ -49,13 +103,18 @@ export function AdvertiserBilling() {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {(error || message) && (
+        <div className={`mb-6 rounded-xl border px-4 py-3 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+          {error || message}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <SummaryCard title="현재 광고비 잔액" value="2,350,000" suffix="원" highlight />
-        <SummaryCard title="가차감 광고비" value="450,000" suffix="원" color="blue" highlight />
-        <SummaryCard title="사용 가능 잔액" value="1,900,000" suffix="원" dark />
-        <SummaryCard title="이번 달 충전액" value="5,000,000" suffix="원" />
-        <SummaryCard title="이번 달 사용액" value="2,650,000" suffix="원" />
+        <SummaryCard title="현재 광고비 잔액" value={balance.toLocaleString()} suffix="원" highlight />
+        <SummaryCard title="이번 달 충전액" value={summary.monthlyCharge.toLocaleString()} suffix="원" />
+        <SummaryCard title="이번 달 사용액" value={summary.monthlySpend.toLocaleString()} suffix="원" />
+        <SummaryCard title="사용 가능 잔액" value={summary.availableBalance.toLocaleString()} suffix="원" dark />
+        <SummaryCard title="거래 건수" value={history.length.toLocaleString()} suffix="건" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -119,16 +178,22 @@ export function AdvertiserBilling() {
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">메모 (선택)</label>
-              <input 
-                type="text" 
-                placeholder="전달하실 내용이 있다면 입력해주세요." 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow" 
+              <input
+                type="text"
+                value={chargeMemo}
+                onChange={(e) => setChargeMemo(e.target.value)}
+                placeholder="전달하실 내용이 있다면 입력해주세요."
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-shadow"
               />
             </div>
 
             <div className="pt-4 border-t border-slate-100">
-              <button className="w-full py-4 bg-cyan-600 text-white hover:bg-cyan-700 rounded-xl font-bold text-lg transition-colors shadow-sm shadow-cyan-600/20 flex items-center justify-center gap-2">
-                광고비 충전 신청하기 <ArrowRight size={20} />
+              <button
+                onClick={handleChargeSubmit}
+                disabled={submitting}
+                className="w-full py-4 bg-cyan-600 text-white hover:bg-cyan-700 rounded-xl font-bold text-lg transition-colors shadow-sm shadow-cyan-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {submitting ? '신청 중...' : '광고비 충전 신청하기'} <ArrowRight size={20} />
               </button>
             </div>
           </div>
@@ -148,23 +213,23 @@ export function AdvertiserBilling() {
           <div className="space-y-6 flex-1 relative z-10">
             <div>
               <div className="text-slate-400 text-sm mb-1">이번 달 충전액</div>
-              <div className="text-xl font-medium text-white">+5,000,000원</div>
+              <div className="text-xl font-medium text-white">+{summary.monthlyCharge.toLocaleString()}원</div>
             </div>
             <div>
               <div className="text-slate-400 text-sm mb-1">이번 달 사용액</div>
-              <div className="text-xl font-medium text-white">-2,650,000원</div>
+              <div className="text-xl font-medium text-white">-{summary.monthlySpend.toLocaleString()}원</div>
             </div>
             <div>
               <div className="text-slate-400 text-sm mb-1 flex items-center gap-1">
-                가차감 금액 <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-400 inline-flex items-center justify-center text-[10px] font-bold cursor-help" title="접수된 디비에 대한 임시 차감액">?</span>
+                현재 잔액
               </div>
-              <div className="text-xl font-medium text-cyan-400">-450,000원</div>
+              <div className="text-xl font-medium text-cyan-400">{balance.toLocaleString()}원</div>
             </div>
           </div>
 
           <div className="pt-6 mt-6 border-t border-slate-800 relative z-10">
             <div className="text-slate-400 text-sm mb-2">남은 잔액 (사용 가능)</div>
-            <div className="text-3xl font-bold text-white tracking-tight">1,900,000<span className="text-xl font-medium ml-1">원</span></div>
+            <div className="text-3xl font-bold text-white tracking-tight">{summary.availableBalance.toLocaleString()}<span className="text-xl font-medium ml-1">원</span></div>
           </div>
 
           <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="w-full mt-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10 relative z-10">
@@ -217,23 +282,24 @@ export function AdvertiserBilling() {
               <tr>
                 <th className="px-6 py-4 font-medium whitespace-nowrap">일시</th>
                 <th className="px-6 py-4 font-medium whitespace-nowrap text-center">구분</th>
-                <th className="px-6 py-4 font-medium whitespace-nowrap">광고상품 / 내역</th>
-                <th className="px-6 py-4 font-medium whitespace-nowrap">관련 디비</th>
+                <th className="px-6 py-4 font-medium whitespace-nowrap">내역</th>
                 <th className="px-6 py-4 font-medium text-right whitespace-nowrap">금액</th>
                 <th className="px-6 py-4 font-medium text-right whitespace-nowrap">처리 후 잔액</th>
                 <th className="px-6 py-4 font-medium text-center whitespace-nowrap">상태</th>
-                <th className="px-6 py-4 font-medium whitespace-nowrap">메모</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredHistory.map((item) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">불러오는 중...</td>
+                </tr>
+              ) : filteredHistory.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-slate-500 whitespace-nowrap">{item.date}</td>
                   <td className="px-6 py-4 text-center whitespace-nowrap">
                     <TypeBadge type={item.type} />
                   </td>
-                  <td className="px-6 py-4 font-bold text-slate-900 whitespace-nowrap">{item.campaign !== '-' ? item.campaign : <span className="text-slate-400 font-normal">충전/조정</span>}</td>
-                  <td className="px-6 py-4 text-slate-500 font-mono text-xs whitespace-nowrap">{item.dbId}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">{item.memo || '-'}</td>
                   <td className={`px-6 py-4 text-right font-bold whitespace-nowrap ${item.amount > 0 ? 'text-emerald-600' : item.amount < 0 ? 'text-red-600' : 'text-slate-500'}`}>
                     {item.amount > 0 ? '+' : ''}{item.amount.toLocaleString()}원
                   </td>
@@ -241,14 +307,13 @@ export function AdvertiserBilling() {
                     {item.balance.toLocaleString()}원
                   </td>
                   <td className="px-6 py-4 text-center whitespace-nowrap">
-                    <StatusBadge status={item.status} />
+                    <StatusBadge status={statusLabel(item.status)} />
                   </td>
-                  <td className="px-6 py-4 text-slate-500 truncate max-w-[200px]" title={item.memo}>{item.memo}</td>
                 </tr>
               ))}
-              {filteredHistory.length === 0 && (
+              {!loading && filteredHistory.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                     내역이 없습니다.
                   </td>
                 </tr>
@@ -259,7 +324,9 @@ export function AdvertiserBilling() {
 
         {/* Mobile List */}
         <div className="lg:hidden divide-y divide-slate-100">
-          {filteredHistory.map((item) => (
+          {loading ? (
+            <div className="p-8 text-center text-slate-500 text-sm">불러오는 중...</div>
+          ) : filteredHistory.map((item) => (
             <div key={item.id} className="p-5 flex flex-col gap-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -267,13 +334,11 @@ export function AdvertiserBilling() {
                 </div>
                 <TypeBadge type={item.type} />
               </div>
-              
+
               <div>
-                <h3 className="font-bold text-slate-900 mb-1">{item.campaign !== '-' ? item.campaign : '충전/조정 내역'}</h3>
-                {item.dbId !== '-' && <p className="text-xs text-slate-400 font-mono mb-2">관련 디비: {item.dbId}</p>}
-                <p className="text-sm text-slate-600 truncate">{item.memo}</p>
+                <h3 className="font-bold text-slate-900 mb-1">{item.memo || '거래 내역'}</h3>
               </div>
-              
+
               <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center mt-1">
                 <div className="flex flex-col">
                   <span className="text-xs text-slate-500 mb-0.5">잔액</span>
@@ -287,7 +352,7 @@ export function AdvertiserBilling() {
                 </div>
               </div>
               <div className="mt-1">
-                <StatusBadge status={item.status} />
+                <StatusBadge status={statusLabel(item.status)} />
               </div>
             </div>
           ))}

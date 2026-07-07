@@ -1,0 +1,20 @@
+<?php
+require_once dirname(__DIR__) . '/_common.php';
+
+lc_api_require_method('GET');
+
+$category = isset($_GET['category']) ? trim((string) $_GET['category']) : '';
+$q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+
+$items = lc_campaign_list_for_api(array(
+    'category' => $category,
+    'q'        => $q,
+));
+
+$categories = array('전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타');
+
+lc_api_success(array(
+    'items'      => $items,
+    'categories' => $categories,
+    'dbReady'    => lc_db_installed(),
+));

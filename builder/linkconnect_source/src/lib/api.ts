@@ -549,3 +549,156 @@ export function fetchAdminConversions(filters?: { status?: string }) {
     status: filters?.status ?? '',
   });
 }
+
+export type AdminCampaign = {
+  id: number;
+  code: string;
+  name: string;
+  advertiser: string;
+  mtId: number;
+  category: string;
+  type: string;
+  partnerPrice: number;
+  advertiserPrice: number;
+  margin: number;
+  totalDb: number;
+  approvedDb: number;
+  canceledDb: number;
+  spend: number;
+  rate: string;
+  cancelRate: string;
+  status: string;
+  statusCode: string;
+  lowBalance: boolean;
+  description: string;
+  approvalRate: string;
+  avgTime: string;
+  allowedChannels: string;
+  forbiddenChannels: string;
+  landingUrl: string;
+  badge: string;
+  recommended: boolean;
+};
+
+export type AdminCampaignSummary = {
+  total: number;
+  active: number;
+  paused: number;
+  lowBalance: number;
+  avgPrice: number;
+  avgApproval: number;
+};
+
+export function fetchAdminCampaigns(filters?: { status?: string; category?: string; q?: string }) {
+  return adminApiGet<{ items: AdminCampaign[]; summary: AdminCampaignSummary; dbReady: boolean }>('campaigns.php', {
+    status: filters?.status ?? '',
+    category: filters?.category ?? '',
+    q: filters?.q ?? '',
+  });
+}
+
+export function saveAdminCampaign(payload: Record<string, unknown>) {
+  return adminApiPost<{ message: string; campaign: AdminCampaign | null }>('campaigns.php', {
+    action: payload.cpId ? 'update' : 'create',
+    ...payload,
+  });
+}
+
+export function updateAdminCampaignStatus(payload: { action: 'activate' | 'pause' | 'end' | 'draft'; cpId: number }) {
+  return adminApiPost<{ message: string; campaign: AdminCampaign | null }>('campaigns.php', payload);
+}
+
+export type MerchantCampaign = {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  statusCode: string;
+  cpa: number;
+  budget: number;
+  spend: number;
+  dbCount: number;
+  category: string;
+};
+
+export type MerchantCampaignSummary = {
+  total: number;
+  active: number;
+  pending: number;
+  ended: number;
+};
+
+export function fetchMerchantCampaigns(filters?: { status?: string }) {
+  return merchantApiGet<{ items: MerchantCampaign[]; summary: MerchantCampaignSummary; dbReady: boolean }>(
+    'campaigns.php',
+    { status: filters?.status ?? '' },
+  );
+}
+
+export type MerchantWalletTransaction = {
+  id: number;
+  date: string;
+  type: string;
+  typeCode: string;
+  amount: number;
+  balance: number;
+  status: string;
+  memo: string;
+};
+
+export type MerchantWalletResponse = {
+  balance: number;
+  balanceFormatted: string;
+  summary: {
+    balance: number;
+    monthlyCharge: number;
+    monthlySpend: number;
+    availableBalance: number;
+  };
+  items: MerchantWalletTransaction[];
+  dbReady: boolean;
+};
+
+export function fetchMerchantWallet() {
+  return merchantApiGet<MerchantWalletResponse>('wallet.php');
+}
+
+export function requestMerchantCharge(payload: { amount: number; memo?: string }) {
+  return merchantApiPost<{ message: string }>('wallet.php', payload);
+}
+
+const PUBLIC_API_BASE = lcPluginUrl('api');
+
+async function publicApiGet<T>(endpoint: string, query?: Record<string, string>): Promise<T> {
+  const url = new URL(`${PUBLIC_API_BASE}/${endpoint}`, window.location.origin);
+  if (query) {
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== '') {
+        url.searchParams.set(key, value);
+      }
+    });
+  }
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
+  if (!body.ok) {
+    const errBody = body as ApiErrorBody;
+    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+  }
+
+  return (body as ApiSuccessBody<T>).data;
+}
+
+export type PublicCampaign = PartnerCampaign;
+
+export function fetchPublicCampaigns(filters?: { category?: string; q?: string }) {
+  return publicApiGet<{ items: PublicCampaign[]; categories: string[]; dbReady: boolean }>('campaigns.php', {
+    category: filters?.category ?? '',
+    q: filters?.q ?? '',
+  });
+}
