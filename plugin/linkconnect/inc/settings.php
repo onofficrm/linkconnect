@@ -68,6 +68,9 @@ if (!function_exists('lc_settings_get_all')) {
     function lc_settings_get_all()
     {
         $defaults = lc_settings_defaults();
+        if (!function_exists('lc_db_installed') || !function_exists('lc_db_table_exists') || !function_exists('lc_table')) {
+            return $defaults;
+        }
         if (!lc_db_installed() || !lc_db_table_exists(lc_table('settings'))) {
             return $defaults;
         }

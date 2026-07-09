@@ -19,6 +19,9 @@ if (!function_exists('onoff_platform_linkconnect_config')) {
         if (defined('G5_PLUGIN_PATH') && is_file(G5_PLUGIN_PATH . '/linkconnect/config.php')) {
             include_once G5_PLUGIN_PATH . '/linkconnect/config.php';
         }
+        if (defined('G5_PLUGIN_PATH') && is_file(G5_PLUGIN_PATH . '/linkconnect/inc/db.php')) {
+            include_once G5_PLUGIN_PATH . '/linkconnect/inc/db.php';
+        }
         if (defined('G5_PLUGIN_PATH') && is_file(G5_PLUGIN_PATH . '/linkconnect/inc/settings.php')) {
             include_once G5_PLUGIN_PATH . '/linkconnect/inc/settings.php';
         }
