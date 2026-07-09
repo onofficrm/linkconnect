@@ -20,6 +20,9 @@ data/tmp/
 # 빌더 임시 입력
 _BUILDER_INPUT/
 
+# CI deploy staging
+.deploy/
+
 # Node·환경
 node_modules/
 .env
