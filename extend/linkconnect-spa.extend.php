@@ -27,7 +27,7 @@ if (!function_exists('linkconnect_spa_rewrite_enabled')) {
 if (!function_exists('linkconnect_spa_route_pattern')) {
     function linkconnect_spa_route_pattern()
     {
-        return '^(select-center|cpa-list|cps|events|notice|partner|advertiser|admin)(/.*)?$';
+        return '^(about|affiliate|select-center|cpa-list|cps|events|notice|partner|advertiser|admin)(/.*)?$';
     }
 }
 

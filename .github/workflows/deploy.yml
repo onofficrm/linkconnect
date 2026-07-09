@@ -8,6 +8,7 @@ on:
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -28,19 +29,33 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
           echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
 
-      - name: Deploy via FTP
+      - name: Deploy SPA assets (priority)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          parallel: 1
+          parallel: 5
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
+          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
+          state-name: linkconnect-spa-v1
+          log-level: minimal
+
+      - name: Deploy site via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 3
           protocol: ftp
           local-dir: ./
           server-dir: /public_html/
-          state-name: linkconnect-deploy-v2
-          log-level: verbose
+          state-name: linkconnect-deploy-v3
+          log-level: minimal
           exclude: |
             **/.git*
             **/.github/**
@@ -50,6 +65,7 @@ jobs:
             _backup_transfer_*/
             **/_backup_transfer_*/
             _BUILDER_INPUT/**
+            builder/**
             /data/**
             /cache/**
             /session/**
@@ -57,4 +73,3 @@ jobs:
             *.log
             .env
             .env.*
-            builder/linkconnect_source/node_modules/**
