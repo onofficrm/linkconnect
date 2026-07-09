@@ -24,45 +24,7 @@ import DebtCollectionTab5 from './info-tabs/DebtCollectionTab5';
 import DebtCollectionTab6 from './info-tabs/DebtCollectionTab6';
 import DebtCollectionTab7 from './info-tabs/DebtCollectionTab7';
 
-const data = {
-  rehabilitation: {
-    title: "개인회생 안내",
-    description: "과도한 채무로 고통받는 분들을 위한 합법적인 채무조정 제도",
-    menus: [
-      "개인회생이란?",
-      "개인회생 신청자격",
-      "개인회생 준비서류",
-      "개인회생 절차",
-      "개인회생 경험담",
-      "개인회생 FAQ"
-    ]
-  },
-  bankruptcy: {
-    title: "개인파산 안내",
-    description: "현재 자신의 모든 재산으로 모든 채무를 변제할 수 없는 지급불능 상태일 때",
-    menus: [
-      "개인파산이란?",
-      "개인파산 신청자격",
-      "개인파산 준비서류",
-      "개인파산 절차",
-      "개인파산 경험담",
-      "개인파산 FAQ"
-    ]
-  },
-  "debt-collection": {
-    title: "채권추심 대처안내",
-    description: "불법 채권추심으로부터 안전하게 보호받고 대처하는 방법",
-    menus: [
-      "채권추심이란?",
-      "불법 채권추심 대처방법",
-      "독촉전화 대처방법",
-      "지급명령을 받았을 때",
-      "급여압류·통장압류 대처",
-      "내용증명을 받았을 때",
-      "채권추심 FAQ"
-    ]
-  }
-};
+import { getNavSection } from '../lib/siteNav';
 
 interface InfoPageProps {
   type: 'rehabilitation' | 'bankruptcy' | 'debt-collection';
@@ -70,7 +32,7 @@ interface InfoPageProps {
 
 export default function InfoPage({ type }: InfoPageProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const currentData = data[type];
+  const currentData = getNavSection(type);
   const location = useLocation();
 
   // Scroll to top and handle tab query parameter
@@ -80,14 +42,14 @@ export default function InfoPage({ type }: InfoPageProps) {
     
     if (tabParam) {
       const tabIndex = parseInt(tabParam, 10);
-      if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex < currentData.menus.length) {
+      if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex < currentData.items.length) {
         setActiveTab(tabIndex);
       }
     } else {
       setActiveTab(0);
     }
     window.scrollTo(0, 0);
-  }, [type, location.search, currentData.menus.length]);
+  }, [type, location.search, currentData.items.length]);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -139,7 +101,7 @@ export default function InfoPage({ type }: InfoPageProps) {
         {/* Sidebar Navigation */}
         <div className="w-full md:w-64 shrink-0">
           <div className="sticky top-[100px] rounded-xl bg-white shadow-sm border border-gray-100 p-2">
-            {currentData.menus.map((menu, idx) => (
+            {currentData.items.map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => {
@@ -152,7 +114,7 @@ export default function InfoPage({ type }: InfoPageProps) {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                {menu}
+                {item.label}
                 {activeTab === idx && <ChevronRight className="h-4 w-4" />}
               </button>
             ))}

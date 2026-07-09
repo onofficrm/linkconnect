@@ -60,10 +60,22 @@ export default function HomePage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              to="/rehabilitation/info?tab=1"
+              to="/rehabilitation/info"
               className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-6 py-4 text-[15px] font-bold text-gray-700"
             >
-              개인회생 정보 보기
+              개인회생 정보
+            </Link>
+            <Link
+              to="/bankruptcy"
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-6 py-4 text-[15px] font-bold text-gray-700"
+            >
+              개인파산 정보
+            </Link>
+            <Link
+              to="/debt-collection"
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-6 py-4 text-[15px] font-bold text-gray-700"
+            >
+              채권추심정보
             </Link>
           </div>
         </div>

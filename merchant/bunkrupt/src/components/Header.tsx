@@ -1,20 +1,31 @@
-import { Scale, Menu, X } from 'lucide-react';
+import { Scale, Menu, X, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { usePartnerContext } from '../context/PartnerContext';
 import { formatPhoneDisplay, phoneTelHref } from '../lib/partnerData';
 import { scrollToCalculator, scrollToConsultForm } from '../lib/consultationForm';
 import { isCampaignTraffic } from '../lib/heroCopy';
+import { SITE_NAV_SECTIONS, navItemHref } from '../lib/siteNav';
+import NavDropdown from './NavDropdown';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { hasPhone, data } = usePartnerContext();
-  const campaignFocus = isCampaignTraffic() || location.pathname.includes('/consultation') || location.pathname.includes('/rehabilitation');
+  const campaignFocus =
+    isCampaignTraffic() ||
+    location.pathname.includes('/consultation') ||
+    location.pathname.includes('/rehabilitation');
+
+  const closeMobile = () => {
+    setIsOpen(false);
+    setMobileSection(null);
+  };
 
   const goForm = () => {
-    setIsOpen(false);
+    closeMobile();
     if (location.pathname.includes('/consultation')) {
       scrollToConsultForm();
       return;
@@ -24,7 +35,7 @@ export default function Header() {
   };
 
   const goCalculator = () => {
-    setIsOpen(false);
+    closeMobile();
     if (location.pathname.includes('/consultation')) {
       scrollToCalculator();
       return;
@@ -33,47 +44,41 @@ export default function Header() {
     scrollToCalculator();
   };
 
-  const navLinks = campaignFocus
-    ? [
-        { name: '자격 확인', action: goCalculator },
-        { name: '상담신청', action: goForm },
-        { name: '자세히 알아보기', path: '/rehabilitation/info?tab=1' },
-      ]
-    : [
-        { name: '개인회생', path: '/rehabilitation' },
-        { name: '상담신청', action: goForm },
-      ];
-
   const tel = hasPhone ? phoneTelHref(data.partner_phone) : '';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm shadow-sm">
-      <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link to={campaignFocus ? '/consultation' : '/'} className="flex items-center gap-2">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link to={campaignFocus ? '/consultation' : '/'} className="flex shrink-0 items-center gap-2">
           <Scale className="h-6 w-6 text-main sm:h-7 sm:w-7" />
-          <span className="text-[16px] font-bold tracking-tight text-main sm:text-xl">개인회생 자격진단 센터</span>
+          <span className="text-[15px] font-bold tracking-tight text-main sm:text-[17px] lg:text-xl">
+            개인회생 자격진단 센터
+          </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) =>
-            link.path ? (
-              <Link key={link.name} to={link.path} className="text-[15px] font-bold text-main transition-colors hover:text-cta">
-                {link.name}
-              </Link>
-            ) : (
-              <button
-                key={link.name}
-                type="button"
-                onClick={link.action}
-                className="text-[15px] font-bold text-main transition-colors hover:text-cta"
-              >
-                {link.name}
-              </button>
-            ),
-          )}
+        <nav className="hidden items-center gap-5 lg:flex xl:gap-7">
+          {SITE_NAV_SECTIONS.map((section) => (
+            <NavDropdown key={section.id} section={section} />
+          ))}
+          {campaignFocus ? (
+            <button
+              type="button"
+              onClick={goCalculator}
+              className="text-[14px] font-bold text-main transition-colors hover:text-cta lg:text-[15px]"
+            >
+              자격 확인
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={goForm}
+            className="text-[14px] font-bold text-main transition-colors hover:text-cta lg:text-[15px]"
+          >
+            상담신청
+          </button>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden items-center gap-3 lg:flex">
           {hasPhone && tel ? (
             <a
               href={tel}
@@ -95,7 +100,7 @@ export default function Header() {
 
         <button
           type="button"
-          className="md:hidden p-2 text-main"
+          className="p-2 text-main lg:hidden"
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           aria-label="메뉴"
@@ -105,20 +110,56 @@ export default function Header() {
       </div>
 
       {isOpen ? (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 shadow-lg">
-          <nav className="flex flex-col gap-4">
-            {navLinks.map((link) =>
-              link.path ? (
-                <Link key={link.name} to={link.path} onClick={() => setIsOpen(false)} className="text-[15px] font-bold text-main">
-                  {link.name}
-                </Link>
-              ) : (
-                <button key={link.name} type="button" onClick={link.action} className="text-left text-[15px] font-bold text-main">
-                  {link.name}
-                </button>
-              ),
-            )}
+        <div className="max-h-[calc(100vh-72px)] overflow-y-auto border-t border-gray-100 bg-white px-4 py-4 shadow-lg lg:hidden">
+          <nav className="flex flex-col gap-1">
+            {SITE_NAV_SECTIONS.map((section) => {
+              const expanded = mobileSection === section.id;
+              return (
+                <div key={section.id} className="rounded-lg border border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setMobileSection(expanded ? null : section.id)}
+                    className="flex w-full items-center justify-between px-4 py-3 text-left text-[15px] font-bold text-main"
+                  >
+                    {section.label}
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {expanded ? (
+                    <div className="border-t border-gray-100 bg-gray-50/80 px-2 py-2">
+                      {section.items.map((item) => (
+                        <Link
+                          key={item.tab}
+                          to={navItemHref(section, item.tab)}
+                          onClick={closeMobile}
+                          className="block rounded-md px-3 py-2.5 text-[14px] font-medium text-gray-700 hover:bg-white hover:text-cta"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+
+            {campaignFocus ? (
+              <button
+                type="button"
+                onClick={goCalculator}
+                className="mt-2 rounded-lg px-4 py-3 text-left text-[15px] font-bold text-main"
+              >
+                자격 확인
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={goForm}
+              className="rounded-lg px-4 py-3 text-left text-[15px] font-bold text-main"
+            >
+              상담신청
+            </button>
           </nav>
+
           <div className="mt-6 flex flex-col gap-2">
             {hasPhone && tel ? (
               <a
