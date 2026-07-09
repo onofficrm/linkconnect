@@ -268,14 +268,30 @@ if (!function_exists('lc_spa_url')) {
     }
 }
 
-if (!function_exists('lc_nav_items_public')) {
-    function lc_nav_items_public()
+if (!function_exists('lc_nav_company_items')) {
+    /** 회사소개 드롭다운 하위 (React publicNav.companySubItems 와 동일) */
+    function lc_nav_company_items()
     {
         if (lc_builder_spa_enabled()) {
             return array(
                 array('id' => 'home', 'label' => '회사소개', 'url' => lc_spa_url('/about'), 'tone' => ''),
                 array('id' => 'affiliate', 'label' => '제휴마케팅이란?', 'url' => lc_spa_url('/affiliate'), 'tone' => ''),
                 array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
+            );
+        }
+
+        return array(
+            array('id' => 'home', 'label' => '회사소개', 'url' => lc_url('pages/home.php'), 'tone' => ''),
+            array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
+        );
+    }
+}
+
+if (!function_exists('lc_nav_items_public')) {
+    function lc_nav_items_public()
+    {
+        if (lc_builder_spa_enabled()) {
+            return array(
                 array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_spa_url('/cpa-list'), 'tone' => ''),
                 array('id' => 'cps', 'label' => 'CPS', 'url' => lc_spa_url('/cps'), 'tone' => ''),
                 array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_spa_url('/events'), 'tone' => ''),
@@ -285,8 +301,6 @@ if (!function_exists('lc_nav_items_public')) {
         }
 
         return array(
-            array('id' => 'home', 'label' => '회사소개', 'url' => lc_url('pages/home.php'), 'tone' => ''),
-            array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
             array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_url('pages/cpa.php'), 'tone' => ''),
             array('id' => 'cps', 'label' => 'CPS', 'url' => lc_url('pages/cps.php'), 'tone' => ''),
             array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_url('pages/events.php'), 'tone' => ''),

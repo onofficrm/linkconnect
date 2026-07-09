@@ -1092,7 +1092,7 @@ if (!function_exists('lc_ui_super_admin_header_btn')) {
      */
     function lc_ui_super_admin_header_btn()
     {
-        if (!lc_is_super_admin()) {
+        if (!function_exists('lc_can_access_admin') || !lc_can_access_admin()) {
             return;
         }
         ?>

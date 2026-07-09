@@ -944,6 +944,11 @@ if (!function_exists('onoff_builder_render_import_page')) {
             if ($lc_auth !== '' && is_file($lc_auth) && function_exists('lc_inject_auth_bootstrap')) {
                 $html = lc_inject_auth_bootstrap($html);
             }
+
+            $cache_meta = '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />';
+            if (stripos($html, '</head>') !== false) {
+                $html = preg_replace('/<\/head>/i', $cache_meta . '</head>', $html, 1);
+            }
         }
 
         header('Content-Type: text/html; charset=utf-8');

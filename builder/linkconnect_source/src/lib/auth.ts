@@ -124,7 +124,8 @@ export function canAccessAdvertiserCenter(): boolean {
 }
 
 export function canAccessAdmin(): boolean {
-  return getLcAuth().canAccessAdmin;
+  const auth = getLcAuth();
+  return Boolean(auth.canAccessAdmin || auth.isSuperAdmin || auth.isLinkconnectAdmin);
 }
 
 export function getMemberDisplayName(): string {

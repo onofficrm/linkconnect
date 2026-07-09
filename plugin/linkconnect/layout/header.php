@@ -7,6 +7,7 @@ $lc_page_title = isset($lc_page_title) ? (string) $lc_page_title : lc_site_name(
 $lc_active_nav = isset($lc_active_nav) ? (string) $lc_active_nav : '';
 $lc_body_class = isset($lc_body_class) ? (string) $lc_body_class : 'lc-app';
 $lc_show_footer = !isset($lc_show_footer) || $lc_show_footer;
+$lc_company_nav_active = in_array($lc_active_nav, array('home', 'affiliate', 'notice'), true);
 ?>
 <!doctype html>
 <html lang="ko">
@@ -29,6 +30,25 @@ $lc_show_footer = !isset($lc_show_footer) || $lc_show_footer;
     </a>
 
     <nav class="lc-nav lc-nav--desktop" data-lc-nav aria-label="주요 메뉴">
+      <div class="lc-nav-dropdown<?php echo $lc_company_nav_active ? ' is-active' : ''; ?>" data-lc-nav-dropdown>
+        <button type="button" class="lc-nav-dropdown__toggle" aria-expanded="false" aria-haspopup="true">
+          회사소개
+          <svg class="lc-nav-dropdown__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="lc-nav-dropdown__menu" role="menu">
+          <?php foreach (lc_nav_company_items() as $item) {
+              $cls = 'lc-nav-dropdown__link';
+              if ($lc_active_nav === $item['id']) {
+                  $cls .= ' is-active';
+              }
+              ?>
+          <a href="<?php echo lc_h($item['url']); ?>" class="<?php echo lc_h($cls); ?>" role="menuitem"><?php echo lc_h($item['label']); ?></a>
+          <?php } ?>
+        </div>
+      </div>
+
       <?php foreach (lc_nav_items_public() as $item) {
           $cls = 'lc-nav__link';
           if ($lc_active_nav === $item['id']) {
@@ -44,7 +64,9 @@ $lc_show_footer = !isset($lc_show_footer) || $lc_show_footer;
       <?php } ?>
     </nav>
 
-    <?php lc_render_header_actions(false); ?>
+    <div class="lc-header__actions-wrap">
+      <?php lc_render_header_actions(false); ?>
+    </div>
 
     <button type="button" class="lc-nav-toggle" data-lc-nav-toggle aria-expanded="false" aria-controls="lcMobileNav" aria-label="메뉴 열기">
       <span class="lc-nav-toggle__icon" aria-hidden="true">
@@ -57,7 +79,34 @@ $lc_show_footer = !isset($lc_show_footer) || $lc_show_footer;
 
   <div class="lc-nav-mobile" id="lcMobileNav" data-lc-mobile-nav hidden>
     <nav class="lc-nav-mobile__menu" aria-label="모바일 메뉴">
+      <p class="lc-nav-mobile__group">회사소개</p>
+      <?php foreach (lc_nav_company_items() as $item) {
+          $cls = 'lc-nav-mobile__link';
+          if ($lc_active_nav === $item['id']) {
+              $cls .= ' is-active';
+          }
+          ?>
+      <a href="<?php echo lc_h($item['url']); ?>" class="<?php echo lc_h($cls); ?>" data-lc-mobile-link><?php echo lc_h($item['label']); ?></a>
+      <?php } ?>
+
+      <p class="lc-nav-mobile__group">캠페인</p>
       <?php foreach (lc_nav_items_public() as $item) {
+          if (!in_array($item['id'], array('cpa', 'cps', 'events'), true)) {
+              continue;
+          }
+          $cls = 'lc-nav-mobile__link';
+          if ($lc_active_nav === $item['id']) {
+              $cls .= ' is-active';
+          }
+          ?>
+      <a href="<?php echo lc_h($item['url']); ?>" class="<?php echo lc_h($cls); ?>" data-lc-mobile-link><?php echo lc_h($item['label']); ?></a>
+      <?php } ?>
+
+      <p class="lc-nav-mobile__group">센터</p>
+      <?php foreach (lc_nav_items_public() as $item) {
+          if (!in_array($item['id'], array('partner', 'merchant'), true)) {
+              continue;
+          }
           $cls = 'lc-nav-mobile__link';
           if ($lc_active_nav === $item['id']) {
               $cls .= ' is-active';
