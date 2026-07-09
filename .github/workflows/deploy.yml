@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ftp-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -34,46 +34,12 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
           echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
 
-      - name: Deploy member UI (priority)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 3
-          protocol: ftp
-          local-dir: ./
-          server-dir: /public_html/
-          state-name: linkconnect-member-ui-v1
-          log-level: minimal
-          include: |
-            css/onoff-platform.css
-            extend/linkconnect-member.extend.php
-            extend/linkconnect-spa.extend.php
-            skin/_inc/**
-            skin/member/onoff/**
-            mobile/skin/member/onoff/**
-            favicon.png
+      - name: Clean junk files before upload
+        run: |
+          find plugin/onoff-builder-bridge/imports/linkconnect -name '._*' -delete 2>/dev/null || true
+          find plugin/onoff-builder-bridge/imports/linkconnect -name '.DS_Store' -delete 2>/dev/null || true
 
-      - name: Deploy bridge PHP (priority)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 2
-          protocol: ftp
-          local-dir: plugin/onoff-builder-bridge/
-          server-dir: /public_html/plugin/onoff-builder-bridge/
-          state-name: linkconnect-bridge-php-v2
-          log-level: minimal
-          include: |
-            lib/**
-            data/**
-
-      - name: Deploy SPA bootstrap PHP (priority)
+      - name: Deploy to production (single FTP session)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -82,43 +48,10 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           parallel: 1
           protocol: ftp
-          local-dir: inc/
-          server-dir: /public_html/inc/
-          state-name: linkconnect-inc-v2
-          log-level: minimal
-          include: |
-            linkconnect-spa-bootstrap.php
-
-      - name: Deploy SPA assets
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 2
-          protocol: ftp
-          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
-          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-v3
-          log-level: minimal
-          exclude: |
-            **/._*
-            **/.DS_Store
-
-      - name: Deploy site via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 2
-          protocol: ftp
           local-dir: ./
           server-dir: /public_html/
-          state-name: linkconnect-deploy-v4
-          log-level: minimal
+          state-name: linkconnect-prod-v1
+          log-level: verbose
           exclude: |
             **/.git*
             **/.github/**
@@ -129,7 +62,6 @@ jobs:
             **/_backup_transfer_*/
             _BUILDER_INPUT/**
             builder/**
-            plugin/onoff-builder-bridge/imports/**
             /data/**
             /cache/**
             /session/**
@@ -137,3 +69,18 @@ jobs:
             *.log
             .env
             .env.*
+          include: |
+            css/onoff-platform.css
+            extend/linkconnect-member.extend.php
+            extend/linkconnect-spa.extend.php
+            skin/_inc/**
+            skin/member/onoff/**
+            mobile/skin/member/onoff/**
+            favicon.png
+            about/**
+            affiliate/**
+            notice/**
+            inc/linkconnect-spa-bootstrap.php
+            plugin/onoff-builder-bridge/lib/**
+            plugin/onoff-builder-bridge/data/**
+            plugin/onoff-builder-bridge/imports/linkconnect/**
