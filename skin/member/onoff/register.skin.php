@@ -6,7 +6,7 @@ onoff_platform_member_styles($member_skin_url);
 ?>
 
 <!-- 회원가입약관 동의 시작 { -->
-<div class="onoff-platform onoff-platform--member">
+<div class="<?php echo onoff_platform_member_shell_class(); ?>">
 <?php onoff_platform_member_top_bar(); ?>
 <div class="register onoff-platform__card">
     <?php onoff_platform_member_brand('회원가입'); ?>

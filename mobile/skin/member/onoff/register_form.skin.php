@@ -10,7 +10,7 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
 ?>
 
 <!-- 회원정보 입력/수정 시작 { -->
-<div class="onoff-platform onoff-platform--member" style="max-width:640px">
+<div class="<?php echo onoff_platform_member_shell_class(); ?>" style="max-width:640px">
 <?php onoff_platform_member_top_bar(); ?>
 <div class="register onoff-platform__card">
     <?php onoff_platform_member_brand($w === '' ? '회원가입' : '정보수정'); ?>

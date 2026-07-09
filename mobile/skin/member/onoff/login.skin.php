@@ -6,7 +6,7 @@ onoff_platform_member_styles($member_skin_url);
 ?>
 
 <!-- 로그인 시작 { -->
-<div class="onoff-platform onoff-platform--member">
+<div class="<?php echo onoff_platform_member_shell_class(); ?>">
 <?php onoff_platform_member_top_bar(); ?>
 <div id="mb_login" class="mbskin onoff-platform__card">
     <div class="mbskin_box">

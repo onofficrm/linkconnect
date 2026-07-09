@@ -551,3 +551,133 @@
     padding: 14px;
   }
 }
+
+/* ── LinkConnect 회원 로그인 (홈 톤앤매너) ── */
+.onoff-platform--linkconnect.onoff-platform--member {
+  max-width: 520px;
+  min-height: 100vh;
+  padding: 0 20px 32px;
+  justify-content: flex-start;
+}
+
+.onoff-platform--linkconnect.onoff-platform--member:before {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(6, 182, 212, 0.18), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(16, 185, 129, 0.12), transparent 36%),
+    linear-gradient(180deg, #020617 0%, #0f172a 42%, #0f172a 100%);
+}
+
+.onoff-platform--linkconnect.onoff-platform--member:after {
+  display: none;
+}
+
+.onoff-platform--linkconnect .onoff-platform__top--lc {
+  display: flex;
+  justify-content: center;
+  width: 100vw;
+  margin: 0 calc(50% - 50vw) 28px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.onoff-platform--linkconnect .onoff-platform__top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.onoff-platform--linkconnect .onoff-platform__top-link:before {
+  display: none;
+}
+
+.onoff-platform--linkconnect .onoff-platform__top-link:hover {
+  color: #22d3ee;
+  transform: none;
+  box-shadow: none;
+}
+
+.onoff-platform--linkconnect .onoff-platform__top-icon {
+  display: inline-flex;
+  color: #22d3ee;
+}
+
+.onoff-platform--linkconnect .onoff-platform__brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.onoff-platform--linkconnect .onoff-platform__brand-icon {
+  display: inline-flex;
+  color: #22d3ee;
+}
+
+.onoff-platform--linkconnect .onoff-platform__eyebrow {
+  border-color: rgba(6, 182, 212, 0.35);
+  background: rgba(6, 182, 212, 0.12);
+  color: #67e8f9;
+  letter-spacing: 0.16em;
+}
+
+.onoff-platform--linkconnect .onoff-platform__brand-hint {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.onoff-platform--linkconnect .onoff-platform__card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
+}
+
+.onoff-platform--linkconnect .onoff-platform__tabs {
+  background: #0f172a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.onoff-platform--linkconnect .onoff-platform__tab {
+  color: #94a3b8;
+}
+
+.onoff-platform--linkconnect .onoff-platform__tab.is-active {
+  color: #10b981;
+  background: #fff;
+}
+
+.onoff-platform--linkconnect .onoff-platform__footer {
+  color: #94a3b8;
+}
+
+.onoff-platform--linkconnect .onoff-platform #mb_login label[for="login_id"],
+.onoff-platform--linkconnect .onoff-platform #mb_login label[for="login_pw"] {
+  color: #0e7490;
+}
+
+@media (max-width: 767px) {
+  .onoff-platform--linkconnect.onoff-platform--member {
+    padding: 0 14px 24px;
+  }
+
+  .onoff-platform--linkconnect .onoff-platform__top--lc {
+    margin-bottom: 20px;
+    padding: 14px 16px;
+  }
+
+  .onoff-platform--linkconnect .onoff-platform__top-text {
+    font-size: 1.15rem;
+  }
+}

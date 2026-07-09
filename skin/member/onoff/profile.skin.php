@@ -6,7 +6,7 @@ onoff_platform_member_styles($member_skin_url);
 ?>
 
 <!-- 자기소개 시작 { -->
-<div class="onoff-platform onoff-platform--member">
+<div class="<?php echo onoff_platform_member_shell_class(); ?>">
 <div id="profile" class="new_win onoff-platform__card">
     <h1 id="win_title"><?php echo $mb_nick ?>님의 프로필</h1>
     <div class="profile_name">

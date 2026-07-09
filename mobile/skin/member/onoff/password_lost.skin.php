@@ -9,7 +9,7 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
 <?php } ?>
 
 <!-- 회원정보 찾기 시작 { -->
-<div class="onoff-platform onoff-platform--member">
+<div class="<?php echo onoff_platform_member_shell_class(); ?>">
 <?php onoff_platform_member_top_bar(); ?>
 <div id="find_info" class="new_win onoff-platform__card<?php if ($config['cf_cert_use'] != 0 && $config['cf_cert_find'] != 0) { ?> cert<?php } ?>">
     <?php onoff_platform_member_brand('아이디/비밀번호 찾기'); ?>

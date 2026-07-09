@@ -7,6 +7,35 @@ if (!defined('_GNUBOARD_')) {
     exit;
 }
 
+if (!function_exists('onoff_platform_linkconnect_config')) {
+    function onoff_platform_linkconnect_config()
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+
+        if (defined('G5_PLUGIN_PATH') && is_file(G5_PLUGIN_PATH . '/linkconnect/config.php')) {
+            include_once G5_PLUGIN_PATH . '/linkconnect/config.php';
+        }
+        if (defined('G5_PLUGIN_PATH') && is_file(G5_PLUGIN_PATH . '/linkconnect/inc/settings.php')) {
+            include_once G5_PLUGIN_PATH . '/linkconnect/inc/settings.php';
+        }
+    }
+}
+
+if (!function_exists('onoff_platform_is_linkconnect')) {
+    function onoff_platform_is_linkconnect()
+    {
+        if (function_exists('g5site_cfg')) {
+            return g5site_cfg('home_builder_bridge_id', '') === 'linkconnect';
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('onoff_platform_member_styles')) {
     function onoff_platform_member_styles($skin_url = '')
     {
@@ -18,6 +47,11 @@ if (!function_exists('onoff_platform_member_styles')) {
         $platform = G5_URL . '/css/onoff-platform.css';
         add_stylesheet('<link rel="stylesheet" href="' . htmlspecialchars($tokens, ENT_QUOTES, 'UTF-8') . '">', 0);
         add_stylesheet('<link rel="stylesheet" href="' . htmlspecialchars($platform, ENT_QUOTES, 'UTF-8') . '">', 1);
+
+        if (onoff_platform_is_linkconnect()) {
+            $favicon = G5_URL . '/plugin/onoff-builder-bridge/imports/linkconnect/favicon.png';
+            echo '<link rel="icon" type="image/png" href="' . htmlspecialchars($favicon, ENT_QUOTES, 'UTF-8') . '">' . PHP_EOL;
+        }
 
         if ($skin_url !== '') {
             add_stylesheet('<link rel="stylesheet" href="' . htmlspecialchars($skin_url, ENT_QUOTES, 'UTF-8') . '/style.css">', 2);
@@ -63,28 +97,120 @@ if (!function_exists('onoff_platform_outlogin_styles')) {
 
 if (!function_exists('onoff_platform_homepage_title')) {
     /**
-     * 기본환경설정(cf_title) 홈페이지 제목. 비어 있으면 온오프빌더.
+     * 회원 화면 브랜드명
      */
     function onoff_platform_homepage_title()
     {
-        global $config;
+        if (onoff_platform_is_linkconnect()) {
+            onoff_platform_linkconnect_config();
+            if (function_exists('lc_settings_get')) {
+                $name = trim((string) lc_settings_get('siteName', ''));
+                if ($name !== '') {
+                    return $name;
+                }
+            }
 
+            return '링크커넥트';
+        }
+
+        if (function_exists('g5site_cfg')) {
+            $name = trim((string) g5site_cfg('site_name', ''));
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        global $config;
         $title = isset($config['cf_title']) ? trim(get_text($config['cf_title'])) : '';
 
         return $title !== '' ? $title : '온오프빌더';
     }
 }
 
+if (!function_exists('onoff_platform_member_shell_class')) {
+    function onoff_platform_member_shell_class()
+    {
+        $classes = array('onoff-platform', 'onoff-platform--member');
+        if (onoff_platform_is_linkconnect()) {
+            $classes[] = 'onoff-platform--linkconnect';
+        }
+
+        return implode(' ', $classes);
+    }
+}
+
+if (!function_exists('onoff_platform_login_return_path')) {
+    function onoff_platform_login_return_path()
+    {
+        global $url;
+
+        $raw = isset($url) ? (string) $url : '';
+        if ($raw === '') {
+            return '';
+        }
+
+        $path = parse_url($raw, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            $path = $raw;
+        }
+
+        return strtolower($path);
+    }
+}
+
+if (!function_exists('onoff_platform_member_center_meta')) {
+    /**
+     * 로그인 return URL 기준 센터 컨텍스트
+     *
+     * @return array{eyebrow:string, hint:string}
+     */
+    function onoff_platform_member_center_meta()
+    {
+        $path = onoff_platform_login_return_path();
+
+        if ($path !== '' && (strpos($path, '/admin') !== false || $path === '/admin')) {
+            return array(
+                'eyebrow' => '관리자센터',
+                'hint'    => '관리자 계정으로 로그인하세요',
+            );
+        }
+        if ($path !== '' && (strpos($path, '/advertiser') !== false || $path === '/advertiser')) {
+            return array(
+                'eyebrow' => '광고주센터',
+                'hint'    => '광고주 계정으로 로그인하세요',
+            );
+        }
+        if ($path !== '' && (strpos($path, '/partner') !== false || $path === '/partner')) {
+            return array(
+                'eyebrow' => '파트너센터',
+                'hint'    => '파트너 계정으로 로그인하세요',
+            );
+        }
+
+        return array(
+            'eyebrow' => 'MEMBER',
+            'hint'    => 'CPA/CPS 제휴마케팅 플랫폼',
+        );
+    }
+}
+
 if (!function_exists('onoff_platform_member_top_bar')) {
-    /** 회원 화면 상단 홈페이지 제목 */
+    /** 회원 화면 상단 — LinkConnect 홈 헤더 톤 */
     function onoff_platform_member_top_bar()
     {
-        $title = onoff_platform_homepage_title();
-        $url = defined('G5_URL') ? G5_URL : '/';
+        if (!onoff_platform_is_linkconnect()) {
+            return;
+        }
 
-        echo '<div class="onoff-platform__top">';
-        echo '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" class="onoff-platform__top-link">';
-        echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $title = onoff_platform_homepage_title();
+        $home = defined('G5_URL') ? rtrim(G5_URL, '/') . '/' : '/';
+
+        echo '<div class="onoff-platform__top onoff-platform__top--lc">';
+        echo '<a href="' . htmlspecialchars($home, ENT_QUOTES, 'UTF-8') . '" class="onoff-platform__top-link">';
+        echo '<span class="onoff-platform__top-icon" aria-hidden="true">';
+        echo '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+        echo '</span>';
+        echo '<span class="onoff-platform__top-text">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</span>';
         echo '</a>';
         echo '</div>';
     }
@@ -97,16 +223,31 @@ if (!function_exists('onoff_platform_member_brand')) {
         global $g5;
 
         $brand = onoff_platform_homepage_title();
+        $center = onoff_platform_member_center_meta();
         $label = trim((string) $page_label);
         if ($label === '' && isset($g5['title'])) {
             $label = trim(get_text($g5['title']));
         }
-        $label = $label !== '' ? $label : $brand;
+        if ($label === '') {
+            $label = '로그인';
+        }
 
         echo '<div class="onoff-platform__brand">';
-        echo '<p class="onoff-platform__eyebrow">MEMBER</p>';
-        echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
+        echo '<p class="onoff-platform__eyebrow">' . htmlspecialchars($center['eyebrow'], ENT_QUOTES, 'UTF-8') . '</p>';
+        if (onoff_platform_is_linkconnect()) {
+            echo '<div class="onoff-platform__brand-lockup">';
+            echo '<span class="onoff-platform__brand-icon" aria-hidden="true">';
+            echo '<svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            echo '</span>';
+            echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
+            echo '</div>';
+        } else {
+            echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
+        }
         echo '<p class="onoff-platform__page-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</p>';
+        if ($center['hint'] !== '') {
+            echo '<p class="onoff-platform__brand-hint">' . htmlspecialchars($center['hint'], ENT_QUOTES, 'UTF-8') . '</p>';
+        }
         echo '</div>';
     }
 }
@@ -117,6 +258,10 @@ if (!function_exists('onoff_platform_member_footer')) {
     {
         $title = onoff_platform_homepage_title();
         $phone = function_exists('g5site_cfg') ? trim((string) g5site_cfg('phone', '')) : '';
+        if ($phone === '' && function_exists('lc_contact_phone')) {
+            onoff_platform_linkconnect_config();
+            $phone = trim((string) lc_contact_phone());
+        }
 
         echo '<p class="onoff-platform__footer">&copy; ' . date('Y') . ' ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         if ($phone !== '') {
@@ -130,8 +275,11 @@ if (!function_exists('onoff_platform_member_tabs')) {
     /** 로그인 / 회원가입 탭 */
     function onoff_platform_member_tabs($active = 'login')
     {
-        $login_url = (defined('G5_BBS_URL') ? G5_BBS_URL : '') . '/login.php';
-        $register_url = (defined('G5_BBS_URL') ? G5_BBS_URL : '') . '/register.php';
+        global $url;
+
+        $return_qs = isset($url) && $url !== '' ? '?url=' . urlencode($url) : '';
+        $login_url = (defined('G5_BBS_URL') ? G5_BBS_URL : '') . '/login.php' . $return_qs;
+        $register_url = (defined('G5_BBS_URL') ? G5_BBS_URL : '') . '/register.php' . $return_qs;
 
         echo '<nav class="onoff-platform__tabs mb_log_cate" aria-label="회원 메뉴">';
 
