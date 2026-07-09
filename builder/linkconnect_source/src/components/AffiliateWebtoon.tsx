@@ -1,5 +1,6 @@
 import { BookOpen, ChevronDown } from 'lucide-react';
 import { CharacterIllustration, SceneDecoration } from './webtoon/WebtoonCharacters';
+import { getPanelImageUrl } from './webtoon/webtoonIllustrationBrief';
 import {
   characterMeta,
   episodes,
@@ -72,7 +73,47 @@ function SpeechBubble({
   );
 }
 
-function WebtoonPanelView({ panel, index }: { panel: WebtoonPanel; index: number }) {
+function WebtoonPanelView({
+  panel,
+  index,
+  episodeNum,
+}: {
+  panel: WebtoonPanel;
+  index: number;
+  episodeNum: number;
+}) {
+  const illustrationUrl = getPanelImageUrl(episodeNum, index);
+  const hasIllustration = Boolean(illustrationUrl);
+
+  if (hasIllustration) {
+    return (
+      <article className="relative border-b-4 border-slate-900/10 overflow-hidden bg-slate-900">
+        <div className="relative aspect-[3/4] w-full">
+          <img
+            src={illustrationUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/10 to-black/50" />
+
+          <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 border-2 border-slate-900/20 flex items-center justify-center text-xs font-black text-slate-600 z-10">
+            {index + 1}
+          </div>
+
+          <div className="absolute inset-0 z-10 flex flex-col justify-between p-4">
+            <SpeechBubble {...panel.bubble} />
+            {panel.caption && (
+              <p className="text-center text-xs md:text-sm font-bold text-white/95 tracking-wide bg-black/40 backdrop-blur-sm rounded-lg py-2 px-3 border border-white/20">
+                {panel.caption}
+              </p>
+            )}
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
       className={`relative min-h-[300px] md:min-h-[340px] bg-gradient-to-b ${panel.scene} border-b-4 border-slate-900/10 overflow-hidden`}
@@ -127,7 +168,7 @@ function EpisodeBlock({ episode }: { episode: (typeof episodes)[0] }) {
 
       <div>
         {episode.panels.map((panel, i) => (
-          <WebtoonPanelView key={i} panel={panel} index={i} />
+          <WebtoonPanelView key={i} panel={panel} index={i} episodeNum={episode.num} />
         ))}
       </div>
     </section>
