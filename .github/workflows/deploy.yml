@@ -44,6 +44,39 @@ jobs:
           dangerous-clean-slate: true
           log-level: minimal
 
+      - name: Deploy bridge PHP (priority)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 3
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/
+          server-dir: /public_html/plugin/onoff-builder-bridge/
+          state-name: linkconnect-bridge-php-v1
+          log-level: minimal
+          include: |
+            lib/**
+            data/**
+
+      - name: Deploy SPA bootstrap PHP (priority)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 1
+          protocol: ftp
+          local-dir: inc/
+          server-dir: /public_html/inc/
+          state-name: linkconnect-inc-v1
+          log-level: minimal
+          include: |
+            linkconnect-spa-bootstrap.php
+
       - name: Deploy site via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
