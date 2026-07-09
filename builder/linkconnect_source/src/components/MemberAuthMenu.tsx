@@ -203,14 +203,14 @@ export function MemberAuthMenu({
       <a
         href={loginUrl}
         onClick={handleClick}
-        className="text-base font-medium text-emerald-400 hover:text-emerald-300 transition-colors px-4 py-2"
+        className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5"
       >
         로그인
       </a>
       <a
         href={registerUrl}
         onClick={handleClick}
-        className="text-base font-medium text-slate-300 hover:text-white transition-colors px-2 py-2"
+        className="text-sm font-medium text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors px-4 py-2 rounded-lg"
       >
         회원가입
       </a>
