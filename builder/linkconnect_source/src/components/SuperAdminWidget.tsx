@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, ShieldCheck, ArrowRight, X } from 'lucide-react';
-import { isLcSuperAdmin } from '../lib/auth';
+import { canAccessAdmin } from '../lib/auth';
 
 export function SuperAdminWidget() {
-  const isSuperAdmin = isLcSuperAdmin();
+  const showAdmin = canAccessAdmin();
   const [showBanner, setShowBanner] = useState(true);
 
-  if (!isSuperAdmin) return null;
+  if (!showAdmin) return null;
 
   return (
     <>
@@ -52,18 +52,37 @@ export function SuperAdminWidget() {
   );
 }
 
-export function SuperAdminHeaderButton() {
-  if (!isLcSuperAdmin()) return null;
+export function SuperAdminHeaderButton({
+  mobile = false,
+  onNavigate,
+}: {
+  mobile?: boolean;
+  onNavigate?: () => void;
+} = {}) {
+  if (!canAccessAdmin()) return null;
+
+  if (mobile) {
+    return (
+      <Link
+        to="/admin"
+        onClick={onNavigate}
+        className="w-full text-center text-base font-bold text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-colors px-4 py-3 rounded-xl flex items-center justify-center gap-2"
+      >
+        <ShieldCheck size={16} />
+        관리자센터
+      </Link>
+    );
+  }
 
   return (
     <Link
       to="/admin"
-      className="hidden md:flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm relative group"
+      className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-400 px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm relative group whitespace-nowrap"
     >
-      <ShieldCheck size={14} />
+      <ShieldCheck size={15} />
       관리자센터
       <div className="absolute top-full mt-2 right-0 w-48 bg-slate-900 border border-slate-800 text-slate-300 text-xs p-2.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-        최고관리자 전용 메뉴입니다.
+        관리자 전용 메뉴입니다.
       </div>
     </Link>
   );

@@ -5,12 +5,13 @@ import {
   campaignNavItems,
   centerNavItems,
   companyNavItems,
+  adminNavItem,
   isCompanyNavActive,
   type NavLinkItem,
 } from '../lib/publicNav';
 import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 import { SuperAdminHeaderButton } from './SuperAdminWidget';
-import { isLcSuperAdmin } from '../lib/auth';
+import { canAccessAdmin } from '../lib/auth';
 
 function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
   if (accent === 'emerald') {
@@ -85,15 +86,15 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="flex items-center justify-between h-20 gap-4">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <LinkIcon className="w-7 h-7 text-cyan-400" />
             <span className="text-2xl font-bold text-white tracking-tight">
               링크커넥트
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8 flex-1 justify-end min-w-0">
             <CompanyNavDropdown />
             {campaignNavItems.map((item) => (
               <Link
@@ -118,7 +119,7 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4 shrink-0">
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
             <SuperAdminHeaderButton />
           </div>
@@ -180,18 +181,19 @@ export function Header() {
               {item.label}
             </Link>
           ))}
+          {canAccessAdmin() && (
+            <Link
+              to={adminNavItem.to}
+              onClick={closeMobile}
+              className="block px-3 py-2.5 pl-5 text-base font-medium text-cyan-400 hover:bg-white/5 rounded-lg"
+            >
+              {adminNavItem.label}
+            </Link>
+          )}
 
           <div className="pt-4 flex flex-col gap-3">
             <MemberAuthMenuMobile onNavigate={closeMobile} />
-            {isLcSuperAdmin() && (
-              <Link
-                to="/admin"
-                onClick={closeMobile}
-                className="w-full text-center text-base font-bold text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/10 transition-colors px-4 py-3 rounded-xl"
-              >
-                관리자센터
-              </Link>
-            )}
+            {canAccessAdmin() && <SuperAdminHeaderButton mobile onNavigate={closeMobile} />}
           </div>
         </div>
       )}

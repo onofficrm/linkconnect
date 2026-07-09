@@ -24,6 +24,13 @@ export const centerNavItems: NavLinkItem[] = [
   { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
 ];
 
+/** 관리자 (권한 있을 때만 표시) */
+export const adminNavItem: NavLinkItem = {
+  to: '/admin',
+  label: '관리자센터',
+  accent: 'cyan',
+};
+
 export function isCompanyNavActive(pathname: string): boolean {
   return companyNavItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
 }
