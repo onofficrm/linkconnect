@@ -50,7 +50,7 @@ if (!function_exists('lc_abuse_check_duplicate')) {
         $table = lc_table('conversions');
         $where = array("cv_created_at >= DATE_SUB(NOW(), INTERVAL " . (int) $days . " DAY)");
         if ($by_phone && $phone !== '') {
-            $where[] = "REPLACE(REPLACE(REPLACE(cv_phone, '-', ''), ' ', ''), '.', '') = '" . lc_sql_escape($phone) . "'";
+            $where[] = "REGEXP_REPLACE(cv_phone, '[^0-9]', '') = '" . lc_sql_escape($phone) . "'";
         } elseif ($email !== '') {
             $where[] = "cv_email = '" . lc_sql_escape($email) . "'";
         }
@@ -87,7 +87,7 @@ if (!function_exists('lc_abuse_check_recent_duplicate')) {
             SELECT COUNT(*) AS cnt
             FROM `{$table}`
             WHERE cp_id = {$cp_id}
-              AND REPLACE(REPLACE(REPLACE(cv_phone, '-', ''), ' ', ''), '.', '') = '" . lc_sql_escape($phone) . "'
+              AND REGEXP_REPLACE(cv_phone, '[^0-9]', '') = '" . lc_sql_escape($phone) . "'
               AND cv_created_at >= DATE_SUB(NOW(), INTERVAL {$hours} HOUR)
         ", false);
 
