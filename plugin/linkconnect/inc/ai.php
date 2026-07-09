@@ -157,7 +157,7 @@ if (!function_exists('lc_ai_guide_system_prompt')) {
             $lines[] = '현재 화면: ' . (string) $context['page'];
         }
 
-        $lines[] = '주요 메뉴: 회사소개(/), CPA(/cpa-list), CPS(/cps), 이벤트(/events), 공지(/notice), 파트너센터(/partner), 광고주센터(/advertiser), 관리자(/admin).';
+        $lines[] = '주요 메뉴: 회사소개(/about), 제휴마케팅(/affiliate), CPA(/cpa-list), CPS(/cps), 이벤트(/events), 공지(/notice), 파트너센터(/partner), 광고주센터(/advertiser), 관리자(/admin).';
 
         return implode("\n", $lines);
     }

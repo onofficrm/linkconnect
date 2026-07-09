@@ -6,6 +6,8 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { Home } from './pages/Home';
+import { About } from './pages/About';
+import { Affiliate } from './pages/Affiliate';
 import { Events } from './pages/Events';
 import { EventDetail } from './pages/EventDetail';
 import { CpsList } from './pages/cps/CpsList';
@@ -60,6 +62,8 @@ export default function App() {
         {/* 공개 마케팅 페이지 — Header + Footer */}
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Home />} />
+          <Route path="about" element={<About />} />
+          <Route path="affiliate" element={<Affiliate />} />
           <Route path="select-center" element={<CenterSelect />} />
           <Route path="cpa-list" element={<CpaList />} />
           <Route path="cps" element={<CpsList />} />
