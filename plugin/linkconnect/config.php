@@ -274,7 +274,7 @@ if (!function_exists('lc_nav_items_public')) {
         if (lc_builder_spa_enabled()) {
             return array(
                 array('id' => 'home', 'label' => '회사소개', 'url' => lc_spa_url('/about'), 'tone' => ''),
-                array('id' => 'affiliate', 'label' => '제휴마케팅', 'url' => lc_spa_url('/affiliate'), 'tone' => ''),
+                array('id' => 'affiliate', 'label' => '제휴마케팅이란?', 'url' => lc_spa_url('/affiliate'), 'tone' => ''),
                 array('id' => 'notice', 'label' => '공지사항', 'url' => lc_spa_url('/notice'), 'tone' => ''),
                 array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_spa_url('/cpa-list'), 'tone' => ''),
                 array('id' => 'cps', 'label' => 'CPS', 'url' => lc_spa_url('/cps'), 'tone' => ''),

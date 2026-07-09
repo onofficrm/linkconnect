@@ -1,0 +1,29 @@
+export interface NavLinkItem {
+  to: string;
+  label: string;
+  accent?: 'emerald' | 'cyan';
+}
+
+/** 회사소개 하위 메뉴 */
+export const companyNavItems: NavLinkItem[] = [
+  { to: '/about', label: '회사소개' },
+  { to: '/affiliate', label: '제휴마케팅이란?' },
+  { to: '/notice', label: '공지사항' },
+];
+
+/** 캠페인·프로모션 */
+export const campaignNavItems: NavLinkItem[] = [
+  { to: '/cpa-list', label: 'CPA' },
+  { to: '/cps', label: 'CPS' },
+  { to: '/events', label: '이벤트/프로모션' },
+];
+
+/** 센터 */
+export const centerNavItems: NavLinkItem[] = [
+  { to: '/partner', label: '파트너센터', accent: 'emerald' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
+];
+
+export function isCompanyNavActive(pathname: string): boolean {
+  return companyNavItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+}

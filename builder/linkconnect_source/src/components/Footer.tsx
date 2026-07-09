@@ -1,5 +1,6 @@
 import { Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { campaignNavItems, centerNavItems, companyNavItems } from '../lib/publicNav';
 import { MemberAuthMenu } from './MemberAuthMenu';
 import { g5BbsUrl } from '../lib/urls';
 
@@ -26,22 +27,35 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">플랫폼</h4>
+            <h4 className="text-white font-semibold mb-4">회사소개</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link to="/about" className="hover:text-emerald-400 transition-colors">회사소개</Link></li>
-              <li><Link to="/affiliate" className="hover:text-emerald-400 transition-colors">제휴마케팅</Link></li>
-              <li><Link to="/notice" className="hover:text-emerald-400 transition-colors">공지사항</Link></li>
-              <li><Link to="/cpa-list" className="hover:text-emerald-400 transition-colors">CPA 상품</Link></li>
-              <li><Link to="/cps" className="hover:text-emerald-400 transition-colors">CPS 상품</Link></li>
-              <li><Link to="/events" className="hover:text-emerald-400 transition-colors">이벤트/프로모션</Link></li>
+              {companyNavItems.map((item) => (
+                <li key={item.to}>
+                  <Link to={item.to} className="hover:text-emerald-400 transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">서비스</h4>
+            <h4 className="text-white font-semibold mb-4">캠페인 · 서비스</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link to="/partner" className="hover:text-cyan-400 transition-colors">파트너센터</Link></li>
-              <li><Link to="/advertiser" className="hover:text-cyan-400 transition-colors">광고주센터</Link></li>
+              {campaignNavItems.map((item) => (
+                <li key={item.to}>
+                  <Link to={item.to} className="hover:text-emerald-400 transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+              {centerNavItems.map((item) => (
+                <li key={item.to}>
+                  <Link to={item.to} className="hover:text-cyan-400 transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
               <MemberAuthMenu variant="footer" />
               <li><a href={g5BbsUrl('content.php?co_id=provision')} className="hover:text-cyan-400 transition-colors">이용약관</a></li>
               <li><a href={g5BbsUrl('content.php?co_id=privacy')} className="hover:text-cyan-400 transition-colors">개인정보처리방침</a></li>
