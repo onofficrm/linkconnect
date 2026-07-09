@@ -68,7 +68,7 @@ onoff_platform_member_styles($member_skin_url);
     </div>
 	    
     <div class="btn_confirm">
-    	<a href="<?php echo G5_BBS_URL ?>/login.php" class="btn_close">이미 계정이 있으신가요? 로그인</a>
+    	<a href="<?php echo G5_BBS_URL ?>/login.php<?php echo isset($url) && $url !== '' ? '?url=' . urlencode($url) : ''; ?>" class="btn_close">이미 계정이 있으신가요? 로그인</a>
         <button type="submit" class="btn_submit">다음 단계</button>
     </div>
 

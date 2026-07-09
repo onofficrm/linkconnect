@@ -24,8 +24,19 @@ if (!function_exists('linkconnect_is_member_bbs_page')) {
 
         return strpos($script, '/bbs/login.php') !== false
             || strpos($script, '/bbs/register.php') !== false
+            || strpos($script, '/bbs/register_form.php') !== false
+            || strpos($script, '/bbs/register_result.php') !== false
+            || strpos($script, '/bbs/register_email.php') !== false
             || strpos($script, '/bbs/password_lost.php') !== false
             || strpos($script, '/bbs/member_confirm.php') !== false;
+    }
+}
+
+if (!function_exists('linkconnect_member_use_minimal_layout')) {
+    /** 로그인과 동일하게 그누보드 기본 헤더·사이드·푸터 없이 회원 스킨만 표시 */
+    function linkconnect_member_use_minimal_layout()
+    {
+        return linkconnect_is_active_site() && linkconnect_is_member_bbs_page();
     }
 }
 

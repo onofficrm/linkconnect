@@ -52,6 +52,7 @@ jobs:
           cp -R skin/member/onoff "$ROOT/skin/member/"
           cp -R mobile/skin/member/onoff "$ROOT/mobile/skin/member/"
           cp favicon.png .htaccess "$ROOT/"
+          cp head.php tail.php "$ROOT/"
           cp -R about affiliate notice "$ROOT/"
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"

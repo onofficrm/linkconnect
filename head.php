@@ -7,6 +7,14 @@ if (!isset($site_config) && is_file(G5_PATH.'/_site.config.php')) {
 
 run_event('pre_head');
 
+if (function_exists('linkconnect_member_use_minimal_layout') && linkconnect_member_use_minimal_layout()) {
+    if (!defined('LINKCONNECT_MEMBER_MINIMAL_LAYOUT')) {
+        define('LINKCONNECT_MEMBER_MINIMAL_LAYOUT', true);
+    }
+    include_once(G5_PATH.'/head.sub.php');
+    return;
+}
+
 if (defined('G5_THEME_PATH')) {
     require_once(G5_THEME_PATH.'/head.php');
     return;
