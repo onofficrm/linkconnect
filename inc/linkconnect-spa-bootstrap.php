@@ -29,6 +29,19 @@ if (is_file(G5_PLUGIN_PATH . '/onoff-builder-bridge/bootstrap.php')) {
     if (function_exists('onoff_builder_maybe_render_home') && onoff_builder_maybe_render_home()) {
         return;
     }
+
+    // SPA 스텁 디렉터리(about/, partner/ 등) — 경로 prefix 목록과 무관하게 직접 렌더
+    if (
+        function_exists('onoff_builder_home_enabled') && onoff_builder_home_enabled()
+        && function_exists('onoff_builder_get_home_bridge_id')
+        && function_exists('onoff_builder_render_import_page')
+    ) {
+        $id = onoff_builder_get_home_bridge_id();
+        if ($id !== '') {
+            onoff_builder_render_import_page($id);
+            return;
+        }
+    }
 }
 
 header('HTTP/1.1 503 Service Unavailable');
