@@ -95,6 +95,26 @@ if (!function_exists('onoff_builder_extract_body_content')) {
     }
 }
 
+if (!function_exists('onoff_builder_landing_context_script')) {
+    function onoff_builder_landing_context_script($id)
+    {
+        if ($id !== 'banktupt' || !function_exists('lc_landing_context_for_api')) {
+            return '';
+        }
+
+        $params = $_GET;
+        $ctx = lc_landing_context_for_api($params);
+        $json = json_encode($ctx, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
+        if ($json === false) {
+            return '';
+        }
+
+        $phone = isset($ctx['partner_phone']) ? (string) $ctx['partner_phone'] : '';
+
+        return '<script>window.LC_LANDING_CONTEXT=' . $json . ';window.PARTNER_PHONE=' . json_encode($phone, JSON_UNESCAPED_UNICODE) . ';</script>';
+    }
+}
+
 if (!function_exists('onoff_builder_render_standalone')) {
     function onoff_builder_render_standalone($id, $options = array())
     {
@@ -124,6 +144,14 @@ if (!function_exists('onoff_builder_render_standalone')) {
         }
 
         if (preg_match('#<!DOCTYPE#i', $html) || preg_match('#<html#i', $html)) {
+            $inject = onoff_builder_landing_context_script($id);
+            if ($inject !== '' && stripos($html, 'LC_LANDING_CONTEXT') === false) {
+                if (preg_match('#</head>#i', $html)) {
+                    $html = preg_replace('#</head>#i', $inject . '</head>', $html, 1);
+                } else {
+                    $html = $inject . $html;
+                }
+            }
             if ($desc !== '' && stripos($html, '<meta name="description"') === false) {
                 $html = preg_replace(
                     '#</head>#i',

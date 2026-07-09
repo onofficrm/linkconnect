@@ -24,6 +24,8 @@ $result = lc_conversion_create_from_link($link, array(
     'email'   => isset($body['email']) ? (string) $body['email'] : '',
     'region'  => isset($body['region']) ? (string) $body['region'] : '',
     'inquiry' => isset($body['inquiry']) ? (string) $body['inquiry'] : '',
+    'channel' => isset($body['channel']) ? (string) $body['channel'] : (isset($body['utm_source']) ? (string) $body['utm_source'] : ''),
+    'sub_id'  => isset($body['sub_id']) ? (string) $body['sub_id'] : (isset($body['utm_campaign']) ? (string) $body['utm_campaign'] : ''),
 ));
 
 if (!$result['ok']) {

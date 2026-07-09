@@ -34,34 +34,52 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
           echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
 
+      - name: Build banktupt merchant landing
+        run: |
+          cd merchant/bunkrupt
+          npm ci
+          npm run deploy:imports
+          test -f ../../plugin/onoff-builder-bridge/imports/banktupt/index.html
+          echo "Banktupt bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/banktupt/index.html)"
+
       - name: Clean junk files before upload
         run: |
           find plugin/onoff-builder-bridge/imports/linkconnect -name '._*' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/linkconnect -name '.DS_Store' -delete 2>/dev/null || true
-          rm -rf builder/linkconnect_source/node_modules
+          find plugin/onoff-builder-bridge/imports/banktupt -name '._*' -delete 2>/dev/null || true
+          find plugin/onoff-builder-bridge/imports/banktupt -name '.DS_Store' -delete 2>/dev/null || true
+          rm -rf builder/linkconnect_source/node_modules merchant/bunkrupt/node_modules
 
       - name: Prepare deploy bundle (app code + SPA core)
         run: |
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,plugin/onoff-builder-bridge/imports/linkconnect,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,merchant/banktupt,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/api}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
           cp -R skin/member/onoff "$ROOT/skin/member/"
           cp -R mobile/skin/member/onoff "$ROOT/mobile/skin/member/"
           cp favicon.png .htaccess "$ROOT/"
+          cp merchant/banktupt/index.php "$ROOT/merchant/banktupt/"
           cp head.php tail.php "$ROOT/"
           cp -R about affiliate notice "$ROOT/"
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
-          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php "$ROOT/plugin/linkconnect/inc/"
+          mkdir -p "$ROOT/plugin/linkconnect/api"
+          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php "$ROOT/plugin/linkconnect/inc/"
+          cp plugin/linkconnect/api/receive.php plugin/linkconnect/api/landing_context.php "$ROOT/plugin/linkconnect/api/"
+          cp plugin/linkconnect/_common.php "$ROOT/plugin/linkconnect/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           cp -R "$SRC/assets" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
+          if [[ -d plugin/onoff-builder-bridge/imports/banktupt ]]; then
+            cp plugin/onoff-builder-bridge/imports/banktupt/index.html "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
+            cp -R plugin/onoff-builder-bridge/imports/banktupt/assets "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
+          fi
           find "$ROOT" -name '._*' -delete 2>/dev/null || true
           echo "Bundle: $(find "$ROOT" -type f | wc -l) files, $(du -sh "$ROOT" | cut -f1)"
 

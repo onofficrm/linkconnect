@@ -926,7 +926,7 @@ if (!function_exists('onoff_builder_render_import_page')) {
         $html = onoff_builder_rewrite_asset_paths($html, $id, $entry);
 
         if ($id === 'linkconnect') {
-            $lc_plugin = defined('G5_PLUGIN_PATH') ? G5_PLUGIN_PATH . '/linkconnect' : '';
+            $lc_plugin = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect' : '';
             $lc_config = $lc_plugin !== '' ? $lc_plugin . '/config.php' : '';
             $lc_auth = $lc_plugin !== '' ? $lc_plugin . '/inc/auth_bootstrap.php' : '';
             if ($lc_config !== '' && is_file($lc_config)) {
@@ -950,6 +950,26 @@ if (!function_exists('onoff_builder_render_import_page')) {
             $cache_meta = '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />';
             if (stripos($html, '</head>') !== false) {
                 $html = preg_replace('/<\/head>/i', $cache_meta . '</head>', $html, 1);
+            }
+        }
+
+        if ($id === 'banktupt') {
+            $lc_common = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect/_common.php' : '';
+            if ($lc_common !== '' && is_file($lc_common)) {
+                include_once $lc_common;
+            }
+            if (function_exists('lc_landing_context_for_api')) {
+                $ctx = lc_landing_context_for_api($_GET);
+                $json = json_encode($ctx, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
+                $phone = isset($ctx['partner_phone']) ? (string) $ctx['partner_phone'] : '';
+                if ($json !== false && stripos($html, 'LC_LANDING_CONTEXT') === false) {
+                    $inject = '<script>window.LC_LANDING_CONTEXT=' . $json . ';window.PARTNER_PHONE=' . json_encode($phone, JSON_UNESCAPED_UNICODE) . ';</script>';
+                    if (stripos($html, '</head>') !== false) {
+                        $html = preg_replace('/<\/head>/i', $inject . '</head>', $html, 1);
+                    } else {
+                        $html = $inject . $html;
+                    }
+                }
             }
         }
 

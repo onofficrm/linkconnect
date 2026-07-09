@@ -502,8 +502,12 @@ if (!function_exists('lc_wallet_admin_adjust')) {
 if (!function_exists('lc_wallet_low_balance_threshold')) {
     function lc_wallet_low_balance_threshold()
     {
-        if (function_exists('lc_settings_get')) {
-            $settings = lc_settings_get();
+        if (function_exists('lc_settings_get_int')) {
+            return max(0, lc_settings_get_int('minChargeAmount', 500000));
+        }
+
+        if (function_exists('lc_settings_get_all')) {
+            $settings = lc_settings_get_all();
 
             return max(0, (int) ($settings['minChargeAmount'] ?? 500000));
         }

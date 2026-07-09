@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  --color-main: #16233F;
+  --color-point: #C9A86A;
+  --color-bg: #F6F7FA;
+  --color-cta: #1F4ED8;
+  --color-warning: #D94A4A;
+}
+
+/* CPA 플랫폼(gnuboard) CSS와 분리 — 머천트 랜딩 전용 wrapper */
+#banktupt-merchant-page.merchant-banktupt-page {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #111827;
+  background-color: var(--color-bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans KR", sans-serif;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page *,
+#banktupt-merchant-page.merchant-banktupt-page *::before,
+#banktupt-merchant-page.merchant-banktupt-page *::after {
+  box-sizing: border-box;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page img,
+#banktupt-merchant-page.merchant-banktupt-page video {
+  max-width: 100%;
+  display: block;
+}
+
+/* object-cover 등 높이 지정 이미지는 Tailwind 클래스 우선 */
+#banktupt-merchant-page.merchant-banktupt-page img:not([class*="object-cover"]):not([class*="h-full"]) {
+  height: auto;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page button {
+  font: inherit;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page input,
+#banktupt-merchant-page.merchant-banktupt-page select,
+#banktupt-merchant-page.merchant-banktupt-page textarea {
+  font: inherit;
+}
+
+/* 파트너 전화번호 없을 때 — CPA 조건부 노출 (JS 로드 전 기본 숨김) */
+#banktupt-merchant-page.merchant-banktupt-page:not(.has-partner-phone) .phone-only,
+#banktupt-merchant-page.merchant-banktupt-page:not(.has-partner-phone) .partner-phone-section {
+  display: none !important;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page:not(.has-partner-phone) .bottom-phone-btn {
+  display: none !important;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page:not(.has-partner-phone) .bottom-form-btn {
+  width: 100% !important;
+  flex: 1 1 100% !important;
+}
+
+#banktupt-merchant-page.merchant-banktupt-page.phone-context-ready:not(.has-partner-phone) a.partner-phone-link {
+  pointer-events: none;
+}
+
+/* 모바일 하단 고정 CTA 여백 */
+@media (max-width: 639px) {
+  #banktupt-merchant-page.merchant-banktupt-page main {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* CPA 플랫폼 전역 스타일 격리 */
+#banktupt-merchant-page.merchant-banktupt-page {
+  isolation: isolate;
+  position: relative;
+  z-index: 0;
+}
