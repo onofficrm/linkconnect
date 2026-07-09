@@ -191,35 +191,44 @@ if (!function_exists('lc_demo_campaign_seed_for_merchant')) {
         }
 
         $inserted = 0;
-        $sort = 0;
-        foreach (lc_sample_cpa_campaigns() as $item) {
-            $sort++;
-            $code = 'DEMO-' . $mt_id . '-' . str_pad((string) $item['id'], 3, '0', STR_PAD_LEFT);
-            $status = LC_STATUS_ACTIVE;
-            if (isset($item['status']) && $item['status'] === '마감임박') {
-                $status = 'closing';
-            }
+        $def = function_exists('lc_banktupt_campaign_definition')
+            ? lc_banktupt_campaign_definition()
+            : array(
+                'code' => 'CPA-BANKTUPT',
+                'title' => '개인회생 상담 DB',
+                'category' => '법률',
+                'price' => 30000,
+                'approval_rate' => '68%',
+                'avg_time' => '1.8일',
+                'allowed_channels' => '블로그, 카페, 지식iN, SNS',
+                'forbidden_channels' => '허위광고, 브랜드 사칭, 스팸문자',
+                'description' => '개인회생·개인파산·채권추심 무료 상담 DB',
+                'badge' => '추천',
+                'recommended' => true,
+                'status' => LC_STATUS_ACTIVE,
+            );
+        $landing = function_exists('lc_banktupt_landing_url') ? lc_banktupt_landing_url() : '';
 
-            lc_sql_query(" INSERT INTO `{$table}` SET
-                mt_id = '{$mt_id}',
-                cp_code = '" . lc_sql_escape($code) . "',
-                cp_name = '" . lc_sql_escape($item['title']) . "',
-                cp_category = '" . lc_sql_escape($item['category']) . "',
-                cp_type = 'cpa',
-                cp_price = '" . (int) $item['price'] . "',
-                cp_approval_rate = '" . lc_sql_escape($item['approval_rate']) . "',
-                cp_avg_time = '" . lc_sql_escape($item['avg_time']) . "',
-                cp_allowed_channels = '" . lc_sql_escape($item['allowed_channels']) . "',
-                cp_forbidden_channels = '" . lc_sql_escape($item['forbidden_channels']) . "',
-                cp_description = '" . lc_sql_escape($item['title'] . ' 캠페인') . "',
-                cp_status = '" . lc_sql_escape($status) . "',
-                cp_badge = '" . lc_sql_escape($item['badge'] ?? '') . "',
-                cp_recommended = '" . (!empty($item['recommended']) ? 1 : 0) . "',
-                cp_sort = '{$sort}',
-                cp_created_at = NOW(),
-                cp_updated_at = NOW() ", false);
-            $inserted++;
-        }
+        lc_sql_query(" INSERT INTO `{$table}` SET
+            mt_id = '{$mt_id}',
+            cp_code = '" . lc_sql_escape((string) $def['code']) . "',
+            cp_name = '" . lc_sql_escape((string) $def['title']) . "',
+            cp_category = '" . lc_sql_escape((string) $def['category']) . "',
+            cp_type = 'cpa',
+            cp_price = '" . (int) $def['price'] . "',
+            cp_approval_rate = '" . lc_sql_escape((string) $def['approval_rate']) . "',
+            cp_avg_time = '" . lc_sql_escape((string) $def['avg_time']) . "',
+            cp_allowed_channels = '" . lc_sql_escape((string) $def['allowed_channels']) . "',
+            cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
+            cp_description = '" . lc_sql_escape((string) $def['description']) . "',
+            cp_landing_url = '" . lc_sql_escape($landing) . "',
+            cp_status = '" . lc_sql_escape((string) $def['status']) . "',
+            cp_badge = '" . lc_sql_escape((string) ($def['badge'] ?? '')) . "',
+            cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
+            cp_sort = 1,
+            cp_created_at = NOW(),
+            cp_updated_at = NOW() ", false);
+        $inserted = 1;
 
         return $inserted;
     }
@@ -389,8 +398,6 @@ if (!function_exists('lc_demo_link_seed_for_partner')) {
 
         $links = array(
             array('campaign' => '개인회생 상담 DB', 'code' => 'demo_blog01', 'channel' => '네이버 블로그', 'sub_id' => 'blog_01'),
-            array('campaign' => '자동차 렌트 상담 DB', 'code' => 'demo_insta1', 'channel' => '인스타그램', 'sub_id' => 'insta_bio'),
-            array('campaign' => '어린이 영어캠프 상담', 'code' => 'demo_cafe01', 'channel' => '맘카페', 'sub_id' => 'cafe_event'),
         );
 
         $inserted = 0;

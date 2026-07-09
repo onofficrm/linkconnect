@@ -165,12 +165,27 @@ if (!function_exists('lc_sample_cpa_categories')) {
 if (!function_exists('lc_sample_cpa_campaigns')) {
     function lc_sample_cpa_campaigns()
     {
+        $def = function_exists('lc_banktupt_campaign_definition')
+            ? lc_banktupt_campaign_definition()
+            : array(
+                'title'             => '개인회생 상담 DB',
+                'category'          => '법률',
+                'price'             => 30000,
+                'approval_rate'     => '68%',
+                'avg_time'          => '1.8일',
+                'allowed_channels'  => '블로그, 카페, 지식iN, SNS',
+                'forbidden_channels'=> '허위광고, 브랜드 사칭, 스팸문자',
+                'status'            => '진행중',
+                'badge'             => '추천',
+                'recommended'       => true,
+            );
+
         return array(
-            array('id' => '1', 'title' => '개인회생 상담 DB', 'category' => '법률', 'price' => 30000, 'approval_rate' => '68%', 'avg_time' => '1.8일', 'allowed_channels' => '블로그, 카페, 검색광고, SNS', 'forbidden_channels' => '허위광고, 브랜드 사칭, 스팸문자', 'status' => '진행중', 'badge' => '추천', 'recommended' => true),
-            array('id' => '2', 'title' => '자동차 렌트 상담 DB', 'category' => '렌탈', 'price' => 25000, 'approval_rate' => '72%', 'avg_time' => '1.2일', 'allowed_channels' => '블로그, SNS, 커뮤니티', 'forbidden_channels' => '보상형 리워드, 강제 가입', 'status' => '진행중', 'badge' => '인기', 'recommended' => true),
-            array('id' => '3', 'title' => '어린이 영어캠프 상담', 'category' => '교육', 'price' => 35000, 'approval_rate' => '55%', 'avg_time' => '2.5일', 'allowed_channels' => '맘카페, 교육 블로그, 인스타그램', 'forbidden_channels' => '과장광고, 관련없는 타겟팅', 'status' => '진행중', 'badge' => '신규', 'recommended' => true),
-            array('id' => '4', 'title' => '임플란트/치아교정 상담', 'category' => '병원', 'price' => 40000, 'approval_rate' => '45%', 'avg_time' => '3.0일', 'allowed_channels' => '블로그, 건강카페', 'forbidden_channels' => '의료법 위반 문구, 허위 후기', 'status' => '진행중', 'badge' => '', 'recommended' => false),
-            array('id' => '5', 'title' => '소상공인 대출 상담', 'category' => '금융', 'price' => 32000, 'approval_rate' => '60%', 'avg_time' => '1.5일', 'allowed_channels' => '자영업 커뮤니티, 블로그', 'forbidden_channels' => '불법 스팸, 사칭', 'status' => '마감임박', 'badge' => '', 'recommended' => false),
+            array_merge(
+                array('id' => '1'),
+                $def,
+                array('status' => '진행중')
+            ),
         );
     }
 }

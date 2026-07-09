@@ -245,11 +245,19 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
     function lc_link_resolve_redirect_url(array $link)
     {
         $landing = trim((string) ($link['cp_landing_url'] ?? ''));
+        $lk_code = trim((string) ($link['lk_code'] ?? ''));
         if ($landing !== '') {
+            if ($lk_code !== '' && stripos($landing, 'lkcode=') === false && stripos($landing, 'code=') === false) {
+                $landing .= (strpos($landing, '?') !== false ? '&' : '?') . 'lkCode=' . rawurlencode($lk_code);
+            }
+            if (strpos($landing, '://') === false && defined('G5_URL') && G5_URL !== '') {
+                return rtrim(G5_URL, '/') . '/' . ltrim($landing, '/');
+            }
+
             return $landing;
         }
 
-        return lc_landing_public_url($link['lk_code']);
+        return lc_landing_public_url($lk_code);
     }
 }
 
