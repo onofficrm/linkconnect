@@ -1086,21 +1086,27 @@ if (!function_exists('lc_ui_super_admin_icon')) {
     }
 }
 
-if (!function_exists('lc_ui_super_admin_header_btn')) {
+if (!function_exists('lc_ui_admin_header_btn')) {
     /**
-     * 헤더·모바일 드로어용 관리자센터 버튼 — lc_is_super_admin() 일 때만 출력
+     * 헤더 우측 끝 관리자센터 배지 (항상 표시)
      */
-    function lc_ui_super_admin_header_btn()
+    function lc_ui_admin_header_btn()
     {
-        if (!function_exists('lc_can_access_admin') || !lc_can_access_admin()) {
-            return;
-        }
+        $admin_url = rtrim(lc_public_home_url(), '/') . '/admin';
         ?>
-<a class="lc-btn lc-btn--admin lc-btn--sm lc-admin-btn" href="<?php echo lc_h(LC_URL_ADMIN_DASHBOARD); ?>">
+<a class="lc-btn lc-btn--admin lc-btn--sm lc-admin-btn" href="<?php echo lc_h($admin_url); ?>">
   <?php echo lc_ui_super_admin_icon(); ?>
   <span>관리자센터</span>
 </a>
         <?php
+    }
+}
+
+if (!function_exists('lc_ui_super_admin_header_btn')) {
+    /** @deprecated lc_ui_admin_header_btn() 사용 */
+    function lc_ui_super_admin_header_btn()
+    {
+        lc_ui_admin_header_btn();
     }
 }
 

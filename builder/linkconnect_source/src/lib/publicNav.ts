@@ -27,7 +27,7 @@ export const centerNavItems: NavLinkItem[] = [
   { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
 ];
 
-/** 관리자 (권한 있을 때만 표시) */
+/** 관리자센터 (헤더 우측 끝 배지) */
 export const adminNavItem: NavLinkItem = {
   to: '/admin',
   label: '관리자센터',

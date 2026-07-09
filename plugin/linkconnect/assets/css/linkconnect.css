@@ -36,8 +36,8 @@ body.lc-app.lc-nav-open { overflow: hidden; }
 
 /* Header — builder Header.tsx */
 .lc-header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: rgba(2, 6, 23, 0.8); border-bottom: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-.lc-header__inner { max-width: var(--lc-max); margin: 0 auto; padding: 0 1rem; min-height: var(--lc-header-h); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.lc-brand { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #fff; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.02em; flex-shrink: 0; }
+.lc-header__inner { width: 100%; max-width: none; margin: 0; padding: 0 1rem; min-height: var(--lc-header-h); display: flex; align-items: center; gap: 1rem; }
+.lc-brand { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #fff; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.02em; flex-shrink: 0; margin-right: 0.25rem; }
 .lc-brand__icon { color: var(--lc-cyan-400); flex-shrink: 0; }
 .lc-brand--footer .lc-brand__text { font-size: 1.15rem; }
 .lc-brand--footer .lc-brand__icon { color: var(--lc-emerald-400); }
@@ -56,6 +56,9 @@ body.lc-app.lc-nav-open { overflow: hidden; }
 .lc-nav-dropdown__link:hover,
 .lc-nav-dropdown__link.is-active { color: var(--lc-emerald-400); background: rgba(255,255,255,0.05); }
 .lc-header__actions-wrap { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; padding-left: 1rem; border-left: 1px solid rgba(255,255,255,0.1); }
+.lc-header__admin-wrap { display: flex; align-items: center; flex-shrink: 0; margin-left: 0.5rem; }
+.lc-header__admin-wrap--mobile { width: 100%; margin: 0.75rem 0 0; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.lc-header__admin-wrap--mobile .lc-btn--admin { width: 100%; justify-content: center; padding-top: 0.75rem; padding-bottom: 0.75rem; border-radius: 0.75rem; }
 .lc-nav-mobile__group { margin: 0.75rem 0 0.25rem; padding: 0 0.75rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lc-slate-500); }
 .lc-nav__link { color: #cbd5e1; text-decoration: none; font-size: 1rem; font-weight: 500; transition: color .2s; white-space: nowrap; }
 .lc-nav__link:hover, .lc-nav__link.is-active { color: #fff; }
@@ -72,8 +75,8 @@ body.lc-app.lc-nav-open { overflow: hidden; }
 .lc-header .lc-btn--outline:hover { background: rgba(255,255,255,0.08); color: #fff; }
 .lc-header .lc-btn--primary { background: var(--lc-cyan); color: var(--lc-slate-950); }
 .lc-header .lc-btn--primary:hover { background: var(--lc-cyan-400); }
-.lc-btn--admin { background: linear-gradient(135deg, #0f172a, #1e3a5f); color: #fff; border: 1px solid rgba(6,182,212,0.35); box-shadow: 0 2px 8px rgba(6,182,212,0.15); }
-.lc-btn--admin:hover { background: linear-gradient(135deg, #1e293b, #0e7490); border-color: rgba(6,182,212,0.55); color: #fff; }
+.lc-btn--admin { background: #0891b2; color: #fff; border: 1px solid rgba(34,211,238,0.35); box-shadow: 0 2px 8px rgba(6,182,212,0.25); font-weight: 800; }
+.lc-btn--admin:hover { background: #06b6d4; border-color: rgba(34,211,238,0.55); color: #fff; }
 .lc-admin-btn { display: inline-flex; align-items: center; gap: 0.35rem; }
 .lc-admin-btn__icon { flex-shrink: 0; opacity: 0.95; }
 

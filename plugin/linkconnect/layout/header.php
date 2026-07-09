@@ -67,6 +67,9 @@ $lc_company_nav_active = in_array($lc_active_nav, array('home', 'affiliate', 'no
     <div class="lc-header__actions-wrap">
       <?php lc_render_header_actions(false); ?>
     </div>
+    <div class="lc-header__admin-wrap">
+      <?php lc_ui_admin_header_btn(); ?>
+    </div>
 
     <button type="button" class="lc-nav-toggle" data-lc-nav-toggle aria-expanded="false" aria-controls="lcMobileNav" aria-label="메뉴 열기">
       <span class="lc-nav-toggle__icon" aria-hidden="true">
@@ -121,5 +124,8 @@ $lc_company_nav_active = in_array($lc_active_nav, array('home', 'affiliate', 'no
       <?php } ?>
     </nav>
     <?php lc_render_header_actions(true); ?>
+    <div class="lc-header__admin-wrap lc-header__admin-wrap--mobile">
+      <?php lc_ui_admin_header_btn(); ?>
+    </div>
   </div>
 </header>

@@ -1,7 +1,6 @@
 import { ChevronDown, Link as LinkIcon, Menu, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { canAccessAdmin } from '../lib/auth';
 import {
   adminNavItem,
   campaignNavItems,
@@ -88,8 +87,6 @@ function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function AdminCenterBadge({ onNavigate, className = '' }: { onNavigate?: () => void; className?: string }) {
-  if (!canAccessAdmin()) return null;
-
   return (
     <Link
       to={adminNavItem.to}
@@ -112,15 +109,13 @@ export function Header() {
       data-lc-nav="v2"
       className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-20">
-          {/* 로고 */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 mr-6">
-            <LinkIcon className="w-7 h-7 text-cyan-400" />
-            <span className="text-xl xl:text-2xl font-bold text-white tracking-tight">링크커넥트</span>
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-20 w-full gap-4 lg:gap-6 xl:gap-8">
+          <Link to="/" className="flex items-center gap-2 shrink-0 min-w-0">
+            <LinkIcon className="w-7 h-7 text-cyan-400 shrink-0" />
+            <span className="text-xl xl:text-2xl font-bold text-white tracking-tight whitespace-nowrap">링크커넥트</span>
           </Link>
 
-          {/* 메인 메뉴 */}
           <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 flex-1 min-w-0 overflow-x-auto" aria-label="주요 메뉴">
             <CompanyNavDropdown />
             {campaignNavItems.map((item) => (
@@ -139,16 +134,16 @@ export function Header() {
             ))}
           </nav>
 
-          {/* 우측: 로그인 · 회원가입 · 관리자센터(맨 끝) */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 ml-auto pl-4 lg:pl-6 border-l border-white/10">
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
-            <AdminCenterBadge />
           </div>
+
+          <AdminCenterBadge className="hidden md:inline-flex ml-2 lg:ml-3 shrink-0" />
 
           {/* 모바일 햄버거 */}
           <button
             type="button"
-            className="md:hidden ml-auto text-slate-300 hover:text-white p-2"
+            className="md:hidden ml-auto text-slate-300 hover:text-white p-2 shrink-0"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-expanded={isMobileMenuOpen}
             aria-label="메뉴"

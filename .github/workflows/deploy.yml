@@ -45,7 +45,7 @@ jobs:
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,plugin/onoff-builder-bridge/imports/linkconnect,plugin/linkconnect/inc,plugin/linkconnect/layout}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,plugin/onoff-builder-bridge/imports/linkconnect,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -57,8 +57,9 @@ jobs:
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
-          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php "$ROOT/plugin/linkconnect/inc/"
+          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php "$ROOT/plugin/linkconnect/inc/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
+          cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           cp -R "$SRC/assets" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           find "$ROOT" -name '._*' -delete 2>/dev/null || true
