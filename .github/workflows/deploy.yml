@@ -52,6 +52,24 @@ jobs:
           server-dir: /public_html/
           state-name: linkconnect-code-v1
           log-level: verbose
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.DS_Store
+            **/.vscode/**
+            **/._*
+            _backup_transfer_*/
+            **/_backup_transfer_*/
+            _BUILDER_INPUT/**
+            builder/**
+            plugin/onoff-builder-bridge/imports/**
+            /data/**
+            /cache/**
+            /session/**
+            /tmp/**
+            *.log
+            .env
+            .env.*
           include: |
             css/onoff-platform.css
             extend/linkconnect-member.extend.php
@@ -84,6 +102,9 @@ jobs:
           server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
           state-name: linkconnect-spa-core-v1
           log-level: verbose
+          exclude: |
+            webtoon/**
+            about/**
           include: |
             index.html
             favicon.png
