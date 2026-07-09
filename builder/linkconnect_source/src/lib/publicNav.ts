@@ -4,12 +4,15 @@ export interface NavLinkItem {
   accent?: 'emerald' | 'cyan';
 }
 
-/** 회사소개 하위 메뉴 */
-export const companyNavItems: NavLinkItem[] = [
+/** 회사소개 드롭다운 하위 메뉴 */
+export const companySubItems: NavLinkItem[] = [
   { to: '/about', label: '회사소개' },
   { to: '/affiliate', label: '제휴마케팅이란?' },
   { to: '/notice', label: '공지사항' },
 ];
+
+/** @deprecated Footer 등 — companySubItems 사용 */
+export const companyNavItems = companySubItems;
 
 /** 캠페인·프로모션 */
 export const campaignNavItems: NavLinkItem[] = [
@@ -32,5 +35,5 @@ export const adminNavItem: NavLinkItem = {
 };
 
 export function isCompanyNavActive(pathname: string): boolean {
-  return companyNavItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  return companySubItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
 }
