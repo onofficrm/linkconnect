@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: linkconnect-ftp-deploy
+  cancel-in-progress: true
+
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
@@ -13,36 +17,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: builder/linkconnect_source/package-lock.json
-
-      - name: Build LinkConnect SPA
-        run: |
-          cd builder/linkconnect_source
-          npm ci
-          npm run deploy:imports
-          test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
-          echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
-
-      - name: Deploy SPA assets (priority)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 5
-          protocol: ftp
-          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
-          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-v2
-          dangerous-clean-slate: true
-          log-level: minimal
 
       - name: Deploy bridge PHP (priority)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -76,6 +50,35 @@ jobs:
           log-level: minimal
           include: |
             linkconnect-spa-bootstrap.php
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: builder/linkconnect_source/package-lock.json
+
+      - name: Build LinkConnect SPA
+        run: |
+          cd builder/linkconnect_source
+          npm ci
+          npm run deploy:imports
+          test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
+          echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
+
+      - name: Deploy SPA assets
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 5
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
+          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
+          state-name: linkconnect-spa-v2
+          log-level: minimal
 
       - name: Deploy site via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
