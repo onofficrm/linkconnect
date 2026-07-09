@@ -516,6 +516,18 @@ if (!function_exists('lc_conversion_admin_final_status')) {
     }
 }
 
+if (!function_exists('lc_conversion_resolve_partner_price')) {
+    function lc_conversion_resolve_partner_price(array $conversion)
+    {
+        $partner_price = (int) ($conversion['cv_partner_price'] ?? 0);
+        if ($partner_price > 0) {
+            return $partner_price;
+        }
+
+        return (int) ($conversion['cv_price'] ?? 0);
+    }
+}
+
 if (!function_exists('lc_partner_credit_for_conversion')) {
     function lc_partner_credit_for_conversion(array $conversion)
     {
@@ -524,7 +536,7 @@ if (!function_exists('lc_partner_credit_for_conversion')) {
         }
 
         $pt_id = (int) $conversion['pt_id'];
-        $amount = (int) $conversion['cv_price'];
+        $amount = lc_conversion_resolve_partner_price($conversion);
         if (function_exists('lc_get_partner_by_id')) {
             $partner = lc_get_partner_by_id($pt_id);
             if (is_array($partner) && function_exists('lc_partner_tier_bonus_rate')) {
@@ -553,7 +565,7 @@ if (!function_exists('lc_partner_debit_for_conversion')) {
         }
 
         $pt_id = (int) $conversion['pt_id'];
-        $amount = (int) $conversion['cv_price'];
+        $amount = lc_conversion_resolve_partner_price($conversion);
         if (function_exists('lc_get_partner_by_id')) {
             $partner = lc_get_partner_by_id($pt_id);
             if (is_array($partner) && function_exists('lc_partner_tier_bonus_rate')) {
@@ -946,6 +958,18 @@ if (!function_exists('lc_conversion_create')) {
         $cp_id = (int) ($payload['cp_id'] ?? 0);
         $lk_id = (int) ($payload['lk_id'] ?? 0);
 
+        if (function_exists('lc_abuse_check_recent_duplicate')) {
+            $recent = lc_abuse_check_recent_duplicate($payload, 24);
+            if (!empty($recent['duplicate'])) {
+                return array(
+                    'ok'         => false,
+                    'message'    => '이미 접수된 연락처입니다. 담당자가 순차적으로 연락드리겠습니다.',
+                    'code'       => 'DUPLICATE_RECENT',
+                    'conversion' => null,
+                );
+            }
+        }
+
         $duplicate = false;
         $abuse_score = 0;
         if (function_exists('lc_abuse_check_duplicate')) {
@@ -968,6 +992,8 @@ if (!function_exists('lc_conversion_create')) {
 
         $cv_code = lc_conversion_generate_code();
         $table = lc_table('conversions');
+        $merchant_price = lc_campaign_resolve_merchant_price($campaign);
+        $partner_price = lc_campaign_resolve_partner_price($campaign);
 
         lc_sql_query(" INSERT INTO `{$table}` SET
             cv_code = '" . lc_sql_escape($cv_code) . "',
@@ -980,7 +1006,8 @@ if (!function_exists('lc_conversion_create')) {
             cv_region = '" . lc_sql_escape($payload['region'] ?? '') . "',
             cv_inquiry = '" . lc_sql_escape($payload['inquiry'] ?? '') . "',
             cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "',
-            cv_price = '" . (int) $campaign['cp_price'] . "',
+            cv_price = '" . (int) $merchant_price . "',
+            cv_partner_price = '" . (int) $partner_price . "',
             cv_channel = '" . lc_sql_escape($payload['channel'] ?? '') . "',
             cv_sub_id = '" . lc_sql_escape($payload['sub_id'] ?? '') . "',
             cv_comment = '',

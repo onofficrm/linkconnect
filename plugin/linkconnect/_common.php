@@ -37,6 +37,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/sample_data.php')) {
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/db.php')) {
     require_once LC_PLUGIN_PATH . '/inc/db.php';
+    if (function_exists('lc_db_installed') && lc_db_installed() && function_exists('lc_db_run_migrations')) {
+        lc_db_run_migrations();
+    }
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/partner.php')) {
     require_once LC_PLUGIN_PATH . '/inc/partner.php';

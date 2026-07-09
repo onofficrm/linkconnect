@@ -1,8 +1,8 @@
-import { ArrowRight, CheckCircle2, DollarSign, Target } from 'lucide-react';
+import { ArrowRight, CheckCircle2, DollarSign, Target, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { fetchPublicCampaigns, PublicCampaign } from '../lib/api';
-import { cn } from '../lib/utils';
+import { cn, openLandingPage } from '../lib/utils';
 
 const filters = ['전체', '고수익', '신규', '승인율 높은 상품', '법률', '병원', '보험', '교육', '부동산'];
 
@@ -109,6 +109,16 @@ export function CPAList() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
+                  {(item.landingUrl || '').trim() && (
+                    <button
+                      type="button"
+                      onClick={() => openLandingPage(item.landingUrl)}
+                      className="col-span-2 w-full py-2.5 bg-white hover:bg-cyan-50 text-cyan-700 text-sm font-medium rounded-lg transition-colors border border-cyan-200 flex justify-center items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      랜딩페이지 보기
+                    </button>
+                  )}
                   <Link to="/cpa-list" className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200 text-center">
                     상세보기
                   </Link>

@@ -63,6 +63,39 @@ if (!function_exists('lc_abuse_check_duplicate')) {
     }
 }
 
+if (!function_exists('lc_abuse_check_recent_duplicate')) {
+    /**
+     * 최근 N시간 내 동일 연락처·캠페인 중복 접수 여부 (사용자 재제출 차단용)
+     *
+     * @return array{duplicate:bool,count:int}
+     */
+    function lc_abuse_check_recent_duplicate(array $payload, $hours = 24)
+    {
+        if (!lc_db_installed()) {
+            return array('duplicate' => false, 'count' => 0);
+        }
+
+        $phone = preg_replace('/\D/', '', (string) ($payload['phone'] ?? ''));
+        $cp_id = (int) ($payload['cp_id'] ?? 0);
+        if ($phone === '' || $cp_id <= 0) {
+            return array('duplicate' => false, 'count' => 0);
+        }
+
+        $hours = max(1, min(168, (int) $hours));
+        $table = lc_table('conversions');
+        $row = lc_sql_fetch("
+            SELECT COUNT(*) AS cnt
+            FROM `{$table}`
+            WHERE cp_id = {$cp_id}
+              AND REPLACE(REPLACE(REPLACE(cv_phone, '-', ''), ' ', ''), '.', '') = '" . lc_sql_escape($phone) . "'
+              AND cv_created_at >= DATE_SUB(NOW(), INTERVAL {$hours} HOUR)
+        ", false);
+
+        $count = (int) ($row['cnt'] ?? 0);
+        return array('duplicate' => $count > 0, 'count' => $count);
+    }
+}
+
 if (!function_exists('lc_abuse_refresh_partner_score')) {
     function lc_abuse_refresh_partner_score($pt_id)
     {

@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign, ExternalLink } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { fetchPartnerCampaigns, createPartnerLink, PartnerCampaign } from '../../lib/api';
 import { AiPromoPanel } from '../../components/AiPromoPanel';
+import { openLandingPage } from '../../lib/utils';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -20,6 +21,7 @@ type CampaignCardItem = {
   status: string;
   badge?: string;
   recommended?: boolean;
+  landingUrl: string;
 };
 
 function toCardItem(campaign: PartnerCampaign): CampaignCardItem {
@@ -36,6 +38,7 @@ function toCardItem(campaign: PartnerCampaign): CampaignCardItem {
     status: campaign.status,
     badge: campaign.badge || undefined,
     recommended: campaign.recommended,
+    landingUrl: campaign.landingUrl || '',
   };
 }
 
@@ -292,6 +295,8 @@ export function PartnerSearch() {
 }
 
 function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreateLink: () => void }) {
+  const hasLandingUrl = item.landingUrl.trim().length > 0;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
@@ -348,14 +353,26 @@ function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreate
         </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2 sm:gap-3">
-        <button className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
-          상세보기
-        </button>
-        <button type="button" onClick={onCreateLink} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">
-          <LinkIcon className="w-4 h-4" />
-          홍보 링크 생성
-        </button>
+      <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+        {hasLandingUrl && (
+          <button
+            type="button"
+            onClick={() => openLandingPage(item.landingUrl)}
+            className="w-full py-2.5 bg-white border border-cyan-200 hover:bg-cyan-50 text-cyan-700 font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
+          >
+            <ExternalLink className="w-4 h-4" />
+            랜딩페이지 보기
+          </button>
+        )}
+        <div className="flex gap-2 sm:gap-3">
+          <button className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
+            상세보기
+          </button>
+          <button type="button" onClick={onCreateLink} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">
+            <LinkIcon className="w-4 h-4" />
+            홍보 링크 생성
+          </button>
+        </div>
       </div>
     </div>
   );

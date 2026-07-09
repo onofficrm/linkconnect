@@ -53,6 +53,7 @@ export interface ConsultationTracking {
 export interface ConsultationResult {
   ok: boolean;
   message: string;
+  duplicate?: boolean;
 }
 
 function trimInquiry(text: string, max = 500): string {
@@ -109,8 +110,14 @@ export async function submitConsultation(
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
+    const payload =
+      data && typeof data === 'object' && data.data && typeof data.data === 'object'
+        ? (data.data as Record<string, unknown>)
+        : (data as Record<string, unknown>);
+
+    if (!res.ok || data.ok === false) {
       const msg =
+        (typeof payload.message === 'string' && payload.message) ||
         (typeof data.message === 'string' && data.message) ||
         (typeof data.error === 'string' && data.error) ||
         '상담 신청 접수에 실패했습니다.';
@@ -119,7 +126,9 @@ export async function submitConsultation(
 
     return {
       ok: true,
+      duplicate: payload.duplicate === true,
       message:
+        (typeof payload.message === 'string' && payload.message) ||
         (typeof data.message === 'string' && data.message) ||
         '상담 신청이 접수되었습니다. 담당자가 곧 연락드리겠습니다.',
     };

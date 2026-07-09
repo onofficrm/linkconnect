@@ -70,6 +70,30 @@ if ($method === 'POST') {
         ));
     }
 
+    if ($action === 'delete') {
+        if (!lc_is_super_admin()) {
+            lc_api_error('삭제 권한이 없습니다.', 'FORBIDDEN', 403);
+        }
+
+        if ($cp_id <= 0) {
+            lc_api_error('캠페인 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+
+        $confirm = isset($body['confirm']) ? trim((string) $body['confirm']) : '';
+        if ($confirm !== '삭제') {
+            lc_api_error('삭제를 확인하려면 "삭제"를 입력해주세요.', 'CONFIRM_REQUIRED', 400);
+        }
+
+        $result = lc_campaign_delete($cp_id);
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'DELETE_FAILED', 400);
+        }
+
+        lc_api_success(array(
+            'message' => $result['message'],
+        ));
+    }
+
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);
 }
 

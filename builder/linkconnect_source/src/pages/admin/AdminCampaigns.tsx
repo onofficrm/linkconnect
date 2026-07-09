@@ -4,17 +4,19 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import {
   Briefcase, Activity, PauseCircle, AlertCircle, Coins, Percent,
   Search, Download, X, Edit3, Plus, Database, Image, Upload,
-  Wand2, Loader2, Copy,
+  Wand2, Loader2, Copy, Trash2,
 } from 'lucide-react';
 import {
   AdminCampaign,
   AdminCampaignSummary,
   AdminMerchant,
+  deleteAdminCampaign,
   fetchAdminCampaigns,
   fetchAdminMerchants,
   saveAdminCampaign,
   updateAdminCampaignStatus,
 } from '../../lib/api';
+import { isLcSuperAdmin } from '../../lib/auth';
 
 const categoryOptions = ['금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -43,6 +45,7 @@ type EditForm = {
   mtId: number;
   category: string;
   type: string;
+  advertiserPrice: number;
   partnerPrice: number;
   statusCode: string;
   landingUrl: string;
@@ -62,6 +65,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
       mtId: 0,
       category: '',
       type: 'CPA',
+      advertiserPrice: 0,
       partnerPrice: 0,
       statusCode: 'draft',
       landingUrl: '',
@@ -80,6 +84,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
     mtId: campaign.mtId,
     category: campaign.category,
     type: campaign.type,
+    advertiserPrice: campaign.advertiserPrice,
     partnerPrice: campaign.partnerPrice,
     statusCode: campaign.statusCode,
     landingUrl: campaign.landingUrl,
@@ -104,6 +109,10 @@ export function AdminCampaigns() {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const isSuperAdmin = isLcSuperAdmin();
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
@@ -180,6 +189,7 @@ export function AdminCampaigns() {
         name: editForm.name,
         category: editForm.category,
         type: editForm.type,
+        advertiserPrice: editForm.advertiserPrice,
         partnerPrice: editForm.partnerPrice,
         statusCode: editForm.statusCode,
         landingUrl: editForm.landingUrl,
@@ -200,6 +210,46 @@ export function AdminCampaigns() {
       setError(err instanceof Error ? err.message : '저장에 실패했습니다.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openDeleteModal = () => {
+    setDeleteConfirmText('');
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    if (deleting) {
+      return;
+    }
+    setDeleteModalOpen(false);
+    setDeleteConfirmText('');
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCampaign) {
+      return;
+    }
+
+    if (deleteConfirmText !== '삭제') {
+      setError('삭제를 확인하려면 "삭제"를 입력해주세요.');
+      return;
+    }
+
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteAdminCampaign({ cpId: selectedCampaign.id, confirm: deleteConfirmText });
+      setDeleteModalOpen(false);
+      setDeleteConfirmText('');
+      setSelectedCampaign(null);
+      setEditForm(null);
+      setIsEditMode(false);
+      await loadCampaigns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -535,7 +585,11 @@ export function AdminCampaigns() {
                 <section>
                   <h4 className="text-sm font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100 flex items-center justify-between">
                     단가 및 마진 설정
-                    {!isEditMode && selectedCampaign && <span className="text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">DB당 단가: {selectedCampaign.partnerPrice.toLocaleString()}원</span>}
+                    {!isEditMode && selectedCampaign && (
+                      <span className="text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                        DB당 마진: {selectedCampaign.margin.toLocaleString()}원
+                      </span>
+                    )}
                   </h4>
                   
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
@@ -545,8 +599,8 @@ export function AdminCampaigns() {
                         <div className="relative">
                           <input
                             type="number"
-                            value={editForm.partnerPrice || ''}
-                            onChange={(e) => updateEditForm({ partnerPrice: Number(e.target.value) })}
+                            value={editForm.advertiserPrice || ''}
+                            onChange={(e) => updateEditForm({ advertiserPrice: Number(e.target.value) })}
                             disabled={!isEditMode}
                             className={`w-full pl-3 pr-8 py-2.5 border rounded-xl text-sm font-bold text-slate-900 ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-100 border-slate-200'}`}
                           />
@@ -573,9 +627,9 @@ export function AdminCampaigns() {
                     
                     {isEditMode && (
                       <div className="pt-3 border-t border-slate-200 flex justify-between items-center bg-slate-900 -mx-4 -mb-4 p-4 rounded-b-xl text-white">
-                        <span className="text-sm font-medium text-slate-400">DB당 지급/차감 단가</span>
+                        <span className="text-sm font-medium text-slate-400">DB당 마진</span>
                         <div className="text-xl font-bold text-emerald-400 flex items-center gap-1">
-                          {editForm.partnerPrice.toLocaleString()}
+                          {Math.max(0, editForm.advertiserPrice - editForm.partnerPrice).toLocaleString()}
                           <span className="text-sm text-emerald-500/70 font-medium">원</span>
                         </div>
                       </div>
@@ -691,6 +745,15 @@ export function AdminCampaigns() {
                         <Activity size={14} /> 운영 시작
                       </button>
                     ) : null}
+                    {isSuperAdmin && selectedCampaign && (
+                      <button
+                        onClick={openDeleteModal}
+                        disabled={saving || deleting}
+                        className="col-span-2 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition-colors flex justify-center items-center gap-1.5 shadow-sm disabled:opacity-50"
+                      >
+                        <Trash2 size={14} /> 광고상품 삭제
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -698,6 +761,58 @@ export function AdminCampaigns() {
           </div>
         )}
       </div>
+
+      {deleteModalOpen && selectedCampaign && (
+        <div
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={closeDeleteModal}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-bold text-lg text-slate-900 mb-1">광고상품 삭제</div>
+            <p className="text-sm text-slate-500 mb-4">
+              <strong className="text-slate-800">{selectedCampaign.name}</strong> 상품을 삭제하시겠습니까?
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+            {selectedCampaign.totalDb > 0 && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                접수 DB가 {selectedCampaign.totalDb.toLocaleString()}건 있는 상품은 삭제할 수 없습니다.
+              </div>
+            )}
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">
+              계속하려면 <span className="text-red-600">삭제</span>를 입력하세요
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="삭제"
+              autoFocus
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-bold text-slate-500 disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || deleteConfirmText !== '삭제' || selectedCampaign.totalDb > 0}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm disabled:opacity-50"
+              >
+                {deleting ? '삭제 중...' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

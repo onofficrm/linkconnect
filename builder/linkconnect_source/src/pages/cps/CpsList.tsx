@@ -1,7 +1,8 @@
-import { Search, Info, Link as LinkIcon, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock, ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
+import { openLandingPage } from '../../lib/utils';
 
 const fallbackCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
 
@@ -162,6 +163,7 @@ export function CpsList() {
 function CpsCard({ item }: { item: PublicCampaign }) {
   const commission = item.approvalRate || item.priceFormatted;
   const cookie = item.avgTime;
+  const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-cyan-300 transition-all flex flex-col">
@@ -201,14 +203,26 @@ function CpsCard({ item }: { item: PublicCampaign }) {
         </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-        <Link to="/cps" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
-          상세보기
-        </Link>
-        <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
-          <LinkIcon className="w-4 h-4" />
-          홍보하기
-        </Link>
+      <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+        {hasLandingUrl && (
+          <button
+            type="button"
+            onClick={() => openLandingPage(item.landingUrl)}
+            className="w-full py-2.5 bg-white border border-cyan-200 hover:bg-cyan-50 text-cyan-700 font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
+          >
+            <ExternalLink className="w-4 h-4" />
+            랜딩페이지 보기
+          </button>
+        )}
+        <div className="flex gap-3">
+          <Link to="/cps" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
+            상세보기
+          </Link>
+          <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            홍보하기
+          </Link>
+        </div>
       </div>
     </div>
   );

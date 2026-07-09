@@ -257,6 +257,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `cp_category` varchar(50) NOT NULL DEFAULT '',
                 `cp_type` varchar(10) NOT NULL DEFAULT 'cpa',
                 `cp_price` int unsigned NOT NULL DEFAULT 0,
+                `cp_merchant_price` int unsigned NOT NULL DEFAULT 0,
                 `cp_approval_rate` varchar(10) NOT NULL DEFAULT '',
                 `cp_avg_time` varchar(20) NOT NULL DEFAULT '',
                 `cp_allowed_channels` varchar(500) NOT NULL DEFAULT '',
@@ -319,6 +320,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `cv_inquiry` varchar(500) NOT NULL DEFAULT '',
                 `cv_status` varchar(20) NOT NULL DEFAULT 'pending',
                 `cv_price` int NOT NULL DEFAULT 0,
+                `cv_partner_price` int NOT NULL DEFAULT 0,
                 `cv_channel` varchar(100) NOT NULL DEFAULT '',
                 `cv_sub_id` varchar(100) NOT NULL DEFAULT '',
                 `cv_comment` varchar(500) NOT NULL DEFAULT '',
@@ -538,6 +540,14 @@ if (!function_exists('lc_db_run_migrations')) {
             $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `cp_id`, ADD KEY `idx_mt_id` (`mt_id`)";
         }
 
+        if (lc_db_table_exists($campaigns) && !lc_db_column_exists($campaigns, 'cp_merchant_price')) {
+            $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `cp_merchant_price` int unsigned NOT NULL DEFAULT 0 AFTER `cp_price`";
+        }
+
+        if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, 'cv_partner_price')) {
+            $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `cv_partner_price` int NOT NULL DEFAULT 0 AFTER `cv_price`";
+        }
+
         foreach (array(
             'cv_email'   => "varchar(100) NOT NULL DEFAULT '' AFTER `cv_phone`",
             'cv_region'  => "varchar(50) NOT NULL DEFAULT '' AFTER `cv_email`",
@@ -628,6 +638,14 @@ if (!function_exists('lc_db_run_migrations')) {
                     'message' => '마이그레이션 실패: ' . lc_sql_error(),
                 );
             }
+        }
+
+        if (lc_db_table_exists($campaigns) && lc_db_column_exists($campaigns, 'cp_merchant_price')) {
+            lc_sql_query(" UPDATE `{$campaigns}` SET cp_merchant_price = cp_price WHERE cp_merchant_price = 0 AND cp_price > 0 ", false);
+        }
+
+        if (lc_db_table_exists($conversions) && lc_db_column_exists($conversions, 'cv_partner_price')) {
+            lc_sql_query(" UPDATE `{$conversions}` SET cv_partner_price = cv_price WHERE cv_partner_price = 0 AND cv_price > 0 ", false);
         }
 
         $events = lc_table('events');

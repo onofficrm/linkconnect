@@ -1,7 +1,8 @@
-import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp, ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
+import { openLandingPage } from '../../lib/utils';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -17,6 +18,7 @@ type CampaignCardItem = {
   status: string;
   badge?: string;
   recommended?: boolean;
+  landingUrl: string;
 };
 
 function toCardItem(campaign: PublicCampaign): CampaignCardItem {
@@ -32,6 +34,7 @@ function toCardItem(campaign: PublicCampaign): CampaignCardItem {
     status: campaign.status,
     badge: campaign.badge || undefined,
     recommended: campaign.recommended,
+    landingUrl: campaign.landingUrl || '',
   };
 }
 
@@ -192,6 +195,8 @@ export function CpaList() {
 }
 
 function CampaignCard({ item }: { item: CampaignCardItem }) {
+  const hasLandingUrl = item.landingUrl.trim().length > 0;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
       <div className="p-6 flex-1">
@@ -243,14 +248,26 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
         </div>
       </div>
 
-      <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-        <Link to="/cpa-list" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
-          상세보기
-        </Link>
-        <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
-          <LinkIcon className="w-4 h-4" />
-          홍보하기
-        </Link>
+      <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+        {hasLandingUrl && (
+          <button
+            type="button"
+            onClick={() => openLandingPage(item.landingUrl)}
+            className="w-full py-2.5 bg-white border border-cyan-200 hover:bg-cyan-50 text-cyan-700 font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
+          >
+            <ExternalLink className="w-4 h-4" />
+            랜딩페이지 보기
+          </button>
+        )}
+        <div className="flex gap-3">
+          <Link to="/cpa-list" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
+            상세보기
+          </Link>
+          <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            홍보하기
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,37 @@ if (!function_exists('lc_campaign_status_label')) {
     }
 }
 
+if (!function_exists('lc_campaign_merchant_price_expr')) {
+    function lc_campaign_merchant_price_expr($alias = 'c')
+    {
+        $alias = preg_replace('/[^a-z_]/', '', (string) $alias);
+        if ($alias === '') {
+            $alias = 'c';
+        }
+
+        return "IF({$alias}.cp_merchant_price > 0, {$alias}.cp_merchant_price, {$alias}.cp_price)";
+    }
+}
+
+if (!function_exists('lc_campaign_resolve_partner_price')) {
+    function lc_campaign_resolve_partner_price(array $row)
+    {
+        return (int) ($row['cp_price'] ?? 0);
+    }
+}
+
+if (!function_exists('lc_campaign_resolve_merchant_price')) {
+    function lc_campaign_resolve_merchant_price(array $row)
+    {
+        $merchant_price = (int) ($row['cp_merchant_price'] ?? 0);
+        if ($merchant_price > 0) {
+            return $merchant_price;
+        }
+
+        return (int) ($row['cp_price'] ?? 0);
+    }
+}
+
 if (!function_exists('lc_campaign_to_api')) {
     function lc_campaign_to_api(array $row)
     {
@@ -28,8 +59,8 @@ if (!function_exists('lc_campaign_to_api')) {
             'category'          => (string) $row['cp_category'],
             'type'              => (string) $row['cp_type'],
             'description'       => (string) ($row['cp_description'] ?? ''),
-            'price'             => (int) $row['cp_price'],
-            'priceFormatted'    => number_format((int) $row['cp_price']),
+            'price'             => lc_campaign_resolve_partner_price($row),
+            'priceFormatted'    => number_format(lc_campaign_resolve_partner_price($row)),
             'approvalRate'      => (string) $row['cp_approval_rate'],
             'avgTime'           => (string) $row['cp_avg_time'],
             'allowedChannels'   => (string) $row['cp_allowed_channels'],
@@ -338,9 +369,11 @@ if (!function_exists('lc_campaign_list_admin')) {
         if (!empty($filters['status'])) {
             $status = (string) $filters['status'];
             if ($status === 'low_balance') {
-                $where .= " AND c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance < c.cp_price ";
+                $merchant_price_expr = lc_campaign_merchant_price_expr('c');
+                $where .= " AND c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance < {$merchant_price_expr} ";
             } elseif ($status === LC_STATUS_ACTIVE) {
-                $where .= " AND c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance >= c.cp_price ";
+                $merchant_price_expr = lc_campaign_merchant_price_expr('c');
+                $where .= " AND c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance >= {$merchant_price_expr} ";
             } else {
                 $where .= " AND c.cp_status = '" . lc_sql_escape($status) . "' ";
             }
@@ -397,11 +430,12 @@ if (!function_exists('lc_campaign_admin_summary')) {
         $mt_table = lc_table('merchants');
         $cv_table = lc_table('conversions');
 
+        $merchant_price_expr = lc_campaign_merchant_price_expr('c');
         $row = lc_sql_fetch(" SELECT
             COUNT(*) AS total_cnt,
-            SUM(CASE WHEN c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance >= c.cp_price THEN 1 ELSE 0 END) AS active_cnt,
+            SUM(CASE WHEN c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance >= {$merchant_price_expr} THEN 1 ELSE 0 END) AS active_cnt,
             SUM(CASE WHEN c.cp_status = 'paused' THEN 1 ELSE 0 END) AS paused_cnt,
-            SUM(CASE WHEN c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance < c.cp_price THEN 1 ELSE 0 END) AS low_balance_cnt,
+            SUM(CASE WHEN c.cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND m.mt_balance < {$merchant_price_expr} THEN 1 ELSE 0 END) AS low_balance_cnt,
             AVG(c.cp_price) AS avg_price
             FROM `{$cp_table}` c
             LEFT JOIN `{$mt_table}` m ON m.mt_id = c.mt_id ");
@@ -432,9 +466,10 @@ if (!function_exists('lc_campaign_to_admin_api')) {
         $canceled = (int) ($row['canceled_db'] ?? 0);
         $rate = $total > 0 ? round(($approved / $total) * 100, 1) . '%' : '-';
         $cancel_rate = $total > 0 ? round(($canceled / $total) * 100, 1) . '%' : '-';
-        $price = (int) $row['cp_price'];
+        $partner_price = lc_campaign_resolve_partner_price($row);
+        $merchant_price = lc_campaign_resolve_merchant_price($row);
         $balance = (int) ($row['mt_balance'] ?? 0);
-        $low_balance = $row['cp_status'] === LC_STATUS_ACTIVE && $balance < $price;
+        $low_balance = $row['cp_status'] === LC_STATUS_ACTIVE && $balance < $merchant_price;
 
         return array(
             'id'              => (int) $row['cp_id'],
@@ -444,9 +479,9 @@ if (!function_exists('lc_campaign_to_admin_api')) {
             'mtId'            => (int) ($row['mt_id'] ?? 0),
             'category'        => (string) $row['cp_category'],
             'type'            => strtoupper((string) $row['cp_type']),
-            'partnerPrice'    => $price,
-            'advertiserPrice' => $price,
-            'margin'          => 0,
+            'partnerPrice'    => $partner_price,
+            'advertiserPrice' => $merchant_price,
+            'margin'          => max(0, $merchant_price - $partner_price),
             'totalDb'         => $total,
             'approvedDb'      => $approved,
             'canceledDb'      => $canceled,
@@ -522,7 +557,7 @@ if (!function_exists('lc_campaign_merchant_to_api')) {
             'type'     => strtoupper((string) $row['cp_type']),
             'status'   => lc_campaign_merchant_status_ui($row['cp_status']),
             'statusCode' => (string) $row['cp_status'],
-            'cpa'      => (int) $row['cp_price'],
+            'cpa'      => lc_campaign_resolve_merchant_price($row),
             'budget'   => 0,
             'spend'    => (int) ($row['spend'] ?? 0),
             'dbCount'  => (int) ($row['total_db'] ?? 0),
@@ -573,7 +608,8 @@ if (!function_exists('lc_campaign_save')) {
         $name = isset($payload['name']) ? trim((string) $payload['name']) : '';
         $category = isset($payload['category']) ? trim((string) $payload['category']) : '';
         $type = isset($payload['type']) ? strtolower(trim((string) $payload['type'])) : 'cpa';
-        $price = isset($payload['price']) ? (int) $payload['price'] : (isset($payload['partnerPrice']) ? (int) $payload['partnerPrice'] : 0);
+        $partner_price = isset($payload['partnerPrice']) ? (int) $payload['partnerPrice'] : (isset($payload['price']) ? (int) $payload['price'] : 0);
+        $merchant_price = isset($payload['advertiserPrice']) ? (int) $payload['advertiserPrice'] : (isset($payload['merchantPrice']) ? (int) $payload['merchantPrice'] : 0);
 
         if ($name === '') {
             return array('ok' => false, 'message' => '광고상품명을 입력해주세요.');
@@ -583,8 +619,16 @@ if (!function_exists('lc_campaign_save')) {
             return array('ok' => false, 'message' => '광고주를 선택해주세요.');
         }
 
-        if ($price <= 0) {
-            return array('ok' => false, 'message' => '단가를 입력해주세요.');
+        if ($partner_price <= 0) {
+            return array('ok' => false, 'message' => '파트너 지급 단가를 입력해주세요.');
+        }
+
+        if ($merchant_price <= 0) {
+            return array('ok' => false, 'message' => '광고주 차감 단가를 입력해주세요.');
+        }
+
+        if ($merchant_price < $partner_price) {
+            return array('ok' => false, 'message' => '광고주 차감 단가는 파트너 지급 단가 이상이어야 합니다.');
         }
 
         $table = lc_table('campaigns');
@@ -592,7 +636,8 @@ if (!function_exists('lc_campaign_save')) {
             'cp_name'               => $name,
             'cp_category'           => $category,
             'cp_type'               => $type,
-            'cp_price'              => $price,
+            'cp_price'              => $partner_price,
+            'cp_merchant_price'     => $merchant_price,
             'cp_approval_rate'      => isset($payload['approvalRate']) ? trim((string) $payload['approvalRate']) : '',
             'cp_avg_time'           => isset($payload['avgTime']) ? trim((string) $payload['avgTime']) : '',
             'cp_allowed_channels'   => isset($payload['allowedChannels']) ? trim((string) $payload['allowedChannels']) : '',
@@ -621,7 +666,7 @@ if (!function_exists('lc_campaign_save')) {
 
             $sets = array();
             foreach ($fields as $key => $value) {
-                if ($key === 'cp_recommended' || $key === 'cp_price' || $key === 'mt_id') {
+                if ($key === 'cp_recommended' || $key === 'cp_price' || $key === 'cp_merchant_price' || $key === 'mt_id') {
                     $sets[] = "`{$key}` = '" . (int) $value . "'";
                 } else {
                     $sets[] = "`{$key}` = '" . lc_sql_escape((string) $value) . "'";
@@ -641,6 +686,7 @@ if (!function_exists('lc_campaign_save')) {
                 cp_category = '" . lc_sql_escape($fields['cp_category']) . "',
                 cp_type = '" . lc_sql_escape($fields['cp_type']) . "',
                 cp_price = '" . (int) $fields['cp_price'] . "',
+                cp_merchant_price = '" . (int) $fields['cp_merchant_price'] . "',
                 cp_approval_rate = '" . lc_sql_escape($fields['cp_approval_rate']) . "',
                 cp_avg_time = '" . lc_sql_escape($fields['cp_avg_time']) . "',
                 cp_allowed_channels = '" . lc_sql_escape($fields['cp_allowed_channels']) . "',
@@ -725,5 +771,58 @@ if (!function_exists('lc_campaign_update_status')) {
             'message'  => '상태가 변경되었습니다.',
             'campaign' => lc_campaign_to_admin_api($saved),
         );
+    }
+}
+
+if (!function_exists('lc_campaign_delete')) {
+    /**
+     * @return array{ok:bool,message:string}
+     */
+    function lc_campaign_delete($cp_id)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        if (!function_exists('lc_is_super_admin') || !lc_is_super_admin()) {
+            return array('ok' => false, 'message' => '삭제 권한이 없습니다.');
+        }
+
+        $cp_id = (int) $cp_id;
+        if ($cp_id <= 0) {
+            return array('ok' => false, 'message' => '캠페인 ID가 필요합니다.');
+        }
+
+        $existing = lc_campaign_get_by_id($cp_id);
+        if (!$existing) {
+            return array('ok' => false, 'message' => '캠페인을 찾을 수 없습니다.');
+        }
+
+        $cv_table = lc_table('conversions');
+        $cv_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE cp_id = '{$cp_id}' ");
+        $conversion_count = is_array($cv_row) ? (int) ($cv_row['cnt'] ?? 0) : 0;
+        if ($conversion_count > 0) {
+            return array('ok' => false, 'message' => '접수 DB가 있는 광고상품은 삭제할 수 없습니다.');
+        }
+
+        $cl_table = lc_table('clicks');
+        $lk_table = lc_table('links');
+        $cs_table = lc_table('call_settings');
+        $car_table = lc_table('call_requests');
+        $cp_table = lc_table('campaigns');
+
+        lc_sql_query(" DELETE FROM `{$cl_table}` WHERE cp_id = '{$cp_id}' ", false);
+        lc_sql_query(" DELETE FROM `{$lk_table}` WHERE cp_id = '{$cp_id}' ", false);
+
+        if (lc_db_table_exists($cs_table)) {
+            lc_sql_query(" DELETE FROM `{$cs_table}` WHERE cp_id = '{$cp_id}' ", false);
+        }
+        if (lc_db_table_exists($car_table)) {
+            lc_sql_query(" DELETE FROM `{$car_table}` WHERE cp_id = '{$cp_id}' ", false);
+        }
+
+        lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);
+
+        return array('ok' => true, 'message' => '광고상품이 삭제되었습니다.');
     }
 }

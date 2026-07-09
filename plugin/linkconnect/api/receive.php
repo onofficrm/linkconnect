@@ -29,7 +29,14 @@ $result = lc_conversion_create_from_link($link, array(
 ));
 
 if (!$result['ok']) {
-    lc_api_error($result['message'], 'CREATE_FAILED', 400);
+    $err_code = isset($result['code']) ? (string) $result['code'] : 'CREATE_FAILED';
+    if ($err_code === 'DUPLICATE_RECENT') {
+        lc_api_success(array(
+            'message'   => $result['message'],
+            'duplicate' => true,
+        ));
+    }
+    lc_api_error($result['message'], $err_code, 400);
 }
 
 lc_api_success(array(

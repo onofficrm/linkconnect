@@ -906,6 +906,8 @@ if (!function_exists('lc_call_conversion_create')) {
         $mm = floor($duration / 60);
         $ss = $duration % 60;
         $inquiry = '콜디비 통화 ' . sprintf('%d분 %d초', $mm, $ss) . ' (' . $result . ')';
+        $campaign = function_exists('lc_campaign_get_by_id') ? lc_campaign_get_by_id($cp_id) : null;
+        $partner_price = is_array($campaign) ? lc_campaign_resolve_partner_price($campaign) : $price;
 
         lc_sql_query(" INSERT INTO `{$table}` SET
             cv_code = '" . lc_sql_escape($cv_code) . "',
@@ -919,6 +921,7 @@ if (!function_exists('lc_call_conversion_create')) {
             cv_inquiry = '" . lc_sql_escape($inquiry) . "',
             cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "',
             cv_price = '{$price}',
+            cv_partner_price = '" . (int) $partner_price . "',
             cv_channel = '콜디비',
             cv_sub_id = '',
             cv_comment = '',

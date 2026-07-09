@@ -760,6 +760,14 @@ export function updateAdminCampaignStatus(payload: { action: 'activate' | 'pause
   return adminApiPost<{ message: string; campaign: AdminCampaign | null }>('campaigns.php', payload);
 }
 
+export function deleteAdminCampaign(payload: { cpId: number; confirm: string }) {
+  return adminApiPost<{ message: string }>('campaigns.php', {
+    action: 'delete',
+    cpId: payload.cpId,
+    confirm: payload.confirm,
+  });
+}
+
 export type MerchantCampaign = {
   id: number;
   code: string;
