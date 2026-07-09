@@ -1,6 +1,7 @@
 import { ArrowUpRight, MousePointerClick, Link2, PenLine, Wallet, ShoppingCart, MessageSquare, Users, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { g5RegisterUrl } from '../lib/urls';
+import { AffiliateWebtoon } from '../components/AffiliateWebtoon';
 
 const steps = [
   {
@@ -80,8 +81,17 @@ export function Affiliate() {
             오직 <strong className="text-slate-900 font-semibold">좋은 제품과 서비스를 사람들에게 소개</strong>하는 것만으로,
             자본금 없이 안정적인 수익을 만들어낼 수 있습니다.
           </p>
+          <a
+            href="#webtoon"
+            className="inline-flex items-center gap-2 mt-6 px-5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl border border-emerald-200 text-sm transition-colors"
+          >
+            📖 웹툰으로 쉽게 이해하기
+          </a>
         </div>
       </section>
+
+      {/* Webtoon — 사장님과 홍보왕의 제휴마케팅 입문기 */}
+      <AffiliateWebtoon />
 
       {/* 4 Steps */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50">
