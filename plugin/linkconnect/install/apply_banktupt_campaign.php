@@ -30,9 +30,8 @@ if (!function_exists('lc_apply_banktupt_token_ok')) {
 }
 
 $token_ok = lc_apply_banktupt_token_ok();
-$once_ok = isset($_REQUEST['once']) && $_REQUEST['once'] === 'banktupt-single-20260709';
 
-if (!$is_cli && $action === 'run' && !$token_ok && !$once_ok && !lc_is_super_admin()) {
+if (!$is_cli && $action === 'run' && !$token_ok && !lc_is_super_admin()) {
     alert('최고관리자만 실행할 수 있습니다.', G5_URL);
 }
 
