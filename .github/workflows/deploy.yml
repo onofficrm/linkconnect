@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: linkconnect-ftp-deploy
@@ -12,44 +13,11 @@ concurrency:
 jobs:
   ftp-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Deploy bridge PHP (priority)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 3
-          protocol: ftp
-          local-dir: plugin/onoff-builder-bridge/
-          server-dir: /public_html/plugin/onoff-builder-bridge/
-          state-name: linkconnect-bridge-php-v1
-          log-level: minimal
-          include: |
-            lib/**
-            data/**
-
-      - name: Deploy SPA bootstrap PHP (priority)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 1
-          protocol: ftp
-          local-dir: inc/
-          server-dir: /public_html/inc/
-          state-name: linkconnect-inc-v1
-          log-level: minimal
-          include: |
-            linkconnect-spa-bootstrap.php
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -66,21 +34,7 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html
           echo "Bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/linkconnect/index.html)"
 
-      - name: Deploy SPA assets
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 5
-          protocol: ftp
-          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
-          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-v2
-          log-level: minimal
-
-      - name: Deploy site via FTP
+      - name: Deploy member UI (priority)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -91,7 +45,79 @@ jobs:
           protocol: ftp
           local-dir: ./
           server-dir: /public_html/
-          state-name: linkconnect-deploy-v3
+          state-name: linkconnect-member-ui-v1
+          log-level: minimal
+          include: |
+            css/onoff-platform.css
+            extend/linkconnect-member.extend.php
+            extend/linkconnect-spa.extend.php
+            skin/_inc/**
+            skin/member/onoff/**
+            mobile/skin/member/onoff/**
+            favicon.png
+
+      - name: Deploy bridge PHP (priority)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 2
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/
+          server-dir: /public_html/plugin/onoff-builder-bridge/
+          state-name: linkconnect-bridge-php-v2
+          log-level: minimal
+          include: |
+            lib/**
+            data/**
+
+      - name: Deploy SPA bootstrap PHP (priority)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 1
+          protocol: ftp
+          local-dir: inc/
+          server-dir: /public_html/inc/
+          state-name: linkconnect-inc-v2
+          log-level: minimal
+          include: |
+            linkconnect-spa-bootstrap.php
+
+      - name: Deploy SPA assets
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 2
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
+          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
+          state-name: linkconnect-spa-v3
+          log-level: minimal
+          exclude: |
+            **/._*
+            **/.DS_Store
+
+      - name: Deploy site via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 2
+          protocol: ftp
+          local-dir: ./
+          server-dir: /public_html/
+          state-name: linkconnect-deploy-v4
           log-level: minimal
           exclude: |
             **/.git*
@@ -103,6 +129,7 @@ jobs:
             **/_backup_transfer_*/
             _BUILDER_INPUT/**
             builder/**
+            plugin/onoff-builder-bridge/imports/**
             /data/**
             /cache/**
             /session/**
