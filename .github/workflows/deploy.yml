@@ -39,7 +39,7 @@ jobs:
           find plugin/onoff-builder-bridge/imports/linkconnect -name '._*' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/linkconnect -name '.DS_Store' -delete 2>/dev/null || true
 
-      - name: Deploy to production (single FTP session)
+      - name: Deploy app code (PHP · skin · CSS)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -50,25 +50,8 @@ jobs:
           protocol: ftp
           local-dir: ./
           server-dir: /public_html/
-          state-name: linkconnect-prod-v1
+          state-name: linkconnect-code-v1
           log-level: verbose
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/.DS_Store
-            **/.vscode/**
-            **/._*
-            _backup_transfer_*/
-            **/_backup_transfer_*/
-            _BUILDER_INPUT/**
-            builder/**
-            /data/**
-            /cache/**
-            /session/**
-            /tmp/**
-            *.log
-            .env
-            .env.*
           include: |
             css/onoff-platform.css
             extend/linkconnect-member.extend.php
@@ -80,7 +63,52 @@ jobs:
             about/**
             affiliate/**
             notice/**
+            .htaccess
             inc/linkconnect-spa-bootstrap.php
             plugin/onoff-builder-bridge/lib/**
             plugin/onoff-builder-bridge/data/**
-            plugin/onoff-builder-bridge/imports/linkconnect/**
+
+      - name: Wait between FTP sessions
+        run: sleep 15
+
+      - name: Deploy SPA core (HTML · JS · CSS · favicon)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 1
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
+          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
+          state-name: linkconnect-spa-core-v1
+          log-level: verbose
+          include: |
+            index.html
+            favicon.png
+            favicon-32.png
+            apple-touch-icon.png
+            hero_dashboard_mockup.png
+            assets/**
+
+      - name: Wait between FTP sessions
+        run: sleep 15
+
+      - name: Deploy SPA static images (about · webtoon)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        continue-on-error: true
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          parallel: 1
+          protocol: ftp
+          local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
+          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
+          state-name: linkconnect-spa-media-v1
+          log-level: verbose
+          include: |
+            about/**
+            webtoon/**
