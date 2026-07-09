@@ -40,11 +40,12 @@ jobs:
           find plugin/onoff-builder-bridge/imports/linkconnect -name '.DS_Store' -delete 2>/dev/null || true
           rm -rf builder/linkconnect_source/node_modules
 
-      - name: Prepare app-code deploy bundle
+      - name: Prepare deploy bundle (app code + SPA core)
         run: |
-          rm -rf .deploy/app-code
-          ROOT=".deploy/app-code"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,plugin/onoff-builder-bridge}
+          rm -rf .deploy/bundle
+          ROOT=".deploy/bundle"
+          SRC="plugin/onoff-builder-bridge/imports/linkconnect"
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,plugin/onoff-builder-bridge/imports/linkconnect,plugin/linkconnect/layout}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -54,58 +55,30 @@ jobs:
           cp -R about affiliate notice "$ROOT/"
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
-          mkdir -p "$ROOT/plugin/linkconnect/layout"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
+          cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
+          cp -R "$SRC/assets" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           find "$ROOT" -name '._*' -delete 2>/dev/null || true
-          echo "App bundle: $(find "$ROOT" -type f | wc -l) files, $(du -sh "$ROOT" | cut -f1)"
+          echo "Bundle: $(find "$ROOT" -type f | wc -l) files, $(du -sh "$ROOT" | cut -f1)"
 
-      - name: Prepare SPA core deploy bundle
-        run: |
-          rm -rf .deploy/spa-core
-          SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          DST=".deploy/spa-core"
-          mkdir -p "$DST/assets"
-          cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$DST/"
-          cp -R "$SRC/assets/"* "$DST/assets/"
-          find "$DST" -name '._*' -delete 2>/dev/null || true
-          echo "SPA core: $(find "$DST" -type f | wc -l) files, $(du -sh "$DST" | cut -f1)"
-
-      - name: Deploy app code (PHP · skin · CSS)
+      - name: Deploy app + SPA core (single FTP session)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          parallel: 2
+          parallel: 1
           protocol: ftp
-          local-dir: .deploy/app-code/
+          local-dir: .deploy/bundle/
           server-dir: /public_html/
-          state-name: linkconnect-deploy-v3
+          state-name: linkconnect-deploy-v4
           log-level: minimal
           timeout: 600000
 
       - name: Wait between FTP sessions
-        run: sleep 15
-
-      - name: Deploy SPA core (HTML · JS · CSS · favicon)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          parallel: 2
-          protocol: ftp
-          local-dir: .deploy/spa-core/
-          server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-v1
-          log-level: minimal
-          timeout: 600000
-
-      - name: Wait between FTP sessions
-        run: sleep 15
+        run: sleep 30
 
       - name: Deploy SPA static images (about · webtoon)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -119,7 +92,7 @@ jobs:
           protocol: ftp
           local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
           server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-media-v1
+          state-name: linkconnect-spa-media-v2
           log-level: minimal
           timeout: 600000
           exclude: |
