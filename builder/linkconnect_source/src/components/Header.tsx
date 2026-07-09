@@ -14,12 +14,12 @@ import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 
 function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
   if (accent === 'emerald') {
-    return `whitespace-nowrap text-sm lg:text-base font-medium transition-colors ${active ? 'text-emerald-400' : 'text-slate-300 hover:text-emerald-400'}`;
+    return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-emerald-400' : 'text-slate-300 hover:text-emerald-400'}`;
   }
   if (accent === 'cyan') {
-    return `whitespace-nowrap text-sm lg:text-base font-medium transition-colors ${active ? 'text-cyan-400' : 'text-slate-300 hover:text-cyan-400'}`;
+    return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-cyan-400' : 'text-slate-300 hover:text-cyan-400'}`;
   }
-  return `whitespace-nowrap text-sm lg:text-base font-medium transition-colors ${active ? 'text-white' : 'text-slate-300 hover:text-white'}`;
+  return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-white' : 'text-slate-300 hover:text-white'}`;
 }
 
 function isActive(pathname: string, to: string) {
@@ -43,7 +43,12 @@ function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
   }, []);
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
       <button
         type="button"
         className={`inline-flex items-center gap-1 ${navLinkClass(active)}`}
@@ -56,24 +61,26 @@ function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-52 py-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50">
-          {companySubItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={() => {
-                setOpen(false);
-                onNavigate?.();
-              }}
-              className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
-                isActive(location.pathname, item.to)
-                  ? 'text-emerald-400 bg-white/5'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="absolute top-full left-0 pt-1 w-52 z-50">
+          <div className="py-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl">
+            {companySubItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => {
+                  setOpen(false);
+                  onNavigate?.();
+                }}
+                className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
+                  isActive(location.pathname, item.to)
+                    ? 'text-emerald-400 bg-white/5'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -87,7 +94,7 @@ function AdminCenterBadge({ onNavigate, className = '' }: { onNavigate?: () => v
     <Link
       to={adminNavItem.to}
       onClick={onNavigate}
-      className={`inline-flex items-center gap-1.5 shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs lg:text-sm font-bold transition-colors shadow-sm border border-cyan-400/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-colors shadow-sm border border-cyan-400/30 ${className}`}
     >
       <ShieldCheck className="w-4 h-4" />
       관리자센터
@@ -103,13 +110,15 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-20 gap-4 lg:gap-6">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center h-20">
+          {/* 로고 */}
+          <Link to="/" className="flex items-center gap-2 shrink-0 mr-6">
             <LinkIcon className="w-7 h-7 text-cyan-400" />
-            <span className="text-xl lg:text-2xl font-bold text-white tracking-tight">링크커넥트</span>
+            <span className="text-xl xl:text-2xl font-bold text-white tracking-tight">링크커넥트</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7 flex-1 min-w-0" aria-label="주요 메뉴">
+          {/* 메인 메뉴 */}
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 flex-1 min-w-0 overflow-x-auto" aria-label="주요 메뉴">
             <CompanyNavDropdown />
             {campaignNavItems.map((item) => (
               <Link key={item.to} to={item.to} className={navLinkClass(isActive(location.pathname, item.to))}>
@@ -127,14 +136,16 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-3 shrink-0 ml-auto border-l border-white/10 pl-5">
+          {/* 우측: 로그인 · 회원가입 · 관리자센터(맨 끝) */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 ml-auto pl-4 lg:pl-6 border-l border-white/10">
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
             <AdminCenterBadge />
           </div>
 
+          {/* 모바일 햄버거 */}
           <button
             type="button"
-            className="lg:hidden ml-auto text-slate-300 hover:text-white p-2"
+            className="md:hidden ml-auto text-slate-300 hover:text-white p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-expanded={isMobileMenuOpen}
             aria-label="메뉴"
@@ -145,7 +156,7 @@ export function Header() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-slate-900 border-b border-white/10 px-4 pt-2 pb-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 pt-2 pb-6 shadow-2xl max-h-[80vh] overflow-y-auto">
           <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">회사소개</p>
           {companySubItems.map((item) => (
             <Link

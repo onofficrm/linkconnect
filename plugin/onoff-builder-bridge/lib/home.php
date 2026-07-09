@@ -44,6 +44,9 @@ if (!function_exists('onoff_builder_spa_route_prefixes')) {
     function onoff_builder_spa_route_prefixes()
     {
         return array(
+            'about',
+            'affiliate',
+            'notice',
             'select-center',
             'cpa-list',
             'cps',
