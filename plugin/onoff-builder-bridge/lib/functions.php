@@ -830,6 +830,8 @@ if (!function_exists('onoff_builder_rewrite_asset_paths')) {
             '#\shref=(["\'])\./assets/#i' => ' href=$1' . $entry_assets,
             '#\ssrc=(["\'])assets/#i'    => ' src=$1' . $entry_assets,
             '#\shref=(["\'])assets/#i'   => ' href=$1' . $entry_assets,
+            '#\shref=(["\'])\./(favicon[^"\']*)#i' => ' href=$1' . onoff_builder_get_import_base_url($id, $entry_path) . '$2',
+            '#\shref=(["\'])\./(apple-touch-icon[^"\']*)#i' => ' href=$1' . onoff_builder_get_import_base_url($id, $entry_path) . '$2',
         );
 
         foreach ($patterns as $pattern => $replacement) {

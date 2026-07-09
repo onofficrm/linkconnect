@@ -216,6 +216,19 @@ if (!function_exists('lc_status_label')) {
     }
 }
 
+if (!function_exists('lc_favicon_url')) {
+    function lc_favicon_url()
+    {
+        if (function_exists('lc_builder_spa_enabled') && lc_builder_spa_enabled()) {
+            $base = defined('G5_URL') ? rtrim(G5_URL, '/') : '';
+
+            return $base . '/plugin/onoff-builder-bridge/imports/linkconnect/favicon.png';
+        }
+
+        return lc_asset_url('img/favicon.png');
+    }
+}
+
 if (!function_exists('lc_enqueue_assets')) {
     function lc_enqueue_assets()
     {
@@ -226,6 +239,9 @@ if (!function_exists('lc_enqueue_assets')) {
         $done = true;
 
         $ver = defined('G5_CSS_VER') ? G5_CSS_VER : LC_VERSION;
+        $favicon = lc_favicon_url();
+        echo '<link rel="icon" type="image/png" href="' . lc_h($favicon) . '">' . PHP_EOL;
+        echo '<link rel="apple-touch-icon" href="' . lc_h($favicon) . '">' . PHP_EOL;
         echo '<link rel="stylesheet" href="' . lc_h(lc_asset_url('css/linkconnect.css?ver=' . $ver)) . '">' . PHP_EOL;
         echo '<script src="' . lc_h(lc_asset_url('js/linkconnect.js?ver=' . $ver)) . '" defer></script>' . PHP_EOL;
     }
