@@ -13,6 +13,7 @@
     "path": "linkconnect",
     "entry": "index.html",
     "enabled": true,
+    "needs_build": false,
     "mode": "standalone",
     "seo_title": "LinkConnect",
     "seo_description": "CPA/CPS 제휴마케팅 플랫폼",

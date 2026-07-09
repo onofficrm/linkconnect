@@ -40,7 +40,8 @@ jobs:
           protocol: ftp
           local-dir: plugin/onoff-builder-bridge/imports/linkconnect/
           server-dir: /public_html/plugin/onoff-builder-bridge/imports/linkconnect/
-          state-name: linkconnect-spa-v1
+          state-name: linkconnect-spa-v2
+          dangerous-clean-slate: true
           log-level: minimal
 
       - name: Deploy site via FTP

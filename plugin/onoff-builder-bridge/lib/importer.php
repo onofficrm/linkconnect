@@ -148,6 +148,42 @@ if (!function_exists('onoff_builder_is_vite_dev_index_html')) {
     }
 }
 
+if (!function_exists('onoff_builder_is_production_dist_index_html')) {
+    function onoff_builder_is_production_dist_index_html($html)
+    {
+        if (!is_string($html) || $html === '' || onoff_builder_is_vite_dev_index_html($html)) {
+            return false;
+        }
+
+        return (bool) preg_match('#/assets/index-[A-Za-z0-9_-]+\.(js|mjs)#', $html);
+    }
+}
+
+if (!function_exists('onoff_builder_has_deployed_production_build')) {
+    /**
+     * imports 루트 또는 dist/ 에 프로덕션 Vite 빌드가 있는지
+     */
+    function onoff_builder_has_deployed_production_build($project_dir)
+    {
+        if (!is_string($project_dir) || $project_dir === '' || !is_dir($project_dir)) {
+            return false;
+        }
+
+        foreach (array('index.html', 'dist/index.html') as $rel) {
+            $file = $project_dir . '/' . $rel;
+            if (!is_file($file)) {
+                continue;
+            }
+            $html = @file_get_contents($file);
+            if ($html !== false && onoff_builder_is_production_dist_index_html($html)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 if (!function_exists('onoff_builder_resolve_import_entry')) {
     /**
      * imports 메타·디스크 상태로 실제 렌더할 entry 경로 결정
@@ -231,11 +267,20 @@ if (!function_exists('onoff_builder_project_needs_build')) {
         }
 
         if (is_array($import) && !empty($import['needs_build'])) {
+            $dir = onoff_builder_project_dir($project_id);
+            if ($dir !== '' && onoff_builder_has_deployed_production_build($dir)) {
+                return false;
+            }
+
             return true;
         }
 
         $dir = onoff_builder_project_dir($project_id);
         if ($dir === '' || !is_dir($dir) || !onoff_builder_is_vite_source_project($dir)) {
+            return false;
+        }
+
+        if (onoff_builder_has_deployed_production_build($dir)) {
             return false;
         }
 

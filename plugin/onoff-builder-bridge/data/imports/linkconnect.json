@@ -3,6 +3,7 @@
   "name": "LinkConnect 메인",
   "type": "vite-dist",
   "enabled": true,
+  "needs_build": false,
   "mode": "standalone",
   "import_path": "/plugin/onoff-builder-bridge/imports/linkconnect",
   "entry_file": "index.html",
