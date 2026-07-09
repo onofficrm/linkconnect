@@ -109,7 +109,7 @@ export function Header() {
       data-lc-nav="v2"
       className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10"
     >
-      <div className="w-full px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-20 w-full gap-4 lg:gap-6 xl:gap-8">
           <Link to="/" className="flex items-center gap-2 shrink-0 min-w-0">
             <LinkIcon className="w-7 h-7 text-cyan-400 shrink-0" />
@@ -136,9 +136,8 @@ export function Header() {
 
           <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 ml-auto pl-4 lg:pl-6 border-l border-white/10">
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
+            <AdminCenterBadge />
           </div>
-
-          <AdminCenterBadge className="hidden md:inline-flex ml-2 lg:ml-3 shrink-0" />
 
           {/* 모바일 햄버거 */}
           <button
@@ -154,7 +153,8 @@ export function Header() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-b border-white/10 px-4 pt-2 pb-6 shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div className="md:hidden bg-slate-900 border-b border-white/10 shadow-2xl max-h-[80vh] overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-6">
           <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">회사소개</p>
           {companySubItems.map((item) => (
             <Link
@@ -200,6 +200,7 @@ export function Header() {
           <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-3">
             <MemberAuthMenuMobile onNavigate={closeMobile} />
             <AdminCenterBadge onNavigate={closeMobile} className="w-full justify-center py-3" />
+          </div>
           </div>
         </div>
       )}
