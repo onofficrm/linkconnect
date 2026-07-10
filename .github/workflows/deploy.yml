@@ -70,7 +70,7 @@ jobs:
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
           mkdir -p "$ROOT/plugin/linkconnect/api" "$ROOT/plugin/linkconnect/install" "$ROOT/plugin/linkconnect/partner/api" "$ROOT/plugin/linkconnect/merchant/api" "$ROOT/plugin/linkconnect/admin/api" "$ROOT/plugin/linkconnect/cron"
           cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/campaign_banktupt.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php plugin/linkconnect/inc/abuse.php plugin/linkconnect/inc/linkprice.php "$ROOT/plugin/linkconnect/inc/"
-          cp plugin/linkconnect/api/receive.php plugin/linkconnect/api/landing_context.php plugin/linkconnect/api/call_receive.php plugin/linkconnect/api/lp_postback.php "$ROOT/plugin/linkconnect/api/"
+          cp plugin/linkconnect/api/receive.php plugin/linkconnect/api/landing_context.php plugin/linkconnect/api/call_receive.php plugin/linkconnect/api/lp_postback.php plugin/linkconnect/api/lp_health.php "$ROOT/plugin/linkconnect/api/"
           cp plugin/linkconnect/partner/api/apply.php plugin/linkconnect/partner/api/linkprice.php plugin/linkconnect/partner/api/_common.php "$ROOT/plugin/linkconnect/partner/api/"
           if [[ -d plugin/linkconnect/partner/api ]]; then
             cp plugin/linkconnect/partner/api/*.php "$ROOT/plugin/linkconnect/partner/api/" 2>/dev/null || true
