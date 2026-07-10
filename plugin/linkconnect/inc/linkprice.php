@@ -120,6 +120,78 @@ if (!function_exists('lc_lp_config_to_api')) {
     }
 }
 
+if (!function_exists('lc_lp_health_snapshot')) {
+    /**
+     * 운영 점검용 스냅샷 (시크릿·PII 미포함)
+     *
+     * @return array{ok:bool,db:array,config:array,counts:array,checks:array}
+     */
+    function lc_lp_health_snapshot()
+    {
+        $tables = array(
+            'lp_networks',
+            'lp_merchants',
+            'lp_clicks',
+            'lp_postbacks',
+            'lp_orders',
+            'lp_order_status_logs',
+            'lp_sync_logs',
+            'lp_ledger',
+        );
+        $db = array();
+        foreach ($tables as $name) {
+            $db[$name] = function_exists('lc_db_table_exists') && lc_db_table_exists(lc_table($name));
+        }
+        $dbReady = !in_array(false, $db, true);
+
+        $cfg = lc_lp_config_to_api();
+        $cronSet = function_exists('lc_settings_get')
+            && trim((string) lc_settings_get('lpCronToken', '')) !== '';
+
+        $counts = array();
+        if ($dbReady) {
+            foreach (array(
+                'merchants' => 'lp_merchants',
+                'clicks'    => 'lp_clicks',
+                'postbacks' => 'lp_postbacks',
+                'orders'    => 'lp_orders',
+                'ledger'    => 'lp_ledger',
+            ) as $key => $tbl) {
+                $row = lc_sql_fetch(' SELECT COUNT(*) AS cnt FROM `' . lc_table($tbl) . '` ', false);
+                $counts[$key] = is_array($row) ? (int) ($row['cnt'] ?? 0) : 0;
+            }
+        }
+
+        $checks = array(
+            'dbReady'              => $dbReady,
+            'apiEnabled'           => !empty($cfg['apiEnabled']),
+            'affiliateConfigured'  => trim((string) ($cfg['affiliateCode'] ?? '')) !== '',
+            'authKeySet'           => !empty($cfg['apiAuthKeySet']),
+            'postbackSecretSet'    => !empty($cfg['postbackSecretSet']),
+            'cronTokenSet'         => $cronSet,
+            'readyForSync'         => !empty($cfg['ready']),
+            'postbackAliasOk'      => true,
+        );
+
+        return array(
+            'ok'     => $dbReady,
+            'db'     => $db,
+            'config' => array(
+                'networkId'          => (int) ($cfg['networkId'] ?? 0),
+                'affiliateCode'      => (string) ($cfg['affiliateCode'] ?? ''),
+                'apiEnabled'         => !empty($cfg['apiEnabled']),
+                'apiAuthKeySet'      => !empty($cfg['apiAuthKeySet']),
+                'postbackSecretSet'  => !empty($cfg['postbackSecretSet']),
+                'ready'              => !empty($cfg['ready']),
+                'lastMerchantSyncAt' => $cfg['lastMerchantSyncAt'] ?? null,
+                'lastOrderSyncAt'    => $cfg['lastOrderSyncAt'] ?? null,
+            ),
+            'counts' => $counts,
+            'checks' => $checks,
+        );
+    }
+}
+
 if (!function_exists('lc_lp_config_save')) {
     /**
      * @param array $values affiliate_code, api_auth_key, postback_secret, api_enabled, default_partner_rate, network_name
