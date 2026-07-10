@@ -50,15 +50,26 @@ export function PartnerRouteGuard() {
       <div className="max-w-lg w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
         {isPending ? (
           <>
-            <h1 className="text-2xl font-bold text-slate-900 mb-3">파트너 승인 대기 중</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-3">파트너 등록 확인</h1>
             <p className="text-slate-600 mb-4">
-              신청이 접수되었습니다. 관리자 승인 후 파트너센터를 이용할 수 있습니다.
+              이전에 신청하신 내역이 있습니다. 아래 버튼을 누르면 즉시 활성화되어 파트너센터를 이용할 수 있습니다.
             </p>
             {auth.partnerCode && (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 mb-4">
                 파트너 코드: <span className="font-mono font-semibold text-slate-800">{auth.partnerCode}</span>
               </p>
             )}
+            {applyError && (
+              <p className="text-sm text-red-600 mb-4">{applyError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleApply}
+              disabled={applying}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors"
+            >
+              {applying ? '활성화 중...' : '파트너 활성화하기'}
+            </button>
           </>
         ) : isSuspended ? (
           <>
@@ -69,7 +80,7 @@ export function PartnerRouteGuard() {
           <>
             <h1 className="text-2xl font-bold text-slate-900 mb-3">파트너 등록이 필요합니다</h1>
             <p className="text-slate-600 mb-6">
-              파트너센터는 승인된 파트너 회원만 이용할 수 있습니다. 아래 버튼으로 신청해 주세요.
+              파트너센터를 이용하려면 파트너로 등록해 주세요. 등록 즉시 이용할 수 있습니다.
             </p>
             {applyError && (
               <p className="text-sm text-red-600 mb-4">{applyError}</p>
@@ -80,7 +91,7 @@ export function PartnerRouteGuard() {
               disabled={applying}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold rounded-xl transition-colors"
             >
-              {applying ? '신청 중...' : '파트너 신청하기'}
+              {applying ? '등록 중...' : '파트너 등록하기'}
             </button>
           </>
         )}

@@ -106,7 +106,7 @@ if (!function_exists('lc_merchant_create')) {
     /**
      * @return array{ok:bool,message:string,merchant:array|null}
      */
-    function lc_merchant_create($mb_id, $company = '', $status = LC_MERCHANT_STATUS_PENDING, $initial_balance = 0)
+    function lc_merchant_create($mb_id, $company = '', $status = LC_MERCHANT_STATUS_ACTIVE, $initial_balance = 0)
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'merchant' => null);
@@ -118,6 +118,12 @@ if (!function_exists('lc_merchant_create')) {
 
         $existing = lc_get_merchant_by_mb_id($mb_id);
         if ($existing) {
+            // 기존 승인대기 계정은 즉시 활성화 (관리자 승인 없이 이용)
+            if (($existing['mt_status'] ?? '') === LC_MERCHANT_STATUS_PENDING) {
+                lc_merchant_update_status((int) $existing['mt_id'], LC_MERCHANT_STATUS_ACTIVE);
+                $merchant = lc_get_merchant_by_id((int) $existing['mt_id']);
+                return array('ok' => true, 'message' => '광고주가 활성화되었습니다.', 'merchant' => $merchant);
+            }
             return array('ok' => false, 'message' => '이미 광고주 신청 또는 등록이 있습니다.', 'merchant' => $existing);
         }
 
@@ -284,19 +290,22 @@ if (!function_exists('lc_render_merchant_gate')) {
         echo '<div class="lc-center-body"><div class="lc-panel lc-panel--merchant" style="max-width:640px;margin:2rem auto;">';
 
         if ($reason === 'pending' || $status === LC_MERCHANT_STATUS_PENDING) {
-            echo '<h1 class="lc-panel__title">광고주 승인 대기 중</h1>';
-            echo '<p class="lc-muted">신청이 접수되었습니다. 관리자 승인 후 광고주센터를 이용할 수 있습니다.</p>';
+            echo '<h1 class="lc-panel__title">광고주 등록 확인</h1>';
+            echo '<p class="lc-muted">이전에 신청하신 내역이 있습니다. 아래 버튼을 누르면 즉시 활성화되어 광고주센터를 이용할 수 있습니다.</p>';
             if ($merchant) {
                 echo '<p>광고주 코드: <code>' . lc_h($merchant['mt_code']) . '</code></p>';
             }
+            echo '<form method="post" action="' . lc_h(lc_url('merchant/api/apply.php')) . '" style="margin-top:1.5rem;">';
+            echo '<button type="submit" class="lc-btn lc-btn--primary">광고주 활성화하기</button>';
+            echo '</form>';
         } elseif ($status === LC_MERCHANT_STATUS_SUSPENDED) {
             echo '<h1 class="lc-panel__title">광고주 계정 정지</h1>';
             echo '<p class="lc-muted">계정이 정지되었습니다. 고객센터로 문의해 주세요.</p>';
         } else {
             echo '<h1 class="lc-panel__title">광고주 등록이 필요합니다</h1>';
-            echo '<p class="lc-muted">광고주센터는 승인된 광고주 회원만 이용할 수 있습니다.</p>';
+            echo '<p class="lc-muted">광고주센터를 이용하려면 광고주로 등록해 주세요. 등록 즉시 이용할 수 있습니다.</p>';
             echo '<form method="post" action="' . lc_h(lc_url('merchant/api/apply.php')) . '" style="margin-top:1.5rem;">';
-            echo '<button type="submit" class="lc-btn lc-btn--primary">광고주 신청하기</button>';
+            echo '<button type="submit" class="lc-btn lc-btn--primary">광고주 등록하기</button>';
             echo '</form>';
         }
 

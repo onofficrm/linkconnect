@@ -31,4 +31,4 @@ if ($wants_json) {
     ));
 }
 
-alert('광고주 신청이 접수되었습니다. 관리자 승인 후 이용 가능합니다.', lc_url('merchant/dashboard.php'));
+alert('광고주 등록이 완료되었습니다. 바로 이용하실 수 있습니다.', lc_url('merchant/dashboard.php'));

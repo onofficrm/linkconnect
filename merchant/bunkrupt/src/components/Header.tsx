@@ -8,16 +8,25 @@ import { isCampaignTraffic } from '../lib/heroCopy';
 import { SITE_NAV_SECTIONS, navItemHref } from '../lib/siteNav';
 import NavDropdown from './NavDropdown';
 
+const HOME_PATH = '/consultation';
+
+function showQualificationNav(pathname: string): boolean {
+  return (
+    pathname.includes('/consultation') ||
+    pathname.includes('/rehabilitation') ||
+    pathname.includes('/bankruptcy') ||
+    pathname.includes('/debt-collection') ||
+    isCampaignTraffic()
+  );
+}
+
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { hasPhone, data } = usePartnerContext();
-  const campaignFocus =
-    isCampaignTraffic() ||
-    location.pathname.includes('/consultation') ||
-    location.pathname.includes('/rehabilitation');
+  const showQualification = showQualificationNav(location.pathname);
 
   const closeMobile = () => {
     setIsOpen(false);
@@ -49,7 +58,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm shadow-sm">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to={campaignFocus ? '/consultation' : '/'} className="flex shrink-0 items-center gap-2">
+        <Link to={HOME_PATH} onClick={closeMobile} className="flex shrink-0 items-center gap-2">
           <Scale className="h-6 w-6 text-main sm:h-7 sm:w-7" />
           <span className="text-[15px] font-bold tracking-tight text-main sm:text-[17px] lg:text-xl">
             개인회생 자격진단 센터
@@ -60,7 +69,7 @@ export default function Header() {
           {SITE_NAV_SECTIONS.map((section) => (
             <NavDropdown key={section.id} section={section} />
           ))}
-          {campaignFocus ? (
+          {showQualification ? (
             <button
               type="button"
               onClick={goCalculator}
@@ -142,7 +151,7 @@ export default function Header() {
               );
             })}
 
-            {campaignFocus ? (
+            {showQualification ? (
               <button
                 type="button"
                 onClick={goCalculator}
