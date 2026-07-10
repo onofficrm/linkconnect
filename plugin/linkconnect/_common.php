@@ -131,6 +131,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/channel_report.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/call.php')) {
     require_once LC_PLUGIN_PATH . '/inc/call.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/linkprice.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/linkprice.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/landing.php')) {
     require_once LC_PLUGIN_PATH . '/inc/landing.php';
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { 
+import {
   BarChart3, 
   Copy, 
   CreditCard, 
@@ -10,7 +10,8 @@ import {
   Search, 
   Target, 
   XCircle,
-  PhoneCall
+  PhoneCall,
+  Store
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
@@ -37,6 +38,9 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
   const menuItems = [
     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: "대시보드", path: "/partner" },
     { id: 'search', icon: <Search size={20} />, label: "광고상품 찾기", path: "/partner/search" },
+    { id: 'cps', icon: <Store size={20} />, label: "CPS 쇼핑", path: "/partner/cps" },
+    { id: 'cps-orders', icon: <Target size={20} />, label: "CPS 실적", path: "/partner/cps/orders" },
+    { id: 'cps-earnings', icon: <CreditCard size={20} />, label: "CPS 수익", path: "/partner/cps/earnings" },
     { id: 'links', icon: <LinkIcon size={20} />, label: "내 홍보 링크", path: "/partner/links" },
     { id: 'analytics', icon: <PieChart size={20} />, label: "유입 분석", path: "/partner/analytics" },
     { id: 'db-status', icon: <Target size={20} />, label: "디비 현황", path: "/partner/db-status" },

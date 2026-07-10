@@ -213,6 +213,54 @@ export function createPartnerLink(payload: { campaignId: number; channel?: strin
   return partnerApiPost<{ message: string; link: PartnerLink | null }>('links.php', payload);
 }
 
+/* ── 파트너 링크프라이스 CPS ── */
+
+export type PartnerLpMerchant = {
+  lpmId: number;
+  merchantCode: string;
+  merchantName: string;
+  originalName: string;
+  merchantLogo: string;
+  categoryName: string;
+  commissionPc: string;
+  commissionMobile: string;
+  partnerRate: number;
+  settlement: string;
+  whenTrans: string;
+  denyAd: string;
+  denyProduct: string;
+  notice: string;
+  deeplinkYn: string;
+  isRecommended: boolean;
+  promoUrl: string;
+  partnerToken: string;
+  clicks: number;
+  expectedOrders: number;
+  confirmedOrders: number;
+};
+
+export function fetchPartnerLpMerchants(filters?: { q?: string; code?: string; deeplink?: boolean }) {
+  return partnerApiGet<{
+    items: PartnerLpMerchant[];
+    total: number;
+    partnerToken: string;
+    stats?: PartnerLpStats;
+    dbReady: boolean;
+  }>('linkprice.php', {
+    view: 'merchants',
+    q: filters?.q ?? '',
+    code: filters?.code ?? '',
+    deeplink: filters?.deeplink ? '1' : '',
+  });
+}
+
+export function buildPartnerLpDeeplink(payload: { merchantCode: string; productUrl: string }) {
+  return partnerApiPost<{ message: string; promoUrl: string }>('linkprice.php', {
+    action: 'deeplink',
+    ...payload,
+  });
+}
+
 export function fetchPartnerConversions(filters?: { status?: string; q?: string; rejected?: boolean }) {
   return partnerApiGet<{ items: PartnerConversion[]; summary: PartnerDashboardResponse['summary']; total: number }>(
     'conversions.php',
@@ -1765,6 +1813,454 @@ export function fetchAdminCallRecording(clogId: number) {
 
 export function finalizeAdminConversion(payload: { cvId: number; finalAction: 'approve' | 'reject' | 'lock' | 'unlock'; memo?: string }) {
   return adminApiPost<{ message: string }>('call.php', { action: 'final_status', ...payload });
+}
+
+/* ── 링크프라이스 CPS ── */
+
+export type LpMerchant = {
+  lpmId: number;
+  networkId: number;
+  merchantCode: string;
+  merchantName: string;
+  merchantLogo: string;
+  merchantUrl: string;
+  categoryId: string;
+  categoryName: string;
+  commissionPc: string;
+  commissionMobile: string;
+  clickUrl: string;
+  deeplinkYn: string;
+  mobileYn: string;
+  returnDay: number;
+  rewardYn: string;
+  subscript: string;
+  denyAd: string;
+  denyProduct: string;
+  notice: string;
+  whenTrans: string;
+  transReposition: string;
+  commissionPaymentStandard: string;
+  visible: boolean;
+  syncActive: boolean;
+  partnerRate: number;
+  campaignAlias: string;
+  partnerNotice: string;
+  isRecommended: boolean;
+  adminMemo: string;
+  syncedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  partnerVisible: boolean;
+  clicks?: number;
+  expectedOrders?: number;
+  confirmedOrders?: number;
+  canceledOrders?: number;
+  partnerDisplayCommission?: string;
+  raw?: unknown;
+};
+
+export type LpNetworkConfig = {
+  networkId: number;
+  networkCode: string;
+  networkName: string;
+  affiliateCode: string;
+  apiAuthKeyMasked: string;
+  apiAuthKeySet: boolean;
+  postbackSecretMasked: string;
+  postbackSecretSet: boolean;
+  apiEnabled: boolean;
+  defaultPartnerRate: number;
+  lastMerchantSyncAt: string | null;
+  lastOrderSyncAt: string | null;
+  ready: boolean;
+  security?: {
+    testMode: boolean;
+    postbackIpEnabled: boolean;
+    postbackIpAllowlist: string;
+    cronTokenSet: boolean;
+  };
+};
+
+export type LpSyncLog = {
+  lpsId: number;
+  syncType: string;
+  requestUrl: string;
+  responseCode: number;
+  success: boolean;
+  processedCount: number;
+  errorMessage: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+};
+
+export type LpSyncResult = {
+  ok: boolean;
+  message: string;
+  scope: string;
+  fetched: number;
+  inserted: number;
+  updated: number;
+  failed: number;
+  deactivated: number;
+  errors: string[];
+  sample_fields: string[];
+  cpa_excluded: boolean;
+  api_url: string;
+  log_id: number;
+  synced_at: string | null;
+};
+
+export function fetchAdminLpMerchants(filters?: {
+  q?: string;
+  code?: string;
+  approved?: boolean;
+  syncActive?: boolean;
+  visible?: boolean;
+  deeplink?: boolean;
+  limit?: number;
+  offset?: number;
+}) {
+  return adminApiGet<{
+    items: LpMerchant[];
+    total: number;
+    config: LpNetworkConfig;
+    syncLogs: LpSyncLog[];
+    dbReady: boolean;
+  }>('linkprice.php', {
+    view: 'merchants',
+    q: filters?.q ?? '',
+    code: filters?.code ?? '',
+    approved: filters?.approved ? '1' : '',
+    syncActive: filters?.syncActive === undefined ? '' : filters.syncActive ? '1' : '0',
+    visible: filters?.visible === undefined ? '' : filters.visible ? '1' : '0',
+    deeplink: filters?.deeplink ? '1' : '',
+    limit: String(filters?.limit ?? 200),
+    offset: String(filters?.offset ?? 0),
+  });
+}
+
+export function fetchAdminLpMerchant(lpmId: number) {
+  return adminApiGet<{ item: LpMerchant }>('linkprice.php', { view: 'merchant', lpmId: String(lpmId) });
+}
+
+export function syncAdminLpMerchants(payload?: { scope?: 'apr' | 'all'; detail?: boolean; testMode?: boolean }) {
+  return adminApiPost<{
+    message: string;
+    sync: LpSyncResult;
+    config: LpNetworkConfig;
+    syncLogs: LpSyncLog[];
+  }>('linkprice.php', { action: 'sync_merchants', ...(payload ?? {}) });
+}
+
+export function updateAdminLpMerchant(payload: {
+  lpmId: number;
+  visible?: boolean;
+  partnerRate?: number;
+  campaignAlias?: string;
+  partnerNotice?: string;
+  isRecommended?: boolean;
+  adminMemo?: string;
+}) {
+  return adminApiPost<{ message: string; item: LpMerchant }>('linkprice.php', {
+    action: 'update_merchant',
+    ...payload,
+  });
+}
+
+export function saveAdminLpConfig(payload: Record<string, unknown>) {
+  return adminApiPost<{ message: string; config: LpNetworkConfig }>('linkprice.php', {
+    action: 'save_config',
+    ...payload,
+  });
+}
+
+export type LpPostback = {
+  lppId: number;
+  trlogId: string;
+  uniqId: string;
+  merchantCode: string;
+  orderCode: string;
+  uId: string;
+  requestIp: string;
+  isDuplicate: boolean;
+  processStatus: string;
+  errorMessage: string;
+  matchNote: string;
+  lpoId: number;
+  receivedAt: string | null;
+  processedAt: string | null;
+  raw?: unknown;
+  headers?: unknown;
+};
+
+export function fetchAdminLpPostbacks(filters?: {
+  status?: string;
+  q?: string;
+  merchant?: string;
+  order?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return adminApiGet<{ items: LpPostback[]; total: number; dbReady: boolean }>('linkprice.php', {
+    view: 'postbacks',
+    status: filters?.status ?? '',
+    q: filters?.q ?? '',
+    merchant: filters?.merchant ?? '',
+    order: filters?.order ?? '',
+    limit: String(filters?.limit ?? 50),
+    offset: String(filters?.offset ?? 0),
+  });
+}
+
+export function fetchAdminLpPostback(lppId: number) {
+  return adminApiGet<{
+    item: LpPostback;
+    order: {
+      lpoId: number;
+      ptId: number;
+      lpmId: number;
+      lcStatus: string;
+      lpCommission: number;
+      partnerRate: number;
+      partnerExpected: number;
+      partnerConfirmed: number;
+      platformMargin: number;
+      merchantCode: string;
+      orderCode: string;
+    } | null;
+  }>('linkprice.php', { view: 'postback', lppId: String(lppId) });
+}
+
+export function reprocessAdminLpPostback(lppId: number) {
+  return adminApiPost<{ message: string; item: LpPostback | null }>('linkprice.php', {
+    action: 'reprocess_postback',
+    lppId,
+  });
+}
+
+export type LpOrderSyncResult = {
+  ok: boolean;
+  message: string;
+  dates: string[];
+  fetched: number;
+  inserted: number;
+  updated: number;
+  unchanged: number;
+  failed: number;
+  pages: number;
+  errors: string[];
+  alerts: string[];
+};
+
+export function syncAdminLpOrders(payload?: {
+  mode?: string;
+  date?: string;
+  from?: string;
+  to?: string;
+  merchantId?: string;
+  orderCode?: string;
+  testMode?: boolean;
+  cancelFlag?: string;
+}) {
+  return adminApiPost<{
+    message: string;
+    sync: LpOrderSyncResult;
+    config: LpNetworkConfig;
+    syncLogs: LpSyncLog[];
+  }>('linkprice.php', { action: 'sync_orders', ...(payload ?? {}) });
+}
+
+export function syncAdminLpOrderOne(lpoId: number) {
+  return adminApiPost<{ message: string }>('linkprice.php', { action: 'sync_order_one', lpoId });
+}
+
+export type LpOrder = {
+  lpoId: number;
+  trlogId: string;
+  uniqId: string;
+  ptId: number;
+  partnerName: string;
+  partnerCode: string;
+  lpmId: number;
+  lpcId: number;
+  uId: string;
+  merchantCode: string;
+  merchantName: string;
+  orderCode: string;
+  productCode: string;
+  productName: string;
+  itemCount: number;
+  salesAmount: number;
+  lpCommission: number;
+  partnerRate: number;
+  partnerExpected: number;
+  partnerConfirmed: number;
+  platformMargin: number | null;
+  rawStatus: string;
+  lcStatus: string;
+  occurredAt: string | null;
+  confirmedAt: string | null;
+  cancelledAt: string | null;
+  lastSyncedAt: string | null;
+  unmatched: boolean;
+  settleHint: string;
+  rawJson?: unknown;
+};
+
+export type LpClick = {
+  lpcId: number;
+  ptId: number;
+  partnerName: string;
+  partnerCode: string;
+  lpmId: number;
+  merchantCode: string;
+  merchantName: string;
+  uId: string;
+  device: string;
+  ip: string;
+  clickedAt: string | null;
+};
+
+export type LpLedger = {
+  lplId: number;
+  ptId: number;
+  partnerName: string;
+  partnerCode: string;
+  lpoId: number;
+  entryType: string;
+  amount: number;
+  balanceAfter: number;
+  memo: string;
+  createdAt: string | null;
+};
+
+export type PartnerLpStats = {
+  clicksToday: number;
+  clicksMonth: number;
+  expectedOrders: number;
+  confirmedOrders: number;
+  canceledOrders: number;
+  expectedEarnings: number;
+  confirmedEarnings: number;
+  withdrawable: number;
+};
+
+export function fetchAdminLpOrders(filters?: Record<string, string | number | boolean | undefined>) {
+  const q: Record<string, string> = { view: 'orders' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '' && v !== false) q[k] = String(v === true ? '1' : v);
+  });
+  return adminApiGet<{ items: LpOrder[]; total: number; dbReady: boolean }>('linkprice.php', q);
+}
+
+export function fetchAdminLpOrder(lpoId: number) {
+  return adminApiGet<{
+    item: LpOrder;
+    logs: Array<{
+      lpslId: number;
+      fromStatus: string;
+      toStatus: string;
+      fromCommission: number;
+      toCommission: number;
+      reason: string;
+      changedAt: string | null;
+    }>;
+    click: { lpcId: number; uId: string; device: string; ip: string; clickedAt: string | null } | null;
+  }>('linkprice.php', { view: 'order', lpoId: String(lpoId) });
+}
+
+export function fetchAdminLpClicks(filters?: Record<string, string | number | undefined>) {
+  const q: Record<string, string> = { view: 'clicks' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') q[k] = String(v);
+  });
+  return adminApiGet<{
+    items: LpClick[];
+    total: number;
+    summary: { today: number; month: number; total: number };
+    dbReady: boolean;
+  }>('linkprice.php', q);
+}
+
+export function fetchAdminLpLedger(filters?: Record<string, string | number | undefined>) {
+  const q: Record<string, string> = { view: 'ledger' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') q[k] = String(v);
+  });
+  return adminApiGet<{ items: LpLedger[]; total: number; dbReady: boolean }>('linkprice.php', q);
+}
+
+export function fetchAdminLpSyncLogs(limit = 30, type = '') {
+  return adminApiGet<{ items: LpSyncLog[]; dbReady: boolean }>('linkprice.php', {
+    view: 'sync_logs',
+    limit: String(limit),
+    type,
+  });
+}
+
+export function fetchAdminLpConfig() {
+  return adminApiGet<{ config: LpNetworkConfig; dbReady: boolean }>('linkprice.php', { view: 'config' });
+}
+
+export function testAdminLpConnection(testMode?: boolean) {
+  return adminApiPost<{ message: string; resultCode: string }>('linkprice.php', {
+    action: 'test_connection',
+    testMode: !!testMode,
+  });
+}
+
+export function linkAdminLpOrderPartner(lpoId: number, ptId: number) {
+  return adminApiPost<{ message: string }>('linkprice.php', { action: 'link_partner', lpoId, ptId });
+}
+
+export function saveAdminLpPostbackSecurity(payload: {
+  postbackIpEnabled?: boolean;
+  postbackIpAllowlist?: string;
+  postbackSecret?: string;
+  testMode?: boolean;
+}) {
+  return adminApiPost<{ message: string; config: LpNetworkConfig }>('linkprice.php', {
+    action: 'save_postback_security',
+    ...payload,
+  });
+}
+
+export function adminLpOrdersCsvUrl(filters?: Record<string, string>) {
+  const params = new URLSearchParams({ view: 'orders', format: 'csv', ...(filters ?? {}) });
+  return `/plugin/linkconnect/admin/api/linkprice.php?${params.toString()}`;
+}
+
+export function fetchPartnerLpStats() {
+  return partnerApiGet<{ stats: PartnerLpStats; dbReady: boolean }>('linkprice.php', { view: 'dashboard' });
+}
+
+export function fetchPartnerLpClicks(filters?: Record<string, string | number | undefined>) {
+  const q: Record<string, string> = { view: 'clicks' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') q[k] = String(v);
+  });
+  return partnerApiGet<{
+    items: LpClick[];
+    total: number;
+    summary: { today: number; month: number; total: number };
+    stats: PartnerLpStats;
+  }>('linkprice.php', q);
+}
+
+export function fetchPartnerLpOrders(filters?: Record<string, string | number | undefined>) {
+  const q: Record<string, string> = { view: 'orders' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') q[k] = String(v);
+  });
+  return partnerApiGet<{ items: LpOrder[]; total: number; stats: PartnerLpStats }>('linkprice.php', q);
+}
+
+export function fetchPartnerLpEarnings(filters?: Record<string, string | number | undefined>) {
+  const q: Record<string, string> = { view: 'earnings' };
+  Object.entries(filters ?? {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') q[k] = String(v);
+  });
+  return partnerApiGet<{ items: LpLedger[]; total: number; stats: PartnerLpStats }>('linkprice.php', q);
 }
 
 // 광고주

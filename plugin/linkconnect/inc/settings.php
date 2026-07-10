@@ -60,6 +60,15 @@ if (!function_exists('lc_settings_defaults')) {
             'callMinDuration'       => 0,
             'callCreateOnMissed'    => '0',
             'callRecordingMode'     => 'normal',
+            // 링크프라이스 CPS (외부 네트워크 — CPA와 분리)
+            'lpEnabled'             => '0',
+            'lpAffiliateCode'       => '',
+            'lpAuthKey'             => '',
+            'lpPostbackSecret'      => '',
+            'lpDefaultPartnerRate'  => '70',
+            'lpCronToken'           => '',
+            'lpPostbackIpEnabled'   => '0',
+            'lpPostbackIpAllowlist' => '',
         );
     }
 }
@@ -135,7 +144,8 @@ if (!function_exists('lc_settings_save')) {
             if (!array_key_exists($key, $defaults)) {
                 continue;
             }
-            if ($key === 'geminiApiKey' || $key === 'callApiKey' || $key === 'callApiSecret' || $key === 'callWebhookToken') {
+            if ($key === 'geminiApiKey' || $key === 'callApiKey' || $key === 'callApiSecret' || $key === 'callWebhookToken'
+                || $key === 'lpAuthKey' || $key === 'lpPostbackSecret') {
                 $key_val = trim((string) $value);
                 if ($key_val !== '') {
                     $key_esc = lc_sql_escape($key);
@@ -232,6 +242,23 @@ if (!function_exists('lc_settings_to_api')) {
                 'callMinDuration'    => (int) ($settings['callMinDuration'] ?? 0),
                 'callCreateOnMissed' => lc_settings_get_bool('callCreateOnMissed'),
                 'callRecordingMode'  => (string) ($settings['callRecordingMode'] ?? 'normal'),
+            ),
+            'linkprice' => array(
+                'lpEnabled'            => lc_settings_get_bool('lpEnabled'),
+                'lpAffiliateCode'      => (string) ($settings['lpAffiliateCode'] ?? ''),
+                'lpAuthKeySet'         => trim((string) ($settings['lpAuthKey'] ?? '')) !== '',
+                'lpAuthKeyMasked'      => function_exists('lc_lp_mask_secret')
+                    ? lc_lp_mask_secret((string) ($settings['lpAuthKey'] ?? ''))
+                    : '',
+                'lpPostbackSecretSet'  => trim((string) ($settings['lpPostbackSecret'] ?? '')) !== '',
+                'lpPostbackSecretMasked' => function_exists('lc_lp_mask_secret')
+                    ? lc_lp_mask_secret((string) ($settings['lpPostbackSecret'] ?? ''))
+                    : '',
+                'lpDefaultPartnerRate' => (float) ($settings['lpDefaultPartnerRate'] ?? 70),
+                'lpCronTokenSet'       => trim((string) ($settings['lpCronToken'] ?? '')) !== '',
+                'lpPostbackIpEnabled'  => lc_settings_get_bool('lpPostbackIpEnabled'),
+                'lpPostbackIpAllowlist'=> (string) ($settings['lpPostbackIpAllowlist'] ?? ''),
+                'config'               => function_exists('lc_lp_config_to_api') ? lc_lp_config_to_api() : null,
             ),
         );
     }

@@ -102,6 +102,42 @@ define('LC_CALL_RESULT_FAIL', 'fail');
 define('LC_FINAL_APPROVED', 'approved');
 define('LC_FINAL_REJECTED', 'rejected');
 
+/* ── 링크프라이스 CPS (외부 네트워크, CPA와 분리) ── */
+define('LC_LP_NETWORK_CODE', 'LINKPRICE');
+/** 내부 실적 상태 (공식 status와 별도 매핑) */
+define('LC_LP_ORDER_EXPECTED', 'expected');       // 하위호환 (=pending)
+define('LC_LP_ORDER_PENDING', 'pending');         // 100 일반
+define('LC_LP_ORDER_REVIEW', 'review');           // 200 정산대기
+define('LC_LP_ORDER_CONFIRMED', 'confirmed');     // 하위호환 (=approved)
+define('LC_LP_ORDER_APPROVED', 'approved');       // 210 정산완료
+define('LC_LP_ORDER_CANCEL_PENDING', 'cancel_pending'); // 300 취소신청
+define('LC_LP_ORDER_CANCELLED', 'cancelled');     // 하위호환 (=canceled)
+define('LC_LP_ORDER_CANCELED', 'canceled');       // 310 취소완료
+define('LC_LP_ORDER_HOLD', 'hold');               // 하위호환 (review/cancel_pending)
+define('LC_LP_ORDER_UNMATCHED', 'unmatched');
+define('LC_LP_ORDER_ERROR', 'error');
+/** 링크프라이스 원본 status */
+define('LC_LP_RAW_NORMAL', '100');
+define('LC_LP_RAW_SETTLE_WAIT', '200');
+define('LC_LP_RAW_SETTLED', '210');
+define('LC_LP_RAW_CANCEL_WAIT', '300');
+define('LC_LP_RAW_CANCELLED', '310');
+/** 원장 전표 유형 */
+define('LC_LP_LEDGER_CREDIT', 'CREDIT');
+define('LC_LP_LEDGER_DEBIT', 'DEBIT');
+define('LC_LP_LEDGER_REVERSAL', 'REVERSAL');
+/** POSTBACK 처리 상태 */
+define('LC_LP_PB_RECEIVED', 'received');
+define('LC_LP_PB_PROCESSED', 'processed');
+define('LC_LP_PB_DUPLICATE', 'duplicate');
+define('LC_LP_PB_UNMATCHED', 'unmatched');
+define('LC_LP_PB_ERROR', 'error');
+/** 동기화 종류 */
+define('LC_LP_SYNC_MERCHANTS', 'merchants');
+define('LC_LP_SYNC_ORDERS', 'orders');
+define('LC_LP_SYNC_POSTBACK', 'postback');
+define('LC_LP_SYNC_REDIRECT_FAIL', 'redirect_fail');
+
 /* ── 샘플 UI 상태값 (실제 DB 연동 전) ── */
 define('LC_STATUS_DRAFT', 'draft');
 define('LC_STATUS_ACTIVE', 'active');

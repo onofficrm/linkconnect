@@ -940,6 +940,312 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        // ── 링크프라이스 CPS (CPA 테이블과 완전 분리) ──
+        if (function_exists('lc_lp_db_ensure_schema')) {
+            $lp = lc_lp_db_ensure_schema();
+            if (empty($lp['ok'])) {
+                return $lp;
+            }
+        }
+
         return array('ok' => true, 'message' => '마이그레이션 완료');
+    }
+}
+
+if (!function_exists('lc_lp_db_ensure_schema')) {
+    /**
+     * 링크프라이스 CPS 전용 테이블 생성 (IF NOT EXISTS)
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_lp_db_ensure_schema()
+    {
+        $charset = 'utf8mb4';
+
+        $networks = lc_table('lp_networks');
+        if (!lc_db_table_exists($networks)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$networks}` (
+                `network_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `network_code` varchar(30) NOT NULL DEFAULT 'LINKPRICE',
+                `network_name` varchar(100) NOT NULL DEFAULT '링크프라이스',
+                `affiliate_code` varchar(20) NOT NULL DEFAULT '',
+                `api_auth_key` varchar(64) NOT NULL DEFAULT '',
+                `postback_secret` varchar(64) NOT NULL DEFAULT '',
+                `api_enabled` tinyint(1) NOT NULL DEFAULT 0,
+                `default_partner_rate` decimal(5,2) NOT NULL DEFAULT 70.00,
+                `last_merchant_sync_at` datetime DEFAULT NULL,
+                `last_order_sync_at` datetime DEFAULT NULL,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`network_id`),
+                UNIQUE KEY `uk_lp_network_code` (`network_code`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_networks 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $merchants = lc_table('lp_merchants');
+        if (!lc_db_table_exists($merchants)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$merchants}` (
+                `lpm_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `network_id` int unsigned NOT NULL DEFAULT 0,
+                `merchant_code` varchar(20) NOT NULL DEFAULT '',
+                `merchant_name` varchar(200) NOT NULL DEFAULT '',
+                `merchant_logo` varchar(500) NOT NULL DEFAULT '',
+                `merchant_url` varchar(500) NOT NULL DEFAULT '',
+                `category_id` varchar(10) NOT NULL DEFAULT '',
+                `category_name` varchar(100) NOT NULL DEFAULT '',
+                `commission_pc` varchar(50) NOT NULL DEFAULT '',
+                `commission_mobile` varchar(50) NOT NULL DEFAULT '',
+                `click_url` varchar(1000) NOT NULL DEFAULT '',
+                `deeplink_yn` char(1) NOT NULL DEFAULT 'N',
+                `mobile_yn` char(1) NOT NULL DEFAULT 'Y',
+                `return_day` int unsigned NOT NULL DEFAULT 0,
+                `reward_yn` char(1) NOT NULL DEFAULT '',
+                `subscript` varchar(10) NOT NULL DEFAULT '',
+                `deny_ad` text,
+                `deny_product` text,
+                `notice` text,
+                `when_trans` varchar(200) NOT NULL DEFAULT '',
+                `trans_reposition` varchar(200) NOT NULL DEFAULT '',
+                `commission_payment_standard` varchar(200) NOT NULL DEFAULT '',
+                `visible` tinyint(1) NOT NULL DEFAULT 1,
+                `sync_active` tinyint(1) NOT NULL DEFAULT 1,
+                `partner_rate` decimal(5,2) NOT NULL DEFAULT 70.00,
+                `campaign_alias` varchar(200) NOT NULL DEFAULT '',
+                `partner_notice` text,
+                `is_recommended` tinyint(1) NOT NULL DEFAULT 0,
+                `admin_memo` varchar(500) NOT NULL DEFAULT '',
+                `raw_json` mediumtext,
+                `synced_at` datetime DEFAULT NULL,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpm_id`),
+                UNIQUE KEY `uk_lp_merchant_code` (`merchant_code`),
+                KEY `idx_lp_merchant_network` (`network_id`),
+                KEY `idx_lp_merchant_visible` (`visible`),
+                KEY `idx_lp_merchant_sync_active` (`sync_active`),
+                KEY `idx_lp_merchant_subscript` (`subscript`),
+                KEY `idx_lp_merchant_category` (`category_id`),
+                KEY `idx_lp_merchant_recommended` (`is_recommended`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_merchants 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        // 기존 lp_merchants 에 관리자 전용 컬럼 보강
+        if (lc_db_table_exists($merchants)) {
+            foreach (array(
+                'sync_active'    => "tinyint(1) NOT NULL DEFAULT 1 AFTER `visible`",
+                'campaign_alias' => "varchar(200) NOT NULL DEFAULT '' AFTER `partner_rate`",
+                'partner_notice' => "text AFTER `campaign_alias`",
+                'is_recommended' => "tinyint(1) NOT NULL DEFAULT 0 AFTER `partner_notice`",
+                'admin_memo'     => "varchar(500) NOT NULL DEFAULT '' AFTER `is_recommended`",
+            ) as $col => $definition) {
+                if (!lc_db_column_exists($merchants, $col)) {
+                    lc_sql_query(" ALTER TABLE `{$merchants}` ADD COLUMN `{$col}` {$definition} ", false);
+                }
+            }
+        }
+
+        $clicks = lc_table('lp_clicks');
+        if (!lc_db_table_exists($clicks)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$clicks}` (
+                `lpc_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `click_token` varchar(32) NOT NULL DEFAULT '',
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `lpm_id` int unsigned NOT NULL DEFAULT 0,
+                `u_id` varchar(80) NOT NULL DEFAULT '',
+                `landing_url` varchar(1000) NOT NULL DEFAULT '',
+                `redirect_url` varchar(1500) NOT NULL DEFAULT '',
+                `ip` varchar(45) NOT NULL DEFAULT '',
+                `user_agent` varchar(500) NOT NULL DEFAULT '',
+                `referer` varchar(500) NOT NULL DEFAULT '',
+                `device` varchar(20) NOT NULL DEFAULT '',
+                `clicked_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpc_id`),
+                UNIQUE KEY `uk_lp_click_token` (`click_token`),
+                KEY `idx_lp_click_pt` (`pt_id`),
+                KEY `idx_lp_click_lpm` (`lpm_id`),
+                KEY `idx_lp_click_uid` (`u_id`),
+                KEY `idx_lp_click_at` (`clicked_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_clicks 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $postbacks = lc_table('lp_postbacks');
+        if (!lc_db_table_exists($postbacks)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$postbacks}` (
+                `lpp_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `trlog_id` varchar(30) NOT NULL DEFAULT '',
+                `uniq_id` varchar(30) NOT NULL DEFAULT '',
+                `merchant_code` varchar(20) NOT NULL DEFAULT '',
+                `order_code` varchar(100) NOT NULL DEFAULT '',
+                `u_id` varchar(80) NOT NULL DEFAULT '',
+                `request_json` mediumtext,
+                `request_headers` text,
+                `request_ip` varchar(45) NOT NULL DEFAULT '',
+                `is_duplicate` tinyint(1) NOT NULL DEFAULT 0,
+                `process_status` varchar(20) NOT NULL DEFAULT 'received',
+                `error_message` varchar(500) NOT NULL DEFAULT '',
+                `match_note` varchar(255) NOT NULL DEFAULT '',
+                `lpo_id` bigint unsigned NOT NULL DEFAULT 0,
+                `received_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `processed_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`lpp_id`),
+                KEY `idx_lp_pb_trlog` (`trlog_id`),
+                KEY `idx_lp_pb_uniq` (`uniq_id`),
+                KEY `idx_lp_pb_status` (`process_status`),
+                KEY `idx_lp_pb_received` (`received_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_postbacks 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+        if (lc_db_table_exists($postbacks)) {
+            foreach (array(
+                'merchant_code' => "varchar(20) NOT NULL DEFAULT '' AFTER `uniq_id`",
+                'order_code'    => "varchar(100) NOT NULL DEFAULT '' AFTER `merchant_code`",
+                'u_id'          => "varchar(80) NOT NULL DEFAULT '' AFTER `order_code`",
+                'match_note'    => "varchar(255) NOT NULL DEFAULT '' AFTER `error_message`",
+            ) as $col => $definition) {
+                if (!lc_db_column_exists($postbacks, $col)) {
+                    lc_sql_query(" ALTER TABLE `{$postbacks}` ADD COLUMN `{$col}` {$definition} ", false);
+                }
+            }
+        }
+
+        $orders = lc_table('lp_orders');
+        if (!lc_db_table_exists($orders)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$orders}` (
+                `lpo_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `trlog_id` varchar(30) NOT NULL DEFAULT '',
+                `uniq_id` varchar(30) NOT NULL DEFAULT '',
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `lpm_id` int unsigned NOT NULL DEFAULT 0,
+                `lpc_id` bigint unsigned NOT NULL DEFAULT 0,
+                `u_id` varchar(80) NOT NULL DEFAULT '',
+                `merchant_code` varchar(20) NOT NULL DEFAULT '',
+                `order_code` varchar(100) NOT NULL DEFAULT '',
+                `product_code` varchar(100) NOT NULL DEFAULT '',
+                `product_name` varchar(300) NOT NULL DEFAULT '',
+                `item_count` int unsigned NOT NULL DEFAULT 1,
+                `sales_amount` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `lp_commission` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `partner_rate` decimal(5,2) NOT NULL DEFAULT 70.00,
+                `partner_expected` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `partner_confirmed` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `platform_margin` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `raw_status` varchar(10) NOT NULL DEFAULT '',
+                `lc_status` varchar(20) NOT NULL DEFAULT 'expected',
+                `occurred_at` datetime DEFAULT NULL,
+                `confirmed_at` datetime DEFAULT NULL,
+                `cancelled_at` datetime DEFAULT NULL,
+                `last_synced_at` datetime DEFAULT NULL,
+                `raw_json` mediumtext,
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpo_id`),
+                UNIQUE KEY `uk_lp_order_trlog` (`trlog_id`),
+                KEY `idx_lp_order_uniq` (`uniq_id`),
+                KEY `idx_lp_order_pt` (`pt_id`),
+                KEY `idx_lp_order_lpm` (`lpm_id`),
+                KEY `idx_lp_order_uid` (`u_id`),
+                KEY `idx_lp_order_code` (`order_code`),
+                KEY `idx_lp_order_merchant_order_uid` (`merchant_code`, `order_code`, `u_id`),
+                KEY `idx_lp_order_status` (`lc_status`),
+                KEY `idx_lp_order_raw_status` (`raw_status`),
+                KEY `idx_lp_order_occurred` (`occurred_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_orders 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $status_logs = lc_table('lp_order_status_logs');
+        if (!lc_db_table_exists($status_logs)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$status_logs}` (
+                `lpsl_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `lpo_id` bigint unsigned NOT NULL DEFAULT 0,
+                `from_status` varchar(20) NOT NULL DEFAULT '',
+                `to_status` varchar(20) NOT NULL DEFAULT '',
+                `from_commission` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `to_commission` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `reason` varchar(500) NOT NULL DEFAULT '',
+                `raw_json` mediumtext,
+                `changed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpsl_id`),
+                KEY `idx_lp_status_lpo` (`lpo_id`),
+                KEY `idx_lp_status_changed` (`changed_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_order_status_logs 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $sync_logs = lc_table('lp_sync_logs');
+        if (!lc_db_table_exists($sync_logs)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$sync_logs}` (
+                `lps_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `sync_type` varchar(30) NOT NULL DEFAULT '',
+                `request_url` varchar(1000) NOT NULL DEFAULT '',
+                `request_body` mediumtext,
+                `response_code` int NOT NULL DEFAULT 0,
+                `response_body` mediumtext,
+                `success` tinyint(1) NOT NULL DEFAULT 0,
+                `processed_count` int NOT NULL DEFAULT 0,
+                `error_message` varchar(500) NOT NULL DEFAULT '',
+                `started_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `finished_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`lps_id`),
+                KEY `idx_lp_sync_type` (`sync_type`),
+                KEY `idx_lp_sync_started` (`started_at`),
+                KEY `idx_lp_sync_success` (`success`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_sync_logs 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        $ledger = lc_table('lp_ledger');
+        if (!lc_db_table_exists($ledger)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$ledger}` (
+                `lpl_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `lpo_id` bigint unsigned NOT NULL DEFAULT 0,
+                `entry_type` varchar(20) NOT NULL DEFAULT '',
+                `amount` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `balance_after` decimal(14,2) NOT NULL DEFAULT 0.00,
+                `idempotency_key` varchar(80) NOT NULL DEFAULT '',
+                `memo` varchar(500) NOT NULL DEFAULT '',
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpl_id`),
+                UNIQUE KEY `uk_lp_ledger_idem` (`idempotency_key`),
+                KEY `idx_lp_ledger_pt` (`pt_id`),
+                KEY `idx_lp_ledger_lpo` (`lpo_id`),
+                KEY `idx_lp_ledger_type` (`entry_type`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_ledger 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        // 기본 LINKPRICE 네트워크 행 시드
+        $row = lc_sql_fetch(" SELECT network_id FROM `{$networks}` WHERE network_code = 'LINKPRICE' LIMIT 1 ", false);
+        if (!$row) {
+            lc_sql_query(" INSERT INTO `{$networks}` SET
+                network_code = 'LINKPRICE',
+                network_name = '링크프라이스',
+                api_enabled = 0,
+                default_partner_rate = 70.00,
+                created_at = NOW(),
+                updated_at = NOW() ", false);
+        }
+
+        return array('ok' => true, 'message' => '링크프라이스 CPS 스키마 준비 완료');
     }
 }
