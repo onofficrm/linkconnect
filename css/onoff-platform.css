@@ -498,9 +498,12 @@
   text-align: left;
 }
 
-.onoff-platform #fregister section {
-  border-radius: var(--onoff-radius-sm);
-  border-color: var(--icrm-border, #e4e4e7);
+.onoff-platform #fregister section,
+.onoff-platform .register_form_inner {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .onoff-platform .profile_tbl {
@@ -667,6 +670,223 @@
   color: #0e7490;
 }
 
+/* LinkConnect 회원가입 — 섹션 박스 제거, 여백·구분선 중심 */
+.onoff-platform--linkconnect .register_form_inner,
+.onoff-platform--linkconnect #fregister section {
+  margin: 0;
+  padding: 26px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.onoff-platform--linkconnect .register_form_inner + .register_form_inner,
+.onoff-platform--linkconnect #fregister section + section {
+  border-top: 1px solid #eef2f7;
+}
+
+.onoff-platform--linkconnect #register_form h2,
+.onoff-platform--linkconnect #fregister h2 {
+  margin: 0 0 18px;
+  padding: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.onoff-platform--linkconnect .register_form_inner ul {
+  gap: 18px;
+}
+
+.onoff-platform--linkconnect .register_form_inner label {
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.onoff-platform--linkconnect .register .btn_confirm {
+  margin-top: 4px;
+  padding-top: 24px;
+  border-top: 1px solid #eef2f7;
+}
+
+/* 회원가입 완료 */
+.onoff-platform .onoff-reg-result {
+  text-align: center;
+}
+
+.onoff-platform .onoff-reg-result .onoff-platform__brand {
+  margin-bottom: 8px;
+}
+
+.onoff-platform .onoff-reg-result__hero {
+  padding: 8px 0 28px;
+}
+
+.onoff-platform .onoff-reg-result__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.onoff-platform .onoff-reg-result__title {
+  margin: 0 0 12px;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.onoff-platform .onoff-reg-result__title strong {
+  color: #059669;
+  font-weight: 800;
+}
+
+.onoff-platform .onoff-reg-result__lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: #64748b;
+}
+
+.onoff-platform .onoff-reg-result__email {
+  margin: 0 0 24px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  text-align: left;
+}
+
+.onoff-platform .onoff-reg-result__email-note {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.onoff-platform .onoff-reg-result__meta {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.onoff-platform .onoff-reg-result__meta > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+}
+
+.onoff-platform .onoff-reg-result__meta dt {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.onoff-platform .onoff-reg-result__meta dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.onoff-platform .onoff-reg-result__hint {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.onoff-platform .onoff-reg-result__notes {
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.onoff-platform .onoff-reg-result__notes li {
+  position: relative;
+  margin: 0;
+  padding: 10px 0 10px 18px;
+  border-top: 1px solid #eef2f7;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.onoff-platform .onoff-reg-result__notes li:last-child {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.onoff-platform .onoff-reg-result__notes li:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.15em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22d3ee;
+}
+
+.onoff-platform .onoff-reg-result__actions {
+  display: grid;
+  gap: 12px;
+}
+
+.onoff-platform .onoff-reg-result__primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  text-decoration: none;
+}
+
+.onoff-platform .onoff-reg-result__secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.onoff-platform .onoff-reg-result__secondary .onoff-platform__outline-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+}
+
+.onoff-platform .onoff-reg-result__home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.onoff-platform .onoff-reg-result__home:hover {
+  color: #0e7490;
+}
+
 @media (max-width: 767px) {
   .onoff-platform--linkconnect.onoff-platform--member {
     padding: 0 14px 24px;
@@ -679,5 +899,13 @@
 
   .onoff-platform--linkconnect .onoff-platform__top-text {
     font-size: 1.15rem;
+  }
+
+  .onoff-platform .onoff-reg-result__title {
+    font-size: 1.35rem;
+  }
+
+  .onoff-platform .onoff-reg-result__secondary {
+    grid-template-columns: 1fr;
   }
 }
