@@ -9,7 +9,8 @@ const defaultRaw: RawSettings = {
   siteName: '링크커넥트',
   siteStatus: 'active',
   adminEmail: 'admin@linkconnect.com',
-  supportPhone: '1588-0000',
+  supportEmail: 'support@linkconnect.co.kr',
+  supportPhone: '070-8098-6824',
   duplicateDays: '30',
   merchantProcessDays: '7',
   minChargeAmount: '500000',
@@ -77,6 +78,7 @@ export function AdminSettings() {
           siteName: raw.siteName,
           siteStatus: raw.siteStatus,
           adminEmail: raw.adminEmail,
+          supportEmail: raw.supportEmail,
           supportPhone: raw.supportPhone,
           timezone: raw.timezone || 'Asia/Seoul',
         },
@@ -188,6 +190,7 @@ export function AdminSettings() {
             <Field label="서비스명" value={raw.siteName} onChange={(v) => update('siteName', v)} />
             <SelectField label="플랫폼 운영 상태" value={raw.siteStatus} onChange={(v) => update('siteStatus', v)} options={[['active', '정상 운영'], ['maintenance', '점검 중']]} />
             <Field label="관리자 이메일" value={raw.adminEmail} onChange={(v) => update('adminEmail', v)} />
+            <Field label="고객센터 이메일" value={raw.supportEmail} onChange={(v) => update('supportEmail', v)} />
             <Field label="고객센터 연락처" value={raw.supportPhone} onChange={(v) => update('supportPhone', v)} />
           </div>
         </section>

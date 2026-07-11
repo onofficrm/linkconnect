@@ -215,6 +215,13 @@ if (!function_exists('lc_site_desc')) {
 if (!function_exists('lc_contact_email')) {
     function lc_contact_email()
     {
+        if (function_exists('lc_settings_get')) {
+            $email = trim((string) lc_settings_get('supportEmail', ''));
+            if ($email !== '') {
+                return $email;
+            }
+        }
+
         if (function_exists('g5site_cfg')) {
             $email = g5site_cfg('email', '');
             if ($email !== '') {
@@ -222,13 +229,20 @@ if (!function_exists('lc_contact_email')) {
             }
         }
 
-        return 'support@linkconnect.com';
+        return 'support@linkconnect.co.kr';
     }
 }
 
 if (!function_exists('lc_contact_phone')) {
     function lc_contact_phone()
     {
+        if (function_exists('lc_settings_get')) {
+            $phone = trim((string) lc_settings_get('supportPhone', ''));
+            if ($phone !== '') {
+                return $phone;
+            }
+        }
+
         if (function_exists('g5site_cfg')) {
             $phone = g5site_cfg('phone', '');
             if ($phone !== '') {
@@ -236,7 +250,7 @@ if (!function_exists('lc_contact_phone')) {
             }
         }
 
-        return '1588-0000';
+        return '070-8098-6824';
     }
 }
 
