@@ -242,11 +242,17 @@ if (!function_exists('onoff_platform_member_top_bar')) {
 }
 
 if (!function_exists('onoff_platform_member_brand')) {
-    /** 로그인·가입·정보수정 상단 히어로 */
-    function onoff_platform_member_brand($page_label = '')
+    /**
+     * 로그인·가입·정보수정 상단
+     *
+     * @param string $page_label
+     * @param array{compact?:bool} $options compact=true 이면 큰 제목 숨김 (탭과 중복 방지)
+     */
+    function onoff_platform_member_brand($page_label = '', $options = array())
     {
         global $g5;
 
+        $compact = !empty($options['compact']);
         $brand = onoff_platform_homepage_title();
         $center = onoff_platform_member_center_meta();
         $label = trim((string) $page_label);
@@ -261,26 +267,24 @@ if (!function_exists('onoff_platform_member_brand')) {
         $home = defined('G5_URL') ? rtrim(G5_URL, '/') . '/' : '/';
         $is_lc = onoff_platform_is_linkconnect();
 
-        echo '<header class="onoff-platform__hero' . ($is_lc ? ' onoff-platform__hero--lc' : '') . '">';
-        if ($is_lc) {
-            echo '<div class="onoff-platform__hero-bg" aria-hidden="true"></div>';
-        }
-
+        echo '<header class="onoff-platform__hero' . ($is_lc ? ' onoff-platform__hero--lc' : '') . ($compact ? ' onoff-platform__hero--compact' : '') . '">';
         echo '<div class="onoff-platform__hero-inner">';
+
+        echo '<p class="onoff-platform__eyebrow">' . htmlspecialchars($center['eyebrow'], ENT_QUOTES, 'UTF-8') . '</p>';
+
         if ($is_lc) {
             echo '<a href="' . htmlspecialchars($home, ENT_QUOTES, 'UTF-8') . '" class="onoff-platform__hero-home">';
             echo '<span class="onoff-platform__hero-mark" aria-hidden="true">';
-            echo '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            echo '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
             echo '</span>';
             echo '<span class="onoff-platform__hero-brand">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</span>';
             echo '</a>';
+        } else {
+            echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
         }
 
-        echo '<p class="onoff-platform__eyebrow">' . htmlspecialchars($center['eyebrow'], ENT_QUOTES, 'UTF-8') . '</p>';
-        echo '<h1 class="onoff-platform__page-title">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</h1>';
-
-        if (!$is_lc) {
-            echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
+        if (!$compact) {
+            echo '<h1 class="onoff-platform__page-title">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</h1>';
         }
 
         if ($hint !== '') {

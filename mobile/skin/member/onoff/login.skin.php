@@ -10,7 +10,7 @@ onoff_platform_member_styles($member_skin_url);
 <?php onoff_platform_member_top_bar(); ?>
 <div id="mb_login" class="mbskin onoff-platform__card">
     <div class="mbskin_box">
-        <?php onoff_platform_member_brand('로그인'); ?>
+        <?php onoff_platform_member_brand('로그인', array('compact' => onoff_platform_is_linkconnect())); ?>
         <?php onoff_platform_member_tabs('login'); ?>
         <form name="flogin" action="<?php echo $login_action_url ?>" onsubmit="return flogin_submit(this);" method="post">
         <input type="hidden" name="url" value="<?php echo $login_url ?>">
@@ -34,7 +34,9 @@ onoff_platform_member_styles($member_skin_url);
             </div>
         </fieldset> 
         </form>
+        <?php if (!onoff_platform_is_linkconnect()) { ?>
         <a href="<?php echo G5_BBS_URL ?>/register.php" class="onoff-platform__outline-btn">회원가입</a>
+        <?php } ?>
         <?php @include_once(get_social_skin_path().'/social_login.skin.php'); // 소셜로그인 사용시 소셜로그인 버튼 ?>
     </div>
 

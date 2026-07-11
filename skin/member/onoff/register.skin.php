@@ -9,7 +9,7 @@ onoff_platform_member_styles($member_skin_url);
 <div class="<?php echo onoff_platform_member_shell_class(); ?>">
 <?php onoff_platform_member_top_bar(); ?>
 <div class="register onoff-platform__card">
-    <?php onoff_platform_member_brand('회원가입'); ?>
+    <?php onoff_platform_member_brand('회원가입', array('compact' => onoff_platform_is_linkconnect())); ?>
     <?php onoff_platform_member_tabs('register'); ?>
 
     <form  name="fregister" id="fregister" action="<?php echo $register_action_url ?>" onsubmit="return fregister_submit(this);" method="POST" autocomplete="off">
