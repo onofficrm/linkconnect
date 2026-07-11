@@ -6,6 +6,10 @@ import { Database, CheckCircle2, Clock, XCircle, Search, Filter, Download, Alert
 
 const fallbackDbData: MerchantConversion[] = [];
 
+function formatPrice(value: number | null | undefined) {
+  return Number(value ?? 0).toLocaleString();
+}
+
 export function AdvertiserDb() {
   const [rows, setRows] = useState<MerchantConversion[]>(fallbackDbData);
   const [summary, setSummary] = useState({ pending: 9, needsAction: 9, todaySpend: 300000 });
@@ -266,8 +270,8 @@ export function AdvertiserDb() {
                   <td className="px-4 py-4 text-center whitespace-nowrap">
                     <StatusBadge status={db.status} />
                   </td>
-                  <td className={`px-4 py-4 text-right font-medium whitespace-nowrap ${db.price > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {db.price.toLocaleString()}원
+                  <td className={`px-4 py-4 text-right font-medium whitespace-nowrap ${(db.price ?? 0) > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
+                    {formatPrice(db.price)}원
                   </td>
                   <td className="px-4 py-4 text-center whitespace-nowrap">
                     <button className={`p-1.5 rounded-lg transition-colors ${db.comment ? 'text-cyan-600 bg-cyan-50 hover:bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`} title={db.comment || '코멘트 작성'} onClick={(e) => { e.stopPropagation(); handleOpenDetail(db); }}>
@@ -329,7 +333,7 @@ export function AdvertiserDb() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">차감액</span>
-                  <span className="font-bold text-slate-900">{db.price.toLocaleString()}원</span>
+                  <span className="font-bold text-slate-900">{formatPrice(db.price)}원</span>
                 </div>
               </div>
 
@@ -408,8 +412,8 @@ export function AdvertiserDb() {
                 </div>
                 <div className="md:text-right">
                   <div className="text-sm text-slate-500 mb-1">광고비 차감액</div>
-                  <div className={`text-2xl font-bold ${selectedDb.price > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {selectedDb.price.toLocaleString()}원
+                  <div className={`text-2xl font-bold ${(selectedDb.price ?? 0) > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
+                    {formatPrice(selectedDb.price)}원
                   </div>
                 </div>
               </div>
@@ -461,14 +465,18 @@ export function AdvertiserDb() {
                   </div>
                   <div className="md:col-span-2">
                     <div className="text-slate-400 mb-1">랜딩 URL</div>
-                    <a href={selectedDb.landingUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
-                      {selectedDb.landingUrl}
-                    </a>
+                    {selectedDb.landingUrl ? (
+                      <a href={selectedDb.landingUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
+                        {selectedDb.landingUrl}
+                      </a>
+                    ) : (
+                      <span className="text-slate-500">-</span>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <div className="text-slate-400 mb-1">유입경로 (Referer)</div>
-                    <div className="text-slate-600 text-xs break-all truncate" title={selectedDb.referer}>
-                      {selectedDb.referer}
+                    <div className="text-slate-600 text-xs break-all" title={selectedDb.referer || ''}>
+                      {selectedDb.referer || '-'}
                     </div>
                   </div>
                   <div className="md:col-span-2 bg-slate-50 p-3 rounded-lg grid grid-cols-3 gap-3">
@@ -504,15 +512,15 @@ export function AdvertiserDb() {
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="text-slate-400">디비당 차감 단가</div>
-                    <div className="font-bold text-slate-900">{selectedDb.price.toLocaleString()}원</div>
+                    <div className="font-bold text-slate-900">{formatPrice(selectedDb.price)}원</div>
                   </div>
                   <div className="pt-3 border-t border-slate-100">
                     <div className="text-slate-400 mb-1 text-xs">승인 기준</div>
-                    <div className="font-medium text-cyan-700 bg-cyan-50 p-2 rounded text-xs">{selectedDb.approvalCriteria}</div>
+                    <div className="font-medium text-cyan-700 bg-cyan-50 p-2 rounded text-xs">{selectedDb.approvalCriteria || '상담 가능 고객은 승인 처리해 주세요.'}</div>
                   </div>
                   <div>
                     <div className="text-slate-400 mb-1 text-xs">취소 기준</div>
-                    <div className="font-medium text-red-700 bg-red-50 p-2 rounded text-xs">{selectedDb.cancelCriteria}</div>
+                    <div className="font-medium text-red-700 bg-red-50 p-2 rounded text-xs">{selectedDb.cancelCriteria || '연락불가, 중복, 조건불일치 등은 취소/무효 처리할 수 있습니다.'}</div>
                   </div>
                 </div>
               </div>
@@ -524,7 +532,7 @@ export function AdvertiserDb() {
                 </div>
                 <div className="p-5">
                   <div className="relative border-l border-slate-200 ml-3 space-y-6">
-                    {selectedDb.history.map((h: any, i: number) => (
+                    {(selectedDb.history ?? []).map((h, i) => (
                       <div key={i} className="relative pl-6">
                         <div className="absolute w-3 h-3 bg-white border-2 border-slate-300 rounded-full -left-[6.5px] top-1"></div>
                         <div className="text-xs text-slate-400 font-mono mb-0.5">{h.time}</div>
@@ -544,7 +552,7 @@ export function AdvertiserDb() {
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-slate-500 font-medium text-xs">광고주 코멘트</span>
-                      {selectedDb.partnerPublic && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">파트너 공개됨</span>}
+                      {selectedDb.partnerPublic ? <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold">파트너 공개됨</span> : null}
                     </div>
                     <div className="bg-slate-50 border border-slate-100 p-3 rounded-lg text-slate-700">
                       {selectedDb.comment || <span className="text-slate-400 italic">등록된 코멘트가 없습니다.</span>}
@@ -611,7 +619,7 @@ export function AdvertiserDb() {
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-slate-200">
                   <span className="text-slate-500">광고비 차감액</span>
-                  <span className="font-bold text-lg text-slate-900">{selectedDb.price.toLocaleString()}원</span>
+                  <span className="font-bold text-lg text-slate-900">{formatPrice(selectedDb.price)}원</span>
                 </div>
               </div>
 

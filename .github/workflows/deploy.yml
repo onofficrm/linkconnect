@@ -76,6 +76,9 @@ jobs:
             cp plugin/linkconnect/partner/api/*.php "$ROOT/plugin/linkconnect/partner/api/" 2>/dev/null || true
           fi
           cp plugin/linkconnect/merchant/api/apply.php "$ROOT/plugin/linkconnect/merchant/api/"
+          if [[ -d plugin/linkconnect/merchant/api ]]; then
+            cp plugin/linkconnect/merchant/api/*.php "$ROOT/plugin/linkconnect/merchant/api/" 2>/dev/null || true
+          fi
           cp plugin/linkconnect/admin/api/_common.php plugin/linkconnect/admin/api/linkprice.php "$ROOT/plugin/linkconnect/admin/api/"
           if [[ -d plugin/linkconnect/admin/api ]]; then
             cp plugin/linkconnect/admin/api/*.php "$ROOT/plugin/linkconnect/admin/api/" 2>/dev/null || true

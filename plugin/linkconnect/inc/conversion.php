@@ -29,6 +29,46 @@ if (!function_exists('lc_conversion_mask_phone')) {
     }
 }
 
+if (!function_exists('lc_conversion_format_phone')) {
+    function lc_conversion_format_phone($phone)
+    {
+        $digits = preg_replace('/[^0-9]/', '', (string) $phone);
+        if (strlen($digits) === 11) {
+            return substr($digits, 0, 3) . '-' . substr($digits, 3, 4) . '-' . substr($digits, 7);
+        }
+        if (strlen($digits) === 10) {
+            return substr($digits, 0, 3) . '-' . substr($digits, 3, 3) . '-' . substr($digits, 6);
+        }
+
+        return trim((string) $phone);
+    }
+}
+
+if (!function_exists('lc_conversion_merchant_history')) {
+    function lc_conversion_merchant_history(array $row)
+    {
+        $history = array();
+        $created = (string) ($row['cv_created_at'] ?? '');
+        if ($created !== '') {
+            $history[] = array(
+                'time' => date('Y.m.d H:i', strtotime($created)),
+                'text' => '신규 디비 접수',
+            );
+        }
+
+        $status = (string) ($row['cv_status'] ?? '');
+        $updated = (string) ($row['cv_updated_at'] ?? '');
+        if ($updated !== '' && $updated !== $created && $status !== LC_STATUS_PENDING) {
+            $history[] = array(
+                'time' => date('Y.m.d H:i', strtotime($updated)),
+                'text' => lc_conversion_status_label($status) . ' 처리',
+            );
+        }
+
+        return $history;
+    }
+}
+
 if (!function_exists('lc_conversion_needs_action')) {
     function lc_conversion_needs_action($status)
     {
@@ -104,10 +144,14 @@ if (!function_exists('lc_conversion_list_for_merchant')) {
             $where .= " AND cv.cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' ";
         }
 
-        $sql = " SELECT cv.*, c.cp_name, p.pt_code
+        $sql = " SELECT cv.*, c.cp_name, c.cp_landing_url, p.pt_code, lk.lk_code,
+            (SELECT cl.cl_referer FROM `" . lc_table('clicks') . "` cl
+                WHERE cl.lk_id = cv.lk_id AND cl.lk_id > 0
+                ORDER BY cl.cl_id DESC LIMIT 1) AS cl_referer
             FROM `{$cv_table}` cv
             INNER JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
             LEFT JOIN `{$pt_table}` p ON p.pt_id = cv.pt_id
+            LEFT JOIN `" . lc_table('links') . "` lk ON lk.lk_id = cv.lk_id
             WHERE {$where}
             ORDER BY cv.cv_id DESC
             LIMIT 200 ";
@@ -125,9 +169,16 @@ if (!function_exists('lc_conversion_list_for_merchant')) {
 }
 
 if (!function_exists('lc_conversion_to_api_merchant')) {
-    function lc_conversion_to_api_merchant(array $row, $mask_phone = true)
+    function lc_conversion_to_api_merchant(array $row, $mask_phone = false)
     {
         $status = (string) $row['cv_status'];
+        $raw_phone = (string) ($row['cv_phone'] ?? '');
+        $phone = $mask_phone ? lc_conversion_mask_phone($raw_phone) : lc_conversion_format_phone($raw_phone);
+        $lk_code = trim((string) ($row['lk_code'] ?? ''));
+        $landing_url = trim((string) ($row['cp_landing_url'] ?? ''));
+        if ($landing_url === '' && $lk_code !== '' && function_exists('lc_landing_public_url')) {
+            $landing_url = lc_landing_public_url($lk_code);
+        }
 
         return array(
             'id'          => (string) $row['cv_code'],
@@ -135,7 +186,7 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             'date'        => date('Y.m.d H:i', strtotime($row['cv_created_at'])),
             'campaign'    => (string) ($row['cp_name'] ?? ''),
             'name'        => (string) $row['cv_name'],
-            'phone'       => $mask_phone ? lc_conversion_mask_phone($row['cv_phone']) : (string) $row['cv_phone'],
+            'phone'       => $phone,
             'email'       => (string) ($row['cv_email'] ?? ''),
             'region'      => (string) ($row['cv_region'] ?? ''),
             'inquiry'     => (string) ($row['cv_inquiry'] ?? ''),
@@ -150,6 +201,16 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             'qualityScore'=> (int) ($row['cv_quality_score'] ?? 0),
             'qualityTags' => lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? ''),
             'partnerVisible' => !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1,
+            'landingUrl'  => $landing_url,
+            'referer'     => (string) ($row['cl_referer'] ?? ''),
+            'utmSource'   => '',
+            'utmMedium'   => '',
+            'utmCampaign' => (string) ($row['cv_sub_id'] ?? ''),
+            'approvalCriteria' => '상담 가능 고객은 승인 처리해 주세요.',
+            'cancelCriteria'   => '연락불가, 중복, 조건불일치, 장난/허위 접수는 취소/무효 처리할 수 있습니다.',
+            'adminComment'     => '',
+            'partnerPublic'    => !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1,
+            'history'     => lc_conversion_merchant_history($row),
         );
     }
 }
@@ -160,7 +221,9 @@ if (!function_exists('lc_conversion_list_for_api')) {
         if (lc_db_installed()) {
             $rows = lc_conversion_list_for_merchant($mt_id, $filters);
 
-            return array_map('lc_conversion_to_api_merchant', $rows);
+            return array_map(function ($row) {
+                return lc_conversion_to_api_merchant($row, false);
+            }, $rows);
         }
 
         if (!function_exists('lc_sample_merchant_dbs')) {
@@ -188,7 +251,7 @@ if (!function_exists('lc_conversion_list_for_api')) {
                 'date'        => (string) $row['date'],
                 'campaign'    => (string) $row['campaign'],
                 'name'        => (string) $row['name'],
-                'phone'       => lc_conversion_mask_phone($row['phone']),
+                'phone'       => lc_conversion_format_phone($row['phone']),
                 'email'       => (string) ($row['email'] ?? ''),
                 'region'      => (string) ($row['region'] ?? ''),
                 'inquiry'     => (string) ($row['inquiry'] ?? ''),
@@ -200,6 +263,16 @@ if (!function_exists('lc_conversion_list_for_api')) {
                 'needsAction' => !empty($row['needs_action']),
                 'channel'     => (string) ($row['channel'] ?? ''),
                 'subId'       => (string) ($row['sub_id'] ?? ''),
+                'landingUrl'  => (string) ($row['landing'] ?? ''),
+                'referer'     => (string) ($row['referer'] ?? ''),
+                'utmSource'   => '',
+                'utmMedium'   => '',
+                'utmCampaign' => (string) ($row['sub_id'] ?? ''),
+                'approvalCriteria' => '상담 가능 고객은 승인 처리해 주세요.',
+                'cancelCriteria'   => '연락불가, 중복, 조건불일치, 장난/허위 접수는 취소/무효 처리할 수 있습니다.',
+                'adminComment'     => '',
+                'partnerPublic'    => true,
+                'history'     => isset($row['history']) && is_array($row['history']) ? $row['history'] : array(),
             );
         }
 

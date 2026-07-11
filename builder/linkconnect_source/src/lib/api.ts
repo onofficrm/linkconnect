@@ -360,6 +360,16 @@ export type MerchantConversion = {
   qualityScore?: number;
   qualityTags?: string[];
   partnerVisible?: boolean;
+  landingUrl?: string;
+  referer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  approvalCriteria?: string;
+  cancelCriteria?: string;
+  adminComment?: string;
+  partnerPublic?: boolean;
+  history?: Array<{ time: string; text: string }>;
 };
 
 export type MerchantDashboardResponse = {
