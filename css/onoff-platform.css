@@ -110,6 +110,57 @@
   text-align: center;
 }
 
+.onoff-platform__hero {
+  margin: 0 0 28px;
+  text-align: center;
+}
+
+.onoff-platform__hero-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.onoff-platform__hero-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.onoff-platform__hero-home:hover {
+  opacity: 0.88;
+}
+
+.onoff-platform__hero-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.18));
+  color: #0891b2;
+}
+
+.onoff-platform__hero-brand {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.onoff-platform__page-title {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  color: var(--onoff-ink);
+}
+
 .onoff-platform__brand:before {
   display: none;
 }
@@ -146,6 +197,14 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #7b8491;
+}
+
+.onoff-platform__brand-hint {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #64748b;
 }
 
 .onoff-platform__tabs {
@@ -559,8 +618,8 @@
 .onoff-platform--linkconnect.onoff-platform--member {
   max-width: 520px;
   min-height: 100vh;
-  padding: 0 20px 32px;
-  justify-content: flex-start;
+  padding: 28px 20px 32px;
+  justify-content: center;
 }
 
 .onoff-platform--linkconnect.onoff-platform--member:before {
@@ -574,77 +633,78 @@
   display: none;
 }
 
-.onoff-platform--linkconnect .onoff-platform__top--lc {
-  display: flex;
-  justify-content: center;
-  width: 100vw;
-  margin: 0 calc(50% - 50vw) 28px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(2, 6, 23, 0.92);
-  backdrop-filter: blur(12px);
+.onoff-platform--linkconnect .onoff-platform__card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
+  padding: 0 40px 40px;
+  overflow: hidden;
 }
 
-.onoff-platform--linkconnect .onoff-platform__top-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #fff;
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  text-decoration: none;
+.onoff-platform--linkconnect .onoff-platform__hero--lc {
+  margin: 0 -40px 30px;
+  padding: 34px 40px 28px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  background:
+    radial-gradient(circle at 85% 0%, rgba(6, 182, 212, 0.12), transparent 42%),
+    radial-gradient(circle at 10% 100%, rgba(16, 185, 129, 0.08), transparent 38%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
 }
 
-.onoff-platform--linkconnect .onoff-platform__top-link:before {
-  display: none;
+.onoff-platform--linkconnect .onoff-platform__hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.08) 50%, transparent);
+  opacity: 0.7;
 }
 
-.onoff-platform--linkconnect .onoff-platform__top-link:hover {
-  color: #22d3ee;
-  transform: none;
-  box-shadow: none;
+.onoff-platform--linkconnect .onoff-platform__hero--lc {
+  position: relative;
 }
 
-.onoff-platform--linkconnect .onoff-platform__top-icon {
-  display: inline-flex;
-  color: #22d3ee;
+.onoff-platform--linkconnect .onoff-platform__hero-home {
+  color: #0f172a;
 }
 
-.onoff-platform--linkconnect .onoff-platform__brand-lockup {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+.onoff-platform--linkconnect .onoff-platform__hero-home:hover {
+  color: #0891b2;
 }
 
-.onoff-platform--linkconnect .onoff-platform__brand-icon {
-  display: inline-flex;
-  color: #22d3ee;
+.onoff-platform--linkconnect .onoff-platform__hero-mark {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.16), rgba(16, 185, 129, 0.14));
+  color: #0891b2;
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.12);
 }
 
 .onoff-platform--linkconnect .onoff-platform__eyebrow {
-  border-color: rgba(6, 182, 212, 0.35);
-  background: rgba(6, 182, 212, 0.12);
-  color: #67e8f9;
-  letter-spacing: 0.16em;
+  border-color: rgba(6, 182, 212, 0.22);
+  background: rgba(255, 255, 255, 0.82);
+  color: #0e7490;
+  letter-spacing: 0.14em;
+  font-size: 0.7rem;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.onoff-platform--linkconnect .onoff-platform__page-title {
+  margin-top: 14px;
+  font-size: 2rem;
+  color: #0f172a;
 }
 
 .onoff-platform--linkconnect .onoff-platform__brand-hint {
-  margin: 8px 0 0;
-  font-size: 0.88rem;
-  font-weight: 600;
+  max-width: 22rem;
+  margin-left: auto;
+  margin-right: auto;
   color: #64748b;
+  font-size: 0.9rem;
 }
 
-.onoff-platform--linkconnect .onoff-platform__card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
+.onoff-platform--linkconnect .onoff-platform__card:before {
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 0;
+  background: linear-gradient(90deg, #10b981, #06b6d4, #22d3ee);
 }
 
 .onoff-platform--linkconnect .onoff-platform__tabs {
@@ -718,6 +778,7 @@
   text-align: center;
 }
 
+.onoff-platform .onoff-reg-result .onoff-platform__hero,
 .onoff-platform .onoff-reg-result .onoff-platform__brand {
   margin-bottom: 8px;
 }
@@ -889,16 +950,20 @@
 
 @media (max-width: 767px) {
   .onoff-platform--linkconnect.onoff-platform--member {
-    padding: 0 14px 24px;
+    padding: 16px 14px 24px;
   }
 
-  .onoff-platform--linkconnect .onoff-platform__top--lc {
-    margin-bottom: 20px;
-    padding: 14px 16px;
+  .onoff-platform--linkconnect .onoff-platform__card {
+    padding: 0 22px 28px;
   }
 
-  .onoff-platform--linkconnect .onoff-platform__top-text {
-    font-size: 1.15rem;
+  .onoff-platform--linkconnect .onoff-platform__hero--lc {
+    margin: 0 -22px 24px;
+    padding: 28px 22px 22px;
+  }
+
+  .onoff-platform--linkconnect .onoff-platform__page-title {
+    font-size: 1.65rem;
   }
 
   .onoff-platform .onoff-reg-result__title {

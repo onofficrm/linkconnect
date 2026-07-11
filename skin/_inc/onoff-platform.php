@@ -197,11 +197,33 @@ if (!function_exists('onoff_platform_member_center_meta')) {
     }
 }
 
+if (!function_exists('onoff_platform_member_page_hint')) {
+    /**
+     * 페이지별 부제 (센터 힌트보다 우선)
+     */
+    function onoff_platform_member_page_hint($page_label, $fallback = '')
+    {
+        $label = trim((string) $page_label);
+        $hints = array(
+            '회원가입'           => '약관에 동의한 뒤 회원 정보를 입력해 주세요',
+            '정보수정'           => '변경할 항목만 수정하셔도 됩니다',
+            '가입 완료'          => '가입이 완료되었습니다. 아래에서 센터로 이동하세요',
+            '아이디/비밀번호 찾기' => '가입 시 등록한 정보로 계정을 찾을 수 있습니다',
+        );
+
+        if ($label === '로그인' || $label === '') {
+            return trim((string) $fallback);
+        }
+
+        return isset($hints[$label]) ? $hints[$label] : trim((string) $fallback);
+    }
+}
+
 if (!function_exists('onoff_platform_member_top_bar')) {
-    /** 회원 화면 상단 — LinkConnect 홈 헤더 톤 */
+    /** 회원 화면 상단 — LinkConnect는 카드 히어로에 브랜드를 통합 */
     function onoff_platform_member_top_bar()
     {
-        if (!onoff_platform_is_linkconnect()) {
+        if (onoff_platform_is_linkconnect()) {
             return;
         }
 
@@ -220,7 +242,7 @@ if (!function_exists('onoff_platform_member_top_bar')) {
 }
 
 if (!function_exists('onoff_platform_member_brand')) {
-    /** 로그인 박스 내 사이트명 + 페이지 부제 */
+    /** 로그인·가입·정보수정 상단 히어로 */
     function onoff_platform_member_brand($page_label = '')
     {
         global $g5;
@@ -235,23 +257,38 @@ if (!function_exists('onoff_platform_member_brand')) {
             $label = '로그인';
         }
 
-        echo '<div class="onoff-platform__brand">';
-        echo '<p class="onoff-platform__eyebrow">' . htmlspecialchars($center['eyebrow'], ENT_QUOTES, 'UTF-8') . '</p>';
-        if (onoff_platform_is_linkconnect()) {
-            echo '<div class="onoff-platform__brand-lockup">';
-            echo '<span class="onoff-platform__brand-icon" aria-hidden="true">';
-            echo '<svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+        $hint = onoff_platform_member_page_hint($label, $center['hint']);
+        $home = defined('G5_URL') ? rtrim(G5_URL, '/') . '/' : '/';
+        $is_lc = onoff_platform_is_linkconnect();
+
+        echo '<header class="onoff-platform__hero' . ($is_lc ? ' onoff-platform__hero--lc' : '') . '">';
+        if ($is_lc) {
+            echo '<div class="onoff-platform__hero-bg" aria-hidden="true"></div>';
+        }
+
+        echo '<div class="onoff-platform__hero-inner">';
+        if ($is_lc) {
+            echo '<a href="' . htmlspecialchars($home, ENT_QUOTES, 'UTF-8') . '" class="onoff-platform__hero-home">';
+            echo '<span class="onoff-platform__hero-mark" aria-hidden="true">';
+            echo '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07l-.71-.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07l.71.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
             echo '</span>';
-            echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
-            echo '</div>';
-        } else {
+            echo '<span class="onoff-platform__hero-brand">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '</a>';
+        }
+
+        echo '<p class="onoff-platform__eyebrow">' . htmlspecialchars($center['eyebrow'], ENT_QUOTES, 'UTF-8') . '</p>';
+        echo '<h1 class="onoff-platform__page-title">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</h1>';
+
+        if (!$is_lc) {
             echo '<p class="onoff-platform__brand-name">' . htmlspecialchars($brand, ENT_QUOTES, 'UTF-8') . '</p>';
         }
-        echo '<p class="onoff-platform__page-label">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</p>';
-        if ($center['hint'] !== '') {
-            echo '<p class="onoff-platform__brand-hint">' . htmlspecialchars($center['hint'], ENT_QUOTES, 'UTF-8') . '</p>';
+
+        if ($hint !== '') {
+            echo '<p class="onoff-platform__brand-hint">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</p>';
         }
+
         echo '</div>';
+        echo '</header>';
     }
 }
 
