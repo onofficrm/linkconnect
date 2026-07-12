@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { canAccessAdmin, getLcAuth } from '../lib/auth';
-import { currentSpaReturnUrl, g5LoginUrl } from '../lib/urls';
+import { g5LoginUrl, spaReturnUrl } from '../lib/urls';
 
 export function AdminRouteGuard() {
   const auth = getLcAuth();
@@ -10,7 +10,7 @@ export function AdminRouteGuard() {
   useEffect(() => {
     if (!auth.loggedIn) {
       setRedirecting(true);
-      window.location.replace(g5LoginUrl(currentSpaReturnUrl('/admin')));
+      window.location.replace(g5LoginUrl(spaReturnUrl('/')));
     }
   }, [auth.loggedIn]);
 

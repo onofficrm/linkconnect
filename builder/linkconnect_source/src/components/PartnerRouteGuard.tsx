@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { applyPartner } from '../lib/api';
 import { canAccessPartnerCenter, getLcAuth } from '../lib/auth';
-import { currentSpaReturnUrl, g5LoginUrl } from '../lib/urls';
+import { g5LoginUrl, spaReturnUrl } from '../lib/urls';
 
 export function PartnerRouteGuard() {
   const auth = getLcAuth();
@@ -13,7 +13,7 @@ export function PartnerRouteGuard() {
   useEffect(() => {
     if (!auth.loggedIn) {
       setRedirecting(true);
-      window.location.replace(g5LoginUrl(currentSpaReturnUrl('/partner')));
+      window.location.replace(g5LoginUrl(spaReturnUrl('/')));
     }
   }, [auth.loggedIn]);
 
