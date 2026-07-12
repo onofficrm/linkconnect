@@ -158,6 +158,19 @@ export function shouldShowMerchantContractNotice(auth: LcAuth = getLcAuth()): bo
   return shouldEnforceMerchantContract(auth) && Boolean(auth.merchantContractRequires);
 }
 
+/** 광고주 CPA 계약 화면 경로 (미체결 → 작성, 체결·이력 → 열람) */
+export function getMerchantContractPath(auth: LcAuth = getLcAuth()): string {
+  if (shouldEnforceMerchantContract(auth) && auth.merchantContractViewable) {
+    return '/advertiser/contract/view';
+  }
+  return '/advertiser/contract';
+}
+
+/** 사이드바 CPA 계약 메뉴 표시 여부 */
+export function shouldShowMerchantContractMenu(auth: LcAuth = getLcAuth()): boolean {
+  return shouldEnforceMerchantContract(auth);
+}
+
 export async function refreshLcAuthFromServer(): Promise<LcAuth> {
   const { fetchMerchantMe } = await import('./api');
   const data = await fetchMerchantMe();

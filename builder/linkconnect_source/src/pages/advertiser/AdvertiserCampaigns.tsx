@@ -1,15 +1,20 @@
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
+import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
 import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, Wand2, Loader2, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchMerchantCampaigns, MerchantCampaign } from '../../lib/api';
+import { fetchMerchantCampaigns, MerchantCampaign, PartnerApiError } from '../../lib/api';
+import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
 
 export function AdvertiserCampaigns() {
+  const auth = getLcAuth();
+  const showContractNotice = shouldShowMerchantContractNotice(auth);
   const [campaigns, setCampaigns] = useState<MerchantCampaign[]>([]);
   const [summary, setSummary] = useState({ total: 0, active: 0, pending: 0, ended: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [contractRequired, setContractRequired] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
@@ -24,6 +29,12 @@ export function AdvertiserCampaigns() {
       })
       .catch((err) => {
         if (!cancelled) {
+          if (err instanceof PartnerApiError && err.code === 'CONTRACT_REQUIRED') {
+            setContractRequired(true);
+            setError('');
+            return;
+          }
+          setContractRequired(false);
           setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
         }
       })
@@ -67,6 +78,10 @@ export function AdvertiserCampaigns() {
           {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />} {isGenerating ? '생성 중...' : '지금 AI로 만들기'}
         </button>
       </div>
+
+      {showContractNotice ? <AdvertiserContractNotice /> : null}
+
+      {contractRequired ? <AdvertiserContractNotice /> : null}
 
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

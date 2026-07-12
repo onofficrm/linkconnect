@@ -68,7 +68,7 @@ export function AdvertiserContractView() {
 
   if (!auth.loggedIn) {
     return (
-      <AdvertiserLayout activeMenu="" title="계약정보">
+      <AdvertiserLayout activeMenu="contract" title="계약정보">
         <p className="text-slate-600">로그인 페이지로 이동 중...</p>
       </AdvertiserLayout>
     );
@@ -76,7 +76,7 @@ export function AdvertiserContractView() {
 
   if (!auth.isMerchant) {
     return (
-      <AdvertiserLayout activeMenu="" title="계약정보">
+      <AdvertiserLayout activeMenu="contract" title="계약정보">
         <div className="bg-white border border-slate-200 rounded-2xl p-6">
           <p className="text-slate-700">광고주 계정으로만 계약 정보를 열람할 수 있습니다.</p>
         </div>
@@ -90,7 +90,7 @@ export function AdvertiserContractView() {
 
   if (loading) {
     return (
-      <AdvertiserLayout activeMenu="" title="계약정보">
+      <AdvertiserLayout activeMenu="contract" title="계약정보">
         <div className="flex items-center gap-2 text-slate-600">
           <Loader2 className="animate-spin" size={18} />
           불러오는 중...
@@ -101,7 +101,7 @@ export function AdvertiserContractView() {
 
   if (error || !contract) {
     return (
-      <AdvertiserLayout activeMenu="" title="계약정보">
+      <AdvertiserLayout activeMenu="contract" title="계약정보">
         <div className="bg-white border border-slate-200 rounded-2xl p-6">
           <p className="text-slate-700">{error || '계약 정보가 없습니다.'}</p>
           <Link to="/advertiser/contract" className="inline-block mt-4 text-sm text-cyan-700 hover:underline">
@@ -113,7 +113,7 @@ export function AdvertiserContractView() {
   }
 
   return (
-    <AdvertiserLayout activeMenu="" title="계약정보" companyName={contract.companyName}>
+    <AdvertiserLayout activeMenu="contract" title="계약정보" companyName={contract.companyName}>
       <div className="max-w-5xl space-y-6">
         <p className="text-sm text-slate-500">
           체결된 계약서는 읽기 전용입니다. 계약 당시 기록된 정보를 표시하며, 현재 회원정보와 다를 수 있습니다.

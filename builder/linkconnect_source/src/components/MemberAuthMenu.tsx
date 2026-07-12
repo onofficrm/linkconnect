@@ -1,6 +1,6 @@
 import { User, UserCog, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getLcAuth, getMemberDisplayName, isLcLoggedIn } from '../lib/auth';
+import { getLcAuth, getMemberDisplayName, isLcLoggedIn, getMerchantContractPath, shouldShowMerchantContractMenu } from '../lib/auth';
 import {
   currentSpaReturnPath,
   currentSpaReturnUrl,
@@ -29,7 +29,9 @@ export function MemberAuthMenu({
   const showContractInfo =
     loggedIn &&
     logoutReturnPath === '/advertiser' &&
-    Boolean(auth.merchantContractApplies && auth.merchantContractViewable);
+    shouldShowMerchantContractMenu(auth);
+  const contractMenuPath = getMerchantContractPath(auth);
+  const contractMenuLabel = auth.merchantContractRequires ? 'CPA 계약 체결' : '계약정보';
   const loginUrl = g5LoginUrl(loginReturnUrl ?? currentSpaReturnUrl());
   const logoutUrl = g5LogoutUrl(logoutReturnPath ?? currentSpaReturnPath());
   const editUrl = g5MemberEditUrl();
@@ -134,11 +136,11 @@ export function MemberAuthMenu({
             </a>
             {showContractInfo ? (
               <Link
-                to="/advertiser/contract/view"
+                to={contractMenuPath}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
               >
                 <FileText size={20} />
-                <span>계약정보</span>
+                <span>{contractMenuLabel}</span>
               </Link>
             ) : null}
           </>
