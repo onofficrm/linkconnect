@@ -974,23 +974,82 @@ export function requestPartnerSettlement(payload: { amount: number; memo?: strin
   return partnerApiPost<{ message: string; settlement: PartnerSettlementItem | null; summary: PartnerSettlementSummary }>('settlements.php', payload);
 }
 
+export type PartnerAnalyticsFilters = {
+  period?: 7 | 30 | 90;
+  dateFrom?: string;
+  dateTo?: string;
+  linkId?: number;
+  channel?: string;
+  linkName?: string;
+  compareIds?: number[];
+};
+
+export type PartnerAnalyticsLinkRow = {
+  id: number;
+  code: string;
+  campaign: string;
+  channel: string;
+  linkName: string;
+  clicks: number;
+  received: number;
+  approved: number;
+  canceled: number;
+  convRate: number;
+  appRate: number;
+  epc: number;
+  confRev: number;
+};
+
 export type PartnerAnalyticsResponse = {
   summary: {
     totalClicks: number;
+    uniqueVisitors: number;
     totalDb: number;
     approvedDb: number;
     rejectedDb: number;
+    confRevenue: number;
     avgConvRate: number;
     avgApprovalRate: number;
+    epc: number;
   };
+  range: {
+    dateFrom: string;
+    dateTo: string;
+    period: number;
+  };
+  funnel: {
+    clicks: number;
+    received: number;
+    approved: number;
+    confirmed: number;
+  };
+  chart: Array<{ date: string; click: number; db: number; approval: number }>;
   chart7d: Array<{ date: string; click: number; db: number; approval: number }>;
   channels: Array<{ channel: string; clicks: number; dbs: number; approved: number; percentage: number }>;
+  linkNames: Array<{ linkName: string; channel: string; clicks: number; dbs: number; approved: number }>;
+  links: PartnerAnalyticsLinkRow[];
+  compareLinks: PartnerAnalyticsLinkRow[];
+  referrers: Array<{ domain: string; clicks: number; percentage: number }>;
+  devices: Array<{ device: string; deviceCode: string; clicks: number; percentage: number }>;
   campaigns: Array<{ campaign: string; clicks: number; received: number; approved: number; appRate: string; confRev: number }>;
+  filterOptions: {
+    links: Array<{ id: number; code: string; campaign: string; channel: string; linkName: string }>;
+    channels: string[];
+    linkNames: string[];
+  };
   dbReady: boolean;
 };
 
-export function fetchPartnerAnalytics() {
-  return partnerApiGet<PartnerAnalyticsResponse>('analytics.php');
+export function fetchPartnerAnalytics(filters?: PartnerAnalyticsFilters) {
+  const query: Record<string, string> = {};
+  if (filters?.period) query.period = String(filters.period);
+  if (filters?.dateFrom) query.dateFrom = filters.dateFrom;
+  if (filters?.dateTo) query.dateTo = filters.dateTo;
+  if (filters?.linkId) query.linkId = String(filters.linkId);
+  if (filters?.channel) query.channel = filters.channel;
+  if (filters?.linkName) query.linkName = filters.linkName;
+  if (filters?.compareIds?.length) query.compareIds = filters.compareIds.join(',');
+  return partnerApiGet<PartnerAnalyticsResponse>('analytics.php', query);
 }
 
 export type PartnerReportResponse = {

@@ -83,6 +83,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/event.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
     require_once LC_PLUGIN_PATH . '/inc/link.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/partner_analytics.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/partner_analytics.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/api.php')) {
     require_once LC_PLUGIN_PATH . '/inc/api.php';
 }
