@@ -178,7 +178,18 @@ if (!function_exists('lc_campaign_list_for_api')) {
                 return lc_campaign_cps_sample_for_api($filters);
             }
 
-            return array_map('lc_campaign_to_api', $rows);
+            $published = function_exists('lc_campaign_promo_guide_published_cp_id_set')
+                ? lc_campaign_promo_guide_published_cp_id_set(array_column($rows, 'cp_id'))
+                : array();
+
+            $items = array();
+            foreach ($rows as $row) {
+                $api = lc_campaign_to_api($row);
+                $api['hasPublishedGuide'] = !empty($published[(int) ($row['cp_id'] ?? 0)]);
+                $items[] = $api;
+            }
+
+            return $items;
         }
 
         if ($type === 'cps' && function_exists('lc_sample_cps_items')) {
@@ -506,7 +517,31 @@ if (!function_exists('lc_campaign_to_admin_api')) {
 if (!function_exists('lc_campaign_admin_for_api')) {
     function lc_campaign_admin_for_api(array $filters = array())
     {
-        return array_map('lc_campaign_to_admin_api', lc_campaign_list_admin($filters));
+        $rows = lc_campaign_list_admin($filters);
+        if (count($rows) === 0) {
+            return array();
+        }
+
+        $cp_ids = array();
+        foreach ($rows as $row) {
+            $cp_ids[] = (int) ($row['cp_id'] ?? 0);
+        }
+
+        $summaries = function_exists('lc_campaign_promo_guide_summaries_for_cp_ids')
+            ? lc_campaign_promo_guide_summaries_for_cp_ids($cp_ids)
+            : array();
+
+        $items = array();
+        foreach ($rows as $row) {
+            $api = lc_campaign_to_admin_api($row);
+            $cp_id = (int) ($row['cp_id'] ?? 0);
+            if (function_exists('lc_campaign_promo_guide_empty_summary')) {
+                $api['promoGuide'] = isset($summaries[$cp_id]) ? $summaries[$cp_id] : lc_campaign_promo_guide_empty_summary();
+            }
+            $items[] = $api;
+        }
+
+        return $items;
     }
 }
 

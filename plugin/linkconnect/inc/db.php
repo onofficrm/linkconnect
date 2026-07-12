@@ -157,6 +157,27 @@ if (!function_exists('lc_sql_escape')) {
     }
 }
 
+if (!function_exists('lc_sql_begin')) {
+    function lc_sql_begin()
+    {
+        return lc_sql_query('START TRANSACTION', false);
+    }
+}
+
+if (!function_exists('lc_sql_commit')) {
+    function lc_sql_commit()
+    {
+        return lc_sql_query('COMMIT', false);
+    }
+}
+
+if (!function_exists('lc_sql_rollback')) {
+    function lc_sql_rollback()
+    {
+        return lc_sql_query('ROLLBACK', false);
+    }
+}
+
 if (!function_exists('lc_db_table_exists')) {
     function lc_db_table_exists($table_name)
     {
@@ -213,6 +234,7 @@ if (!function_exists('lc_db_run_schema')) {
             lc_table('event_rewards'),
             lc_table('notifications'),
             lc_table('admin_logs'),
+            lc_table('merchant_contracts'),
         );
 
         $queries = array(
@@ -486,6 +508,8 @@ if (!function_exists('lc_db_run_schema')) {
                 KEY `idx_er_pt_id` (`pt_id`),
                 KEY `idx_er_status` (`er_status`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            lc_merchant_contract_create_table_sql(),
         );
 
         foreach ($queries as $sql) {
@@ -940,6 +964,32 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        // ── 광고주 CPA 계약서 (기존 merchants 테이블과 분리) ──
+        $mc = lc_merchant_contract_db_ensure_schema();
+        if (empty($mc['ok'])) {
+            return $mc;
+        }
+
+        $mc_logs = lc_merchant_contract_log_db_ensure_schema();
+        if (empty($mc_logs['ok'])) {
+            return $mc_logs;
+        }
+
+        if (function_exists('lc_merchant_contract_status_log_db_ensure_schema')) {
+            $mc_status_logs = lc_merchant_contract_status_log_db_ensure_schema();
+            if (empty($mc_status_logs['ok'])) {
+                return $mc_status_logs;
+            }
+        }
+
+        // ── 광고상품 홍보 가이드 (campaigns 테이블과 분리) ──
+        if (function_exists('lc_campaign_promo_guide_db_ensure_schema')) {
+            $cpg = lc_campaign_promo_guide_db_ensure_schema();
+            if (empty($cpg['ok'])) {
+                return $cpg;
+            }
+        }
+
         // ── 링크프라이스 CPS (CPA 테이블과 완전 분리) ──
         if (function_exists('lc_lp_db_ensure_schema')) {
             $lp = lc_lp_db_ensure_schema();
@@ -949,6 +999,110 @@ if (!function_exists('lc_db_run_migrations')) {
         }
 
         return array('ok' => true, 'message' => '마이그레이션 완료');
+    }
+}
+
+if (!function_exists('lc_merchant_contract_create_table_sql')) {
+    function lc_merchant_contract_create_table_sql()
+    {
+        $table = lc_table('merchant_contracts');
+
+        return "CREATE TABLE IF NOT EXISTS `{$table}` (
+                `mc_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `mc_mt_id` int unsigned NOT NULL DEFAULT 0,
+                `mc_contract_version` varchar(50) NOT NULL DEFAULT '',
+                `mc_contract_code` varchar(50) NOT NULL DEFAULT '',
+                `mc_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `mc_company_name` varchar(200) NOT NULL DEFAULT '',
+                `mc_representative_name` varchar(100) NOT NULL DEFAULT '',
+                `mc_business_number` varchar(20) NOT NULL DEFAULT '',
+                `mc_company_address` varchar(500) NOT NULL DEFAULT '',
+                `mc_company_phone` varchar(30) NOT NULL DEFAULT '',
+                `mc_signer_name` varchar(100) NOT NULL DEFAULT '',
+                `mc_signer_position` varchar(100) NOT NULL DEFAULT '',
+                `mc_signer_phone` varchar(30) NOT NULL DEFAULT '',
+                `mc_signer_email` varchar(200) NOT NULL DEFAULT '',
+                `mc_signature_file_path` varchar(500) NOT NULL DEFAULT '',
+                `mc_signed_at` datetime DEFAULT NULL,
+                `mc_signed_ip` varchar(45) NOT NULL DEFAULT '',
+                `mc_user_agent` varchar(500) NOT NULL DEFAULT '',
+                `mc_contract_pdf_path` varchar(500) NOT NULL DEFAULT '',
+                `mc_contract_file_hash` varchar(128) NOT NULL DEFAULT '',
+                `mc_company_snapshot` longtext,
+                `mc_contract_snapshot` longtext,
+                `mc_agreement_snapshot` longtext,
+                `mc_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `mc_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`mc_id`),
+                UNIQUE KEY `uk_mc_mt_version` (`mc_mt_id`, `mc_contract_version`),
+                KEY `idx_mc_contract_code` (`mc_contract_code`),
+                KEY `idx_mc_mt_id` (`mc_mt_id`),
+                KEY `idx_mc_status` (`mc_status`),
+                KEY `idx_mc_signed_at` (`mc_signed_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+    }
+}
+
+if (!function_exists('lc_merchant_contract_db_ensure_schema')) {
+    /**
+     * 광고주 계약 테이블 생성 (IF NOT EXISTS)
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_merchant_contract_db_ensure_schema()
+    {
+        $table = lc_table('merchant_contracts');
+        if (!lc_db_table_exists($table)) {
+            $create = lc_sql_query(lc_merchant_contract_create_table_sql(), false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'merchant_contracts 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
+        if (lc_db_table_exists($table) && !lc_db_column_exists($table, 'mc_contract_code')) {
+            $alter = lc_sql_query("ALTER TABLE `{$table}` ADD COLUMN `mc_contract_code` varchar(50) NOT NULL DEFAULT '' AFTER `mc_contract_version`, ADD KEY `idx_mc_contract_code` (`mc_contract_code`)", false);
+            if ($alter === false) {
+                return array('ok' => false, 'message' => 'merchant_contracts mc_contract_code 컬럼 추가 실패: ' . lc_sql_error());
+            }
+        }
+
+        return array('ok' => true, 'message' => 'merchant_contracts 테이블 준비 완료');
+    }
+}
+
+if (!function_exists('lc_merchant_contract_log_db_ensure_schema')) {
+    function lc_merchant_contract_log_db_ensure_schema()
+    {
+        $table = lc_table('merchant_contract_logs');
+        if (lc_db_table_exists($table)) {
+            return array('ok' => true, 'message' => 'merchant_contract_logs 테이블 준비 완료');
+        }
+
+        $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$table}` (
+                `mcl_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `mc_id` bigint unsigned NOT NULL DEFAULT 0,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `mcl_contract_code` varchar(50) NOT NULL DEFAULT '',
+                `mcl_contract_version` varchar(50) NOT NULL DEFAULT '',
+                `mcl_signed_at` datetime DEFAULT NULL,
+                `mcl_ip` varchar(45) NOT NULL DEFAULT '',
+                `mcl_user_agent` varchar(500) NOT NULL DEFAULT '',
+                `mcl_pdf_path` varchar(500) NOT NULL DEFAULT '',
+                `mcl_pdf_hash` varchar(128) NOT NULL DEFAULT '',
+                `mcl_result` varchar(20) NOT NULL DEFAULT 'success',
+                `mcl_message` varchar(500) NOT NULL DEFAULT '',
+                `mcl_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`mcl_id`),
+                KEY `idx_mcl_mt_id` (`mt_id`),
+                KEY `idx_mcl_mc_id` (`mc_id`),
+                KEY `idx_mcl_contract_code` (`mcl_contract_code`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+
+        if ($create === false) {
+            return array('ok' => false, 'message' => 'merchant_contract_logs 테이블 생성 실패: ' . lc_sql_error());
+        }
+
+        return array('ok' => true, 'message' => 'merchant_contract_logs 테이블 준비 완료');
     }
 }
 

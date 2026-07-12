@@ -26,6 +26,13 @@ export type LcAuth = {
   memberEmail: string | null;
   bbsUrl: string;
   dbReady: boolean;
+  merchantContractApplies?: boolean;
+  merchantContractSigned?: boolean;
+  merchantContractBlocked?: boolean;
+  merchantContractGraceActive?: boolean;
+  merchantContractRequires?: boolean;
+  merchantContractHasSignedHistory?: boolean;
+  merchantContractViewable?: boolean;
 };
 
 declare global {
@@ -62,6 +69,13 @@ const defaultAuth: LcAuth = {
   memberEmail: null,
   bbsUrl: '/bbs',
   dbReady: false,
+  merchantContractApplies: false,
+  merchantContractSigned: true,
+  merchantContractBlocked: false,
+  merchantContractGraceActive: false,
+  merchantContractRequires: false,
+  merchantContractHasSignedHistory: false,
+  merchantContractViewable: false,
 };
 
 export function getLcAuth(): LcAuth {
@@ -121,6 +135,36 @@ export function canAccessAdvertiserCenter(): boolean {
     return true;
   }
   return auth.isActiveMerchant;
+}
+
+/** 계약 접근 제어가 적용되는 광고주 세션인지 */
+export function shouldEnforceMerchantContract(auth: LcAuth = getLcAuth()): boolean {
+  if (!auth.dbReady) {
+    return false;
+  }
+  if (auth.isSuperAdmin && !(auth.isImpersonating && auth.impersonateType === 'merchant')) {
+    return false;
+  }
+  return Boolean(auth.merchantContractApplies);
+}
+
+/** 유예 종료 후 미체결 — 주요 기능 차단 */
+export function isMerchantContractBlocked(auth: LcAuth = getLcAuth()): boolean {
+  return shouldEnforceMerchantContract(auth) && Boolean(auth.merchantContractBlocked);
+}
+
+/** 미체결이나 유예 중 안내 표시 */
+export function shouldShowMerchantContractNotice(auth: LcAuth = getLcAuth()): boolean {
+  return shouldEnforceMerchantContract(auth) && Boolean(auth.merchantContractRequires);
+}
+
+export async function refreshLcAuthFromServer(): Promise<LcAuth> {
+  const { fetchMerchantMe } = await import('./api');
+  const data = await fetchMerchantMe();
+  if (typeof window !== 'undefined' && data.auth) {
+    window.__LC_AUTH__ = { ...defaultAuth, ...data.auth };
+  }
+  return getLcAuth();
 }
 
 export function canAccessAdmin(): boolean {

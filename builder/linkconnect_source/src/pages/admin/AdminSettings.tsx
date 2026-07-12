@@ -24,6 +24,7 @@ const defaultRaw: RawSettings = {
   aiChatDailyLimit: '30',
   aiPromoDailyLimit: '20',
   aiSummaryDailyLimit: '10',
+  advertiserContractGraceUntil: '',
   notifyLowBalanceEmail: '1',
   notifyLowBalanceSms: '0',
   notifyLowBalanceKakao: '0',
@@ -89,6 +90,7 @@ export function AdminSettings() {
           duplicateByCampaign: boolVal(raw, 'duplicateByCampaign'),
           duplicateByMerchant: boolVal(raw, 'duplicateByMerchant'),
           merchantProcessDays: Number(raw.merchantProcessDays || 7),
+          advertiserContractGraceUntil: raw.advertiserContractGraceUntil || '',
         },
         billing: {
           billingDeductMode: raw.billingDeductMode || 'on_receive',
@@ -200,6 +202,12 @@ export function AdminSettings() {
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <Field label="중복 디비 판단 기간 (일)" value={raw.duplicateDays} onChange={(v) => update('duplicateDays', v)} type="number" />
             <Field label="광고주 처리 제한일 (일)" value={raw.merchantProcessDays} onChange={(v) => update('merchantProcessDays', v)} type="number" />
+            <Field
+              label="광고주 계약 유예 종료일"
+              value={raw.advertiserContractGraceUntil}
+              onChange={(v) => update('advertiserContractGraceUntil', v)}
+              placeholder="YYYY-MM-DD (비우면 즉시 제한)"
+            />
             <Field label="최소 충전 금액 (원)" value={raw.minChargeAmount} onChange={(v) => update('minChargeAmount', v)} type="number" />
             <Field label="최소 정산 가능 금액 (원)" value={raw.minSettlementAmount} onChange={(v) => update('minSettlementAmount', v)} type="number" />
             <Field label="정산 신청 가능일" value={raw.settlementPeriod} onChange={(v) => update('settlementPeriod', v)} />

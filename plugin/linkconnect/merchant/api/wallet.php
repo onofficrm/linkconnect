@@ -2,7 +2,7 @@
 require_once __DIR__ . '/_common.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (LC_MERCHANT_GUARD_ENABLED && lc_db_installed() && !lc_is_super_admin()) {
+    if (function_exists('lc_merchant_api_use_strict_guard') && lc_merchant_api_use_strict_guard()) {
         $merchant = lc_api_require_active_merchant();
     } else {
         lc_api_require_login();

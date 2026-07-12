@@ -45,6 +45,9 @@ if (!function_exists('lc_settings_defaults')) {
             'aiChatDailyLimit'      => 30,
             'aiPromoDailyLimit'     => 20,
             'aiSummaryDailyLimit'   => 10,
+            'advertiserContractGraceUntil' => '',
+            'promoGuideMaxImageBytes'   => 2097152,
+            'promoGuideSkipReview'      => '0',
             'notifyLowBalanceEmail' => '1',
             'notifyLowBalanceSms'   => '0',
             'notifyLowBalanceKakao' => '0',
@@ -189,6 +192,7 @@ if (!function_exists('lc_settings_to_api')) {
                 'duplicateByCampaign' => lc_settings_get_bool('duplicateByCampaign'),
                 'duplicateByMerchant' => lc_settings_get_bool('duplicateByMerchant'),
                 'merchantProcessDays' => (int) ($settings['merchantProcessDays'] ?? 7),
+                'advertiserContractGraceUntil' => (string) ($settings['advertiserContractGraceUntil'] ?? ''),
             ),
             'billing' => array(
                 'billingDeductMode'  => (string) ($settings['billingDeductMode'] ?? 'on_receive'),

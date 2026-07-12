@@ -1,60 +1,32 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign, ExternalLink } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign, ExternalLink, BookOpen } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
-import { fetchPartnerCampaigns, createPartnerLink, PartnerCampaign } from '../../lib/api';
+import { fetchPartnerCampaigns, createPartnerLink, fetchPartnerPromoGuide, PartnerCampaign } from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
+import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
-type CampaignCardItem = {
-  id: number;
-  title: string;
-  category: string;
-  description: string;
-  price: string;
-  approvalRate: string;
-  avgTime: string;
-  allowedChannels: string;
-  forbiddenChannels: string;
-  status: string;
-  badge?: string;
-  recommended?: boolean;
-  landingUrl: string;
-};
-
-function toCardItem(campaign: PartnerCampaign): CampaignCardItem {
-  return {
-    id: campaign.id,
-    title: campaign.title,
-    category: campaign.category,
-    description: campaign.description,
-    price: campaign.priceFormatted,
-    approvalRate: campaign.approvalRate,
-    avgTime: campaign.avgTime,
-    allowedChannels: campaign.allowedChannels,
-    forbiddenChannels: campaign.forbiddenChannels,
-    status: campaign.status,
-    badge: campaign.badge || undefined,
-    recommended: campaign.recommended,
-    landingUrl: campaign.landingUrl || '',
-  };
-}
+type DetailTab = 'intro' | 'guide' | 'assets';
 
 export function PartnerSearch() {
   const [activeCategory, setActiveCategory] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState(fallbackCategories);
-  const [items, setItems] = useState<CampaignCardItem[]>([]);
+  const [campaigns, setCampaigns] = useState<PartnerCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [linkModal, setLinkModal] = useState<CampaignCardItem | null>(null);
+  const [linkModal, setLinkModal] = useState<PartnerCampaign | null>(null);
   const [linkChannelPreset, setLinkChannelPreset] = useState('');
   const [linkChannelCustom, setLinkChannelCustom] = useState('');
   const [linkName, setLinkName] = useState('');
   const [linkCreating, setLinkCreating] = useState(false);
   const [linkResult, setLinkResult] = useState('');
+  const [detailModal, setDetailModal] = useState<{ campaign: PartnerCampaign; tab: DetailTab } | null>(null);
+  const [guideConfirmed, setGuideConfirmed] = useState<Record<number, boolean>>({});
+  const [linkGuideWarning, setLinkGuideWarning] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +43,7 @@ export function PartnerSearch() {
           return;
         }
         setCategories(data.categories.length ? data.categories : fallbackCategories);
-        setItems(data.items.map(toCardItem));
+        setCampaigns(data.items);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
@@ -92,33 +64,51 @@ export function PartnerSearch() {
   }, [activeCategory, searchQuery]);
 
   const recommendedItems = useMemo(
-    () => items.filter((item) => item.recommended || item.badge).slice(0, 3),
-    [items],
+    () => campaigns.filter((item) => item.recommended || item.badge).slice(0, 3),
+    [campaigns],
   );
 
   const highApprovalCount = useMemo(
-    () => items.filter((item) => parseInt(item.approvalRate, 10) >= 70).length,
-    [items],
+    () => campaigns.filter((item) => parseInt(item.approvalRate, 10) >= 70).length,
+    [campaigns],
   );
 
   const avgPrice = useMemo(() => {
-    if (!items.length) {
+    if (!campaigns.length) {
       return '0';
     }
-    const total = items.reduce((sum, item) => sum + Number(item.price.replace(/,/g, '')), 0);
-    return Math.round(total / items.length).toLocaleString();
-  }, [items]);
+    const total = campaigns.reduce((sum, item) => sum + item.price, 0);
+    return Math.round(total / campaigns.length).toLocaleString();
+  }, [campaigns]);
 
   const resetLinkModalFields = () => {
     setLinkChannelPreset('');
     setLinkChannelCustom('');
     setLinkName('');
     setLinkResult('');
+    setLinkGuideWarning(false);
   };
 
-  const openLinkModal = (item: CampaignCardItem) => {
-    setLinkModal(item);
+  const openLinkModal = async (campaign: PartnerCampaign) => {
+    setLinkModal(campaign);
     resetLinkModalFields();
+
+    if (!campaign.hasPublishedGuide) return;
+
+    if (guideConfirmed[campaign.id] === true) return;
+
+    try {
+      const detail = await fetchPartnerPromoGuide(campaign.id);
+      const confirmed = detail.confirmation?.confirmed ?? false;
+      setGuideConfirmed((prev) => ({ ...prev, [campaign.id]: confirmed }));
+      setLinkGuideWarning(!confirmed);
+    } catch {
+      setLinkGuideWarning(false);
+    }
+  };
+
+  const openDetailModal = (campaign: PartnerCampaign, tab: DetailTab = 'intro') => {
+    setDetailModal({ campaign, tab });
   };
 
   const handleCreateLink = async () => {
@@ -155,8 +145,8 @@ export function PartnerSearch() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <SummaryCard title="전체 CPA 상품" value={String(items.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
-        <SummaryCard title="신규 캠페인" value={String(items.filter((i) => i.badge === '신규').length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
+        <SummaryCard title="전체 CPA 상품" value={String(campaigns.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
+        <SummaryCard title="신규 캠페인" value={String(campaigns.filter((i) => i.badge === '신규').length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
         <SummaryCard title="승인율 70% 이상" value={String(highApprovalCount)} suffix="개" icon={<CheckCircle className="text-emerald-500" />} />
         <SummaryCard title="평균 파트너 단가" value={avgPrice} suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
       </div>
@@ -213,7 +203,12 @@ export function PartnerSearch() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendedItems.map((item) => (
                   <div key={`rec-${item.id}`}>
-                    <CampaignCard item={item} onCreateLink={() => openLinkModal(item)} />
+                    <CampaignCard
+                      campaign={item}
+                      onOpenDetail={() => openDetailModal(item, 'intro')}
+                      onOpenGuide={() => openDetailModal(item, 'guide')}
+                      onCreateLink={() => openLinkModal(item)}
+                    />
                   </div>
                 ))}
               </div>
@@ -224,13 +219,18 @@ export function PartnerSearch() {
 
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">
-              전체 캠페인 <span className="text-emerald-600 font-bold">({items.length})</span>
+              전체 캠페인 <span className="text-emerald-600 font-bold">({campaigns.length})</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {items.map((item) => (
+            {campaigns.map((item) => (
               <div key={item.id}>
-                <CampaignCard item={item} onCreateLink={() => openLinkModal(item)} />
+                <CampaignCard
+                  campaign={item}
+                  onOpenDetail={() => openDetailModal(item, 'intro')}
+                  onOpenGuide={() => openDetailModal(item, 'guide')}
+                  onCreateLink={() => openLinkModal(item)}
+                />
               </div>
             ))}
           </div>
@@ -260,6 +260,16 @@ export function PartnerSearch() {
         </div>
       </div>
 
+      <PartnerCampaignDetailModal
+        open={detailModal !== null}
+        campaign={detailModal?.campaign ?? null}
+        initialTab={detailModal?.tab ?? 'intro'}
+        onClose={() => setDetailModal(null)}
+        onConfirmationChange={(campaignId, confirmed) => {
+          setGuideConfirmed((prev) => ({ ...prev, [campaignId]: confirmed }));
+        }}
+      />
+
       {linkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
@@ -268,6 +278,21 @@ export function PartnerSearch() {
               <p className="text-sm text-slate-500 mt-1">{linkModal.title}</p>
             </div>
             <div className="p-6 space-y-4">
+              {linkGuideWarning && linkModal.hasPublishedGuide ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+                  광고를 시작하기 전에 최신 홍보 가이드를 확인해 주세요.{' '}
+                  <button
+                    type="button"
+                    className="font-bold underline ml-1"
+                    onClick={() => {
+                      setLinkModal(null);
+                      openDetailModal(linkModal, 'guide');
+                    }}
+                  >
+                    가이드 보기
+                  </button>
+                </div>
+              ) : null}
               <PartnerLinkCreateFields
                 channelPreset={linkChannelPreset}
                 channelCustom={linkChannelCustom}
@@ -296,8 +321,19 @@ export function PartnerSearch() {
   );
 }
 
-function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreateLink: () => void }) {
-  const hasLandingUrl = item.landingUrl.trim().length > 0;
+function CampaignCard({
+  campaign,
+  onOpenDetail,
+  onOpenGuide,
+  onCreateLink,
+}: {
+  campaign: PartnerCampaign;
+  onOpenDetail: () => void;
+  onOpenGuide: () => void;
+  onCreateLink: () => void;
+}) {
+  const hasLandingUrl = campaign.landingUrl.trim().length > 0;
+  const hasGuide = Boolean(campaign.hasPublishedGuide);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
@@ -305,61 +341,71 @@ function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreate
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md border border-slate-200">
-              {item.category}
+              {campaign.category}
             </span>
             <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md border border-slate-200">
               CPA
             </span>
           </div>
           <div className="flex gap-2">
-            {item.badge && (
+            {campaign.badge && (
               <span className={`px-2.5 py-1 text-xs font-bold rounded-md ${
-                item.badge === '추천' ? 'bg-emerald-100 text-emerald-800' :
-                item.badge === '인기' ? 'bg-blue-100 text-blue-800' :
+                campaign.badge === '추천' ? 'bg-emerald-100 text-emerald-800' :
+                campaign.badge === '인기' ? 'bg-blue-100 text-blue-800' :
                 'bg-purple-100 text-purple-800'
               }`}>
-                {item.badge}
+                {campaign.badge}
               </span>
             )}
             <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${
-              item.status === '진행중' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
+              campaign.status === '진행중' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
             }`}>
-              {item.status}
+              {campaign.status}
             </span>
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h3>
-        <p className="text-sm text-slate-500 mb-5 line-clamp-1">{item.description}</p>
+        <h3 className="text-lg font-bold text-slate-900 mb-1">{campaign.title}</h3>
+        <p className="text-sm text-slate-500 mb-5 line-clamp-1">{campaign.description}</p>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
             <div className="text-xs text-emerald-800 mb-1">파트너 단가</div>
-            <div className="text-lg font-bold text-emerald-600">{item.price}<span className="text-sm font-normal ml-0.5">원</span></div>
+            <div className="text-lg font-bold text-emerald-600">{campaign.priceFormatted}<span className="text-sm font-normal ml-0.5">원</span></div>
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
             <div className="text-xs text-slate-500 mb-1">승인율 / 평균</div>
-            <div className="text-lg font-bold text-slate-700">{item.approvalRate} <span className="text-xs font-normal text-slate-400">({item.avgTime})</span></div>
+            <div className="text-lg font-bold text-slate-700">{campaign.approvalRate} <span className="text-xs font-normal text-slate-400">({campaign.avgTime})</span></div>
           </div>
         </div>
 
         <div className="space-y-2 text-xs">
           <div className="flex items-start">
             <span className="inline-block w-14 text-slate-400 font-medium shrink-0">허용채널</span>
-            <span className="text-slate-700 font-medium">{item.allowedChannels}</span>
+            <span className="text-slate-700 font-medium">{campaign.allowedChannels}</span>
           </div>
           <div className="flex items-start">
             <span className="inline-block w-14 text-slate-400 font-medium shrink-0">금지채널</span>
-            <span className="text-red-500 font-medium">{item.forbiddenChannels}</span>
+            <span className="text-red-500 font-medium">{campaign.forbiddenChannels}</span>
           </div>
         </div>
       </div>
 
       <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
+        {hasGuide ? (
+          <button
+            type="button"
+            onClick={onOpenGuide}
+            className="w-full py-2.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
+          >
+            <BookOpen className="w-4 h-4" />
+            홍보 가이드 보기
+          </button>
+        ) : null}
         {hasLandingUrl && (
           <button
             type="button"
-            onClick={() => openLandingPage(item.landingUrl)}
+            onClick={() => openLandingPage(campaign.landingUrl)}
             className="w-full py-2.5 bg-white border border-cyan-200 hover:bg-cyan-50 text-cyan-700 font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
           >
             <ExternalLink className="w-4 h-4" />
@@ -367,7 +413,11 @@ function CampaignCard({ item, onCreateLink }: { item: CampaignCardItem; onCreate
           </button>
         )}
         <div className="flex gap-2 sm:gap-3">
-          <button className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm">
+          <button
+            type="button"
+            onClick={onOpenDetail}
+            className="flex-1 py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm"
+          >
             상세보기
           </button>
           <button type="button" onClick={onCreateLink} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">

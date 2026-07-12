@@ -1,5 +1,6 @@
-import { User, UserCog } from 'lucide-react';
-import { getMemberDisplayName, isLcLoggedIn } from '../lib/auth';
+import { User, UserCog, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { getLcAuth, getMemberDisplayName, isLcLoggedIn } from '../lib/auth';
 import {
   currentSpaReturnPath,
   currentSpaReturnUrl,
@@ -23,7 +24,12 @@ export function MemberAuthMenu({
   onNavigate,
 }: MemberAuthMenuProps) {
   const loggedIn = isLcLoggedIn();
+  const auth = getLcAuth();
   const displayName = getMemberDisplayName();
+  const showContractInfo =
+    loggedIn &&
+    logoutReturnPath === '/advertiser' &&
+    Boolean(auth.merchantContractApplies && auth.merchantContractViewable);
   const loginUrl = g5LoginUrl(loginReturnUrl ?? currentSpaReturnUrl());
   const logoutUrl = g5LogoutUrl(logoutReturnPath ?? currentSpaReturnPath());
   const editUrl = g5MemberEditUrl();
@@ -126,6 +132,15 @@ export function MemberAuthMenu({
               <UserCog size={20} />
               <span>회원정보 수정</span>
             </a>
+            {showContractInfo ? (
+              <Link
+                to="/advertiser/contract/view"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+              >
+                <FileText size={20} />
+                <span>계약정보</span>
+              </Link>
+            ) : null}
           </>
         )}
         {loggedIn ? (

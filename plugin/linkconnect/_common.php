@@ -47,6 +47,27 @@ if (is_file(LC_PLUGIN_PATH . '/inc/partner.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/merchant.php')) {
     require_once LC_PLUGIN_PATH . '/inc/merchant.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_config.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_config.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_body.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_body.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_pdf.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_pdf.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_access.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_access.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_read.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_read.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/wallet.php')) {
     require_once LC_PLUGIN_PATH . '/inc/wallet.php';
 }
@@ -61,6 +82,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/auth_bootstrap.php')) {
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php';
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign_banktupt.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign_banktupt.php';

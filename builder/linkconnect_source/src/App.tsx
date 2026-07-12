@@ -30,6 +30,7 @@ import { PartnerCpsOrders } from './pages/partner/cps/PartnerCpsOrders';
 import { PartnerCpsEarnings } from './pages/partner/cps/PartnerCpsEarnings';
 
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
+import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
 import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
 import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
@@ -37,9 +38,13 @@ import { AdvertiserReports } from './pages/advertiser/AdvertiserReports';
 import { AdvertiserSupport } from './pages/advertiser/AdvertiserSupport';
 
 import { AdvertiserDashboard } from './pages/advertiser/Dashboard';
+import { AdvertiserContract } from './pages/advertiser/AdvertiserContract';
+import { AdvertiserContractView } from './pages/advertiser/AdvertiserContractView';
+import { AdvertiserContractComplete } from './pages/advertiser/AdvertiserContractComplete';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { AdminPartners } from './pages/admin/AdminPartners';
 import { AdminAdvertisers } from './pages/admin/AdminAdvertisers';
+import { AdminContracts } from './pages/admin/AdminContracts';
 import { AdminCampaigns } from './pages/admin/AdminCampaigns';
 import { AdminInspections } from './pages/admin/AdminInspections';
 import { AdminBilling } from './pages/admin/AdminBilling';
@@ -67,6 +72,7 @@ import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
+import { AdvertiserContractAccessGuard } from './components/advertiser/AdvertiserContractAccessGuard';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 
 export default function App() {
@@ -109,18 +115,25 @@ export default function App() {
           <Route path="partner/support" element={<PartnerSupport />} />
         </Route>
         <Route element={<AdvertiserRouteGuard />}>
-          <Route path="advertiser" element={<AdvertiserDashboard />} />
-          <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
-          <Route path="advertiser/db" element={<AdvertiserDb />} />
-          <Route path="advertiser/call" element={<AdvertiserCall />} />
-          <Route path="advertiser/billing" element={<AdvertiserBilling />} />
-          <Route path="advertiser/reports" element={<AdvertiserReports />} />
+          <Route path="advertiser/contract" element={<AdvertiserContract />} />
+          <Route path="advertiser/contract/view" element={<AdvertiserContractView />} />
+          <Route path="advertiser/contract/complete" element={<AdvertiserContractComplete />} />
           <Route path="advertiser/support" element={<AdvertiserSupport />} />
+          <Route element={<AdvertiserContractAccessGuard />}>
+            <Route path="advertiser" element={<AdvertiserDashboard />} />
+            <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
+            <Route path="advertiser/campaigns/:cpId/guide" element={<AdvertiserCampaignGuide />} />
+            <Route path="advertiser/db" element={<AdvertiserDb />} />
+            <Route path="advertiser/call" element={<AdvertiserCall />} />
+            <Route path="advertiser/billing" element={<AdvertiserBilling />} />
+            <Route path="advertiser/reports" element={<AdvertiserReports />} />
+          </Route>
         </Route>
         <Route element={<AdminRouteGuard />}>
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="admin/partners" element={<AdminPartners />} />
           <Route path="admin/advertisers" element={<AdminAdvertisers />} />
+          <Route path="admin/contracts" element={<AdminContracts />} />
           <Route path="admin/campaigns" element={<AdminCampaigns />} />
           <Route path="admin/conversions" element={<AdminConversions />} />
           <Route path="admin/call" element={<AdminCallDb />} />

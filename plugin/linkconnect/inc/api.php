@@ -100,7 +100,7 @@ if (!function_exists('lc_api_require_active_merchant')) {
     {
         lc_api_require_login();
 
-        if (lc_is_super_admin()) {
+        if (function_exists('lc_merchant_contract_guard_skip_user') && lc_merchant_contract_guard_skip_user()) {
             return lc_get_current_merchant();
         }
 
@@ -117,6 +117,55 @@ if (!function_exists('lc_api_require_active_merchant')) {
             lc_api_error('광고주 승인 후 이용할 수 있습니다.', 'MERCHANT_NOT_ACTIVE', 403, array(
                 'status' => $merchant['mt_status'],
             ));
+        }
+
+        if (function_exists('lc_merchant_contract_guard_api_or_fail')) {
+            lc_merchant_contract_guard_api_or_fail($merchant);
+        }
+
+        return $merchant;
+    }
+}
+
+if (!function_exists('lc_merchant_api_use_strict_guard')) {
+    /**
+     * 슈퍼관리자 직접 탐색(가맹점 가장 아님)은 샘플·완화 모드
+     */
+    function lc_merchant_api_use_strict_guard()
+    {
+        if (!LC_MERCHANT_GUARD_ENABLED || !lc_db_installed()) {
+            return false;
+        }
+
+        if (function_exists('lc_merchant_contract_guard_skip_user') && lc_merchant_contract_guard_skip_user()) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('lc_api_require_contract_merchant')) {
+    /**
+     * 계약서 API 전용 — 세션의 현재 광고주만 허용 (관리자 직접 접근 불가)
+     *
+     * @return array<string,mixed>
+     */
+    function lc_api_require_contract_merchant()
+    {
+        lc_api_require_login();
+
+        if (lc_is_super_admin() && !(function_exists('lc_impersonate_is_active') && lc_impersonate_is_active('merchant'))) {
+            lc_api_error('광고주 계정으로 로그인해 주세요.', 'NOT_MERCHANT', 403);
+        }
+
+        $merchant = lc_get_current_merchant();
+        if (!is_array($merchant)) {
+            lc_api_error('광고주 등록이 필요합니다.', 'NOT_MERCHANT', 403);
+        }
+
+        if (($merchant['mt_status'] ?? '') === LC_MERCHANT_STATUS_SUSPENDED) {
+            lc_api_error('정지된 광고주 계정입니다.', 'MERCHANT_SUSPENDED', 403);
         }
 
         return $merchant;

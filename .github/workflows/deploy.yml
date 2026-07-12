@@ -69,13 +69,22 @@ jobs:
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
           mkdir -p "$ROOT/plugin/linkconnect/api" "$ROOT/plugin/linkconnect/install" "$ROOT/plugin/linkconnect/partner/api" "$ROOT/plugin/linkconnect/merchant/api" "$ROOT/plugin/linkconnect/admin/api" "$ROOT/plugin/linkconnect/cron"
-          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/partner_analytics.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/campaign_banktupt.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php plugin/linkconnect/inc/abuse.php plugin/linkconnect/inc/linkprice.php "$ROOT/plugin/linkconnect/inc/"
+          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/partner_analytics.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/campaign_banktupt.php plugin/linkconnect/inc/campaign_promo_guide.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/merchant_contract_config.php plugin/linkconnect/inc/merchant_contract.php plugin/linkconnect/inc/merchant_contract_body.php plugin/linkconnect/inc/merchant_contract_pdf.php plugin/linkconnect/inc/merchant_contract_access.php plugin/linkconnect/inc/merchant_contract_read.php plugin/linkconnect/inc/merchant_contract_admin.php plugin/linkconnect/inc/auth_bootstrap.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php plugin/linkconnect/inc/abuse.php plugin/linkconnect/inc/linkprice.php "$ROOT/plugin/linkconnect/inc/"
           cp plugin/linkconnect/api/receive.php plugin/linkconnect/api/landing_context.php plugin/linkconnect/api/call_receive.php plugin/linkconnect/api/lp_postback.php plugin/linkconnect/api/lp_health.php "$ROOT/plugin/linkconnect/api/"
           cp plugin/linkconnect/partner/api/apply.php plugin/linkconnect/partner/api/linkprice.php plugin/linkconnect/partner/api/_common.php "$ROOT/plugin/linkconnect/partner/api/"
           if [[ -d plugin/linkconnect/partner/api ]]; then
             cp plugin/linkconnect/partner/api/*.php "$ROOT/plugin/linkconnect/partner/api/" 2>/dev/null || true
           fi
           cp plugin/linkconnect/merchant/api/apply.php "$ROOT/plugin/linkconnect/merchant/api/"
+          cp plugin/linkconnect/merchant/contract-document.php plugin/linkconnect/merchant/contract-download.php plugin/linkconnect/merchant/contract-signature.php "$ROOT/plugin/linkconnect/merchant/"
+          bash plugin/linkconnect/install/install_tcpdf.sh
+          if [[ -d plugin/linkconnect/lib/tcpdf ]]; then
+            mkdir -p "$ROOT/plugin/linkconnect/lib"
+            cp -R plugin/linkconnect/lib/tcpdf "$ROOT/plugin/linkconnect/lib/"
+          fi
+          mkdir -p "$ROOT/plugin/linkconnect/data/contract_signatures" "$ROOT/plugin/linkconnect/data/campaign_promo_assets"
+          cp plugin/linkconnect/data/contract_signatures/.htaccess "$ROOT/plugin/linkconnect/data/contract_signatures/" 2>/dev/null || true
+          cp plugin/linkconnect/data/campaign_promo_assets/.htaccess "$ROOT/plugin/linkconnect/data/campaign_promo_assets/" 2>/dev/null || true
           if [[ -d plugin/linkconnect/merchant/api ]]; then
             cp plugin/linkconnect/merchant/api/*.php "$ROOT/plugin/linkconnect/merchant/api/" 2>/dev/null || true
           fi
@@ -83,6 +92,7 @@ jobs:
           if [[ -d plugin/linkconnect/admin/api ]]; then
             cp plugin/linkconnect/admin/api/*.php "$ROOT/plugin/linkconnect/admin/api/" 2>/dev/null || true
           fi
+          cp plugin/linkconnect/admin/contract-document.php plugin/linkconnect/admin/contract-download.php plugin/linkconnect/admin/contract-signature.php "$ROOT/plugin/linkconnect/admin/" 2>/dev/null || true
           cp plugin/linkconnect/cron/linkprice_sync_merchants.php "$ROOT/plugin/linkconnect/cron/"
           cp cron/linkprice_sync_merchants.php "$ROOT/cron/"
           cp plugin/linkconnect/cron/linkprice_sync_conversions.php "$ROOT/plugin/linkconnect/cron/"
@@ -90,7 +100,7 @@ jobs:
           cp go/lp/index.php "$ROOT/go/lp/"
           cp api/external/linkprice/postback.php "$ROOT/api/external/linkprice/"
           cp plugin/linkconnect/_common.php "$ROOT/plugin/linkconnect/"
-          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/linkprice_cps_schema.sql "$ROOT/plugin/linkconnect/install/"
+          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql "$ROOT/plugin/linkconnect/install/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"

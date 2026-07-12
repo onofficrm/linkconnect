@@ -18,7 +18,9 @@ import {
 
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
+import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
 import { fetchMerchantDashboard } from '../../lib/api';
+import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -33,6 +35,8 @@ const fallbackChartData = [
 ];
 
 export function AdvertiserDashboard() {
+  const auth = getLcAuth();
+  const showContractCard = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
   const [balance, setBalance] = useState('2,350,000');
   const [summary, setSummary] = useState({ pending: 9, todayReceived: 17, todaySpend: 300000 });
   const [chartData, setChartData] = useState(fallbackChartData);
@@ -55,6 +59,7 @@ export function AdvertiserDashboard() {
 
   return (
     <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
+        {showContractCard ? <AdvertiserContractNotice /> : null}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">

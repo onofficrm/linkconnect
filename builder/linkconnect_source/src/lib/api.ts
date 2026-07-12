@@ -61,7 +61,11 @@ export async function partnerApiGet<T>(endpoint: string, query?: Record<string, 
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -81,7 +85,11 @@ export async function partnerApiPost<T>(endpoint: string, payload?: Record<strin
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -124,6 +132,7 @@ export type PartnerCampaign = {
   badge: string;
   recommended: boolean;
   landingUrl: string;
+  hasPublishedGuide?: boolean;
 };
 
 export type PartnerCampaignsResponse = {
@@ -140,6 +149,56 @@ export function fetchPartnerCampaigns(filters?: { category?: string; q?: string 
   return partnerApiGet<PartnerCampaignsResponse>('campaigns.php', {
     category: filters?.category ?? '',
     q: filters?.q ?? '',
+  });
+}
+
+export type PartnerPromoGuideImage = {
+  id: number;
+  assetId: number;
+  originalFilename: string;
+  mimeType: string;
+  fileSize: number;
+  imageTitle: string;
+  sortOrder: number;
+  downloadUrl: string;
+};
+
+export type PartnerPromoGuideConfirmation = {
+  confirmed: boolean;
+  confirmedAt: string;
+  guideUpdatedAt: string;
+  guideId: number;
+};
+
+export type PartnerPromoGuideDetail = {
+  campaign: PartnerCampaign;
+  guide: {
+    id: number;
+    guideId: number;
+    campaignId: number;
+    promotionPoints: string[];
+    recommendedKeywords: string[];
+    forbiddenWords: string[];
+    precautions: string[];
+    validDbRules: string[];
+    invalidDbRules: string[];
+    approvalType: 'free' | 'first_review' | 'all_review';
+    guideStatus: string;
+    updatedAt: string;
+    publishedAt: string;
+    images: PartnerPromoGuideImage[];
+  };
+  confirmation: PartnerPromoGuideConfirmation;
+};
+
+export function fetchPartnerPromoGuide(cpId: number) {
+  return partnerApiGet<PartnerPromoGuideDetail>('campaign-guide.php', { cpId: String(cpId) });
+}
+
+export function confirmPartnerPromoGuide(cpId: number) {
+  return partnerApiPost<{ message: string; confirmation: PartnerPromoGuideConfirmation }>('campaign-guide.php', {
+    action: 'confirm',
+    cpId,
   });
 }
 
@@ -297,7 +356,11 @@ export async function merchantApiGet<T>(endpoint: string, query?: Record<string,
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -317,7 +380,33 @@ export async function merchantApiPost<T>(endpoint: string, payload?: Record<stri
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
+  }
+
+  return (body as ApiSuccessBody<T>).data;
+}
+
+export async function merchantApiPostFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${MERCHANT_API_BASE}/${endpoint}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    body: formData,
+  });
+
+  const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
+  if (!body.ok) {
+    const errBody = body as ApiErrorBody;
+    const extra = errBody.data && typeof errBody.data === 'object' ? (errBody.data as Record<string, unknown>) : undefined;
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (extra?.errors) {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = extra.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -447,7 +536,11 @@ export async function adminApiGet<T>(endpoint: string, query?: Record<string, st
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -467,7 +560,11 @@ export async function adminApiPost<T>(endpoint: string, payload?: Record<string,
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -760,6 +857,20 @@ export function fetchAdminConversions(filters?: { status?: string }) {
   });
 }
 
+export type AdminCampaignPromoGuideSummary = {
+  exists: boolean;
+  guideId?: number;
+  status?: string;
+  statusLabel?: string;
+  hasPoints?: boolean;
+  keywordCount?: number;
+  forbiddenCount?: number;
+  imageCount?: number;
+  updatedAt?: string;
+  publishedAt?: string;
+  revisionReason?: string;
+};
+
 export type AdminCampaign = {
   id: number;
   code: string;
@@ -788,6 +899,7 @@ export type AdminCampaign = {
   landingUrl: string;
   badge: string;
   recommended: boolean;
+  promoGuide?: AdminCampaignPromoGuideSummary;
 };
 
 export type AdminCampaignSummary = {
@@ -826,6 +938,72 @@ export function deleteAdminCampaign(payload: { cpId: number; confirm: string }) 
   });
 }
 
+export type AdminPromoGuideDetail = {
+  exists: boolean;
+  guideId?: number;
+  campaignId?: number;
+  campaignName?: string;
+  campaignStatus?: string;
+  promotionPoints?: string[];
+  recommendedKeywords?: string[];
+  forbiddenWords?: string[];
+  precautions?: string[];
+  validDbRules?: string[];
+  invalidDbRules?: string[];
+  approvalType?: 'free' | 'first_review' | 'all_review';
+  guideStatus?: string;
+  guideStatusLabel?: string;
+  revisionReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  images?: Array<{
+    id: number;
+    assetId: number;
+    originalFilename: string;
+    mimeType: string;
+    fileSize: number;
+    imageTitle: string;
+    sortOrder: number;
+    downloadUrl: string;
+  }>;
+};
+
+export type AdminPromoGuideLog = {
+  id: number;
+  guideId: number;
+  campaignId: number;
+  actorType: string;
+  actorId: string;
+  fromStatus: string;
+  fromStatusLabel: string;
+  toStatus: string;
+  toStatusLabel: string;
+  summary: string;
+  revisionReason: string;
+  createdAt: string;
+};
+
+export function fetchAdminPromoGuide(cpId: number) {
+  return adminApiGet<AdminPromoGuideDetail>('campaign-guide.php', { cpId: String(cpId) });
+}
+
+export function fetchAdminPromoGuideLogs(guideId: number) {
+  return adminApiGet<{ items: AdminPromoGuideLog[] }>('campaign-guide.php', {
+    guideId: String(guideId),
+    logs: '1',
+  });
+}
+
+export function adminPromoGuideAction(payload: {
+  action: 'publish' | 'hide' | 'review' | 'draft' | 'request_revision';
+  guideId: number;
+  cpId?: number;
+  reason?: string;
+}) {
+  return adminApiPost<{ message: string; guide: AdminPromoGuideDetail | null }>('campaign-guide.php', payload);
+}
+
 export type MerchantCampaign = {
   id: number;
   code: string;
@@ -851,6 +1029,151 @@ export function fetchMerchantCampaigns(filters?: { status?: string }) {
   return merchantApiGet<{ items: MerchantCampaign[]; summary: MerchantCampaignSummary; dbReady: boolean }>(
     'campaigns.php',
     { status: filters?.status ?? '' },
+  );
+}
+
+export type MerchantPromoGuideImage = {
+  id: number;
+  assetId: number;
+  originalFilename: string;
+  mimeType: string;
+  fileSize: number;
+  imageTitle: string;
+  sortOrder: number;
+  downloadUrl: string;
+};
+
+export type MerchantPromoGuideLimits = {
+  promotion_points: number;
+  recommended_keywords: number;
+  forbidden_words: number;
+  precautions: number;
+  valid_db_rules: number;
+  invalid_db_rules: number;
+  images: number;
+};
+
+export type MerchantPromoGuideData = {
+  exists: boolean;
+  campaignId?: number;
+  campaignName?: string;
+  guideId?: number;
+  promotionPoints?: string[];
+  recommendedKeywords?: string[];
+  forbiddenWords?: string[];
+  precautions?: string[];
+  validDbRules?: string[];
+  invalidDbRules?: string[];
+  approvalType?: 'free' | 'first_review' | 'all_review';
+  guideStatus?: string;
+  guideStatusLabel?: string;
+  revisionReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  images?: MerchantPromoGuideImage[];
+  limits?: MerchantPromoGuideLimits;
+  maxImageBytes?: number;
+  skipReview?: boolean;
+  csrfToken?: string;
+};
+
+export type MerchantPromoGuideSaveResponse = {
+  message: string;
+  guide: MerchantPromoGuideData | null;
+  csrfToken?: string;
+};
+
+export function fetchMerchantPromoGuide(cpId: number) {
+  return merchantApiGet<MerchantPromoGuideData>('campaign-guide.php', { cpId: String(cpId) });
+}
+
+export function saveMerchantPromoGuideDraft(cpId: number, csrfToken: string, payload: Record<string, unknown>) {
+  return merchantApiPost<MerchantPromoGuideSaveResponse>('campaign-guide.php', {
+    action: 'save_draft',
+    cpId,
+    csrfToken,
+    ...payload,
+  });
+}
+
+export function updateMerchantPromoGuide(cpId: number, csrfToken: string, payload: Record<string, unknown>) {
+  return merchantApiPost<MerchantPromoGuideSaveResponse>('campaign-guide.php', {
+    action: 'update',
+    cpId,
+    csrfToken,
+    ...payload,
+  });
+}
+
+export function submitMerchantPromoGuideReview(cpId: number, csrfToken: string, payload?: Record<string, unknown>) {
+  return merchantApiPost<MerchantPromoGuideSaveResponse>('campaign-guide.php', {
+    action: 'submit_review',
+    cpId,
+    csrfToken,
+    payload,
+  });
+}
+
+export function publishMerchantPromoGuide(cpId: number, csrfToken: string, payload?: Record<string, unknown>) {
+  return merchantApiPost<MerchantPromoGuideSaveResponse>('campaign-guide.php', {
+    action: 'publish',
+    cpId,
+    csrfToken,
+    payload,
+  });
+}
+
+export function createMerchantPromoGuide(cpId: number, csrfToken: string) {
+  return merchantApiPost<MerchantPromoGuideSaveResponse>('campaign-guide.php', {
+    action: 'create',
+    cpId,
+    csrfToken,
+  });
+}
+
+export function uploadMerchantPromoGuideImage(cpId: number, csrfToken: string, file: File, imageTitle = '') {
+  const form = new FormData();
+  form.append('action', 'upload');
+  form.append('cpId', String(cpId));
+  form.append('csrfToken', csrfToken);
+  form.append('file', file);
+  if (imageTitle) form.append('imageTitle', imageTitle);
+  return merchantApiPostFormData<{ message: string; asset: MerchantPromoGuideImage; csrfToken?: string }>(
+    'campaign-guide-asset.php',
+    form,
+  );
+}
+
+export function deleteMerchantPromoGuideImage(assetId: number, csrfToken: string) {
+  return merchantApiPost<{ message: string; csrfToken?: string }>('campaign-guide-asset.php', {
+    action: 'delete',
+    assetId,
+    csrfToken,
+  });
+}
+
+export function sortMerchantPromoGuideImages(cpId: number, csrfToken: string, assetIds: number[]) {
+  return merchantApiPost<{ message: string; guide: MerchantPromoGuideData | null; csrfToken?: string }>(
+    'campaign-guide-asset.php',
+    {
+      action: 'sort',
+      cpId,
+      csrfToken,
+      assetIds,
+    },
+  );
+}
+
+export function updateMerchantPromoGuideImageTitle(assetId: number, csrfToken: string, imageTitle: string) {
+  return merchantApiPost<{ message: string; asset: MerchantPromoGuideImage; csrfToken?: string }>(
+    'campaign-guide-asset.php',
+    {
+      action: 'update_title',
+      assetId,
+      csrfToken,
+      imageTitle,
+    },
   );
 }
 
@@ -906,7 +1229,11 @@ async function publicApiGet<T>(endpoint: string, query?: Record<string, string>)
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -926,7 +1253,11 @@ async function publicApiPost<T>(endpoint: string, payload?: Record<string, unkno
   const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
   if (!body.ok) {
     const errBody = body as ApiErrorBody;
-    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
   }
 
   return (body as ApiSuccessBody<T>).data;
@@ -2368,4 +2699,259 @@ export function fetchPartnerCallLogs() {
 
 export function requestPartnerCallNumber(payload: { cpId: number; memo?: string }) {
   return partnerApiPost<{ message: string; carId?: number }>('call.php', { action: 'request', ...payload });
+}
+
+export type MerchantContractParty = {
+  companyName: string;
+  representativeName: string;
+  businessNumber: string;
+  companyAddress: string;
+  companyPhone: string;
+};
+
+export type MerchantContractForm = {
+  companyName: string;
+  representativeName: string;
+  businessNumber: string;
+  companyAddress: string;
+  companyPhone: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  signerName: string;
+  signerPosition: string;
+  signerPhone: string;
+  signerEmail: string;
+  step: number;
+  agreements: {
+    readAll: boolean;
+    hasAuthority: boolean;
+    electronic: boolean;
+    noModify: boolean;
+  };
+  agreementCheckedAt?: string;
+};
+
+export type MerchantContractSummary = {
+  id: number;
+  advertiserId: number;
+  contractCode: string;
+  contractVersion: string;
+  status: string;
+  statusLabel: string;
+  companyName: string;
+  signerName: string;
+  signedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  pdfDownloadUrl: string;
+};
+
+export type MerchantContractState = {
+  contractVersion: string;
+  status: string;
+  statusLabel: string;
+  isSigned: boolean;
+  canWrite: boolean;
+  requiresContract: boolean;
+  partyB: MerchantContractParty;
+  form: MerchantContractForm;
+  contractHtml: string;
+  contract: MerchantContractSummary | null;
+  documentPreviewUrl: string;
+  documentPdfUrl: string;
+  signedPdfDownloadUrl: string;
+  csrfToken: string;
+  hasSignature: boolean;
+};
+
+export function fetchMerchantContract() {
+  return merchantApiGet<MerchantContractState>('contract.php');
+}
+
+export function saveMerchantContractDraft(payload: Record<string, unknown>) {
+  return merchantApiPost<{ message: string; contract: MerchantContractSummary | null; state: MerchantContractState }>(
+    'contract.php',
+    { action: 'draft', ...payload },
+  );
+}
+
+export function uploadMerchantContractSignature(payload: { csrfToken: string; signatureDataUrl: string }) {
+  return merchantApiPost<{ message: string; hasSignature: boolean; state: MerchantContractState }>('contract.php', {
+    action: 'signature',
+    ...payload,
+  });
+}
+
+export function validateMerchantContract(payload: Record<string, unknown>) {
+  return merchantApiPost<{ message: string; validated: boolean; state: MerchantContractState }>('contract.php', payload);
+}
+
+export function signMerchantContract(payload: Record<string, unknown>) {
+  return merchantApiPost<{
+    message: string;
+    alreadySigned: boolean;
+    contract: MerchantContractSummary | null;
+    state: MerchantContractState;
+  }>('contract.php', payload);
+}
+
+export type MerchantContractRead = {
+  id: number;
+  advertiserId: number;
+  contractVersion: string;
+  status: string;
+  statusLabel: string;
+  contractCode: string;
+  companyName: string;
+  representativeName: string;
+  businessNumber: string;
+  companyAddress: string;
+  companyPhone: string;
+  signerName: string;
+  signerPosition: string;
+  signerPhone: string;
+  signerEmail: string;
+  signedAt: string;
+  signedIp: string;
+  userAgent: string;
+  createdAt: string;
+  pdfHash: string;
+  pdfHashMasked: string;
+  agreements: Record<string, boolean>;
+  agreementCheckedAt: string;
+  partyB: MerchantContractParty;
+  contractHtml: string;
+  signatureUrl: string;
+  documentPreviewUrl: string;
+  documentPdfUrl: string;
+  isReadOnly: boolean;
+  isFullySigned: boolean;
+};
+
+export type MerchantContractHistoryItem = {
+  id: number;
+  contractVersion: string;
+  contractCode: string;
+  status: string;
+  statusLabel: string;
+  signedAt: string;
+  createdAt: string;
+  isFullySigned: boolean;
+  isCurrentVersion: boolean;
+};
+
+export type MerchantContractReadResponse = {
+  contract: MerchantContractRead;
+  history: MerchantContractHistoryItem[];
+};
+
+export function fetchMerchantContractRead(version?: string) {
+  const query: Record<string, string> = { mode: 'read' };
+  if (version) {
+    query.version = version;
+  }
+  return merchantApiGet<MerchantContractReadResponse>('contract.php', query);
+}
+
+export type AdminContractListItem = {
+  id: number;
+  advertiserId: number;
+  companyName: string;
+  representativeName: string;
+  businessNumber: string;
+  signerName: string;
+  contractVersion: string;
+  status: string;
+  statusLabel: string;
+  contractCode: string;
+  signedAt: string;
+  createdAt: string;
+  isFullySigned: boolean;
+};
+
+export type AdminContractSummary = {
+  total: number;
+  signed: number;
+  pending: number;
+  inProgress: number;
+  cancelled: number;
+  expired: number;
+  renewal: number;
+};
+
+export type AdminContractDetail = {
+  contract: MerchantContractRead;
+  listItem: AdminContractListItem;
+  merchant: { id: number; code: string; company: string; status: string } | null;
+  companyCompare: Record<string, { contract: string; current: string; changed: boolean }>;
+  companySnapshot: Record<string, unknown> | null;
+  history: MerchantContractHistoryItem[];
+  statusLogs: Array<{
+    id: number;
+    adminId: string;
+    oldStatus: string;
+    newStatus: string;
+    oldLabel: string;
+    newLabel: string;
+    reason: string;
+    ip: string;
+    userAgent: string;
+    createdAt: string;
+  }>;
+  signLogs: Array<{
+    id: number;
+    result: string;
+    message: string;
+    signedAt: string;
+    ip: string;
+    userAgent: string;
+    pdfHash: string;
+    createdAt: string;
+  }>;
+  documentPreviewUrl: string;
+  documentPdfUrl: string;
+  signatureUrl: string;
+};
+
+export function fetchAdminContracts(filters?: {
+  q?: string;
+  status?: string;
+  version?: string;
+  mtId?: number;
+  signedFrom?: string;
+  signedTo?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return adminApiGet<{
+    items: AdminContractListItem[];
+    total: number;
+    page: number;
+    limit: number;
+    summary: AdminContractSummary;
+    dbReady: boolean;
+    currentVersion: string;
+  }>('contracts.php', {
+    q: filters?.q ?? '',
+    status: filters?.status ?? '',
+    version: filters?.version ?? '',
+    mtId: filters?.mtId ? String(filters.mtId) : '',
+    signedFrom: filters?.signedFrom ?? '',
+    signedTo: filters?.signedTo ?? '',
+    page: filters?.page ? String(filters.page) : '1',
+    limit: filters?.limit ? String(filters.limit) : '30',
+  });
+}
+
+export function fetchAdminContractDetail(mcId: number) {
+  return adminApiGet<AdminContractDetail>('contracts.php', { mcId: String(mcId) });
+}
+
+export function updateAdminContractStatus(payload: {
+  mcId: number;
+  action: 'cancel' | 'expire' | 'requireRenewal';
+  reason: string;
+}) {
+  return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', payload);
 }

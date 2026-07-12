@@ -17,8 +17,20 @@ import {
   updateAdminCampaignStatus,
 } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
+import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
+import { AdminCampaignPromoGuidePanel } from '../../components/admin/AdminCampaignPromoGuidePanel';
 
 const categoryOptions = ['금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+
+const guideFilterOptions = [
+  { label: '가이드 상태 전체', value: '' },
+  { label: '미등록', value: 'none' },
+  { label: '작성 중', value: 'draft' },
+  { label: '검토 대기', value: 'review' },
+  { label: '수정 요청', value: 'revision' },
+  { label: '파트너 공개', value: 'published' },
+  { label: '비공개', value: 'hidden' },
+];
 
 const statusFilterOptions = [
   { label: '전체 상태', value: '' },
@@ -109,6 +121,8 @@ export function AdminCampaigns() {
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [guideFilter, setGuideFilter] = useState('');
+  const [guidePanel, setGuidePanel] = useState<AdminCampaign | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -274,6 +288,20 @@ export function AdminCampaigns() {
     }
   };
 
+  const filteredCampaigns = campaigns.filter((campaign) => {
+    if (!guideFilter) return true;
+    const pg = campaign.promoGuide;
+    if (guideFilter === 'none') return !pg?.exists;
+    return pg?.status === guideFilter;
+  });
+
+  const formatGuideDate = (value?: string) => {
+    if (!value) return '-';
+    const d = new Date(value.replace(' ', 'T'));
+    if (Number.isNaN(d.getTime())) return value.slice(0, 10);
+    return d.toLocaleDateString('ko-KR');
+  };
+
   const updateEditForm = (patch: Partial<EditForm>) => {
     setEditForm((prev) => (prev ? { ...prev, ...patch } : prev));
   };
@@ -333,6 +361,15 @@ export function AdminCampaigns() {
                   ))}
                 </select>
                 <select
+                  value={guideFilter}
+                  onChange={(e) => setGuideFilter(e.target.value)}
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500"
+                >
+                  {guideFilterOptions.map((option) => (
+                    <option key={option.value || 'all-guide'} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-cyan-500"
@@ -349,7 +386,7 @@ export function AdminCampaigns() {
           {/* Table Area */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">{campaigns.length}</strong>개의 상품</div>
+              <div className="text-sm font-medium text-slate-600">총 <strong className="text-cyan-600">{filteredCampaigns.length}</strong>개의 상품</div>
               <button className="text-sm font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm">
                 <Download size={14} /> 엑셀 다운로드
               </button>
@@ -359,11 +396,12 @@ export function AdminCampaigns() {
                 <thead className="text-xs text-slate-500 bg-white border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3 font-medium">상품명/코드</th>
-                    <th className="px-4 py-3 font-medium">광고주/유형</th>
+                    <th className="px-4 py-3 font-medium">광고주</th>
+                    <th className="px-4 py-3 font-medium text-center">홍보 가이드</th>
+                    <th className="px-4 py-3 font-medium text-center">포인트/키워드</th>
+                    <th className="px-4 py-3 font-medium text-center">이미지</th>
+                    <th className="px-4 py-3 font-medium text-center">수정/공개</th>
                     <th className="px-4 py-3 font-medium text-right">파트너 단가</th>
-                    <th className="px-4 py-3 font-medium text-right">광고주 단가/마진</th>
-                    <th className="px-4 py-3 font-medium text-right">접수 DB</th>
-                    <th className="px-4 py-3 font-medium text-right">승인율/취소율</th>
                     <th className="px-4 py-3 font-medium text-center">상태</th>
                     <th className="px-4 py-3 font-medium text-center">관리</th>
                   </tr>
@@ -371,13 +409,16 @@ export function AdminCampaigns() {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td>
+                      <td colSpan={9} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td>
                     </tr>
-                  ) : campaigns.length === 0 ? (
+                  ) : filteredCampaigns.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-10 text-center text-slate-500">등록된 광고상품이 없습니다.</td>
+                      <td colSpan={9} className="px-4 py-10 text-center text-slate-500">등록된 광고상품이 없습니다.</td>
                     </tr>
-                  ) : campaigns.map((campaign) => (
+                  ) : filteredCampaigns.map((campaign) => {
+                    const pg = campaign.promoGuide;
+                    const guideStatus = pg?.exists ? (pg.status ?? 'draft') : 'none';
+                    return (
                     <tr
                       key={campaign.id}
                       className={`hover:bg-slate-50 transition-colors cursor-pointer ${selectedCampaign?.id === campaign.id ? 'bg-cyan-50/50' : ''}`}
@@ -397,28 +438,51 @@ export function AdminCampaigns() {
                           {campaign.type}
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        {pg?.exists ? (
+                          <span className={`inline-flex px-2 py-1 rounded-lg text-xs font-bold border ${promoGuideStatusStyle(guideStatus)}`}>
+                            {pg.statusLabel || promoGuideStatusLabel(guideStatus)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">미등록</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap text-xs text-slate-600">
+                        {pg?.exists ? (
+                          <>
+                            <div>{pg.hasPoints ? 'O' : 'X'} / {pg.keywordCount ?? 0} / {pg.forbiddenCount ?? 0}</div>
+                            <div className="text-slate-400">포인트·키워드·금지</div>
+                          </>
+                        ) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium text-slate-700">
+                        {pg?.exists ? (pg.imageCount ?? 0) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap text-xs text-slate-600">
+                        <div>{formatGuideDate(pg?.updatedAt)}</div>
+                        <div className="text-slate-400">{formatGuideDate(pg?.publishedAt)}</div>
+                      </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="font-bold text-slate-900 text-base">{campaign.partnerPrice.toLocaleString()}원</div>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="text-sm font-medium text-slate-600">{campaign.advertiserPrice.toLocaleString()}원</div>
-                        <div className="text-xs font-bold text-emerald-600 mt-0.5">+{campaign.margin.toLocaleString()}원</div>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap font-medium text-slate-700">
-                        {campaign.totalDb.toLocaleString()}건
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="font-bold text-slate-900">{campaign.rate}</div>
-                        <div className="text-xs text-red-500 mt-0.5">{campaign.cancelRate}</div>
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
                         <StatusBadge status={campaign.status} />
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">
-                        <button className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 rounded text-xs font-bold transition-colors">관리</button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGuidePanel(campaign);
+                          }}
+                          className="px-3 py-1.5 bg-cyan-50 text-cyan-700 hover:bg-cyan-100 rounded text-xs font-bold transition-colors"
+                        >
+                          가이드
+                        </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -813,6 +877,16 @@ export function AdminCampaigns() {
           </div>
         </div>
       )}
+
+      {guidePanel ? (
+        <AdminCampaignPromoGuidePanel
+          campaignId={guidePanel.id}
+          campaignName={guidePanel.name}
+          advertiserName={guidePanel.advertiser}
+          onClose={() => setGuidePanel(null)}
+          onUpdated={loadCampaigns}
+        />
+      ) : null}
     </AdminLayout>
   );
 }

@@ -59,6 +59,19 @@ define('LC_MERCHANT_STATUS_SUSPENDED', 'suspended');
  */
 define('LC_MERCHANT_GUARD_ENABLED', true);
 
+/**
+ * CPA 광고주 계약 미체결 시 광고주센터 접근 제한
+ */
+if (!defined('LC_MERCHANT_CONTRACT_GUARD_ENABLED')) {
+    define('LC_MERCHANT_CONTRACT_GUARD_ENABLED', true);
+}
+/**
+ * 기존 광고주 유예 종료일 (Y-m-d). 비우면 즉시 제한. lc_settings advertiserContractGraceUntil 우선.
+ */
+if (!defined('ADVERTISER_CONTRACT_GRACE_UNTIL')) {
+    define('ADVERTISER_CONTRACT_GRACE_UNTIL', '');
+}
+
 /* ── LinkConnect 전용 DB (그누보드 기본 DB와 분리) ── */
 if (!defined('LC_MYSQL_DB')) {
     if (function_exists('g5site_cfg')) {

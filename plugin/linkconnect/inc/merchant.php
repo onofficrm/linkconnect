@@ -251,7 +251,9 @@ if (!function_exists('lc_require_merchant_access')) {
         }
 
         if (lc_is_super_admin()) {
-            return;
+            if (!(function_exists('lc_impersonate_is_active') && lc_impersonate_is_active('merchant'))) {
+                return;
+            }
         }
 
         if (!lc_is_logged_in()) {
@@ -269,6 +271,10 @@ if (!function_exists('lc_require_merchant_access')) {
         if (!lc_is_active_merchant()) {
             lc_render_merchant_gate('pending');
             exit;
+        }
+
+        if (function_exists('lc_merchant_contract_require_access_for_page')) {
+            lc_merchant_contract_require_access_for_page();
         }
     }
 }

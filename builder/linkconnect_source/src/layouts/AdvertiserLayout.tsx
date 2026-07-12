@@ -5,8 +5,9 @@ import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdm
 import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
-import { getLcAuth } from '../lib/auth';
+import { getLcAuth, shouldShowMerchantContractNotice } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
+import { AdvertiserContractNotice } from '../components/advertiser/AdvertiserContractNotice';
 import { NotificationCenter } from '../components/NotificationCenter';
 
 export function AdvertiserLayout({
@@ -25,6 +26,7 @@ export function AdvertiserLayout({
   pendingBadge?: number;
 }) {
   const auth = getLcAuth();
+  const showContractGraceBanner = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
   const displayCompany = companyName ?? auth.merchantCompany ?? '(주)리드앤솔루션';
   const displayBalance = balance ?? (auth.merchantBalance !== null ? auth.merchantBalance.toLocaleString() : '2,350,000');
   const dbBadge = pendingBadge ?? (auth.dbReady ? undefined : 9);
@@ -70,6 +72,8 @@ export function AdvertiserLayout({
             <MemberAuthMenu variant="compact" logoutReturnPath="/advertiser" />
           </div>
         </header>
+
+        {showContractGraceBanner ? <AdvertiserContractNotice variant="banner" /> : null}
 
         {children}
       </main>

@@ -32,6 +32,15 @@ if (!function_exists('lc_auth_state')) {
         $partner = function_exists('lc_get_current_partner') ? lc_get_current_partner() : null;
         $merchant = function_exists('lc_get_current_merchant') ? lc_get_current_merchant() : null;
         $impersonate = function_exists('lc_impersonate_state_for_api') ? lc_impersonate_state_for_api() : array('active' => false);
+        $contract_access = function_exists('lc_merchant_contract_access_state_for_auth')
+            ? lc_merchant_contract_access_state_for_auth()
+            : array(
+                'applies'          => false,
+                'signed'           => true,
+                'blocked'          => false,
+                'graceActive'      => false,
+                'requiresContract' => false,
+            );
 
         return array(
             'loggedIn'          => $logged_in,
@@ -61,6 +70,13 @@ if (!function_exists('lc_auth_state')) {
             'memberNick'        => $logged_in && is_array($member) && isset($member['mb_nick']) ? (string) $member['mb_nick'] : null,
             'memberEmail'       => $logged_in && is_array($member) && isset($member['mb_email']) ? (string) $member['mb_email'] : null,
             'bbsUrl'            => defined('G5_BBS_URL') ? (string) G5_BBS_URL : '/bbs',
+            'merchantContractApplies'    => !empty($contract_access['applies']),
+            'merchantContractSigned'       => !empty($contract_access['signed']),
+            'merchantContractBlocked'      => !empty($contract_access['blocked']),
+            'merchantContractGraceActive'  => !empty($contract_access['graceActive']),
+            'merchantContractRequires'     => !empty($contract_access['requiresContract']),
+            'merchantContractHasSignedHistory' => !empty($contract_access['hasSignedHistory']),
+            'merchantContractViewable'     => !empty($contract_access['viewable']),
         );
     }
 }
