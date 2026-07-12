@@ -60,7 +60,7 @@ function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 pt-1 w-52 z-50">
+        <div className="absolute top-full left-0 pt-1 w-52 z-[100]">
           <div className="py-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl">
             {companySubItems.map((item) => (
               <Link
@@ -116,8 +116,9 @@ export function Header() {
             <span className="text-xl xl:text-2xl font-bold text-white tracking-tight whitespace-nowrap">링크커넥트</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 flex-1 min-w-0 overflow-x-auto" aria-label="주요 메뉴">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 flex-1 min-w-0 overflow-visible" aria-label="주요 메뉴">
             <CompanyNavDropdown />
+            <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 min-w-0 overflow-x-auto">
             {campaignNavItems.map((item) => (
               <Link key={item.to} to={item.to} className={navLinkClass(isActive(location.pathname, item.to))}>
                 {item.label}
@@ -132,6 +133,7 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            </div>
           </nav>
 
           <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 ml-auto pl-4 lg:pl-6 border-l border-white/10">
