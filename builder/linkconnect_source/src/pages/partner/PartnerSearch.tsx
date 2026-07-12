@@ -3,7 +3,7 @@ import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, Tr
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { fetchPartnerCampaigns, createPartnerLink, PartnerCampaign } from '../../lib/api';
-import { AiPromoPanel } from '../../components/AiPromoPanel';
+import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { openLandingPage } from '../../lib/utils';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
@@ -50,8 +50,9 @@ export function PartnerSearch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [linkModal, setLinkModal] = useState<CampaignCardItem | null>(null);
-  const [linkChannel, setLinkChannel] = useState('');
-  const [linkSubId, setLinkSubId] = useState('');
+  const [linkChannelPreset, setLinkChannelPreset] = useState('');
+  const [linkChannelCustom, setLinkChannelCustom] = useState('');
+  const [linkName, setLinkName] = useState('');
   const [linkCreating, setLinkCreating] = useState(false);
   const [linkResult, setLinkResult] = useState('');
 
@@ -108,6 +109,18 @@ export function PartnerSearch() {
     return Math.round(total / items.length).toLocaleString();
   }, [items]);
 
+  const resetLinkModalFields = () => {
+    setLinkChannelPreset('');
+    setLinkChannelCustom('');
+    setLinkName('');
+    setLinkResult('');
+  };
+
+  const openLinkModal = (item: CampaignCardItem) => {
+    setLinkModal(item);
+    resetLinkModalFields();
+  };
+
   const handleCreateLink = async () => {
     if (!linkModal) return;
     setLinkCreating(true);
@@ -115,8 +128,8 @@ export function PartnerSearch() {
     try {
       const result = await createPartnerLink({
         campaignId: linkModal.id,
-        channel: linkChannel,
-        subId: linkSubId,
+        channel: resolvePartnerChannel(linkChannelPreset, linkChannelCustom),
+        subId: linkName,
       });
       if (result.link?.url) {
         setLinkResult(result.link.url);
@@ -200,7 +213,7 @@ export function PartnerSearch() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendedItems.map((item) => (
                   <div key={`rec-${item.id}`}>
-                    <CampaignCard item={item} onCreateLink={() => { setLinkModal(item); setLinkChannel(''); setLinkSubId(''); setLinkResult(''); }} />
+                    <CampaignCard item={item} onCreateLink={() => openLinkModal(item)} />
                   </div>
                 ))}
               </div>
@@ -217,7 +230,7 @@ export function PartnerSearch() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {items.map((item) => (
               <div key={item.id}>
-                <CampaignCard item={item} onCreateLink={() => { setLinkModal(item); setLinkChannel(''); setLinkSubId(''); setLinkResult(''); }} />
+                <CampaignCard item={item} onCreateLink={() => openLinkModal(item)} />
               </div>
             ))}
           </div>
@@ -255,30 +268,19 @@ export function PartnerSearch() {
               <p className="text-sm text-slate-500 mt-1">{linkModal.title}</p>
             </div>
             <div className="p-6 space-y-4">
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">채널명</span>
-                <input value={linkChannel} onChange={(e) => setLinkChannel(e.target.value)} placeholder="네이버 블로그" className="mt-1 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">sub_id (선택)</span>
-                <input value={linkSubId} onChange={(e) => setLinkSubId(e.target.value)} placeholder="blog_01" className="mt-1 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
-              </label>
+              <PartnerLinkCreateFields
+                channelPreset={linkChannelPreset}
+                channelCustom={linkChannelCustom}
+                linkName={linkName}
+                onChannelPresetChange={setLinkChannelPreset}
+                onChannelCustomChange={setLinkChannelCustom}
+                onLinkNameChange={setLinkName}
+              />
               {linkResult && (
                 <p className={`text-sm ${linkResult.startsWith('http') ? 'text-emerald-600 break-all' : 'text-red-600'}`}>
                   {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
                 </p>
               )}
-              <AiPromoPanel
-                campaign={{
-                  id: linkModal.id,
-                  title: linkModal.title,
-                  category: linkModal.category,
-                  price: linkModal.price,
-                  approvalRate: linkModal.approvalRate,
-                  allowedChannels: linkModal.allowedChannels,
-                  forbiddenChannels: linkModal.forbiddenChannels,
-                }}
-              />
             </div>
             <div className="px-6 py-4 bg-slate-50 flex gap-3">
               <button type="button" onClick={() => setLinkModal(null)} className="flex-1 py-3 border border-slate-200 rounded-xl">닫기</button>

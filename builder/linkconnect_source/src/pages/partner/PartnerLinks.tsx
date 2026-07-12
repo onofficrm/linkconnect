@@ -1,5 +1,6 @@
 import { Search, Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X } from 'lucide-react';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
+import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { useEffect, useMemo, useState } from 'react';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { createPartnerLink, fetchPartnerCampaigns, fetchPartnerLinks, PartnerLink } from '../../lib/api';
@@ -10,8 +11,9 @@ export function PartnerLinks() {
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Array<{ id: number; title: string }>>([]);
   const [campaignId, setCampaignId] = useState(0);
-  const [channel, setChannel] = useState('');
-  const [subId, setSubId] = useState('');
+  const [channelPreset, setChannelPreset] = useState('');
+  const [channelCustom, setChannelCustom] = useState('');
+  const [linkName, setLinkName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -53,10 +55,15 @@ export function PartnerLinks() {
     setCreating(true);
     setError('');
     try {
-      await createPartnerLink({ campaignId, channel, subId });
+      await createPartnerLink({
+        campaignId,
+        channel: resolvePartnerChannel(channelPreset, channelCustom),
+        subId: linkName,
+      });
       setIsModalOpen(false);
-      setChannel('');
-      setSubId('');
+      setChannelPreset('');
+      setChannelCustom('');
+      setLinkName('');
       loadLinks();
     } catch (err) {
       setError(err instanceof Error ? err.message : '링크 생성에 실패했습니다.');
@@ -104,7 +111,7 @@ export function PartnerLinks() {
                   <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-4 font-medium whitespace-nowrap">광고상품 / 채널명</th>
-                      <th className="px-4 py-4 font-medium whitespace-nowrap">sub_id</th>
+                      <th className="px-4 py-4 font-medium whitespace-nowrap">링크이름</th>
                       <th className="px-4 py-4 font-medium whitespace-nowrap">홍보 링크</th>
                       <th className="px-4 py-4 font-medium text-right whitespace-nowrap">클릭 수</th>
                       <th className="px-4 py-4 font-medium text-right whitespace-nowrap">접수/승인/취소</th>
@@ -174,7 +181,7 @@ export function PartnerLinks() {
               <h3 className="font-bold text-lg">채널별 성과 팁</h3>
             </div>
             <div className="space-y-4 text-sm text-slate-300">
-              <p><strong className="text-emerald-400 font-semibold">sub_id</strong>를 구분해서 생성하면 채널별 성과를 쉽게 비교할 수 있습니다.</p>
+              <p><strong className="text-emerald-400 font-semibold">링크이름</strong>을 구분해서 생성하면 채널별 성과를 쉽게 비교할 수 있습니다.</p>
             </div>
           </div>
         </div>
@@ -196,14 +203,14 @@ export function PartnerLinks() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">채널명</label>
-                <input value={channel} onChange={(e) => setChannel(e.target.value)} type="text" placeholder="예) 네이버 블로그" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">sub_id <span className="text-slate-400 font-normal">(선택)</span></label>
-                <input value={subId} onChange={(e) => setSubId(e.target.value)} type="text" placeholder="blog_01" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm" />
-              </div>
+              <PartnerLinkCreateFields
+                channelPreset={channelPreset}
+                channelCustom={channelCustom}
+                linkName={linkName}
+                onChannelPresetChange={setChannelPreset}
+                onChannelCustomChange={setChannelCustom}
+                onLinkNameChange={setLinkName}
+              />
               {error && <p className="text-sm text-red-600">{error}</p>}
             </div>
             <div className="px-6 py-5 bg-slate-50 border-t border-slate-100 flex gap-3">
