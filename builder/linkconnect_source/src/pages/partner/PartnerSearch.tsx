@@ -337,6 +337,16 @@ function CampaignCard({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
+      {campaign.thumbnailUrl ? (
+        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100">
+          <img
+            src={campaign.thumbnailUrl}
+            alt={campaign.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center gap-2">

@@ -132,6 +132,7 @@ export type PartnerCampaign = {
   badge: string;
   recommended: boolean;
   landingUrl: string;
+  thumbnailUrl?: string;
   hasPublishedGuide?: boolean;
 };
 

@@ -19,6 +19,7 @@ type CampaignCardItem = {
   badge?: string;
   recommended?: boolean;
   landingUrl: string;
+  thumbnailUrl: string;
 };
 
 function toCardItem(campaign: PublicCampaign): CampaignCardItem {
@@ -35,6 +36,7 @@ function toCardItem(campaign: PublicCampaign): CampaignCardItem {
     badge: campaign.badge || undefined,
     recommended: campaign.recommended,
     landingUrl: campaign.landingUrl || '',
+    thumbnailUrl: campaign.thumbnailUrl || '',
   };
 }
 
@@ -199,6 +201,16 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
+      {item.thumbnailUrl ? (
+        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100">
+          <img
+            src={item.thumbnailUrl}
+            alt={item.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
           <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">
