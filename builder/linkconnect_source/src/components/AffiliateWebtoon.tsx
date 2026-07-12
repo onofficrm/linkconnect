@@ -38,9 +38,13 @@ function SpeechBubble({
   speakerColor,
   text,
   highlight,
-}: WebtoonPanel['bubble']) {
-  const alignClass =
-    align === 'left'
+  overlay = false,
+}: WebtoonPanel['bubble'] & { overlay?: boolean }) {
+  const alignClass = overlay
+    ? align === 'center'
+      ? 'w-full max-w-[92%] mx-auto'
+      : 'w-full max-w-none'
+    : align === 'left'
       ? 'ml-2 mr-auto max-w-[88%]'
       : align === 'right'
         ? 'ml-auto mr-2 max-w-[88%]'
@@ -55,10 +59,10 @@ function SpeechBubble({
 
   return (
     <div
-      className={`relative bg-white border-2 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_rgba(15,23,42,1)] ${alignClass} before:content-[''] before:absolute before:-bottom-2 before:w-4 before:h-4 before:bg-white before:border-b-2 before:border-r-2 before:border-slate-900 before:rotate-45 ${tailClass}`}
+      className={`relative bg-white/95 backdrop-blur-[2px] border-2 border-slate-900 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-[3px_3px_0_0_rgba(15,23,42,0.85)] ${alignClass} before:content-[''] before:absolute before:-bottom-2 before:w-3.5 before:h-3.5 before:bg-white/95 before:border-b-2 before:border-r-2 before:border-slate-900 before:rotate-45 ${tailClass}`}
     >
-      <p className={`text-xs font-bold mb-1 ${speakerColor}`}>{speaker}</p>
-      <p className="text-sm md:text-base text-slate-800 leading-relaxed font-medium">
+      <p className={`text-[11px] sm:text-xs font-bold mb-0.5 ${speakerColor}`}>{speaker}</p>
+      <p className="text-[13px] sm:text-sm md:text-[15px] text-slate-800 leading-snug sm:leading-relaxed font-medium">
         {highlight && text.includes(highlight) ? (
           <>
             {text.split(highlight)[0]}
@@ -69,6 +73,42 @@ function SpeechBubble({
           text
         )}
       </p>
+    </div>
+  );
+}
+
+function PanelNumberBadge({ index }: { index: number }) {
+  return (
+    <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/95 border-2 border-slate-900/25 flex items-center justify-center text-[11px] sm:text-xs font-black text-slate-600 shadow-sm">
+      {index + 1}
+    </div>
+  );
+}
+
+function IllustratedPanelHeader({
+  panel,
+  index,
+}: {
+  panel: WebtoonPanel;
+  index: number;
+}) {
+  const { align } = panel.bubble;
+
+  if (align === 'center') {
+    return (
+      <div className="space-y-2">
+        <PanelNumberBadge index={index} />
+        <SpeechBubble {...panel.bubble} overlay />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-start gap-2.5 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+      <PanelNumberBadge index={index} />
+      <div className="flex-1 min-w-0">
+        <SpeechBubble {...panel.bubble} overlay />
+      </div>
     </div>
   );
 }
@@ -87,24 +127,23 @@ function WebtoonPanelView({
 
   if (hasIllustration) {
     return (
-      <article className="relative border-b-4 border-slate-900/10 overflow-hidden bg-slate-900">
-        <div className="relative aspect-[3/4] w-full">
+      <article className="relative border-b-4 border-slate-900/10 overflow-hidden bg-slate-950">
+        <div className="relative aspect-[2/3] w-full">
           <img
             src={illustrationUrl}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="lazy"
+            width={1024}
+            height={1536}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            loading={index === 0 && episodeNum === 1 ? 'eager' : 'lazy'}
+            decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/10 to-black/50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/45 pointer-events-none" />
 
-          <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 border-2 border-slate-900/20 flex items-center justify-center text-xs font-black text-slate-600 z-10">
-            {index + 1}
-          </div>
-
-          <div className="absolute inset-0 z-10 flex flex-col justify-between p-4">
-            <SpeechBubble {...panel.bubble} />
+          <div className="absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-4">
+            <IllustratedPanelHeader panel={panel} index={index} />
             {panel.caption && (
-              <p className="text-center text-xs md:text-sm font-bold text-white/95 tracking-wide bg-black/40 backdrop-blur-sm rounded-lg py-2 px-3 border border-white/20">
+              <p className="text-center text-[11px] sm:text-xs md:text-sm font-bold text-white/95 tracking-wide bg-black/45 backdrop-blur-sm rounded-lg py-2 px-3 border border-white/15">
                 {panel.caption}
               </p>
             )}
@@ -121,8 +160,8 @@ function WebtoonPanelView({
       <div className={`absolute inset-0 ${panel.sceneAccent}`} />
       {panel.sceneProp && <SceneDecoration type={panel.sceneProp} />}
 
-      <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/80 border-2 border-slate-900/20 flex items-center justify-center text-xs font-black text-slate-500">
-        {index + 1}
+      <div className="absolute top-3 left-3 z-10">
+        <PanelNumberBadge index={index} />
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/8 to-transparent pointer-events-none" />
@@ -139,7 +178,7 @@ function WebtoonPanelView({
         ))}
       </div>
 
-      <div className="relative z-20 px-4 pt-5 pb-4 min-h-[300px] md:min-h-[340px] flex flex-col">
+      <div className="relative z-20 px-4 pt-12 pb-4 min-h-[300px] md:min-h-[340px] flex flex-col">
         <SpeechBubble {...panel.bubble} />
         {panel.caption && (
           <p className="mt-auto pt-3 text-center text-xs md:text-sm font-bold text-slate-600/90 tracking-wide bg-white/50 rounded-lg py-2 px-3 border border-white/60">
