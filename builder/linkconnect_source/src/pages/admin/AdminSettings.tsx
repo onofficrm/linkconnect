@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Settings, Save, RotateCcw, Check, Sparkles, PhoneCall } from 'lucide-react';
+import { Settings, Save, RotateCcw, Check, Sparkles, PhoneCall, Link2 } from 'lucide-react';
 import { fetchAdminSettings, resetAdminSettings, saveAdminSettings } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -41,6 +41,13 @@ const defaultRaw: RawSettings = {
   callMinDuration: '0',
   callCreateOnMissed: '0',
   callRecordingMode: 'normal',
+  cpaTrackingDomainEnabled: '0',
+  cpaTrackingBaseUrl: '',
+  cpaLandingSeoTitle: '{campaign} 상담 신청 | {site}',
+  cpaLandingSeoDescription: '{campaign} 무료 상담 신청 페이지입니다. 지금 바로 상담을 신청해 보세요.',
+  cpaLandingSeoKeywords: '',
+  cpaLandingSeoOgImage: '',
+  cpaLandingSeoRobots: 'index,follow',
 };
 
 function boolVal(raw: RawSettings, key: string) {
@@ -91,6 +98,13 @@ export function AdminSettings() {
           duplicateByMerchant: boolVal(raw, 'duplicateByMerchant'),
           merchantProcessDays: Number(raw.merchantProcessDays || 7),
           advertiserContractGraceUntil: raw.advertiserContractGraceUntil || '',
+          cpaTrackingDomainEnabled: boolVal(raw, 'cpaTrackingDomainEnabled'),
+          cpaTrackingBaseUrl: raw.cpaTrackingBaseUrl || '',
+          cpaLandingSeoTitle: raw.cpaLandingSeoTitle || '',
+          cpaLandingSeoDescription: raw.cpaLandingSeoDescription || '',
+          cpaLandingSeoKeywords: raw.cpaLandingSeoKeywords || '',
+          cpaLandingSeoOgImage: raw.cpaLandingSeoOgImage || '',
+          cpaLandingSeoRobots: raw.cpaLandingSeoRobots || 'index,follow',
         },
         billing: {
           billingDeductMode: raw.billingDeductMode || 'on_receive',
@@ -218,6 +232,66 @@ export function AdminSettings() {
             <Toggle label="파트너 이의신청 허용" checked={boolVal(raw, 'partnerAppealAllowed')} onChange={(v) => setRaw((prev) => setBool(prev, 'partnerAppealAllowed', v))} />
             <Toggle label="API 로그 저장" checked={boolVal(raw, 'apiLogEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'apiLogEnabled', v))} />
             <Toggle label="개인정보 마스킹 저장" checked={boolVal(raw, 'apiMaskPii')} onChange={(v) => setRaw((prev) => setBool(prev, 'apiMaskPii', v))} />
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-cyan-600 to-blue-600 flex items-center gap-2">
+            <Link2 className="w-5 h-5 text-white" />
+            <h3 className="font-bold text-white">CPA 홍보 링크 독립 도메인 · SEO</h3>
+          </div>
+          <div className="p-6 space-y-6">
+            <p className="text-sm text-slate-500">
+              CPA 홍보 링크(<code className="bg-slate-100 px-1 rounded">/r/</code>)와 상담 랜딩(
+              <code className="bg-slate-100 px-1 rounded">/c/</code>)에만 적용됩니다. CPS 링크프라이스 링크는 변경되지 않습니다.
+            </p>
+            <Toggle
+              label="독립 도메인 사용"
+              checked={boolVal(raw, 'cpaTrackingDomainEnabled')}
+              onChange={(v) => setRaw((prev) => setBool(prev, 'cpaTrackingDomainEnabled', v))}
+            />
+            <Field
+              label="홍보 링크 기본 URL"
+              value={raw.cpaTrackingBaseUrl || ''}
+              onChange={(v) => update('cpaTrackingBaseUrl', v)}
+              placeholder="https://go.linkconnect.co.kr"
+            />
+            <p className="text-xs text-slate-500 -mt-4">
+              DNS를 운영 서버로 연결한 뒤, 해당 도메인에서도 <code>/r/</code>, <code>/c/</code> 경로가 동작해야 합니다.
+              비우거나 끄면 메인 사이트 도메인(<code>G5_URL</code>)을 사용합니다.
+            </p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <p className="font-semibold text-slate-800 mb-1">미리보기</p>
+              <p className="font-mono text-xs break-all">
+                {(raw.cpaTrackingDomainEnabled === '1' && raw.cpaTrackingBaseUrl
+                  ? raw.cpaTrackingBaseUrl.replace(/\/$/, '')
+                  : 'https://linkconnect.co.kr')}
+                /r/abc123xyz
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-6">
+              <h4 className="font-bold text-slate-900 mb-1">상담 랜딩 SEO</h4>
+              <p className="text-sm text-slate-500 mb-4">
+                <code>/c/&#123;코드&#125;</code> 랜딩 페이지 메타 태그입니다. 변수: <code>{'{campaign}'}</code>, <code>{'{site}'}</code>
+              </p>
+              <div className="grid grid-cols-1 gap-6">
+                <Field label="페이지 제목 (title)" value={raw.cpaLandingSeoTitle || ''} onChange={(v) => update('cpaLandingSeoTitle', v)} />
+                <TextAreaField label="메타 설명 (description)" value={raw.cpaLandingSeoDescription || ''} onChange={(v) => update('cpaLandingSeoDescription', v)} />
+                <Field label="메타 키워드 (keywords)" value={raw.cpaLandingSeoKeywords || ''} onChange={(v) => update('cpaLandingSeoKeywords', v)} placeholder="상담, 무료상담 (쉼표 구분)" />
+                <Field label="OG 이미지 URL" value={raw.cpaLandingSeoOgImage || ''} onChange={(v) => update('cpaLandingSeoOgImage', v)} placeholder="https://..." />
+                <SelectField
+                  label="검색엔진 색인 (robots)"
+                  value={raw.cpaLandingSeoRobots || 'index,follow'}
+                  onChange={(v) => update('cpaLandingSeoRobots', v)}
+                  options={[
+                    ['index,follow', '색인 허용 (index,follow)'],
+                    ['noindex,nofollow', '색인 차단 (noindex,nofollow)'],
+                    ['noindex,follow', '색인 차단 · 링크 추적 (noindex,follow)'],
+                  ]}
+                />
+              </div>
+            </div>
           </div>
         </section>
 

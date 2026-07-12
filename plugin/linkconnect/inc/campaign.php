@@ -70,6 +70,9 @@ if (!function_exists('lc_campaign_to_api')) {
             'badge'             => (string) $row['cp_badge'],
             'recommended'       => (bool) (int) ($row['cp_recommended'] ?? 0),
             'landingUrl'        => (string) $row['cp_landing_url'],
+            'thumbnailUrl'      => function_exists('lc_campaign_thumbnail_public_url')
+                ? lc_campaign_thumbnail_public_url((int) $row['cp_id'])
+                : '',
         );
     }
 }
@@ -510,6 +513,9 @@ if (!function_exists('lc_campaign_to_admin_api')) {
             'landingUrl'      => (string) $row['cp_landing_url'],
             'badge'           => (string) $row['cp_badge'],
             'recommended'     => (bool) (int) ($row['cp_recommended'] ?? 0),
+            'thumbnailUrl'    => function_exists('lc_campaign_thumbnail_admin_url')
+                ? (lc_campaign_thumbnail_relative_from_row($row) !== '' ? lc_campaign_thumbnail_admin_url((int) $row['cp_id']) : '')
+                : '',
         );
     }
 }
@@ -854,6 +860,10 @@ if (!function_exists('lc_campaign_delete')) {
         }
         if (lc_db_table_exists($car_table)) {
             lc_sql_query(" DELETE FROM `{$car_table}` WHERE cp_id = '{$cp_id}' ", false);
+        }
+
+        if (function_exists('lc_campaign_thumbnail_delete')) {
+            lc_campaign_thumbnail_delete($cp_id);
         }
 
         lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);

@@ -16,6 +16,8 @@ $done = isset($_GET['done']);
 $error = '';
 $success = '';
 
+$landing_url = $code !== '' ? lc_landing_public_url($code) : lc_link_tracking_base_url();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_array($link)) {
     $result = lc_conversion_create_from_link($link, array(
         'name'    => isset($_POST['name']) ? (string) $_POST['name'] : '',
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_array($link)) {
     ));
 
     if ($result['ok']) {
-        goto_url(G5_URL . '/c/' . rawurlencode($code) . '?done=1');
+        goto_url($landing_url . '?done=1');
     }
 
     $error = $result['message'];
@@ -37,13 +39,37 @@ if ($done) {
 }
 
 $campaign_name = is_array($link) ? (string) $link['cp_name'] : '';
+$seo = lc_link_landing_seo_meta($campaign_name, $code);
+$home_url = defined('G5_URL') ? rtrim((string) G5_URL, '/') : lc_link_tracking_base_url();
 ?>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo $campaign_name !== '' ? lc_h($campaign_name) . ' 상담 신청' : '상담 신청'; ?></title>
+  <title><?php echo lc_h($seo['title']); ?></title>
+  <?php if ($seo['description'] !== '') { ?>
+  <meta name="description" content="<?php echo lc_h($seo['description']); ?>">
+  <?php } ?>
+  <?php if ($seo['keywords'] !== '') { ?>
+  <meta name="keywords" content="<?php echo lc_h($seo['keywords']); ?>">
+  <?php } ?>
+  <meta name="robots" content="<?php echo lc_h($seo['robots']); ?>">
+  <link rel="canonical" href="<?php echo lc_h($seo['canonical']); ?>">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="<?php echo lc_h($seo['title']); ?>">
+  <?php if ($seo['description'] !== '') { ?>
+  <meta property="og:description" content="<?php echo lc_h($seo['description']); ?>">
+  <?php } ?>
+  <meta property="og:url" content="<?php echo lc_h($seo['canonical']); ?>">
+  <?php if ($seo['ogImage'] !== '') { ?>
+  <meta property="og:image" content="<?php echo lc_h($seo['ogImage']); ?>">
+  <?php } ?>
+  <meta name="twitter:card" content="<?php echo $seo['ogImage'] !== '' ? 'summary_large_image' : 'summary'; ?>">
+  <meta name="twitter:title" content="<?php echo lc_h($seo['title']); ?>">
+  <?php if ($seo['description'] !== '') { ?>
+  <meta name="twitter:description" content="<?php echo lc_h($seo['description']); ?>">
+  <?php } ?>
   <link rel="stylesheet" href="<?php echo lc_h(lc_asset_url('css/linkconnect.css')); ?>">
 </head>
 <body class="lc-app lc-app--public">
@@ -52,11 +78,11 @@ $campaign_name = is_array($link) ? (string) $link['cp_name'] : '';
     <?php if (!is_array($link)) { ?>
       <h1 class="lc-panel__title">링크를 찾을 수 없습니다</h1>
       <p class="lc-muted">유효하지 않거나 만료된 홍보 링크입니다.</p>
-      <p style="margin-top:1.5rem"><a class="lc-btn lc-btn--ghost" href="<?php echo lc_h(G5_URL); ?>">홈으로</a></p>
+      <p style="margin-top:1.5rem"><a class="lc-btn lc-btn--ghost" href="<?php echo lc_h($home_url); ?>">홈으로</a></p>
     <?php } elseif ($success !== '') { ?>
       <h1 class="lc-panel__title">접수 완료</h1>
       <p class="lc-muted"><?php echo lc_h($success); ?></p>
-      <p style="margin-top:1.5rem"><a class="lc-btn lc-btn--ghost" href="<?php echo lc_h(G5_URL); ?>">홈으로</a></p>
+      <p style="margin-top:1.5rem"><a class="lc-btn lc-btn--ghost" href="<?php echo lc_h($home_url); ?>">홈으로</a></p>
     <?php } else { ?>
       <h1 class="lc-panel__title"><?php echo lc_h($campaign_name); ?></h1>
       <p class="lc-muted">무료 상담 신청서를 작성해 주세요. 입력하신 정보는 해당 광고주에게 전달됩니다.</p>
@@ -65,7 +91,7 @@ $campaign_name = is_array($link) ? (string) $link['cp_name'] : '';
         <p class="lc-muted" style="color:#b91c1c;margin-top:1rem;"><?php echo lc_h($error); ?></p>
       <?php } ?>
 
-      <form method="post" action="<?php echo lc_h(G5_URL . '/c/' . rawurlencode($code)); ?>" style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;">
+      <form method="post" action="<?php echo lc_h($landing_url); ?>" style="display:flex;flex-direction:column;gap:0.75rem;margin-top:1.5rem;">
         <label>
           <span class="lc-muted">이름 (필수)</span>
           <input type="text" name="name" class="lc-input" required maxlength="50">

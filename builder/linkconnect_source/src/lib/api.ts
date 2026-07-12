@@ -570,6 +570,27 @@ export async function adminApiPost<T>(endpoint: string, payload?: Record<string,
   return (body as ApiSuccessBody<T>).data;
 }
 
+export async function adminApiPostFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${ADMIN_API_BASE}/${endpoint}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    body: formData,
+  });
+
+  const body = await parseJson<ApiSuccessBody<T> | ApiErrorBody>(response);
+  if (!body.ok) {
+    const errBody = body as ApiErrorBody;
+    const err = new PartnerApiError(errBody.error, errBody.code, response.status);
+    if (errBody.data?.errors && typeof errBody.data.errors === 'object') {
+      (err as PartnerApiError & { fieldErrors?: Record<string, string> }).fieldErrors = errBody.data.errors as Record<string, string>;
+    }
+    throw err;
+  }
+
+  return (body as ApiSuccessBody<T>).data;
+}
+
 export type AdminPartner = {
   id: number;
   code: string;
@@ -900,6 +921,7 @@ export type AdminCampaign = {
   badge: string;
   recommended: boolean;
   promoGuide?: AdminCampaignPromoGuideSummary;
+  thumbnailUrl?: string;
 };
 
 export type AdminCampaignSummary = {
@@ -935,6 +957,24 @@ export function deleteAdminCampaign(payload: { cpId: number; confirm: string }) 
     action: 'delete',
     cpId: payload.cpId,
     confirm: payload.confirm,
+  });
+}
+
+export function uploadAdminCampaignThumbnail(cpId: number, file: File) {
+  const formData = new FormData();
+  formData.append('action', 'upload');
+  formData.append('cpId', String(cpId));
+  formData.append('file', file);
+  return adminApiPostFormData<{ message: string; thumbnailUrl: string; campaign: AdminCampaign | null }>(
+    'campaign-thumbnail.php',
+    formData,
+  );
+}
+
+export function deleteAdminCampaignThumbnail(cpId: number) {
+  return adminApiPost<{ message: string }>('campaign-thumbnail.php', {
+    action: 'delete',
+    cpId,
   });
 }
 

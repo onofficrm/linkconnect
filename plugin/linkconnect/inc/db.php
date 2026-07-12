@@ -568,6 +568,10 @@ if (!function_exists('lc_db_run_migrations')) {
             $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `cp_merchant_price` int unsigned NOT NULL DEFAULT 0 AFTER `cp_price`";
         }
 
+        if (lc_db_table_exists($campaigns) && !lc_db_column_exists($campaigns, 'cp_thumbnail')) {
+            $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `cp_thumbnail` varchar(500) NOT NULL DEFAULT '' AFTER `cp_landing_url`";
+        }
+
         if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, 'cv_partner_price')) {
             $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `cv_partner_price` int NOT NULL DEFAULT 0 AFTER `cv_price`";
         }

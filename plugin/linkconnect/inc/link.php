@@ -3,12 +3,26 @@ if (!defined('_GNUBOARD_')) {
     exit;
 }
 
+if (!function_exists('lc_link_tracking_base_url')) {
+    function lc_link_tracking_base_url()
+    {
+        if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('cpaTrackingDomainEnabled')) {
+            $base = trim((string) lc_settings_get('cpaTrackingBaseUrl', ''));
+            if ($base !== '') {
+                return rtrim($base, '/');
+            }
+        }
+
+        return defined('G5_URL') ? rtrim((string) G5_URL, '/') : '';
+    }
+}
+
 if (!function_exists('lc_link_public_url')) {
     function lc_link_public_url($lk_code)
     {
         $lk_code = trim((string) $lk_code);
 
-        return rtrim(G5_URL, '/') . '/r/' . rawurlencode($lk_code);
+        return lc_link_tracking_base_url() . '/r/' . rawurlencode($lk_code);
     }
 }
 
@@ -17,7 +31,75 @@ if (!function_exists('lc_landing_public_url')) {
     {
         $lk_code = trim((string) $lk_code);
 
-        return rtrim(G5_URL, '/') . '/c/' . rawurlencode($lk_code);
+        return lc_link_tracking_base_url() . '/c/' . rawurlencode($lk_code);
+    }
+}
+
+if (!function_exists('lc_link_landing_seo_replace')) {
+    function lc_link_landing_seo_replace($template, $campaign_name)
+    {
+        $template = trim((string) $template);
+        $campaign_name = trim((string) $campaign_name);
+        $site = function_exists('lc_settings_get')
+            ? trim((string) lc_settings_get('siteName', '링크커넥트'))
+            : '링크커넥트';
+
+        return str_replace(
+            array('{campaign}', '{site}'),
+            array($campaign_name !== '' ? $campaign_name : '상담 신청', $site),
+            $template
+        );
+    }
+}
+
+if (!function_exists('lc_link_landing_seo_meta')) {
+    /**
+     * @return array{title:string,description:string,keywords:string,robots:string,ogImage:string,canonical:string}
+     */
+    function lc_link_landing_seo_meta($campaign_name, $lk_code)
+    {
+        $campaign_name = trim((string) $campaign_name);
+        $lk_code = trim((string) $lk_code);
+        $canonical = $lk_code !== '' ? lc_landing_public_url($lk_code) : lc_link_tracking_base_url();
+
+        $title_tpl = function_exists('lc_settings_get')
+            ? (string) lc_settings_get('cpaLandingSeoTitle', '{campaign} 상담 신청 | {site}')
+            : '{campaign} 상담 신청 | {site}';
+        $desc_tpl = function_exists('lc_settings_get')
+            ? (string) lc_settings_get('cpaLandingSeoDescription', '')
+            : '';
+        $keywords = function_exists('lc_settings_get')
+            ? trim((string) lc_settings_get('cpaLandingSeoKeywords', ''))
+            : '';
+        $robots = function_exists('lc_settings_get')
+            ? trim((string) lc_settings_get('cpaLandingSeoRobots', 'index,follow'))
+            : 'index,follow';
+        $og_image = function_exists('lc_settings_get')
+            ? trim((string) lc_settings_get('cpaLandingSeoOgImage', ''))
+            : '';
+
+        $title = lc_link_landing_seo_replace($title_tpl, $campaign_name);
+        if ($title === '') {
+            $title = $campaign_name !== '' ? $campaign_name . ' 상담 신청' : '상담 신청';
+        }
+
+        $description = lc_link_landing_seo_replace($desc_tpl, $campaign_name);
+        if ($description === '' && $campaign_name !== '') {
+            $description = $campaign_name . ' 무료 상담 신청 페이지입니다.';
+        }
+
+        if ($robots === '') {
+            $robots = 'index,follow';
+        }
+
+        return array(
+            'title'       => $title,
+            'description' => $description,
+            'keywords'    => $keywords,
+            'robots'      => $robots,
+            'ogImage'     => $og_image,
+            'canonical'   => $canonical,
+        );
     }
 }
 
@@ -135,6 +217,7 @@ if (!function_exists('lc_link_to_api')) {
             'channel'     => (string) $row['lk_channel'],
             'subId'       => (string) $row['lk_sub_id'],
             'url'         => lc_link_public_url($row['lk_code']),
+            'landingUrl'  => lc_landing_public_url($row['lk_code']),
             'clicks'      => (int) ($row['click_cnt'] ?? 0),
             'received'    => (int) ($row['received_cnt'] ?? 0),
             'approved'    => (int) ($row['approved_cnt'] ?? 0),

@@ -15,6 +15,8 @@ import {
   fetchAdminMerchants,
   saveAdminCampaign,
   updateAdminCampaignStatus,
+  uploadAdminCampaignThumbnail,
+  deleteAdminCampaignThumbnail,
 } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
@@ -66,6 +68,7 @@ type EditForm = {
   description: string;
   approvalRate: string;
   avgTime: string;
+  thumbnailUrl: string;
 };
 
 function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
@@ -86,6 +89,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
       description: '',
       approvalRate: '',
       avgTime: '',
+      thumbnailUrl: '',
     };
   }
 
@@ -105,6 +109,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
     description: campaign.description,
     approvalRate: campaign.approvalRate,
     avgTime: campaign.avgTime,
+    thumbnailUrl: campaign.thumbnailUrl ?? '',
   };
 }
 
@@ -164,22 +169,61 @@ export function AdminCampaigns() {
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   const handleAIGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 2000);
+    setError('AI 썸네일 생성은 준비 중입니다. 이미지 파일을 업로드해 주세요.');
   };
 
   const handleThumbnailClick = () => {
-    if (isEditMode) {
-      fileInputRef.current?.click();
+    if (!isEditMode || thumbnailUploading) return;
+    if (!editForm?.id) {
+      setError('광고상품을 먼저 저장한 후 썸네일을 등록할 수 있습니다.');
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !editForm?.id) return;
+
+    setThumbnailUploading(true);
+    setError('');
+    try {
+      const result = await uploadAdminCampaignThumbnail(editForm.id, file);
+      const cacheBust = `${result.thumbnailUrl}${result.thumbnailUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      setEditForm((prev) => (prev ? { ...prev, thumbnailUrl: cacheBust } : prev));
+      if (result.campaign) {
+        setSelectedCampaign(result.campaign);
+      }
+      await loadCampaigns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '썸네일 업로드에 실패했습니다.');
+    } finally {
+      setThumbnailUploading(false);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.target.value = '';
+  const handleThumbnailDelete = async () => {
+    if (!editForm?.id || thumbnailUploading) return;
+    if (!window.confirm('썸네일 이미지를 삭제하시겠습니까?')) return;
+
+    setThumbnailUploading(true);
+    setError('');
+    try {
+      await deleteAdminCampaignThumbnail(editForm.id);
+      setEditForm((prev) => (prev ? { ...prev, thumbnailUrl: '' } : prev));
+      if (selectedCampaign) {
+        setSelectedCampaign({ ...selectedCampaign, thumbnailUrl: '' });
+      }
+      await loadCampaigns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '썸네일 삭제에 실패했습니다.');
+    } finally {
+      setThumbnailUploading(false);
+    }
   };
 
   const handleCreateNew = () => {
@@ -532,34 +576,58 @@ export function AdminCampaigns() {
                     <div className="col-span-2">
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">썸네일 이미지</label>
                       <div className="flex items-start gap-4">
-                        <div className="w-24 h-24 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group" onClick={handleThumbnailClick}>
-                          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                          {editForm.code !== '신규등록' ? (
-                            <img src="https://images.unsplash.com/photo-1557682250-33bd709cbe85?auto=format&fit=crop&q=80" alt="Thumbnail" className="w-full h-full object-cover" />
+                        <div
+                          className={`w-24 h-24 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group ${isEditMode && editForm.id ? 'cursor-pointer' : ''}`}
+                          onClick={handleThumbnailClick}
+                        >
+                          <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
+                          {editForm.thumbnailUrl ? (
+                            <img src={editForm.thumbnailUrl} alt="썸네일" className="w-full h-full object-cover" />
                           ) : (
                             <Image className="w-8 h-8 text-slate-300" />
                           )}
-                          {isEditMode && (
-                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                              <Upload className="w-5 h-5 text-white" />
+                          {isEditMode && editForm.id && (
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              {thumbnailUploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Upload className="w-5 h-5 text-white" />}
                             </div>
                           )}
                         </div>
                         <div className="flex-1">
                           {isEditMode ? (
                             <div className="flex flex-col gap-2 h-full justify-center">
-                              <div className="border-2 border-dashed border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-cyan-300 transition-colors cursor-pointer flex-1" onClick={handleThumbnailClick}>
+                              <div
+                                className={`border-2 border-dashed border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-cyan-300 transition-colors flex-1 ${editForm.id ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                onClick={handleThumbnailClick}
+                              >
                                 <Upload className="w-5 h-5 text-cyan-500 mb-1" />
-                                <span className="text-xs font-medium text-slate-600">업로드</span>
+                                <span className="text-xs font-medium text-slate-600">
+                                  {editForm.id ? 'JPG · PNG · WEBP (최대 2MB)' : '저장 후 업로드 가능'}
+                                </span>
                               </div>
-                              <button onClick={handleAIGenerate} disabled={isGenerating} className="flex-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-colors shadow-sm disabled:opacity-50">
-                                {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} AI 생성
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={handleAIGenerate}
+                                  disabled={isGenerating || thumbnailUploading}
+                                  className="flex-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-colors shadow-sm disabled:opacity-50 py-2"
+                                >
+                                  {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} AI 생성
+                                </button>
+                                {editForm.thumbnailUrl && editForm.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={handleThumbnailDelete}
+                                    disabled={thumbnailUploading}
+                                    className="px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold disabled:opacity-50"
+                                  >
+                                    삭제
+                                  </button>
+                                ) : null}
+                              </div>
                             </div>
                           ) : (
-
                             <div className="h-24 flex items-center text-sm text-slate-500 bg-slate-50 rounded-xl px-4 border border-slate-100">
-                              등록된 썸네일 이미지가 없습니다.
+                              {editForm.thumbnailUrl ? '등록된 썸네일 이미지' : '등록된 썸네일 이미지가 없습니다.'}
                             </div>
                           )}
                         </div>

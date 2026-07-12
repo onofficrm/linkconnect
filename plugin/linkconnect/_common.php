@@ -83,6 +83,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/auth_bootstrap.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign_thumbnail.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign_thumbnail.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php';
 }

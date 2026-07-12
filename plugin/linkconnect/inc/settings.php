@@ -48,6 +48,13 @@ if (!function_exists('lc_settings_defaults')) {
             'advertiserContractGraceUntil' => '',
             'promoGuideMaxImageBytes'   => 2097152,
             'promoGuideSkipReview'      => '0',
+            'cpaTrackingDomainEnabled'  => '0',
+            'cpaTrackingBaseUrl'        => '',
+            'cpaLandingSeoTitle'        => '{campaign} 상담 신청 | {site}',
+            'cpaLandingSeoDescription'  => '{campaign} 무료 상담 신청 페이지입니다. 지금 바로 상담을 신청해 보세요.',
+            'cpaLandingSeoKeywords'     => '',
+            'cpaLandingSeoOgImage'      => '',
+            'cpaLandingSeoRobots'       => 'index,follow',
             'notifyLowBalanceEmail' => '1',
             'notifyLowBalanceSms'   => '0',
             'notifyLowBalanceKakao' => '0',
@@ -144,6 +151,14 @@ if (!function_exists('lc_settings_save')) {
         $defaults = lc_settings_defaults();
         $table = lc_table('settings');
 
+        if (function_exists('lc_settings_validate_before_save')) {
+            $validated = lc_settings_validate_before_save($values);
+            if (empty($validated['ok'])) {
+                return array('ok' => false, 'message' => $validated['message'], 'settings' => lc_settings_get_all());
+            }
+            $values = $validated['values'];
+        }
+
         foreach ($values as $key => $value) {
             if (!array_key_exists($key, $defaults)) {
                 continue;
@@ -173,6 +188,87 @@ if (!function_exists('lc_settings_save')) {
     }
 }
 
+if (!function_exists('lc_settings_normalize_cpa_tracking_base_url')) {
+    /**
+     * @return array{ok:bool,message:string,url:string}
+     */
+    function lc_settings_normalize_cpa_tracking_base_url($url)
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return array('ok' => true, 'message' => '', 'url' => '');
+        }
+
+        if (!preg_match('#^https?://#i', $url)) {
+            return array('ok' => false, 'message' => '홍보 링크 도메인은 http:// 또는 https://로 시작해야 합니다.', 'url' => '');
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['host'])) {
+            return array('ok' => false, 'message' => '올바른 홍보 링크 도메인을 입력하세요.', 'url' => '');
+        }
+
+        if (!empty($parts['path']) && $parts['path'] !== '/') {
+            return array('ok' => false, 'message' => '도메인만 입력하세요. 경로(/r 등)는 포함하지 마세요.', 'url' => '');
+        }
+        if (!empty($parts['query']) || !empty($parts['fragment'])) {
+            return array('ok' => false, 'message' => '쿼리스트링이나 # 앵커는 사용할 수 없습니다.', 'url' => '');
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'https'));
+        $host = (string) $parts['host'];
+        $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+
+        return array(
+            'ok'      => true,
+            'message' => '',
+            'url'     => $scheme . '://' . $host . $port,
+        );
+    }
+}
+
+if (!function_exists('lc_settings_validate_before_save')) {
+    /**
+     * @return array{ok:bool,message:string,values:array}
+     */
+    function lc_settings_validate_before_save(array $values)
+    {
+        $enabled = false;
+        if (isset($values['cpaTrackingDomainEnabled'])) {
+            $enabled = in_array((string) $values['cpaTrackingDomainEnabled'], array('1', 'true', 'yes', 'on'), true);
+        } elseif (function_exists('lc_settings_get_bool')) {
+            $enabled = lc_settings_get_bool('cpaTrackingDomainEnabled');
+        }
+
+        if (array_key_exists('cpaTrackingBaseUrl', $values)) {
+            $norm = lc_settings_normalize_cpa_tracking_base_url($values['cpaTrackingBaseUrl']);
+            if (empty($norm['ok'])) {
+                return array('ok' => false, 'message' => $norm['message'], 'values' => $values);
+            }
+            $values['cpaTrackingBaseUrl'] = $norm['url'];
+            if ($enabled && $norm['url'] === '') {
+                return array('ok' => false, 'message' => '독립 도메인 사용 시 홍보 링크 기본 URL을 입력하세요.', 'values' => $values);
+            }
+        }
+
+        if (array_key_exists('cpaLandingSeoOgImage', $values)) {
+            $og = trim((string) $values['cpaLandingSeoOgImage']);
+            if ($og !== '' && !preg_match('#^https?://#i', $og)) {
+                return array('ok' => false, 'message' => 'OG 이미지는 http(s) URL이어야 합니다.', 'values' => $values);
+            }
+            $values['cpaLandingSeoOgImage'] = $og;
+        }
+
+        foreach (array('cpaLandingSeoTitle', 'cpaLandingSeoDescription', 'cpaLandingSeoKeywords', 'cpaLandingSeoRobots') as $seo_key) {
+            if (array_key_exists($seo_key, $values)) {
+                $values[$seo_key] = trim((string) $values[$seo_key]);
+            }
+        }
+
+        return array('ok' => true, 'message' => '', 'values' => $values);
+    }
+}
+
 if (!function_exists('lc_settings_to_api')) {
     function lc_settings_to_api(array $settings)
     {
@@ -193,6 +289,14 @@ if (!function_exists('lc_settings_to_api')) {
                 'duplicateByMerchant' => lc_settings_get_bool('duplicateByMerchant'),
                 'merchantProcessDays' => (int) ($settings['merchantProcessDays'] ?? 7),
                 'advertiserContractGraceUntil' => (string) ($settings['advertiserContractGraceUntil'] ?? ''),
+                'cpaTrackingDomainEnabled' => lc_settings_get_bool('cpaTrackingDomainEnabled'),
+                'cpaTrackingBaseUrl'       => (string) ($settings['cpaTrackingBaseUrl'] ?? ''),
+                'cpaTrackingPreviewUrl'    => function_exists('lc_link_tracking_base_url') ? lc_link_tracking_base_url() : rtrim((string) G5_URL, '/'),
+                'cpaLandingSeoTitle'       => (string) ($settings['cpaLandingSeoTitle'] ?? ''),
+                'cpaLandingSeoDescription' => (string) ($settings['cpaLandingSeoDescription'] ?? ''),
+                'cpaLandingSeoKeywords'    => (string) ($settings['cpaLandingSeoKeywords'] ?? ''),
+                'cpaLandingSeoOgImage'     => (string) ($settings['cpaLandingSeoOgImage'] ?? ''),
+                'cpaLandingSeoRobots'      => (string) ($settings['cpaLandingSeoRobots'] ?? 'index,follow'),
             ),
             'billing' => array(
                 'billingDeductMode'  => (string) ($settings['billingDeductMode'] ?? 'on_receive'),
