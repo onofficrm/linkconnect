@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard } from '../../components/admin/AdminShared';
+import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
 import {
   fetchAdminContractDetail,
   fetchAdminContracts,
@@ -9,7 +10,9 @@ import {
   type AdminContractListItem,
   type AdminContractSummary,
 } from '../../lib/api';
-import { FileText, Search, ExternalLink, FileDown, X, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { FileText, Search, X, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+
+type DetailTab = 'document' | 'admin';
 
 const emptySummary: AdminContractSummary = {
   total: 0,
@@ -49,6 +52,7 @@ export function AdminContracts() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [detailTab, setDetailTab] = useState<DetailTab>('document');
 
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -97,6 +101,7 @@ export function AdminContracts() {
 
   useEffect(() => {
     if (selectedId) {
+      setDetailTab('document');
       loadDetail(selectedId);
     } else {
       setDetail(null);
@@ -218,18 +223,39 @@ export function AdminContracts() {
                 </button>
               </div>
 
-              <div className="p-5 space-y-6">
-                <div className="flex flex-wrap gap-2">
-                  <a href={detail.documentPreviewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border text-sm">
-                    <ExternalLink size={16} /> HTML 미리보기
-                  </a>
-                  {detail.contract.isFullySigned ? (
-                    <a href={detail.documentPdfUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border text-sm">
-                      <FileDown size={16} /> PDF 다운로드
-                    </a>
-                  ) : null}
+              <div className="px-5 pt-4 border-b border-slate-100">
+                <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setDetailTab('document')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${detailTab === 'document' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  >
+                    계약서 문서
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailTab('admin')}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${detailTab === 'admin' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  >
+                    관리 정보
+                  </button>
                 </div>
+              </div>
 
+              <div className="p-5 space-y-6">
+                {detailTab === 'document' ? (
+                  <ContractDocumentViewer
+                    html={detail.contract.contractHtml}
+                    title="CPA 광고주 이용 계약서"
+                    contractCode={detail.contract.contractCode}
+                    signedAt={detail.contract.signedAt}
+                    signatureUrl={detail.signatureUrl}
+                    documentPreviewUrl={detail.documentPreviewUrl}
+                    documentPdfUrl={detail.contract.isFullySigned ? detail.documentPdfUrl : undefined}
+                    maxHeight="75vh"
+                  />
+                ) : (
+                <>
                 <section>
                   <h3 className="font-bold text-slate-900 mb-3">회사정보 비교</h3>
                   <div className="overflow-x-auto">
@@ -332,10 +358,8 @@ export function AdminContracts() {
                   </section>
                 ) : null}
 
-                <section>
-                  <h3 className="font-bold text-slate-900 mb-2">계약서 HTML 스냅샷</h3>
-                  <div className="border border-slate-200 rounded-xl p-4 max-h-64 overflow-y-auto text-sm bg-slate-50" dangerouslySetInnerHTML={{ __html: detail.contract.contractHtml }} />
-                </section>
+                </>
+                )}
               </div>
             </div>
           )}

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ExternalLink, FileDown, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AdvertiserContractLayout } from '../../layouts/AdvertiserContractLayout';
+import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
 import { SignatureCanvas } from '../../components/advertiser/contract/SignatureCanvas';
 import {
   CONTRACT_REQUIRED_AGREEMENTS,
@@ -420,36 +421,17 @@ export function AdvertiserContract() {
 
       {step === 2 ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 md:p-8 shadow-sm space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 mb-1">2단계: 계약서 확인 및 동의</h2>
-              <p className="text-sm text-slate-500">계약서 전문을 확인하고 필수 항목에 동의해 주세요.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={state?.documentPreviewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-              >
-                <ExternalLink size={16} />
-                원본 계약서 보기
-              </a>
-              <a
-                href={state?.documentPdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-              >
-                <FileDown size={16} />
-                계약서 PDF 다운로드
-              </a>
-            </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">2단계: 계약서 확인 및 동의</h2>
+            <p className="text-sm text-slate-500">계약서 전문을 확인하고 필수 항목에 동의해 주세요.</p>
           </div>
 
-          <div
-            className="contract-document prose prose-slate max-w-none rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-6 max-h-[55vh] overflow-y-auto text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: state?.contractHtml ?? '' }}
+          <ContractDocumentViewer
+            html={state?.contractHtml ?? ''}
+            title="CPA 광고주 이용 계약서"
+            documentPreviewUrl={state?.documentPreviewUrl}
+            documentPdfUrl={state?.documentPdfUrl}
+            maxHeight="70vh"
           />
 
           <div className="space-y-3 border-t border-slate-200 pt-4">

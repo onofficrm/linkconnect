@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, FileDown, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
+import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
 import { CONTRACT_REQUIRED_AGREEMENTS } from '../../components/advertiser/contract/contractForm';
 import { fetchMerchantContractRead, type MerchantContractRead, PartnerApiError } from '../../lib/api';
 import { getLcAuth, isLcLoggedIn } from '../../lib/auth';
@@ -113,7 +114,7 @@ export function AdvertiserContractView() {
 
   return (
     <AdvertiserLayout activeMenu="" title="계약정보" companyName={contract.companyName}>
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-5xl space-y-6">
         <p className="text-sm text-slate-500">
           체결된 계약서는 읽기 전용입니다. 계약 당시 기록된 정보를 표시하며, 현재 회원정보와 다를 수 있습니다.
         </p>
@@ -135,7 +136,21 @@ export function AdvertiserContractView() {
           </div>
         ) : null}
 
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
+          <ContractDocumentViewer
+            html={contract.contractHtml}
+            title="CPA 광고주 이용 계약서"
+            contractCode={contract.contractCode}
+            signedAt={contract.signedAt}
+            signatureUrl={contract.signatureUrl}
+            documentPreviewUrl={contract.documentPreviewUrl}
+            documentPdfUrl={contract.documentPdfUrl}
+            maxHeight="78vh"
+          />
+        </div>
+
         <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-8 shadow-sm space-y-6">
+          <h2 className="text-base font-bold text-slate-900">계약 요약 정보</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <ReadOnlyField label="계약 상태" value={contract.statusLabel} />
             <ReadOnlyField label="계약번호" value={contract.contractCode} />
@@ -169,41 +184,6 @@ export function AdvertiserContractView() {
               <p className="text-xs text-slate-500 mt-2">동의 시각: {contract.agreementCheckedAt}</p>
             ) : null}
           </div>
-
-          {contract.signatureUrl ? (
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-2">서명</h3>
-              <div className="inline-block border border-slate-200 rounded-xl bg-white p-3">
-                <img src={contract.signatureUrl} alt="계약 서명" className="max-h-24" />
-              </div>
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-            <a
-              href={contract.documentPreviewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-            >
-              <ExternalLink size={16} />
-              계약서 보기
-            </a>
-            <a
-              href={contract.documentPdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-            >
-              <FileDown size={16} />
-              PDF 다운로드
-            </a>
-          </div>
-
-          <div
-            className="contract-document rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-6 max-h-[50vh] overflow-y-auto text-sm"
-            dangerouslySetInnerHTML={{ __html: contract.contractHtml }}
-          />
         </div>
 
         <Link to="/advertiser" className="inline-flex text-sm text-slate-500 hover:text-cyan-600">
