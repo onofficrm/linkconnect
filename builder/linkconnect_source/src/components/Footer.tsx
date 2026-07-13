@@ -6,7 +6,6 @@ import {
   footerServiceNavItems,
 } from '../lib/publicNav';
 import { handleSectionLink, scrollToSection } from '../lib/navigation';
-import { MemberAuthMenu } from './MemberAuthMenu';
 import { g5BbsUrl } from '../lib/urls';
 import type { NavLinkItem } from '../lib/publicNav';
 
@@ -44,31 +43,51 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
   );
 }
 
-export function Footer() {
+function FooterColumn({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <footer className="bg-slate-950 pt-20 pb-10 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+    <div>
+      <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 mb-5">
+        {title}
+      </h4>
+      <ul className="space-y-3 text-sm text-slate-400">{children}</ul>
+    </div>
+  );
+}
+
+export function Footer() {
+  const year = new Date().getFullYear();
+
+  return (
+    <footer className="bg-slate-950 pt-16 pb-8 px-4 sm:px-6 lg:px-8 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          <div>
-            <Link to="/" className="flex items-center gap-2 mb-6">
-              <LinkIcon className="w-6 h-6 text-emerald-400" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 mb-14">
+          <div className="lg:col-span-5 xl:col-span-5">
+            <Link to="/" className="inline-flex items-center gap-2.5 mb-5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <LinkIcon className="w-5 h-5 text-emerald-400" />
+              </span>
               <span className="text-xl font-bold text-white tracking-tight">
                 링크커넥트
               </span>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+            <p className="text-slate-400 text-sm leading-relaxed max-w-md mb-6">
               클릭을 수익으로, DB를 성과로 연결하는 제휴마케팅 플랫폼입니다.
               최고의 전환율과 투명한 정산 시스템을 제공합니다.
             </p>
-            <div className="text-slate-500 text-sm">
+            <div className="space-y-1.5 text-sm text-slate-500">
               <p>이메일: support@linkconnect.co.kr</p>
               <p>고객센터: 070-8098-6824 (평일 10:00 ~ 17:00)</p>
             </div>
           </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4">회사소개</h4>
-            <ul className="space-y-3 text-sm text-slate-400">
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8">
+            <FooterColumn title="회사소개">
               {companyNavItems.map((item) => (
                 <li key={item.to}>
                   <Link to={item.to} className="hover:text-emerald-400 transition-colors">
@@ -76,37 +95,50 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-            </ul>
-          </div>
+            </FooterColumn>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4">캠페인</h4>
-            <ul className="space-y-3 text-sm text-slate-400">
+            <FooterColumn title="캠페인">
               {footerCampaignNavItems.map((item) => (
                 <li key={item.label}>
                   <FooterNavLink item={item} />
                 </li>
               ))}
-            </ul>
-          </div>
+            </FooterColumn>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4">서비스</h4>
-            <ul className="space-y-3 text-sm text-slate-400">
+            <FooterColumn title="서비스">
               {footerServiceNavItems.map((item) => (
                 <li key={item.to}>
                   <FooterNavLink item={item} />
                 </li>
               ))}
-              <MemberAuthMenu variant="footer" />
-              <li><a href={g5BbsUrl('content.php?co_id=provision')} className="hover:text-cyan-400 transition-colors">이용약관</a></li>
-              <li><a href={g5BbsUrl('content.php?co_id=privacy')} className="hover:text-cyan-400 transition-colors">개인정보처리방침</a></li>
-            </ul>
+            </FooterColumn>
           </div>
         </div>
 
-        <div className="pt-8 border-t border-white/5 text-center text-sm text-slate-600">
-          © {new Date().getFullYear()} LinkConnect. All rights reserved.
+        <div className="pt-6 border-t border-white/5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-600">
+            © {year} LinkConnect. All rights reserved.
+          </p>
+          <nav
+            className="flex items-center gap-4 text-sm text-slate-500 sm:ml-auto"
+            aria-label="법적 고지"
+          >
+            <a
+              href={g5BbsUrl('content.php?co_id=provision')}
+              className="hover:text-slate-300 transition-colors whitespace-nowrap"
+            >
+              이용약관
+            </a>
+            <span className="text-slate-700" aria-hidden="true">
+              |
+            </span>
+            <a
+              href={g5BbsUrl('content.php?co_id=privacy')}
+              className="hover:text-slate-300 transition-colors whitespace-nowrap"
+            >
+              개인정보처리방침
+            </a>
+          </nav>
         </div>
       </div>
     </footer>
