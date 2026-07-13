@@ -43,6 +43,13 @@ if ($method === 'GET') {
         ));
     }
 
+    if ($view === 'e2e') {
+        lc_api_success(array_merge(
+            array('dbReady' => lc_db_table_exists(lc_table('lp_merchants'))),
+            function_exists('lc_lp_admin_e2e_snapshot') ? lc_lp_admin_e2e_snapshot() : array()
+        ));
+    }
+
     if ($view === 'config') {
         lc_api_success(array(
             'config'  => lc_lp_config_to_api(),
@@ -377,6 +384,34 @@ if ($method === 'POST') {
             'connection' => $connection,
             'setup'      => $snapshot,
         ));
+    }
+
+    if ($action === 'create_test_click') {
+        $result = lc_lp_admin_create_test_click($body);
+        $result['ok']
+            ? lc_api_success(array(
+                'message'  => $result['message'],
+                'click'    => $result['click'],
+                'promoUrl' => $result['promoUrl'],
+                'e2e'      => lc_lp_admin_e2e_snapshot(),
+            ))
+            : lc_api_error($result['message'], 'TEST_CLICK_FAILED', 400);
+    }
+
+    if ($action === 'simulate_postback') {
+        $security = function_exists('lc_lp_ui_security_settings') ? lc_lp_ui_security_settings() : array();
+        if (empty($security['testMode']) && empty($body['force'])) {
+            lc_api_error('테스트 POSTBACK은 테스트 모드에서만 가능합니다. 설정에서 테스트 모드를 켜거나 force=true를 사용하세요.', 'TEST_MODE_REQUIRED', 403);
+        }
+        $result = lc_lp_admin_simulate_postback($body);
+        $payload = array(
+            'message'  => $result['message'],
+            'result'   => $result['result'],
+            'lppId'    => (int) ($result['lppId'] ?? 0),
+            'promoUrl' => (string) ($result['promoUrl'] ?? ''),
+            'e2e'      => lc_lp_admin_e2e_snapshot(),
+        );
+        $result['ok'] ? lc_api_success($payload) : lc_api_error($result['message'], 'SIMULATE_FAILED', 400, $payload);
     }
 
     if ($action === 'save_config') {

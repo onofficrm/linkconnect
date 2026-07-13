@@ -61,6 +61,7 @@ import { AdminCallDb } from './pages/admin/AdminCallDb';
 import { AdminLinkprice } from './pages/admin/AdminLinkprice';
 import { AdminCpsSettings } from './pages/admin/cps/AdminCpsSettings';
 import { AdminCpsSetup } from './pages/admin/cps/AdminCpsSetup';
+import { AdminCpsE2e } from './pages/admin/cps/AdminCpsE2e';
 import { AdminCpsMerchants } from './pages/admin/cps/AdminCpsMerchants';
 import { AdminCpsClicks } from './pages/admin/cps/AdminCpsClicks';
 import { AdminCpsOrders, AdminCpsUnmatched } from './pages/admin/cps/AdminCpsOrders';
@@ -141,6 +142,7 @@ export default function App() {
           <Route path="admin/linkprice" element={<AdminLinkprice />} />
           <Route path="admin/cps" element={<AdminCpsSetup />} />
           <Route path="admin/cps/setup" element={<AdminCpsSetup />} />
+          <Route path="admin/cps/e2e" element={<AdminCpsE2e />} />
           <Route path="admin/cps/settings" element={<AdminCpsSettings />} />
           <Route path="admin/cps/merchants" element={<AdminCpsMerchants />} />
           <Route path="admin/cps/clicks" element={<AdminCpsClicks />} />

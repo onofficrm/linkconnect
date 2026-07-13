@@ -134,22 +134,28 @@ export type PartnerCampaign = {
   landingUrl: string;
   thumbnailUrl?: string;
   hasPublishedGuide?: boolean;
+  campaignType?: 'cpa' | 'cps';
+  merchantCode?: string;
+  promoUrl?: string;
+  lpmId?: number;
 };
 
 export type PartnerCampaignsResponse = {
   items: PartnerCampaign[];
   categories: string[];
   dbReady: boolean;
+  counts?: { cpa: number; cps: number };
 };
 
 export function fetchPartnerMe() {
   return partnerApiGet<PartnerMeResponse>('me.php');
 }
 
-export function fetchPartnerCampaigns(filters?: { category?: string; q?: string }) {
+export function fetchPartnerCampaigns(filters?: { category?: string; q?: string; type?: 'cpa' | 'cps' | 'all' }) {
   return partnerApiGet<PartnerCampaignsResponse>('campaigns.php', {
     category: filters?.category ?? '',
     q: filters?.q ?? '',
+    type: filters?.type ?? 'cpa',
   });
 }
 
@@ -2707,6 +2713,50 @@ export function bulkUpdateAdminLpMerchants(payload: {
     updated: number;
     merchants: LpSetupSnapshot['merchants'];
   }>('linkprice.php', { action: 'bulk_update_merchants', ...payload });
+}
+
+export type LpE2eCheck = { id: string; label: string; ok: boolean };
+
+export type LpE2eSnapshot = {
+  dbReady: boolean;
+  setup: LpSetupSnapshot;
+  partnerId: number;
+  merchant: { lpmId: number; merchantCode: string; merchantName: string } | null;
+  promoUrl: string;
+  recentClick: { lpcId: number; ptId: number; lpmId: number; uId: string; clickedAt: string | null } | null;
+  checks: LpE2eCheck[];
+  checksDone: number;
+  checksTotal: number;
+};
+
+export function fetchAdminLpE2e() {
+  return adminApiGet<LpE2eSnapshot>('linkprice.php', { view: 'e2e' });
+}
+
+export function createAdminLpTestClick(payload?: { ptId?: number; lpmId?: number; merchantCode?: string }) {
+  return adminApiPost<{
+    message: string;
+    promoUrl: string;
+    e2e: LpE2eSnapshot;
+    click: Record<string, unknown> | null;
+  }>('linkprice.php', { action: 'create_test_click', ...payload });
+}
+
+export function simulateAdminLpPostback(payload?: {
+  ptId?: number;
+  lpmId?: number;
+  merchantCode?: string;
+  price?: number;
+  commission?: number;
+  force?: boolean;
+}) {
+  return adminApiPost<{
+    message: string;
+    lppId: number;
+    promoUrl: string;
+    e2e: LpE2eSnapshot;
+    result: Record<string, unknown> | null;
+  }>('linkprice.php', { action: 'simulate_postback', ...payload });
 }
 
 export function testAdminLpConnection(testMode?: boolean) {

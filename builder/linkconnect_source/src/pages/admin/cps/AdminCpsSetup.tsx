@@ -145,6 +145,9 @@ export function AdminCpsSetup() {
               >
                 <PlayCircle size={16} /> 연결 점검
               </button>
+              <Link to="/admin/cps/e2e" className="inline-flex items-center px-3 py-2 rounded-xl border text-sm font-bold text-cyan-700">
+                E2E 검증 →
+              </Link>
               <button
                 type="button"
                 disabled={busy}

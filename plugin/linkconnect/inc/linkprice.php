@@ -562,6 +562,232 @@ if (!function_exists('lc_lp_merchant_bulk_update_scope')) {
     }
 }
 
+if (!function_exists('lc_lp_admin_first_active_partner_id')) {
+    function lc_lp_admin_first_active_partner_id()
+    {
+        $table = lc_table('partners');
+        if (!lc_db_table_exists($table)) {
+            return 0;
+        }
+        $row = lc_sql_fetch(" SELECT pt_id FROM `{$table}`
+            WHERE pt_status = '" . lc_sql_escape(LC_PARTNER_STATUS_ACTIVE) . "'
+            ORDER BY pt_id ASC LIMIT 1 ", false);
+
+        return is_array($row) ? (int) ($row['pt_id'] ?? 0) : 0;
+    }
+}
+
+if (!function_exists('lc_lp_admin_e2e_snapshot')) {
+    /**
+     * @return array<string,mixed>
+     */
+    function lc_lp_admin_e2e_snapshot()
+    {
+        $setup = function_exists('lc_lp_setup_snapshot') ? lc_lp_setup_snapshot() : array();
+        $pt_id = lc_lp_admin_first_active_partner_id();
+        $merchant = null;
+        $promo_url = '';
+        $test_click_url = '';
+
+        if ($pt_id > 0 && lc_db_table_exists(lc_table('lp_merchants'))) {
+            $list = lc_lp_merchants_list(array('partner_visible' => true, 'limit' => 1));
+            if (!empty($list['items'][0])) {
+                $merchant = $list['items'][0];
+                if (function_exists('lc_lp_public_promo_url')) {
+                    $promo_url = lc_lp_public_promo_url((string) $merchant['merchant_code'], $pt_id);
+                }
+            }
+        }
+
+        $recent_click = null;
+        if (lc_db_table_exists(lc_table('lp_clicks'))) {
+            $recent_click = lc_sql_fetch(' SELECT lpc_id, pt_id, lpm_id, u_id, clicked_at FROM `' . lc_table('lp_clicks') . '` ORDER BY lpc_id DESC LIMIT 1 ', false);
+        }
+
+        $checks = array(
+            array(
+                'id'    => 'config',
+                'label' => 'API 설정 완료',
+                'ok'    => !empty($setup['config']['ready']),
+            ),
+            array(
+                'id'    => 'merchants',
+                'label' => '노출 광고주 1건 이상',
+                'ok'    => (int) (($setup['merchants']['partnerVisible'] ?? 0)) > 0,
+            ),
+            array(
+                'id'    => 'partner',
+                'label' => '활성 파트너 계정',
+                'ok'    => $pt_id > 0,
+            ),
+            array(
+                'id'    => 'clicks',
+                'label' => '클릭 기록 존재',
+                'ok'    => (int) ($setup['health']['counts']['clicks'] ?? 0) > 0,
+            ),
+            array(
+                'id'    => 'postbacks',
+                'label' => 'POSTBACK 수신',
+                'ok'    => (int) (($setup['postbacks']['total'] ?? 0)) > 0,
+            ),
+            array(
+                'id'    => 'orders',
+                'label' => 'CPS 실적 생성',
+                'ok'    => (int) ($setup['health']['counts']['orders'] ?? 0) > 0,
+            ),
+        );
+
+        $done = 0;
+        foreach ($checks as $c) {
+            if (!empty($c['ok'])) {
+                $done++;
+            }
+        }
+
+        return array(
+            'setup'       => $setup,
+            'partnerId'   => $pt_id,
+            'merchant'    => is_array($merchant) ? array(
+                'lpmId'        => (int) ($merchant['lpm_id'] ?? 0),
+                'merchantCode' => (string) ($merchant['merchant_code'] ?? ''),
+                'merchantName' => (string) ($merchant['merchant_name'] ?? ''),
+            ) : null,
+            'promoUrl'    => $promo_url,
+            'recentClick' => is_array($recent_click) ? array(
+                'lpcId'     => (int) ($recent_click['lpc_id'] ?? 0),
+                'ptId'      => (int) ($recent_click['pt_id'] ?? 0),
+                'lpmId'     => (int) ($recent_click['lpm_id'] ?? 0),
+                'uId'       => (string) ($recent_click['u_id'] ?? ''),
+                'clickedAt' => $recent_click['clicked_at'] ?? null,
+            ) : null,
+            'checks'      => $checks,
+            'checksDone'  => $done,
+            'checksTotal' => count($checks),
+        );
+    }
+}
+
+if (!function_exists('lc_lp_admin_create_test_click')) {
+    /**
+     * @return array{ok:bool,message:string,click:array|null,promoUrl:string}
+     */
+    function lc_lp_admin_create_test_click(array $options = array())
+    {
+        $pt_id = (int) ($options['pt_id'] ?? $options['ptId'] ?? 0);
+        if ($pt_id <= 0) {
+            $pt_id = lc_lp_admin_first_active_partner_id();
+        }
+        if ($pt_id <= 0) {
+            return array('ok' => false, 'message' => '활성 파트너가 없습니다.', 'click' => null, 'promoUrl' => '');
+        }
+
+        $lpm_id = (int) ($options['lpm_id'] ?? $options['lpmId'] ?? 0);
+        $merchant = null;
+        if ($lpm_id > 0 && lc_db_table_exists(lc_table('lp_merchants'))) {
+            $merchant = lc_sql_fetch(' SELECT * FROM `' . lc_table('lp_merchants') . '` WHERE lpm_id = ' . $lpm_id . ' LIMIT 1 ', false);
+        } elseif (trim((string) ($options['merchant_code'] ?? $options['merchantCode'] ?? '')) !== '') {
+            $merchant = lc_lp_repo_get_merchant_by_code((string) ($options['merchant_code'] ?? $options['merchantCode']));
+        } else {
+            $list = lc_lp_merchants_list(array('partner_visible' => true, 'limit' => 1));
+            $merchant = $list['items'][0] ?? null;
+        }
+
+        if (!is_array($merchant) || !lc_lp_merchant_partner_visible($merchant)) {
+            return array('ok' => false, 'message' => '홍보 가능한 CPS 광고주가 없습니다.', 'click' => null, 'promoUrl' => '');
+        }
+
+        $lpm_id = (int) ($merchant['lpm_id'] ?? 0);
+        $created = lc_lp_repo_create_click($pt_id, $lpm_id, (string) ($merchant['merchant_url'] ?? ''));
+        if (empty($created['ok'])) {
+            return array(
+                'ok'       => false,
+                'message'  => (string) ($created['message'] ?? '클릭 생성 실패'),
+                'click'    => null,
+                'promoUrl' => '',
+            );
+        }
+
+        return array(
+            'ok'       => true,
+            'message'  => '테스트 클릭이 생성되었습니다.',
+            'click'    => $created['click'],
+            'promoUrl' => lc_lp_public_promo_url((string) $merchant['merchant_code'], $pt_id),
+        );
+    }
+}
+
+if (!function_exists('lc_lp_admin_simulate_postback')) {
+    /**
+     * 관리자 E2E — 테스트 POSTBACK 처리 (IP/Secret 검증 우회, process_item 직접 호출)
+     *
+     * @return array{ok:bool,message:string,result:array|null,lppId:int}
+     */
+    function lc_lp_admin_simulate_postback(array $options = array())
+    {
+        $click_result = lc_lp_admin_create_test_click($options);
+        if (empty($click_result['ok']) || !is_array($click_result['click'])) {
+            return array(
+                'ok'      => false,
+                'message' => (string) ($click_result['message'] ?? '클릭 생성 실패'),
+                'result'  => null,
+                'lppId'   => 0,
+            );
+        }
+
+        $click = $click_result['click'];
+        $merchant = lc_sql_fetch(' SELECT * FROM `' . lc_table('lp_merchants') . '` WHERE lpm_id = ' . (int) ($click['lpm_id'] ?? 0) . ' LIMIT 1 ', false);
+        if (!is_array($merchant)) {
+            return array('ok' => false, 'message' => '광고주를 찾을 수 없습니다.', 'result' => null, 'lppId' => 0);
+        }
+
+        $cfg = lc_lp_config_get();
+        $trlog = '9' . date('YmdHis') . mt_rand(1000, 9999);
+        $payload = array(
+            'day'                => date('Ymd'),
+            'time'               => date('His'),
+            'merchant_id'        => (string) $merchant['merchant_code'],
+            'order_code'         => 'lc_test_' . date('YmdHis') . '_' . mt_rand(100, 999),
+            'product_code'       => 'lc_test_product',
+            'product_name'       => 'LinkConnect E2E Test Product',
+            'category_code'      => 'test',
+            'item_count'         => 1,
+            'price'              => (int) ($options['price'] ?? 50000),
+            'commision'          => (int) ($options['commission'] ?? 2500),
+            'affiliate_id'       => (string) ($cfg['affiliate_code'] ?? 'TEST'),
+            'affiliate_user_id'  => (string) ($click['u_id'] ?? ''),
+            'trlog_id'           => $trlog,
+            'uniq_id'            => substr(md5(uniqid('', true)), 0, 14),
+            'base_commission'    => '5%',
+            'incentive_commission' => '0%',
+            'test'               => 'Y',
+        );
+
+        $headers_json = json_encode(array('X-LC-E2E' => 'admin'), JSON_UNESCAPED_UNICODE);
+        $lpp_id = lc_lp_repo_insert_postback($payload, $headers_json, '127.0.0.1', array(
+            'trlog_id'      => (string) $payload['trlog_id'],
+            'uniq_id'       => (string) $payload['uniq_id'],
+            'merchant_code' => (string) $payload['merchant_id'],
+            'order_code'    => (string) $payload['order_code'],
+            'u_id'          => (string) $payload['affiliate_user_id'],
+        ));
+
+        $result = lc_lp_postback_process_item($payload, $lpp_id);
+        $status = (string) ($result['status'] ?? '');
+        $ok = in_array($status, array(LC_LP_PB_PROCESSED, LC_LP_PB_UNMATCHED, LC_LP_PB_DUPLICATE), true);
+
+        return array(
+            'ok'      => $ok,
+            'message' => $ok
+                ? ('테스트 POSTBACK 처리: ' . $status)
+                : ('POSTBACK 처리 실패: ' . ($result['message'] ?? $status)),
+            'result'  => $result,
+            'lppId'   => $lpp_id,
+            'payload' => $payload,
+            'promoUrl'=> (string) ($click_result['promoUrl'] ?? ''),
+        );
+    }
+}
+
 if (!function_exists('lc_lp_config_save')) {
     /**
      * @param array $values affiliate_code, api_auth_key, postback_secret, api_enabled, default_partner_rate, network_name

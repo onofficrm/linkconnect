@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, CheckCircle, DollarSign, ExternalLink, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, DollarSign, ExternalLink, BookOpen, ShoppingBag, Copy } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { fetchPartnerCampaigns, createPartnerLink, fetchPartnerPromoGuide, PartnerCampaign } from '../../lib/api';
@@ -7,15 +8,23 @@ import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 
-const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
+const fallbackCpsCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
 
+type ProductType = 'all' | 'cpa' | 'cps';
 type DetailTab = 'intro' | 'guide' | 'assets';
 
+function isCpsCampaign(campaign: PartnerCampaign) {
+  return campaign.campaignType === 'cps' || campaign.type === 'cps';
+}
+
 export function PartnerSearch() {
+  const [productType, setProductType] = useState<ProductType>('all');
   const [activeCategory, setActiveCategory] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
-  const [categories, setCategories] = useState(fallbackCategories);
+  const [categories, setCategories] = useState(fallbackCpaCategories);
   const [campaigns, setCampaigns] = useState<PartnerCampaign[]>([]);
+  const [counts, setCounts] = useState({ cpa: 0, cps: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [linkModal, setLinkModal] = useState<PartnerCampaign | null>(null);
@@ -38,12 +47,20 @@ export function PartnerSearch() {
         const data = await fetchPartnerCampaigns({
           category: activeCategory,
           q: searchQuery,
+          type: productType,
         });
         if (cancelled) {
           return;
         }
-        setCategories(data.categories.length ? data.categories : fallbackCategories);
+        const cats = data.categories.length
+          ? data.categories
+          : (productType === 'cps' ? fallbackCpsCategories : fallbackCpaCategories);
+        setCategories(cats);
         setCampaigns(data.items);
+        setCounts(data.counts ?? {
+          cpa: data.items.filter((i) => !isCpsCampaign(i)).length,
+          cps: data.items.filter((i) => isCpsCampaign(i)).length,
+        });
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : '캠페인을 불러오지 못했습니다.');
@@ -61,25 +78,23 @@ export function PartnerSearch() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, productType]);
+
+  const cpaCampaigns = useMemo(() => campaigns.filter((i) => !isCpsCampaign(i)), [campaigns]);
+  const cpsCampaigns = useMemo(() => campaigns.filter((i) => isCpsCampaign(i)), [campaigns]);
 
   const recommendedItems = useMemo(
     () => campaigns.filter((item) => item.recommended || item.badge).slice(0, 3),
     [campaigns],
   );
 
-  const highApprovalCount = useMemo(
-    () => campaigns.filter((item) => parseInt(item.approvalRate, 10) >= 70).length,
-    [campaigns],
-  );
-
   const avgPrice = useMemo(() => {
-    if (!campaigns.length) {
+    if (!cpaCampaigns.length) {
       return '0';
     }
-    const total = campaigns.reduce((sum, item) => sum + item.price, 0);
-    return Math.round(total / campaigns.length).toLocaleString();
-  }, [campaigns]);
+    const total = cpaCampaigns.reduce((sum, item) => sum + item.price, 0);
+    return Math.round(total / cpaCampaigns.length).toLocaleString();
+  }, [cpaCampaigns]);
 
   const resetLinkModalFields = () => {
     setLinkChannelPreset('');
@@ -90,6 +105,25 @@ export function PartnerSearch() {
   };
 
   const openLinkModal = async (campaign: PartnerCampaign) => {
+    if (isCpsCampaign(campaign)) {
+      const url = (campaign.promoUrl || '').trim();
+      if (!url) {
+        setLinkResult('홍보 링크를 불러올 수 없습니다.');
+        setLinkModal(campaign);
+        resetLinkModalFields();
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        setLinkResult(url);
+      } catch {
+        setLinkResult(url);
+      }
+      setLinkModal(campaign);
+      resetLinkModalFields();
+      return;
+    }
+
     setLinkModal(campaign);
     resetLinkModalFields();
 
@@ -108,11 +142,27 @@ export function PartnerSearch() {
   };
 
   const openDetailModal = (campaign: PartnerCampaign, tab: DetailTab = 'intro') => {
+    if (isCpsCampaign(campaign)) {
+      setDetailModal({ campaign, tab: 'intro' });
+      return;
+    }
     setDetailModal({ campaign, tab });
   };
 
   const handleCreateLink = async () => {
     if (!linkModal) return;
+    if (isCpsCampaign(linkModal)) {
+      const url = (linkModal.promoUrl || '').trim();
+      if (url) {
+        try {
+          await navigator.clipboard.writeText(url);
+        } catch {
+          /* ignore */
+        }
+        setLinkResult(url);
+      }
+      return;
+    }
     setLinkCreating(true);
     setLinkResult('');
     try {
@@ -135,7 +185,7 @@ export function PartnerSearch() {
   return (
     <PartnerLayout activeMenu="search" title="광고상품 찾기">
       <p className="text-slate-500 mb-8 -mt-2">
-        홍보 가능한 CPA 광고상품을 확인하고, 내 채널에 맞는 캠페인을 선택하세요.
+        CPA 리드형 상품과 CPS 쇼핑몰 상품을 한곳에서 찾고 홍보할 수 있습니다.
       </p>
 
       {error && (
@@ -144,11 +194,33 @@ export function PartnerSearch() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <SummaryCard title="전체 CPA 상품" value={String(campaigns.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
-        <SummaryCard title="신규 캠페인" value={String(campaigns.filter((i) => i.badge === '신규').length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
-        <SummaryCard title="승인율 70% 이상" value={String(highApprovalCount)} suffix="개" icon={<CheckCircle className="text-emerald-500" />} />
-        <SummaryCard title="평균 파트너 단가" value={avgPrice} suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <SummaryCard title="전체 상품" value={String(campaigns.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
+        <SummaryCard title="CPA 상품" value={String(counts.cpa || cpaCampaigns.length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
+        <SummaryCard title="CPS 쇼핑" value={String(counts.cps || cpsCampaigns.length)} suffix="개" icon={<ShoppingBag className="text-cyan-500" />} />
+        <SummaryCard title="평균 CPA 단가" value={avgPrice} suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        {([
+          ['all', '전체'],
+          ['cpa', 'CPA'],
+          ['cps', 'CPS'],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => { setProductType(id); setActiveCategory('전체'); }}
+            className={`px-4 py-2 rounded-full text-sm font-bold border ${
+              productType === id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+        <Link to="/partner/cps" className="ml-auto text-sm font-bold text-cyan-700 self-center">
+          CPS 전용 화면 →
+        </Link>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">
@@ -198,7 +270,7 @@ export function PartnerSearch() {
             <div className="mb-12">
               <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-500" />
-                추천 CPA 캠페인
+                추천 상품
               </h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {recommendedItems.map((item) => (
@@ -274,43 +346,65 @@ export function PartnerSearch() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900">홍보 링크 생성</h3>
+              <h3 className="text-lg font-bold text-slate-900">
+                {isCpsCampaign(linkModal) ? 'CPS 홍보 링크' : '홍보 링크 생성'}
+              </h3>
               <p className="text-sm text-slate-500 mt-1">{linkModal.title}</p>
             </div>
             <div className="p-6 space-y-4">
-              {linkGuideWarning && linkModal.hasPublishedGuide ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
-                  광고를 시작하기 전에 최신 홍보 가이드를 확인해 주세요.{' '}
-                  <button
-                    type="button"
-                    className="font-bold underline ml-1"
-                    onClick={() => {
-                      setLinkModal(null);
-                      openDetailModal(linkModal, 'guide');
-                    }}
-                  >
-                    가이드 보기
-                  </button>
-                </div>
-              ) : null}
-              <PartnerLinkCreateFields
-                channelPreset={linkChannelPreset}
-                channelCustom={linkChannelCustom}
-                linkName={linkName}
-                onChannelPresetChange={setLinkChannelPreset}
-                onChannelCustomChange={setLinkChannelCustom}
-                onLinkNameChange={setLinkName}
-              />
-              {linkResult && (
-                <p className={`text-sm ${linkResult.startsWith('http') ? 'text-emerald-600 break-all' : 'text-red-600'}`}>
-                  {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
-                </p>
+              {isCpsCampaign(linkModal) ? (
+                <>
+                  <p className="text-sm text-slate-600">아래 링크를 복사해 채널에 게시하세요. 구매 발생 시 수익이 적립됩니다.</p>
+                  <div className="text-xs break-all bg-slate-50 rounded-xl p-3 font-mono border">
+                    {(linkModal.promoUrl || linkResult || '').trim() || '링크를 불러오지 못했습니다.'}
+                  </div>
+                  {linkResult ? (
+                    <p className="text-sm text-emerald-600">클립보드에 복사되었습니다.</p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  {linkGuideWarning && linkModal.hasPublishedGuide ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+                      광고를 시작하기 전에 최신 홍보 가이드를 확인해 주세요.{' '}
+                      <button
+                        type="button"
+                        className="font-bold underline ml-1"
+                        onClick={() => {
+                          setLinkModal(null);
+                          openDetailModal(linkModal, 'guide');
+                        }}
+                      >
+                        가이드 보기
+                      </button>
+                    </div>
+                  ) : null}
+                  <PartnerLinkCreateFields
+                    channelPreset={linkChannelPreset}
+                    channelCustom={linkChannelCustom}
+                    linkName={linkName}
+                    onChannelPresetChange={setLinkChannelPreset}
+                    onChannelCustomChange={setLinkChannelCustom}
+                    onLinkNameChange={setLinkName}
+                  />
+                  {linkResult && (
+                    <p className={`text-sm ${linkResult.startsWith('http') ? 'text-emerald-600 break-all' : 'text-red-600'}`}>
+                      {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
+                    </p>
+                  )}
+                </>
               )}
             </div>
             <div className="px-6 py-4 bg-slate-50 flex gap-3">
               <button type="button" onClick={() => setLinkModal(null)} className="flex-1 py-3 border border-slate-200 rounded-xl">닫기</button>
-              <button type="button" disabled={linkCreating} onClick={handleCreateLink} className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-60">
-                {linkCreating ? '생성 중...' : '링크 생성'}
+              <button type="button" disabled={linkCreating} onClick={handleCreateLink} className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-2">
+                {isCpsCampaign(linkModal) ? (
+                  <><Copy size={16} /> 링크 복사</>
+                ) : linkCreating ? (
+                  '생성 중...'
+                ) : (
+                  '링크 생성'
+                )}
               </button>
             </div>
           </div>
@@ -332,29 +426,33 @@ function CampaignCard({
   onOpenGuide: () => void;
   onCreateLink: () => void;
 }) {
+  const isCps = isCpsCampaign(campaign);
   const hasLandingUrl = campaign.landingUrl.trim().length > 0;
   const hasGuide = Boolean(campaign.hasPublishedGuide);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       {campaign.thumbnailUrl ? (
-        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100">
+        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100 flex items-center justify-center">
           <img
             src={campaign.thumbnailUrl}
             alt={campaign.title}
-            className="w-full h-full object-cover"
+            className={isCps ? 'w-full h-full object-contain p-4' : 'w-full h-full object-cover'}
             loading="lazy"
+            referrerPolicy="no-referrer"
           />
         </div>
       ) : null}
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md border border-slate-200">
               {campaign.category}
             </span>
-            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-md border border-slate-200">
-              CPA
+            <span className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${
+              isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+            }`}>
+              {isCps ? 'CPS' : 'CPA'}
             </span>
           </div>
           <div className="flex gap-2">
@@ -379,14 +477,29 @@ function CampaignCard({
         <p className="text-sm text-slate-500 mb-5 line-clamp-1">{campaign.description}</p>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
-            <div className="text-xs text-emerald-800 mb-1">파트너 단가</div>
-            <div className="text-lg font-bold text-emerald-600">{campaign.priceFormatted}<span className="text-sm font-normal ml-0.5">원</span></div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <div className="text-xs text-slate-500 mb-1">승인율 / 평균</div>
-            <div className="text-lg font-bold text-slate-700">{campaign.approvalRate} <span className="text-xs font-normal text-slate-400">({campaign.avgTime})</span></div>
-          </div>
+          {isCps ? (
+            <>
+              <div className="bg-cyan-50/50 rounded-xl p-3 border border-cyan-100/50">
+                <div className="text-xs text-cyan-800 mb-1">수수료</div>
+                <div className="text-lg font-bold text-cyan-600">{campaign.approvalRate}</div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">유형</div>
+                <div className="text-lg font-bold text-slate-700">구매 연동</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
+                <div className="text-xs text-emerald-800 mb-1">파트너 단가</div>
+                <div className="text-lg font-bold text-emerald-600">{campaign.priceFormatted}<span className="text-sm font-normal ml-0.5">원</span></div>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="text-xs text-slate-500 mb-1">승인율 / 평균</div>
+                <div className="text-lg font-bold text-slate-700">{campaign.approvalRate} <span className="text-xs font-normal text-slate-400">({campaign.avgTime})</span></div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="space-y-2 text-xs">
@@ -432,7 +545,7 @@ function CampaignCard({
           </button>
           <button type="button" onClick={onCreateLink} className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5 shadow-sm">
             <LinkIcon className="w-4 h-4" />
-            홍보 링크 생성
+            {isCps ? '링크 복사' : '홍보 링크 생성'}
           </button>
         </div>
       </div>
