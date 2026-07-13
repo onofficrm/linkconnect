@@ -37,6 +37,7 @@ import {
   uploadMerchantPromoGuideImage,
 } from '../../lib/api';
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import { AdvertiserCampaignAiPanel } from '../../components/advertiser/AdvertiserCampaignAiPanel';
 
 const APPROVAL_OPTIONS: PromoGuideApprovalType[] = ['free', 'first_review', 'all_review'];
 
@@ -401,6 +402,25 @@ export function AdvertiserCampaignGuide() {
             max={limits.images}
             error={fieldErrors.images}
           >
+            <AdvertiserCampaignAiPanel
+              cpId={cpId}
+              campaignName={campaignName || '광고상품'}
+              readOnly={readOnly}
+              onApplyPromotionPoints={(points) => {
+                setForm((prev) => {
+                  const merged = [...prev.promotionPoints];
+                  points.forEach((point) => {
+                    const emptyIdx = merged.findIndex((v) => !v.trim());
+                    if (emptyIdx >= 0) {
+                      merged[emptyIdx] = point;
+                    } else if (merged.length < limits.promotion_points) {
+                      merged.push(point);
+                    }
+                  });
+                  return { ...prev, promotionPoints: merged };
+                });
+              }}
+            />
             <ImageUploader
               images={images.map((img) => ({
                 id: img.id,

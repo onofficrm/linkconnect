@@ -1,7 +1,7 @@
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
-import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, Wand2, Loader2, BookOpen } from 'lucide-react';
+import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMerchantCampaigns, MerchantCampaign, PartnerApiError } from '../../lib/api';
@@ -15,7 +15,6 @@ export function AdvertiserCampaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [contractRequired, setContractRequired] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,34 +48,12 @@ export function AdvertiserCampaigns() {
     };
   }, []);
 
-  const handleAIGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      alert('AI 배너 및 홍보 문구가 성공적으로 생성되었습니다.');
-    }, 2000);
-  };
-
   return (
     <AdvertiserLayout activeMenu="campaigns" title="내 광고상품">
       <div className="flex flex-col mb-8 -mt-2">
         <p className="text-slate-500">
           운영 중인 광고 캠페인을 관리하고 실시간 성과를 확인하세요.
         </p>
-      </div>
-
-      <div className="mb-8 bg-gradient-to-r from-indigo-900 to-purple-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 border border-white/10 text-xs font-bold mb-3 backdrop-blur-sm">
-            <Wand2 size={12} className="text-purple-300" /> AI 베타
-          </div>
-          <h3 className="text-xl font-bold mb-2">원클릭 AI 썸네일 & 배너 생성</h3>
-          <p className="text-indigo-200 text-sm max-w-md">상품명과 타겟만 입력하면, AI가 전환율이 높은 광고 이미지와 홍보 문구를 자동으로 생성해 드립니다.</p>
-        </div>
-        <button onClick={handleAIGenerate} disabled={isGenerating} className="relative z-10 shrink-0 bg-white text-indigo-900 hover:bg-indigo-50 px-6 py-3 rounded-xl font-bold text-sm shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:hover:scale-100">
-          {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />} {isGenerating ? '생성 중...' : '지금 AI로 만들기'}
-        </button>
       </div>
 
       {showContractNotice ? <AdvertiserContractNotice /> : null}

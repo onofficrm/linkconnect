@@ -2229,6 +2229,18 @@ export function fetchMerchantAiSummary() {
   return merchantApiPost<{ summary: string; fallback: boolean }>('ai.php', { action: 'summary' });
 }
 
+export function generateMerchantCampaignPromo(payload: {
+  cpId: number;
+  title?: string;
+  targetAudience: string;
+  category?: string;
+}) {
+  return merchantApiPost<{ copies: AiPromoCopy[]; fallback: boolean; message?: string }>('ai.php', {
+    action: 'promo',
+    ...payload,
+  });
+}
+
 /* ─────────────────────────── 콜디비 (Call DB) ─────────────────────────── */
 
 export type CallNumber = {

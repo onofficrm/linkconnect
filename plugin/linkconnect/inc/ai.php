@@ -221,9 +221,11 @@ if (!function_exists('lc_ai_promo_generate')) {
         $forbidden = trim((string) ($payload['forbiddenChannels'] ?? ''));
         $channel = trim((string) ($payload['channel'] ?? 'all'));
         $event = trim((string) ($payload['eventTitle'] ?? ''));
+        $target = trim((string) ($payload['targetAudience'] ?? ''));
 
         $prompt = "다음 CPA 캠페인 홍보 문구를 작성하세요.\n\n";
         $prompt .= "캠페인: {$title}\n";
+        if ($target !== '') $prompt .= "타겟 고객: {$target}\n";
         if ($category !== '') $prompt .= "카테고리: {$category}\n";
         if ($price !== '') $prompt .= "파트너 단가: {$price}\n";
         if ($approval !== '') $prompt .= "승인율: {$approval}\n";
