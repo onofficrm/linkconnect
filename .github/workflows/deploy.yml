@@ -55,7 +55,7 @@ jobs:
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,inc,merchant/banktupt,cron,go/lp,r,c,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/api,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,terms,privacy,inc,merchant/banktupt,cron,go/lp,r,c,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/api,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -64,7 +64,7 @@ jobs:
           cp favicon.png .htaccess "$ROOT/"
           cp merchant/banktupt/index.php "$ROOT/merchant/banktupt/"
           cp head.php tail.php "$ROOT/"
-          cp -R about affiliate notice "$ROOT/"
+          cp -R about affiliate notice terms privacy "$ROOT/"
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"

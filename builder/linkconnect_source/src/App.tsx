@@ -73,6 +73,8 @@ import { AdminCpsSettlements } from './pages/admin/cps/AdminCpsSettlements';
 import { NoticeList } from './pages/notice/NoticeList';
 import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
+import { TermsOfService } from './pages/legal/TermsOfService';
+import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
 import { AdvertiserContractAccessGuard } from './components/advertiser/AdvertiserContractAccessGuard';
@@ -96,6 +98,8 @@ export default function App() {
           <Route path="notice/write" element={<NoticeForm />} />
           <Route path="notice/:id/edit" element={<NoticeForm />} />
           <Route path="notice/:id" element={<NoticeDetailPage />} />
+          <Route path="terms" element={<TermsOfService />} />
+          <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>
 
         {/* 센터 — 전용 레이아웃만 (마케팅 chrome 없음) */}

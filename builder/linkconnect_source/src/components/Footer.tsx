@@ -6,7 +6,6 @@ import {
   footerServiceNavItems,
 } from '../lib/publicNav';
 import { handleSectionLink, scrollToSection } from '../lib/navigation';
-import { g5BbsUrl } from '../lib/urls';
 import type { NavLinkItem } from '../lib/publicNav';
 
 function footerLinkClass(accent?: NavLinkItem['accent']) {
@@ -123,21 +122,15 @@ export function Footer() {
             className="flex items-center gap-4 text-sm text-slate-500 sm:ml-auto"
             aria-label="법적 고지"
           >
-            <a
-              href={g5BbsUrl('content.php?co_id=provision')}
-              className="hover:text-slate-300 transition-colors whitespace-nowrap"
-            >
+            <Link to="/terms" className="hover:text-slate-300 transition-colors whitespace-nowrap">
               이용약관
-            </a>
+            </Link>
             <span className="text-slate-700" aria-hidden="true">
               |
             </span>
-            <a
-              href={g5BbsUrl('content.php?co_id=privacy')}
-              className="hover:text-slate-300 transition-colors whitespace-nowrap"
-            >
+            <Link to="/privacy" className="hover:text-slate-300 transition-colors whitespace-nowrap">
               개인정보처리방침
-            </a>
+            </Link>
           </nav>
         </div>
       </div>

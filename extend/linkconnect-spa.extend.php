@@ -27,7 +27,7 @@ if (!function_exists('linkconnect_spa_rewrite_enabled')) {
 if (!function_exists('linkconnect_spa_route_pattern')) {
     function linkconnect_spa_route_pattern()
     {
-        return '^(about|affiliate|select-center|cpa-list|cps|events|notice|partner|advertiser|admin)(/.*)?$';
+        return '^(about|affiliate|select-center|cpa-list|cps|events|notice|terms|privacy|partner|advertiser|admin)(/.*)?$';
     }
 }
 
@@ -67,3 +67,29 @@ if (function_exists('add_replace')) {
     add_replace('add_mod_rewrite_rules', 'linkconnect_add_tracking_rewrite_rules', 4, 4);
     add_replace('add_mod_rewrite_rules', 'linkconnect_add_spa_rewrite_rules', 5, 4);
 }
+
+if (!function_exists('linkconnect_legal_content_redirect')) {
+    function linkconnect_legal_content_redirect()
+    {
+        if (!function_exists('linkconnect_spa_rewrite_enabled') || !linkconnect_spa_rewrite_enabled()) {
+            return;
+        }
+
+        $script = isset($_SERVER['SCRIPT_NAME']) ? (string) $_SERVER['SCRIPT_NAME'] : '';
+        if (strpos($script, 'content.php') === false) {
+            return;
+        }
+
+        $co_id = isset($_GET['co_id']) ? preg_replace('/[^a-z0-9_]/i', '', (string) $_GET['co_id']) : '';
+        if ($co_id === 'provision') {
+            header('Location: ' . G5_URL . '/terms', true, 301);
+            exit;
+        }
+        if ($co_id === 'privacy') {
+            header('Location: ' . G5_URL . '/privacy', true, 301);
+            exit;
+        }
+    }
+}
+
+linkconnect_legal_content_redirect();
