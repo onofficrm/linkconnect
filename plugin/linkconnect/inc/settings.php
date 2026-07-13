@@ -269,6 +269,36 @@ if (!function_exists('lc_settings_validate_before_save')) {
     }
 }
 
+if (!function_exists('lc_settings_raw_for_admin')) {
+    /**
+     * 관리자 설정 API용 flat raw (비밀값 제거, Set/Masked 플래그 문자열)
+     *
+     * @return array<string, string>
+     */
+    function lc_settings_raw_for_admin(array $settings)
+    {
+        $raw = $settings;
+        unset(
+            $raw['geminiApiKey'],
+            $raw['callApiKey'],
+            $raw['callApiSecret'],
+            $raw['callWebhookToken'],
+            $raw['lpAuthKey'],
+            $raw['lpPostbackSecret']
+        );
+
+        $raw['geminiApiKeySet'] = trim((string) ($settings['geminiApiKey'] ?? '')) !== '' ? '1' : '0';
+        $raw['geminiApiKeyMasked'] = function_exists('lc_gemini_mask_key')
+            ? lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? ''))
+            : '';
+        $raw['callApiKeySet'] = trim((string) ($settings['callApiKey'] ?? '')) !== '' ? '1' : '0';
+        $raw['callApiSecretSet'] = trim((string) ($settings['callApiSecret'] ?? '')) !== '' ? '1' : '0';
+        $raw['callWebhookTokenSet'] = trim((string) ($settings['callWebhookToken'] ?? '')) !== '' ? '1' : '0';
+
+        return $raw;
+    }
+}
+
 if (!function_exists('lc_settings_to_api')) {
     function lc_settings_to_api(array $settings)
     {

@@ -5,14 +5,10 @@ lc_api_require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $settings = lc_settings_get_all();
-    $raw = $settings;
-    unset($raw['geminiApiKey']);
-    $raw['geminiApiKeySet'] = trim((string) ($settings['geminiApiKey'] ?? '')) !== '';
-    $raw['geminiApiKeyMasked'] = lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? ''));
 
     lc_api_success(array(
         'settings' => lc_settings_to_api($settings),
-        'raw'      => $raw,
+        'raw'      => lc_settings_raw_for_admin($settings),
         'dbReady'  => lc_db_installed(),
     ));
 }
@@ -29,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lc_api_success(array(
             'message'  => '기본값으로 복원되었습니다.',
             'settings' => lc_settings_to_api(lc_settings_get_all()),
-            'raw'      => lc_settings_get_all(),
+            'raw'      => lc_settings_raw_for_admin(lc_settings_get_all()),
         ));
     }
 
@@ -110,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     lc_api_success(array(
         'message'  => $result['message'],
         'settings' => lc_settings_to_api($result['settings']),
-        'raw'      => $result['settings'],
+        'raw'      => lc_settings_raw_for_admin($result['settings']),
     ));
 }
 

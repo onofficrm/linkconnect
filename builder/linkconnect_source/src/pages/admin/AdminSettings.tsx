@@ -46,7 +46,8 @@ const defaultRaw: RawSettings = {
 };
 
 function boolVal(raw: RawSettings, key: string) {
-  return raw[key] === '1' || raw[key] === 'true';
+  const v = raw[key];
+  return v === '1' || v === 'true' || v === true;
 }
 
 function setBool(raw: RawSettings, key: string, value: boolean): RawSettings {
@@ -289,7 +290,7 @@ export function AdminSettings() {
             <Field label="Gemini 모델" value={raw.geminiModel} onChange={(v) => update('geminiModel', v)} />
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Google Gemini API 키</label>
-              {raw.geminiApiKeySet === '1' || raw.geminiApiKeySet === 'true' ? (
+              {boolVal(raw, 'geminiApiKeySet') ? (
                 <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.geminiApiKeyMasked || '********'}</p>
               ) : (
                 <p className="text-xs text-amber-600 mb-2">API 키가 설정되지 않았습니다. AI 기능을 사용하려면 키를 입력하세요.</p>
