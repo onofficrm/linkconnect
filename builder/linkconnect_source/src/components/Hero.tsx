@@ -1,10 +1,25 @@
 import { ArrowUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { handleSectionLink } from '../lib/navigation';
+import type { MouseEvent } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { handleSectionLink, scrollToSection } from '../lib/navigation';
 
 const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.png`;
 
+function sectionLinkClick(
+  e: MouseEvent<HTMLAnchorElement>,
+  sectionId: string,
+  pathname: string,
+) {
+  handleSectionLink(sectionId);
+  if (pathname === '/') {
+    e.preventDefault();
+    scrollToSection(sectionId);
+  }
+}
+
 export function Hero() {
+  const location = useLocation();
+
   return (
     <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-slate-950">
       <div className="max-w-7xl mx-auto">
@@ -35,14 +50,14 @@ export function Hero() {
               </Link>
               <Link
                 to="/"
-                onClick={() => handleSectionLink('call-db')}
+                onClick={(e) => sectionLinkClick(e, 'call-db', location.pathname)}
                 className="px-8 py-4 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 font-medium rounded-xl border border-violet-500/30 transition-colors"
               >
                 콜디비 알아보기
               </Link>
               <Link
                 to="/"
-                onClick={() => handleSectionLink('lc-inquiry')}
+                onClick={(e) => sectionLinkClick(e, 'lc-inquiry', location.pathname)}
                 className="px-8 py-4 bg-transparent hover:bg-cyan-500/10 text-cyan-400 font-medium rounded-xl transition-colors"
               >
                 광고주 입점 문의

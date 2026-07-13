@@ -1,13 +1,23 @@
 import { Link as LinkIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { campaignNavItems, centerNavItems, companyNavItems } from '../lib/publicNav';
+import {
+  companyNavItems,
+  footerCampaignNavItems,
+  footerServiceNavItems,
+} from '../lib/publicNav';
 import { handleSectionLink, scrollToSection } from '../lib/navigation';
 import { MemberAuthMenu } from './MemberAuthMenu';
 import { g5BbsUrl } from '../lib/urls';
 import type { NavLinkItem } from '../lib/publicNav';
 
+function footerLinkClass(accent?: NavLinkItem['accent']) {
+  if (accent === 'cyan') return 'hover:text-cyan-400 transition-colors';
+  return 'hover:text-emerald-400 transition-colors';
+}
+
 function FooterNavLink({ item }: { item: NavLinkItem }) {
   const location = useLocation();
+  const className = footerLinkClass(item.accent);
 
   if (item.scrollTarget) {
     return (
@@ -20,7 +30,7 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
             scrollToSection(item.scrollTarget!);
           }
         }}
-        className="hover:text-emerald-400 transition-colors"
+        className={className}
       >
         {item.label}
       </Link>
@@ -28,7 +38,7 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
   }
 
   return (
-    <Link to={item.to} className="hover:text-emerald-400 transition-colors">
+    <Link to={item.to} className={className}>
       {item.label}
     </Link>
   );
@@ -38,15 +48,15 @@ export function Footer() {
   return (
     <footer className="bg-slate-950 pt-20 pb-10 px-4 sm:px-6 lg:px-8 border-t border-white/5">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          <div>
             <Link to="/" className="flex items-center gap-2 mb-6">
               <LinkIcon className="w-6 h-6 text-emerald-400" />
               <span className="text-xl font-bold text-white tracking-tight">
                 링크커넥트
               </span>
             </Link>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-md mb-6">
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
               클릭을 수익으로, DB를 성과로 연결하는 제휴마케팅 플랫폼입니다.
               최고의 전환율과 투명한 정산 시스템을 제공합니다.
             </p>
@@ -70,18 +80,22 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">캠페인 · 서비스</h4>
+            <h4 className="text-white font-semibold mb-4">캠페인</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              {campaignNavItems.map((item) => (
+              {footerCampaignNavItems.map((item) => (
                 <li key={item.label}>
                   <FooterNavLink item={item} />
                 </li>
               ))}
-              {centerNavItems.map((item) => (
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-semibold mb-4">서비스</h4>
+            <ul className="space-y-3 text-sm text-slate-400">
+              {footerServiceNavItems.map((item) => (
                 <li key={item.to}>
-                  <Link to={item.to} className="hover:text-cyan-400 transition-colors">
-                    {item.label}
-                  </Link>
+                  <FooterNavLink item={item} />
                 </li>
               ))}
               <MemberAuthMenu variant="footer" />

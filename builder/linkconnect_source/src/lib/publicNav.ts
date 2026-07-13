@@ -24,6 +24,20 @@ export const campaignNavItems: NavLinkItem[] = [
   { to: '/events', label: '이벤트/프로모션' },
 ];
 
+/** 푸터 — 캠페인 */
+export const footerCampaignNavItems: NavLinkItem[] = [
+  { to: '/cpa-list', label: 'CPA' },
+  { to: '/cps', label: 'CPS' },
+  { to: '/', label: '콜디비', scrollTarget: 'call-db' },
+];
+
+/** 푸터 — 서비스 */
+export const footerServiceNavItems: NavLinkItem[] = [
+  { to: '/partner', label: '파트너센터', accent: 'emerald' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
+  { to: '/events', label: '이벤트/프로모션' },
+];
+
 /** 센터 */
 export const centerNavItems: NavLinkItem[] = [
   { to: '/partner', label: '파트너센터', accent: 'emerald' },

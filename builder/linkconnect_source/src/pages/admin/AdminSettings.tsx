@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Settings, Save, RotateCcw, Check, Sparkles, PhoneCall, Link2 } from 'lucide-react';
+import { Settings, Save, RotateCcw, Check, Sparkles, Link2 } from 'lucide-react';
 import { fetchAdminSettings, resetAdminSettings, saveAdminSettings } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -31,11 +31,6 @@ const defaultRaw: RawSettings = {
   notifyLowBalanceEmailTpl: '[{site}] {company}님, 광고비 잔액이 {balance}원입니다. (기준 {threshold}원) 충전을 진행해 주세요.',
   notifyLowBalanceSmsTpl: '[{site}] 광고비 잔액 {balance}원. 충전 필요.',
   notifyLowBalanceKakaoTpl: '{company}님, 광고비 잔액 {balance}원입니다. 충전해 주세요.',
-  callEnabled: '0',
-  callDefaultPrice: '0',
-  callMinDuration: '0',
-  callCreateOnMissed: '0',
-  callRecordingMode: 'normal',
   cpaTrackingDomainEnabled: '0',
   cpaTrackingBaseUrl: '',
   cpaLandingSeoTitle: '{campaign} 상담 신청 | {site}',
@@ -140,13 +135,6 @@ export function AdminSettings() {
           aiChatDailyLimit: Number(raw.aiChatDailyLimit || 30),
           aiPromoDailyLimit: Number(raw.aiPromoDailyLimit || 20),
           aiSummaryDailyLimit: Number(raw.aiSummaryDailyLimit || 10),
-        },
-        call: {
-          callEnabled: boolVal(raw, 'callEnabled'),
-          callDefaultPrice: Number(raw.callDefaultPrice || 0),
-          callMinDuration: Number(raw.callMinDuration || 0),
-          callCreateOnMissed: boolVal(raw, 'callCreateOnMissed'),
-          callRecordingMode: raw.callRecordingMode || 'normal',
         },
       });
       setRaw({ ...defaultRaw, ...data.raw });
@@ -322,25 +310,6 @@ export function AdminSettings() {
             <TextAreaField label="문자 템플릿" value={raw.notifyLowBalanceSmsTpl || ''} onChange={(v) => update('notifyLowBalanceSmsTpl', v)} />
             <Toggle label="카카오 알림톡 발송" checked={boolVal(raw, 'notifyLowBalanceKakao')} onChange={(v) => setRaw((prev) => setBool(prev, 'notifyLowBalanceKakao', v))} />
             <TextAreaField label="카카오 템플릿" value={raw.notifyLowBalanceKakaoTpl || ''} onChange={(v) => update('notifyLowBalanceKakaoTpl', v)} />
-          </div>
-        </section>
-
-        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-violet-600 to-cyan-600 flex items-center gap-2">
-            <PhoneCall className="w-5 h-5 text-white" />
-            <h3 className="font-bold text-white">콜디비 (수동 운영)</h3>
-          </div>
-          <div className="p-6 space-y-6">
-            <p className="text-sm text-slate-600 leading-relaxed">
-              콜디비는 API 연동 없이 운영합니다. 관리자가 가상번호를 수동 배정하고, 콜업체 통화내역 엑셀을 업로드하면 파트너·광고주 화면에 담당 번호 기준으로 표시됩니다.
-            </p>
-            <Toggle label="콜디비 기능 사용" checked={boolVal(raw, 'callEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'callEnabled', v))} />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field label="기본 콜 단가 (원)" value={raw.callDefaultPrice} onChange={(v) => update('callDefaultPrice', v)} type="number" />
-              <Field label="최소 통화시간 (초)" value={raw.callMinDuration} onChange={(v) => update('callMinDuration', v)} type="number" />
-              <SelectField label="기본 녹음 방식" value={raw.callRecordingMode} onChange={(v) => update('callRecordingMode', v)} options={[['normal', '녹음'], ['none', '녹음 안함'], ['both', '양방향 녹음']]} />
-            </div>
-            <Toggle label="부재중 통화도 콜DB로 집계" checked={boolVal(raw, 'callCreateOnMissed')} onChange={(v) => setRaw((prev) => setBool(prev, 'callCreateOnMissed', v))} />
           </div>
         </section>
 

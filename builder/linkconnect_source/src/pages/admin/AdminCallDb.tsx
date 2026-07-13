@@ -26,6 +26,8 @@ import {
   saveAdminCallSettings,
   updateAdminCallNumber,
   uploadAdminCallRecordingWav,
+  fetchAdminSettings,
+  saveAdminSettings,
 } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 
@@ -62,6 +64,26 @@ function fmtDuration(sec: number) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+type PlatformCallSettings = {
+  callEnabled: boolean;
+  callDefaultPrice: number;
+  callMinDuration: number;
+  callCreateOnMissed: boolean;
+  callRecordingMode: string;
+};
+
+const defaultPlatformCall: PlatformCallSettings = {
+  callEnabled: false,
+  callDefaultPrice: 0,
+  callMinDuration: 0,
+  callCreateOnMissed: false,
+  callRecordingMode: 'normal',
+};
+
+function rawBool(v: string | undefined) {
+  return v === '1' || v === 'true';
 }
 
 export function AdminCallDb() {
@@ -105,6 +127,44 @@ export function AdminCallDb() {
   // 콜 설정 모달
   const [settingsCp, setSettingsCp] = useState<{ cpId: number; name: string } | null>(null);
   const [settingsDraft, setSettingsDraft] = useState<Record<string, unknown>>({});
+  const [platformCall, setPlatformCall] = useState<PlatformCallSettings>(defaultPlatformCall);
+  const [platformSaving, setPlatformSaving] = useState(false);
+
+  useEffect(() => {
+    fetchAdminSettings()
+      .then((data) => {
+        const raw = data.raw;
+        setPlatformCall({
+          callEnabled: rawBool(raw.callEnabled),
+          callDefaultPrice: Number(raw.callDefaultPrice || 0),
+          callMinDuration: Number(raw.callMinDuration || 0),
+          callCreateOnMissed: rawBool(raw.callCreateOnMissed),
+          callRecordingMode: raw.callRecordingMode || 'normal',
+        });
+      })
+      .catch(() => {});
+  }, []);
+
+  const savePlatformCall = async () => {
+    setPlatformSaving(true);
+    setMessage('');
+    try {
+      await saveAdminSettings({
+        call: {
+          callEnabled: platformCall.callEnabled,
+          callDefaultPrice: platformCall.callDefaultPrice,
+          callMinDuration: platformCall.callMinDuration,
+          callCreateOnMissed: platformCall.callCreateOnMissed,
+          callRecordingMode: platformCall.callRecordingMode,
+        },
+      });
+      setMessage('플랫폼 콜 설정이 저장되었습니다.');
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : '플랫폼 콜 설정 저장에 실패했습니다.');
+    } finally {
+      setPlatformSaving(false);
+    }
+  };
 
   const loadRecordingRequests = useCallback(() => {
     fetchAdminCallRecordingRequests(recStatusFilter || undefined)
@@ -373,6 +433,73 @@ export function AdminCallDb() {
           </div>
         </div>
       </div>
+
+      <section className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-slate-900">플랫폼 콜 설정</h3>
+            <p className="text-xs text-slate-500 mt-0.5">환경설정이 아닌 콜디비 관리에서 마스터 ON/OFF와 기본값을 관리합니다.</p>
+          </div>
+          <button
+            type="button"
+            onClick={savePlatformCall}
+            disabled={platformSaving}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl disabled:opacity-50"
+          >
+            {platformSaving ? '저장 중...' : '설정 저장'}
+          </button>
+        </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 md:col-span-2 lg:col-span-4">
+            <span className="text-sm font-medium text-slate-700">콜디비 기능 사용 (플랫폼 마스터)</span>
+            <input
+              type="checkbox"
+              checked={platformCall.callEnabled}
+              onChange={(e) => setPlatformCall((p) => ({ ...p, callEnabled: e.target.checked }))}
+              className="w-4 h-4 accent-violet-600"
+            />
+          </label>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1">기본 콜 단가 (원)</label>
+            <input
+              type="number"
+              value={platformCall.callDefaultPrice}
+              onChange={(e) => setPlatformCall((p) => ({ ...p, callDefaultPrice: Number(e.target.value) }))}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1">최소 통화시간 (초)</label>
+            <input
+              type="number"
+              value={platformCall.callMinDuration}
+              onChange={(e) => setPlatformCall((p) => ({ ...p, callMinDuration: Number(e.target.value) }))}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1">기본 녹음 방식</label>
+            <select
+              value={platformCall.callRecordingMode}
+              onChange={(e) => setPlatformCall((p) => ({ ...p, callRecordingMode: e.target.value }))}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+            >
+              <option value="normal">녹음</option>
+              <option value="none">녹음 안함</option>
+              <option value="both">양방향 녹음</option>
+            </select>
+          </div>
+          <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="text-sm font-medium text-slate-700">부재중도 콜DB 집계</span>
+            <input
+              type="checkbox"
+              checked={platformCall.callCreateOnMissed}
+              onChange={(e) => setPlatformCall((p) => ({ ...p, callCreateOnMissed: e.target.checked }))}
+              className="w-4 h-4 accent-violet-600"
+            />
+          </label>
+        </div>
+      </section>
 
       {message && (
         <div className="mb-4 px-4 py-3 bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-xl text-sm font-medium">{message}</div>
