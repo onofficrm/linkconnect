@@ -1600,6 +1600,22 @@ export type AdminSettingsData = {
   partner: Record<string, string | number | boolean>;
   cancel: Record<string, boolean>;
   api: Record<string, string | number | boolean>;
+  ai?: {
+    geminiEnabled?: boolean;
+    geminiModel?: string;
+    geminiApiKey?: string;
+    geminiApiKeySet?: boolean;
+    geminiApiKeyMasked?: string;
+    aiChatDailyLimit?: number;
+    aiPromoDailyLimit?: number;
+    aiSummaryDailyLimit?: number;
+  };
+};
+
+export type AdminSettingsResponse = {
+  message: string;
+  settings: AdminSettingsData;
+  raw: Record<string, string>;
 };
 
 export function fetchAdminSettings() {
@@ -1607,11 +1623,15 @@ export function fetchAdminSettings() {
 }
 
 export function saveAdminSettings(settings: AdminSettingsData | Record<string, unknown>) {
-  return adminApiPost<{ message: string; settings: AdminSettingsData; raw: Record<string, string> }>('settings.php', { settings });
+  return adminApiPost<AdminSettingsResponse>('settings.php', { settings });
+}
+
+export function saveAdminGeminiApiKey(geminiApiKey: string) {
+  return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'save_gemini_key', geminiApiKey });
 }
 
 export function resetAdminSettings() {
-  return adminApiPost<{ message: string; settings: AdminSettingsData; raw: Record<string, string> }>('settings.php', { action: 'reset' });
+  return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'reset' });
 }
 
 export type ApiLogItem = {

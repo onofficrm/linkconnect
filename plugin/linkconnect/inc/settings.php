@@ -138,6 +138,67 @@ if (!function_exists('lc_settings_get_bool')) {
     }
 }
 
+if (!function_exists('lc_settings_secret_keys')) {
+    function lc_settings_secret_keys()
+    {
+        return array('geminiApiKey', 'callApiKey', 'callApiSecret', 'callWebhookToken', 'lpAuthKey', 'lpPostbackSecret');
+    }
+}
+
+if (!function_exists('lc_settings_ensure_table')) {
+    function lc_settings_ensure_table()
+    {
+        if (!function_exists('lc_db_table_exists') || !function_exists('lc_table') || !function_exists('lc_sql_query')) {
+            return false;
+        }
+
+        $table = lc_table('settings');
+        if (lc_db_table_exists($table)) {
+            return true;
+        }
+
+        $sql = "CREATE TABLE IF NOT EXISTS `{$table}` (
+            `st_key` varchar(100) NOT NULL,
+            `st_value` text,
+            `st_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (`st_key`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+        return (bool) lc_sql_query($sql, false);
+    }
+}
+
+if (!function_exists('lc_settings_save_row')) {
+    /**
+     * @return array{ok:bool,message:string}
+     */
+    function lc_settings_save_row($key, $value)
+    {
+        $defaults = lc_settings_defaults();
+        if (!array_key_exists($key, $defaults)) {
+            return array('ok' => false, 'message' => '알 수 없는 설정 키입니다.');
+        }
+
+        if (!lc_settings_ensure_table()) {
+            return array('ok' => false, 'message' => '설정 테이블을 준비하지 못했습니다.');
+        }
+
+        $table = lc_table('settings');
+        $key_esc = lc_sql_escape((string) $key);
+        $val_esc = lc_sql_escape(is_bool($value) ? ($value ? '1' : '0') : (string) $value);
+        $ok = lc_sql_query(" INSERT INTO `{$table}` (st_key, st_value) VALUES ('{$key_esc}', '{$val_esc}')
+            ON DUPLICATE KEY UPDATE st_value = '{$val_esc}', st_updated_at = NOW() ", false);
+
+        if (!$ok) {
+            $err = function_exists('lc_sql_error') ? lc_sql_error() : 'DB 오류';
+
+            return array('ok' => false, 'message' => '설정 저장 실패 (' . $key . '): ' . $err);
+        }
+
+        return array('ok' => true, 'message' => '');
+    }
+}
+
 if (!function_exists('lc_settings_save')) {
     /**
      * @return array{ok:bool,message:string,settings:array}
@@ -148,8 +209,12 @@ if (!function_exists('lc_settings_save')) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'settings' => lc_settings_defaults());
         }
 
+        if (!lc_settings_ensure_table()) {
+            return array('ok' => false, 'message' => '설정 테이블을 준비하지 못했습니다.', 'settings' => lc_settings_get_all());
+        }
+
         $defaults = lc_settings_defaults();
-        $table = lc_table('settings');
+        $secret_keys = lc_settings_secret_keys();
 
         if (function_exists('lc_settings_validate_before_save')) {
             $validated = lc_settings_validate_before_save($values);
@@ -163,21 +228,21 @@ if (!function_exists('lc_settings_save')) {
             if (!array_key_exists($key, $defaults)) {
                 continue;
             }
-            if ($key === 'geminiApiKey' || $key === 'callApiKey' || $key === 'callApiSecret' || $key === 'callWebhookToken'
-                || $key === 'lpAuthKey' || $key === 'lpPostbackSecret') {
+            if (in_array($key, $secret_keys, true)) {
                 $key_val = trim((string) $value);
-                if ($key_val !== '') {
-                    $key_esc = lc_sql_escape($key);
-                    $val_esc = lc_sql_escape($key_val);
-                    lc_sql_query(" INSERT INTO `{$table}` (st_key, st_value) VALUES ('{$key_esc}', '{$val_esc}')
-                        ON DUPLICATE KEY UPDATE st_value = '{$val_esc}', st_updated_at = NOW() ", false);
+                if ($key_val === '' || strpos($key_val, '*') !== false) {
+                    continue;
+                }
+                $saved = lc_settings_save_row($key, $key_val);
+                if (!$saved['ok']) {
+                    return array('ok' => false, 'message' => $saved['message'], 'settings' => lc_settings_get_all());
                 }
                 continue;
             }
-            $key_esc = lc_sql_escape((string) $key);
-            $val_esc = lc_sql_escape(is_bool($value) ? ($value ? '1' : '0') : (string) $value);
-            lc_sql_query(" INSERT INTO `{$table}` (st_key, st_value) VALUES ('{$key_esc}', '{$val_esc}')
-                ON DUPLICATE KEY UPDATE st_value = '{$val_esc}', st_updated_at = NOW() ", false);
+            $saved = lc_settings_save_row($key, $value);
+            if (!$saved['ok']) {
+                return array('ok' => false, 'message' => $saved['message'], 'settings' => lc_settings_get_all());
+            }
         }
 
         return array(

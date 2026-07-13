@@ -13,6 +13,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     ));
 }
 
+if (!function_exists('lc_settings_api_success_payload')) {
+    function lc_settings_api_success_payload($message)
+    {
+        $settings = lc_settings_get_all();
+
+        return array(
+            'message'  => $message,
+            'settings' => lc_settings_to_api($settings),
+            'raw'      => lc_settings_raw_for_admin($settings),
+        );
+    }
+}
+
+if (!function_exists('lc_settings_normalize_secret_value')) {
+    function lc_settings_normalize_secret_value($value)
+    {
+        $key_val = trim((string) $value);
+        if ($key_val === '' || strpos($key_val, '*') !== false) {
+            return '';
+        }
+
+        return $key_val;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $body = lc_api_read_json_body();
     $values = isset($body['settings']) && is_array($body['settings']) ? $body['settings'] : $body;
@@ -22,11 +47,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (lc_db_table_exists($table)) {
             lc_sql_query(" DELETE FROM `{$table}` ", false);
         }
-        lc_api_success(array(
-            'message'  => '기본값으로 복원되었습니다.',
-            'settings' => lc_settings_to_api(lc_settings_get_all()),
-            'raw'      => lc_settings_raw_for_admin(lc_settings_get_all()),
-        ));
+        lc_api_success(lc_settings_api_success_payload('기본값으로 복원되었습니다.'));
+    }
+
+    if (isset($body['action']) && $body['action'] === 'save_gemini_key') {
+        $gemini_key = lc_settings_normalize_secret_value($body['geminiApiKey'] ?? '');
+        if ($gemini_key === '') {
+            lc_api_error('유효한 Gemini API 키를 입력하세요. 마스킹된 값(****)은 다시 입력할 수 없습니다.', 'GEMINI_KEY_INVALID', 400);
+        }
+
+        $result = lc_settings_save(array('geminiApiKey' => $gemini_key));
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'SETTINGS_SAVE_FAILED', 400);
+        }
+
+        $saved_key = trim((string) lc_settings_get('geminiApiKey', ''));
+        if ($saved_key === '') {
+            lc_api_error('API 키 저장에 실패했습니다. DB 연결 및 settings 테이블 상태를 확인하세요.', 'GEMINI_KEY_NOT_PERSISTED', 500);
+        }
+
+        lc_api_success(lc_settings_api_success_payload('Gemini API 키가 저장되었습니다.'));
     }
 
     $flat = array();
@@ -63,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($values['ai']) && is_array($values['ai'])) {
         foreach ($values['ai'] as $key => $value) {
             if ($key === 'geminiApiKey') {
-                $key_val = trim((string) $value);
-                if ($key_val !== '' && strpos($key_val, '*') === false) {
+                $key_val = lc_settings_normalize_secret_value($value);
+                if ($key_val !== '') {
                     $flat['geminiApiKey'] = $key_val;
                 }
                 continue;
@@ -92,22 +132,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $secret_keys = function_exists('lc_settings_secret_keys') ? lc_settings_secret_keys() : array('geminiApiKey');
     foreach ($body as $key => $value) {
-        if (is_string($key) && array_key_exists($key, lc_settings_defaults())) {
-            $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
+        if (!is_string($key) || !array_key_exists($key, lc_settings_defaults())) {
+            continue;
         }
+        if (is_array($value) || is_object($value)) {
+            continue;
+        }
+        if (in_array($key, $secret_keys, true)) {
+            $key_val = lc_settings_normalize_secret_value($value);
+            if ($key_val === '') {
+                continue;
+            }
+            $flat[$key] = $key_val;
+            continue;
+        }
+        $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : (string) $value;
     }
+
+    $requested_gemini_key = isset($flat['geminiApiKey']) ? (string) $flat['geminiApiKey'] : '';
 
     $result = lc_settings_save($flat);
     if (!$result['ok']) {
         lc_api_error($result['message'], 'SETTINGS_SAVE_FAILED', 400);
     }
 
-    lc_api_success(array(
-        'message'  => $result['message'],
-        'settings' => lc_settings_to_api($result['settings']),
-        'raw'      => lc_settings_raw_for_admin($result['settings']),
-    ));
+    if ($requested_gemini_key !== '') {
+        $saved_key = trim((string) lc_settings_get('geminiApiKey', ''));
+        if ($saved_key === '') {
+            lc_api_error('Gemini API 키 저장에 실패했습니다. DB 연결 및 settings 테이블 상태를 확인하세요.', 'GEMINI_KEY_NOT_PERSISTED', 500);
+        }
+    }
+
+    lc_api_success(lc_settings_api_success_payload($result['message']));
 }
 
 lc_api_error('허용되지 않은 HTTP 메서드입니다.', 'METHOD_NOT_ALLOWED', 405);

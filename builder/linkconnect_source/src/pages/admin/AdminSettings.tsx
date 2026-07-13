@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { Settings, Save, RotateCcw, Check, Sparkles, Link2 } from 'lucide-react';
-import { fetchAdminSettings, resetAdminSettings, saveAdminSettings } from '../../lib/api';
+import { fetchAdminSettings, resetAdminSettings, saveAdminGeminiApiKey, saveAdminSettings } from '../../lib/api';
+import type { AdminSettingsResponse } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
 
@@ -45,6 +46,21 @@ function boolVal(raw: RawSettings, key: string) {
   return v === '1' || v === 'true' || v === true;
 }
 
+function mapAdminSettingsRaw(data: AdminSettingsResponse['raw'] | Record<string, string>, settings?: AdminSettingsResponse['settings']): RawSettings {
+  const raw: RawSettings = { ...defaultRaw, ...data };
+  const ai = settings?.ai;
+  if (ai?.geminiApiKeySet) {
+    raw.geminiApiKeySet = '1';
+  }
+  if (ai?.geminiApiKeyMasked) {
+    raw.geminiApiKeyMasked = ai.geminiApiKeyMasked;
+  }
+  if (raw.geminiApiKeySet === 'true' || raw.geminiApiKeySet === true) {
+    raw.geminiApiKeySet = '1';
+  }
+  return raw;
+}
+
 function setBool(raw: RawSettings, key: string, value: boolean): RawSettings {
   return { ...raw, [key]: value ? '1' : '0' };
 }
@@ -52,16 +68,46 @@ function setBool(raw: RawSettings, key: string, value: boolean): RawSettings {
 export function AdminSettings() {
   const [raw, setRaw] = useState<RawSettings>(defaultRaw);
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [geminiKeyStatus, setGeminiKeyStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchAdminSettings()
-      .then((data) => setRaw({ ...defaultRaw, ...data.raw }))
+      .then((data) => setRaw(mapAdminSettingsRaw(data.raw, data.settings)))
       .catch((err) => setError(err instanceof Error ? err.message : '설정을 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, []);
+
+  const applySettingsResponse = (data: AdminSettingsResponse) => {
+    setRaw(mapAdminSettingsRaw(data.raw, data.settings));
+    setGeminiKeyInput('');
+  };
+
+  const handleSaveGeminiKey = async () => {
+    const key = geminiKeyInput.trim();
+    if (!key) {
+      setError('Gemini API 키를 입력한 뒤 저장하세요.');
+      return;
+    }
+    if (key.includes('*')) {
+      setError('마스킹된 키(****)는 저장할 수 없습니다. Google AI Studio에서 발급받은 전체 키를 입력하세요.');
+      return;
+    }
+
+    setGeminiKeyStatus('saving');
+    setError('');
+    try {
+      const data = await saveAdminGeminiApiKey(key);
+      applySettingsResponse(data);
+      setGeminiKeyStatus('saved');
+      setTimeout(() => setGeminiKeyStatus('idle'), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'API 키 저장에 실패했습니다.');
+      setGeminiKeyStatus('idle');
+    }
+  };
 
   const update = (key: string, value: string) => setRaw((prev) => ({ ...prev, [key]: value }));
 
@@ -137,8 +183,7 @@ export function AdminSettings() {
           aiSummaryDailyLimit: Number(raw.aiSummaryDailyLimit || 10),
         },
       });
-      setRaw({ ...defaultRaw, ...data.raw });
-      setGeminiKeyInput('');
+      applySettingsResponse(data);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -151,7 +196,7 @@ export function AdminSettings() {
     if (!window.confirm('기본값으로 복원하시겠습니까?')) return;
     try {
       const data = await resetAdminSettings();
-      setRaw({ ...defaultRaw, ...data.raw });
+      applySettingsResponse(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : '복원에 실패했습니다.');
     }
@@ -290,6 +335,19 @@ export function AdminSettings() {
                 placeholder="새 API 키 입력 (변경 시에만)"
                 className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
               />
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveGeminiKey}
+                  disabled={geminiKeyStatus !== 'idle' || !geminiKeyInput.trim()}
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
+                >
+                  {geminiKeyStatus === 'idle' && 'API 키 저장'}
+                  {geminiKeyStatus === 'saving' && '저장 중...'}
+                  {geminiKeyStatus === 'saved' && '저장 완료'}
+                </button>
+                <p className="text-[11px] text-slate-400">키만 따로 저장할 수 있습니다. 아래 「설정 저장」은 다른 항목용입니다.</p>
+              </div>
               <p className="text-[11px] text-slate-400 mt-2">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다. Google AI Studio에서 발급받을 수 있습니다.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
