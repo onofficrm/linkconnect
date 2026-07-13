@@ -348,13 +348,11 @@ if (!function_exists('lc_lp_setup_steps')) {
         $postbacks = lc_lp_postback_recent_stats();
         $security = function_exists('lc_lp_ui_security_settings') ? lc_lp_ui_security_settings() : array();
 
-        $connection_ok = !empty($cfg['ready']) && ($merchant_synced || $merchants['apr'] > 0);
-
-        $postback_guard_ok = empty($cfg['postbackSecretSet'])
-            || !empty($security['postbackIpEnabled']);
-
         $merchant_synced = trim((string) ($cfg['lastMerchantSyncAt'] ?? '')) !== '';
         $order_synced = trim((string) ($cfg['lastOrderSyncAt'] ?? '')) !== '';
+        $connection_ok = !empty($cfg['ready']) && ($merchant_synced || $merchants['apr'] > 0);
+        $postback_guard_ok = empty($cfg['postbackSecretSet'])
+            || !empty($security['postbackIpEnabled']);
         $cron_hint_ok = !empty($health['checks']['cronTokenSet']) || $order_synced;
 
         $make = function ($id, $title, $done, $description = '', $action = '') {
