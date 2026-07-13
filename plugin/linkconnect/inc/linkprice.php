@@ -1985,13 +1985,13 @@ if (!function_exists('lc_lp_merchant_logo_is_linkprice_brand')) {
         }
 
         $lower = strtolower($url);
-        if (preg_match('#/(?:linkprice|lp)[_-]?(?:logo|brand)(?:[._/\-?#]|$)#i', $lower)) {
+        if (preg_match('~/(?:linkprice|lp)[_-]?(?:logo|brand)(?:[._/\-\?#]|$)~i', $lower)) {
             return true;
         }
-        if (preg_match('#/(?:logo/)?linkprice\.(?:png|jpe?g|gif|webp|svg)(?:\?|#|$)#i', $lower)) {
+        if (preg_match('~/(?:logo/)?linkprice\.(?:png|jpe?g|gif|webp|svg)(?:\?|#|$)~i', $lower)) {
             return true;
         }
-        if (preg_match('#/(?:default|common)/linkprice#i', $lower)) {
+        if (preg_match('~/(?:default|common)/linkprice~i', $lower)) {
             return true;
         }
 
