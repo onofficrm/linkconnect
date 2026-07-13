@@ -122,27 +122,57 @@ if ($method === 'POST') {
     }
 
     if ($action === 'assign_request') {
-        $result = lc_call_request_assign((int) ($body['carId'] ?? 0), (int) ($body['cnId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        $car_id = (int) ($body['carId'] ?? 0);
+        $price = (int) ($body['price'] ?? 0);
+        $request = lc_call_request_get($car_id);
+        if (!$request) {
+            lc_api_error('신청 내역을 찾을 수 없습니다.', 'NOT_FOUND', 404);
+        }
+        if ($price <= 0) {
+            lc_api_error('콜당 디비 단가를 입력하세요.', 'INVALID_PRICE', 400);
+        }
+
+        $result = lc_call_request_assign($car_id, (int) ($body['cnId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        if ($result['ok']) {
+            $price_result = lc_call_assign_apply_price((int) ($request['cp_id'] ?? 0), $price);
+            if (!$price_result['ok']) {
+                lc_api_error($price_result['message'], 'PRICE_SAVE_FAILED', 400);
+            }
+        }
         if ($result['ok'] && function_exists('lc_admin_log_write')) {
-            lc_admin_log_write('call_assign_request', 'call_request', (int) ($body['carId'] ?? 0), (string) ($result['message'] ?? ''), array(
+            lc_admin_log_write('call_assign_request', 'call_request', $car_id, (string) ($result['message'] ?? ''), array(
                 'cnId' => (int) ($body['cnId'] ?? 0),
+                'price' => $price,
             ));
         }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
     }
 
     if ($action === 'assign_direct') {
+        $cp_id = (int) ($body['cpId'] ?? 0);
+        $price = (int) ($body['price'] ?? 0);
+        if ($price <= 0) {
+            lc_api_error('콜당 디비 단가를 입력하세요.', 'INVALID_PRICE', 400);
+        }
+
         $result = lc_call_request_assign_direct(
             (int) ($body['ptId'] ?? 0),
-            (int) ($body['cpId'] ?? 0),
+            $cp_id,
             (int) ($body['cnId'] ?? 0),
             (string) ($body['adminMemo'] ?? '')
         );
+        if ($result['ok']) {
+            $price_result = lc_call_assign_apply_price($cp_id, $price);
+            if (!$price_result['ok']) {
+                lc_api_error($price_result['message'], 'PRICE_SAVE_FAILED', 400);
+            }
+        }
         if ($result['ok'] && function_exists('lc_admin_log_write')) {
             lc_admin_log_write('call_assign_direct', 'call_request', (int) ($result['carId'] ?? 0), (string) ($result['message'] ?? ''), array(
                 'ptId' => (int) ($body['ptId'] ?? 0),
-                'cpId' => (int) ($body['cpId'] ?? 0),
+                'cpId' => $cp_id,
                 'cnId' => (int) ($body['cnId'] ?? 0),
+                'price' => $price,
             ));
         }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
@@ -209,6 +239,11 @@ if ($method === 'POST') {
     }
 
     if ($action === 'save_settings') {
+        $price = (int) ($body['price'] ?? 0);
+        if ($price <= 0) {
+            lc_api_error('콜당 디비 단가를 입력하세요.', 'INVALID_PRICE', 400);
+        }
+        $body['adminEnabled'] = true;
         $result = lc_call_settings_save((int) ($body['cpId'] ?? 0), $body, 'admin');
         if ($result['ok'] && function_exists('lc_admin_log_write')) {
             lc_admin_log_write('call_save_settings', 'campaign', (int) ($body['cpId'] ?? 0), (string) ($result['message'] ?? ''));

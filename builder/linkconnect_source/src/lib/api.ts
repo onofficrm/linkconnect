@@ -2342,7 +2342,7 @@ export function updateAdminCallNumber(payload: { cnId: number; status?: string; 
   return adminApiPost<{ message: string }>('call.php', { action: 'update_number', ...payload });
 }
 
-export function assignAdminCallRequest(payload: { carId: number; cnId: number; adminMemo?: string }) {
+export function assignAdminCallRequest(payload: { carId: number; cnId: number; price: number; adminMemo?: string }) {
   return adminApiPost<{ message: string; number?: string }>('call.php', { action: 'assign_request', ...payload });
 }
 
@@ -2354,7 +2354,7 @@ export function revokeAdminCallRequest(payload: { carId: number; adminMemo?: str
   return adminApiPost<{ message: string }>('call.php', { action: 'revoke_request', ...payload });
 }
 
-export function assignAdminCallDirect(payload: { ptId: number; cpId: number; cnId: number; adminMemo?: string }) {
+export function assignAdminCallDirect(payload: { ptId: number; cpId: number; cnId: number; price: number; adminMemo?: string }) {
   return adminApiPost<{ message: string; number?: string }>('call.php', { action: 'assign_direct', ...payload });
 }
 

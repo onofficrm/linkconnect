@@ -26,8 +26,6 @@ import {
   saveAdminCallSettings,
   updateAdminCallNumber,
   uploadAdminCallRecordingWav,
-  fetchAdminSettings,
-  saveAdminSettings,
 } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 
@@ -66,26 +64,6 @@ function fmtDuration(sec: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-type PlatformCallSettings = {
-  callEnabled: boolean;
-  callDefaultPrice: number;
-  callMinDuration: number;
-  callCreateOnMissed: boolean;
-  callRecordingMode: string;
-};
-
-const defaultPlatformCall: PlatformCallSettings = {
-  callEnabled: false,
-  callDefaultPrice: 0,
-  callMinDuration: 0,
-  callCreateOnMissed: false,
-  callRecordingMode: 'normal',
-};
-
-function rawBool(v: string | undefined) {
-  return v === '1' || v === 'true';
-}
-
 export function AdminCallDb() {
   const [tab, setTab] = useState<Tab>('requests');
   const [numbers, setNumbers] = useState<CallNumber[]>([]);
@@ -107,6 +85,7 @@ export function AdminCallDb() {
   // 배정 모달
   const [assignTarget, setAssignTarget] = useState<CallRequest | null>(null);
   const [assignCn, setAssignCn] = useState('');
+  const [assignPrice, setAssignPrice] = useState('');
 
   // 직접 배정
   const [partners, setPartners] = useState<AdminPartner[]>([]);
@@ -115,6 +94,7 @@ export function AdminCallDb() {
   const [directCp, setDirectCp] = useState('');
   const [directCn, setDirectCn] = useState('');
   const [directMemo, setDirectMemo] = useState('');
+  const [directPrice, setDirectPrice] = useState('');
 
   // 통화 엑셀 업로드
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -127,44 +107,6 @@ export function AdminCallDb() {
   // 콜 설정 모달
   const [settingsCp, setSettingsCp] = useState<{ cpId: number; name: string } | null>(null);
   const [settingsDraft, setSettingsDraft] = useState<Record<string, unknown>>({});
-  const [platformCall, setPlatformCall] = useState<PlatformCallSettings>(defaultPlatformCall);
-  const [platformSaving, setPlatformSaving] = useState(false);
-
-  useEffect(() => {
-    fetchAdminSettings()
-      .then((data) => {
-        const raw = data.raw;
-        setPlatformCall({
-          callEnabled: rawBool(raw.callEnabled),
-          callDefaultPrice: Number(raw.callDefaultPrice || 0),
-          callMinDuration: Number(raw.callMinDuration || 0),
-          callCreateOnMissed: rawBool(raw.callCreateOnMissed),
-          callRecordingMode: raw.callRecordingMode || 'normal',
-        });
-      })
-      .catch(() => {});
-  }, []);
-
-  const savePlatformCall = async () => {
-    setPlatformSaving(true);
-    setMessage('');
-    try {
-      await saveAdminSettings({
-        call: {
-          callEnabled: platformCall.callEnabled,
-          callDefaultPrice: platformCall.callDefaultPrice,
-          callMinDuration: platformCall.callMinDuration,
-          callCreateOnMissed: platformCall.callCreateOnMissed,
-          callRecordingMode: platformCall.callRecordingMode,
-        },
-      });
-      setMessage('플랫폼 콜 설정이 저장되었습니다.');
-    } catch (e) {
-      setMessage(e instanceof Error ? e.message : '플랫폼 콜 설정 저장에 실패했습니다.');
-    } finally {
-      setPlatformSaving(false);
-    }
-  };
 
   const loadRecordingRequests = useCallback(() => {
     fetchAdminCallRecordingRequests(recStatusFilter || undefined)
@@ -220,16 +162,33 @@ export function AdminCallDb() {
     loadAll();
   };
 
-  const openAssign = (req: CallRequest) => {
+  const openAssign = async (req: CallRequest) => {
     setAssignTarget(req);
     setAssignCn('');
+    setAssignPrice('');
+    try {
+      const res = await fetchAdminCallSettings(req.cpId);
+      const price = Number(res.settings?.cs_price ?? 0);
+      if (price > 0) setAssignPrice(String(price));
+    } catch {
+      // ignore
+    }
   };
 
   const handleAssign = async () => {
     if (!assignTarget || !assignCn) return;
+    const price = Number(assignPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      notify('콜당 디비 단가를 입력하세요.');
+      return;
+    }
     setBusy(true);
     try {
-      const res = await assignAdminCallRequest({ carId: assignTarget.carId, cnId: Number(assignCn) });
+      const res = await assignAdminCallRequest({
+        carId: assignTarget.carId,
+        cnId: Number(assignCn),
+        price,
+      });
       notify(res.message);
       setAssignTarget(null);
       loadAll();
@@ -252,6 +211,11 @@ export function AdminCallDb() {
 
   const handleDirectAssign = async () => {
     if (!directPt || !directCp || !directCn) return;
+    const price = Number(directPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      notify('콜당 디비 단가를 입력하세요.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await assignAdminCallDirect({
@@ -259,12 +223,14 @@ export function AdminCallDb() {
         cpId: Number(directCp),
         cnId: Number(directCn),
         adminMemo: directMemo,
+        price,
       });
       notify(res.message);
       setDirectPt('');
       setDirectCp('');
       setDirectCn('');
       setDirectMemo('');
+      setDirectPrice('');
       loadAll();
     } catch (e) {
       notify(e instanceof Error ? e.message : '직접 배정 실패');
@@ -335,11 +301,16 @@ export function AdminCallDb() {
 
   const handleSaveSettings = async () => {
     if (!settingsCp) return;
+    const price = Number(settingsDraft.cs_price ?? 0);
+    if (!Number.isFinite(price) || price <= 0) {
+      notify('콜당 디비 단가를 입력하세요.');
+      return;
+    }
     setBusy(true);
     try {
       const res = await saveAdminCallSettings({
         cpId: settingsCp.cpId,
-        adminEnabled: !!settingsDraft.cs_admin_enabled,
+        adminEnabled: true,
         recordingMode: String(settingsDraft.cs_recording_mode ?? 'normal'),
         coloring: String(settingsDraft.cs_coloring ?? ''),
         callMent: String(settingsDraft.cs_call_ment ?? ''),
@@ -433,73 +404,6 @@ export function AdminCallDb() {
           </div>
         </div>
       </div>
-
-      <section className="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="font-bold text-slate-900">플랫폼 콜 설정</h3>
-            <p className="text-xs text-slate-500 mt-0.5">환경설정이 아닌 콜디비 관리에서 마스터 ON/OFF와 기본값을 관리합니다.</p>
-          </div>
-          <button
-            type="button"
-            onClick={savePlatformCall}
-            disabled={platformSaving}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl disabled:opacity-50"
-          >
-            {platformSaving ? '저장 중...' : '설정 저장'}
-          </button>
-        </div>
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 md:col-span-2 lg:col-span-4">
-            <span className="text-sm font-medium text-slate-700">콜디비 기능 사용 (플랫폼 마스터)</span>
-            <input
-              type="checkbox"
-              checked={platformCall.callEnabled}
-              onChange={(e) => setPlatformCall((p) => ({ ...p, callEnabled: e.target.checked }))}
-              className="w-4 h-4 accent-violet-600"
-            />
-          </label>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">기본 콜 단가 (원)</label>
-            <input
-              type="number"
-              value={platformCall.callDefaultPrice}
-              onChange={(e) => setPlatformCall((p) => ({ ...p, callDefaultPrice: Number(e.target.value) }))}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">최소 통화시간 (초)</label>
-            <input
-              type="number"
-              value={platformCall.callMinDuration}
-              onChange={(e) => setPlatformCall((p) => ({ ...p, callMinDuration: Number(e.target.value) }))}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">기본 녹음 방식</label>
-            <select
-              value={platformCall.callRecordingMode}
-              onChange={(e) => setPlatformCall((p) => ({ ...p, callRecordingMode: e.target.value }))}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-            >
-              <option value="normal">녹음</option>
-              <option value="none">녹음 안함</option>
-              <option value="both">양방향 녹음</option>
-            </select>
-          </div>
-          <label className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-sm font-medium text-slate-700">부재중도 콜DB 집계</span>
-            <input
-              type="checkbox"
-              checked={platformCall.callCreateOnMissed}
-              onChange={(e) => setPlatformCall((p) => ({ ...p, callCreateOnMissed: e.target.checked }))}
-              className="w-4 h-4 accent-violet-600"
-            />
-          </label>
-        </div>
-      </section>
 
       {message && (
         <div className="mb-4 px-4 py-3 bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-xl text-sm font-medium">{message}</div>
@@ -602,7 +506,7 @@ export function AdminCallDb() {
           <div className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-5">
             <div className="font-bold text-slate-800 mb-1">파트너·캠페인 직접 배정</div>
             <p className="text-xs text-slate-500 mb-3">파트너 신청 없이 관리자가 가상번호를 바로 배정할 수 있습니다.</p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <select value={directPt} onChange={(e) => setDirectPt(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                 <option value="">파트너 선택</option>
                 {partners.map((p) => <option key={p.id} value={p.id}>{p.name || p.code}</option>)}
@@ -615,7 +519,15 @@ export function AdminCallDb() {
                 <option value="">가상번호 선택</option>
                 {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
               </select>
-              <button type="button" onClick={handleDirectAssign} disabled={busy || !directPt || !directCp || !directCn}
+              <input
+                type="number"
+                min={1}
+                value={directPrice}
+                onChange={(e) => setDirectPrice(e.target.value)}
+                placeholder="콜당 디비 단가 (원) *"
+                className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+              />
+              <button type="button" onClick={handleDirectAssign} disabled={busy || !directPt || !directCp || !directCn || !directPrice}
                 className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">
                 직접 배정
               </button>
@@ -958,10 +870,19 @@ export function AdminCallDb() {
               <option value="">번호 선택</option>
               {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
             </select>
+            <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
+            <input
+              type="number"
+              min={1}
+              value={assignPrice}
+              onChange={(e) => setAssignPrice(e.target.value)}
+              placeholder="예: 15000"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-4"
+            />
             {availableNumbers.length === 0 && <p className="text-xs text-rose-500 mb-3">사용 가능한 번호가 없습니다. 가상번호 풀에서 먼저 등록하세요.</p>}
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setAssignTarget(null)} className="px-4 py-2 text-sm font-bold text-slate-500">취소</button>
-              <button type="button" onClick={handleAssign} disabled={busy || !assignCn} className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">배정하기</button>
+              <button type="button" onClick={handleAssign} disabled={busy || !assignCn || !assignPrice} className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">배정하기</button>
             </div>
           </div>
         </div>
@@ -972,12 +893,12 @@ export function AdminCallDb() {
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSettingsCp(null)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="font-bold text-lg text-slate-900 mb-1">콜 설정 — {settingsCp.name}</div>
-            <p className="text-sm text-slate-500 mb-4">녹음/멘트/업무시간/단가는 관리자 전용 설정입니다.</p>
+            <p className="text-sm text-slate-500 mb-4">가상번호 배정 시 설정한 단가를 변경하거나 녹음·업무시간을 조정합니다.</p>
             <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                <input type="checkbox" checked={!!settingsDraft.cs_admin_enabled} onChange={(e) => setDraft('cs_admin_enabled', e.target.checked)} className="w-4 h-4 accent-cyan-500" />
-                콜디비 활성화 (관리자 마스터)
-              </label>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
+                <input type="number" min={1} value={Number(settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">녹음 방식</label>
@@ -988,15 +909,11 @@ export function AdminCallDb() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">콜 단가(원)</label>
-                  <input type="number" value={Number(settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">최소 통화시간(초)</label>
                   <input type="number" value={Number(settingsDraft.cs_min_duration ?? 0)} onChange={(e) => setDraft('cs_min_duration', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">컬러링</label>
                   <input type="text" value={String(settingsDraft.cs_coloring ?? '')} onChange={(e) => setDraft('cs_coloring', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />

@@ -449,7 +449,31 @@ if (!function_exists('lc_call_request_assign')) {
             ));
         }
 
-        return array('ok' => true, 'message' => '가상번호를 배정했습니다.', 'number' => $number['cn_number']);
+        return array('ok' => true, 'message' => '가상번호를 배정했습니다.', 'number' => $number['cn_number'], 'cpId' => (int) $request['cp_id']);
+    }
+}
+
+if (!function_exists('lc_call_assign_apply_price')) {
+    /**
+     * 가상번호 배정 시 캠페인 콜 단가·활성화 적용.
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_call_assign_apply_price($cp_id, $price)
+    {
+        $cp_id = (int) $cp_id;
+        $price = (int) $price;
+        if ($cp_id <= 0) {
+            return array('ok' => false, 'message' => '캠페인 정보가 없습니다.');
+        }
+        if ($price <= 0) {
+            return array('ok' => false, 'message' => '콜당 디비 단가를 입력하세요.');
+        }
+
+        return lc_call_settings_save($cp_id, array(
+            'adminEnabled' => true,
+            'price'        => $price,
+        ), 'admin');
     }
 }
 
