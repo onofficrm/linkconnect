@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X } from 'lucide-react';
+import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X, Upload, Info } from 'lucide-react';
 import {
   CallLog,
   CallNumber,
   CallRequest,
+  AdminCampaign,
+  AdminPartner,
+  assignAdminCallDirect,
   assignAdminCallRequest,
   createAdminCallNumber,
   fetchAdminCallLogs,
@@ -12,7 +15,10 @@ import {
   fetchAdminCallRecording,
   fetchAdminCallRequests,
   fetchAdminCallSettings,
+  fetchAdminCampaigns,
+  fetchAdminPartners,
   finalizeAdminConversion,
+  importAdminCallLogs,
   provisionAdminCallNumber,
   rejectAdminCallRequest,
   revokeAdminCallRequest,
@@ -65,6 +71,18 @@ export function AdminCallDb() {
   const [assignTarget, setAssignTarget] = useState<CallRequest | null>(null);
   const [assignCn, setAssignCn] = useState('');
 
+  // 직접 배정
+  const [partners, setPartners] = useState<AdminPartner[]>([]);
+  const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
+  const [directPt, setDirectPt] = useState('');
+  const [directCp, setDirectCp] = useState('');
+  const [directCn, setDirectCn] = useState('');
+  const [directMemo, setDirectMemo] = useState('');
+
+  // 통화 엑셀 업로드
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [skipConversionOnImport, setSkipConversionOnImport] = useState(true);
+  const [importResult, setImportResult] = useState('');
   // 콜 설정 모달
   const [settingsCp, setSettingsCp] = useState<{ cpId: number; name: string } | null>(null);
   const [settingsDraft, setSettingsDraft] = useState<Record<string, unknown>>({});
@@ -77,6 +95,8 @@ export function AdminCallDb() {
 
   useEffect(() => {
     loadAll();
+    fetchAdminPartners({ status: 'active' }).then((d) => setPartners(d.items)).catch(() => setPartners([]));
+    fetchAdminCampaigns({ status: 'active' }).then((d) => setCampaigns(d.items)).catch(() => setCampaigns([]));
   }, [loadAll]);
 
   const notify = (msg: string) => {
@@ -148,6 +168,51 @@ export function AdminCallDb() {
     loadAll();
   };
 
+  const handleDirectAssign = async () => {
+    if (!directPt || !directCp || !directCn) return;
+    setBusy(true);
+    try {
+      const res = await assignAdminCallDirect({
+        ptId: Number(directPt),
+        cpId: Number(directCp),
+        cnId: Number(directCn),
+        adminMemo: directMemo,
+      });
+      notify(res.message);
+      setDirectPt('');
+      setDirectCp('');
+      setDirectCn('');
+      setDirectMemo('');
+      loadAll();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : '직접 배정 실패');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleImportLogs = async () => {
+    if (!importFile) return;
+    setBusy(true);
+    setImportResult('');
+    try {
+      const res = await importAdminCallLogs({
+        file: importFile,
+        skipConversion: skipConversionOnImport,
+      });
+      setImportResult(res.message);
+      notify(res.message);
+      setImportFile(null);
+      loadAll();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '업로드 실패';
+      setImportResult(msg);
+      notify(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const openSettings = async (cpId: number, name: string) => {
     setSettingsCp({ cpId, name });
     try {
@@ -205,7 +270,21 @@ export function AdminCallDb() {
   const setDraft = (k: string, v: unknown) => setSettingsDraft((p) => ({ ...p, [k]: v }));
 
   return (
-    <AdminLayout activeMenu="call" title="콜디비 관리" description="가상번호 풀 · 파트너 번호 신청 배정 · 통화 로그/녹취 · 최종확정">
+    <AdminLayout activeMenu="call" title="콜디비 관리" description="API 연동 전 수동 운영 · 가상번호 등록/배정 · 통화 엑셀 업로드">
+      <div className="mb-6 bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-900">
+        <div className="flex items-start gap-2">
+          <Info className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold mb-1">수동 운영 모드 (API 연동 전)</div>
+            <ol className="list-decimal pl-5 space-y-1 text-amber-900/90">
+              <li>가상번호 풀에 콜업체에서 받은 번호를 <b>수동 등록</b>합니다.</li>
+              <li>파트너·캠페인에 번호를 <b>직접 배정</b>합니다. (파트너 신청 없이도 가능)</li>
+              <li>콜업체 통화내역 엑셀/CSV를 업로드하면 <b>가상번호 기준</b>으로 파트너·광고주 화면에 표시됩니다.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
       {message && (
         <div className="mb-4 px-4 py-3 bg-cyan-50 border border-cyan-200 text-cyan-800 rounded-xl text-sm font-medium">{message}</div>
       )}
@@ -290,7 +369,8 @@ export function AdminCallDb() {
       {tab === 'numbers' && (
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div className="font-bold text-slate-800 mb-3">가상번호 등록</div>
+            <div className="font-bold text-slate-800 mb-1">가상번호 수동 등록</div>
+            <p className="text-xs text-slate-500 mb-3">콜업체 API 연동 전까지 관리자가 직접 050 가상번호를 입력해 풀에 등록합니다.</p>
             <div className="flex flex-col sm:flex-row gap-3">
               <input type="text" value={newNumber} onChange={(e) => setNewNumber(e.target.value)} placeholder="가상번호 (예: 0507xxxxxxx)"
                 className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
@@ -299,10 +379,35 @@ export function AdminCallDb() {
               <button type="button" onClick={handleAddNumber} disabled={busy} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm disabled:opacity-50">
                 <Plus size={16} /> 수동 등록
               </button>
-              <button type="button" onClick={handleProvision} disabled={busy} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50 whitespace-nowrap">
-                <PhoneCall size={16} /> 콜업체 자동발급
+              <button type="button" onClick={handleProvision} disabled={busy} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm disabled:opacity-50 whitespace-nowrap">
+                <PhoneCall size={16} /> API 자동발급
               </button>
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-5">
+            <div className="font-bold text-slate-800 mb-1">파트너·캠페인 직접 배정</div>
+            <p className="text-xs text-slate-500 mb-3">파트너 신청 없이 관리자가 가상번호를 바로 배정할 수 있습니다.</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <select value={directPt} onChange={(e) => setDirectPt(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">파트너 선택</option>
+                {partners.map((p) => <option key={p.id} value={p.id}>{p.name || p.code}</option>)}
+              </select>
+              <select value={directCp} onChange={(e) => setDirectCp(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                <option value="">캠페인 선택</option>
+                {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <select value={directCn} onChange={(e) => setDirectCn(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono">
+                <option value="">가상번호 선택</option>
+                {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
+              </select>
+              <button type="button" onClick={handleDirectAssign} disabled={busy || !directPt || !directCp || !directCn}
+                className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">
+                직접 배정
+              </button>
+            </div>
+            <input type="text" value={directMemo} onChange={(e) => setDirectMemo(e.target.value)} placeholder="배정 메모 (선택)"
+              className="mt-3 w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -349,7 +454,38 @@ export function AdminCallDb() {
 
       {/* 통화 로그 */}
       {tab === 'logs' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <Upload size={18} className="text-cyan-600" />
+              통화내역 엑셀 업로드
+            </div>
+            <p className="text-xs text-slate-500 mb-3">
+              콜업체에서 받은 통화내역 파일(xlsx, xls, csv)을 업로드합니다. <b>가상번호</b>가 배정된 파트너·캠페인에 자동 연결되어 각 센터에 표시됩니다.
+            </p>
+            <div className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4">
+              필수 열: <b>가상번호</b> · 권장 열: 발신번호, 통화시작, 통화시간(초), 결과, 통화ID, 녹취URL
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+                className="text-sm"
+              />
+              <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                <input type="checkbox" checked={skipConversionOnImport} onChange={(e) => setSkipConversionOnImport(e.target.checked)} className="accent-cyan-500" />
+                콜DB 전환 자동 생성 안 함 (통화내역만 표시)
+              </label>
+              <button type="button" onClick={handleImportLogs} disabled={busy || !importFile}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">
+                <Upload size={16} /> 업로드
+              </button>
+            </div>
+            {importResult ? <p className="mt-3 text-sm text-cyan-700">{importResult}</p> : null}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 font-bold text-slate-800">통화 로그 (녹취 열람 · 최종확정)</div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -402,6 +538,7 @@ export function AdminCallDb() {
                 })}
               </tbody>
             </table>
+          </div>
           </div>
         </div>
       )}

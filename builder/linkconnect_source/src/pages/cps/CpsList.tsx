@@ -1,8 +1,8 @@
-import { Search, Info, Link as LinkIcon, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock, ExternalLink } from 'lucide-react';
+import { Search, Info, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
-import { openLandingPage } from '../../lib/utils';
+import { CpsPublicList } from '../../components/cps/CpsPublicList';
 
 const fallbackCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
 
@@ -80,7 +80,7 @@ export function CpsList() {
           ))}
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center mb-10 shadow-sm">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center mb-6 shadow-sm">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -98,34 +98,30 @@ export function CpsList() {
         )}
 
         {recommendedItems.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">추천 CPS 캠페인</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedItems.map((item) => (
-                <CpsCard key={`rec-${item.id}`} item={item} />
-              ))}
-            </div>
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">추천 CPS 캠페인</h2>
+            <CpsPublicList items={recommendedItems} compact />
           </div>
         )}
 
-        <div className="h-px bg-slate-200 w-full mb-12" />
+        {recommendedItems.length > 0 ? <div className="h-px bg-slate-200 w-full mb-10" /> : null}
 
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">전체 CPS <span className="text-cyan-600">({items.length})</span></h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">
+            전체 CPS <span className="text-cyan-600">({items.length})</span>
+          </h2>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-slate-500">CPS 캠페인을 불러오는 중...</div>
+          <div className="py-16 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">CPS 캠페인을 불러오는 중...</div>
         ) : items.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center bg-white border border-slate-200 rounded-xl">
             <p className="text-slate-500 mb-4">표시할 CPS 캠페인이 없습니다.</p>
             <Link to="/cpa-list" className="text-cyan-600 font-bold">CPA 상품 보기</Link>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {items.map((item) => (
-              <CpsCard key={item.id} item={item} />
-            ))}
+          <div className="mb-16">
+            <CpsPublicList items={items} />
           </div>
         )}
 
@@ -154,86 +150,6 @@ export function CpsList() {
               </ul>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CpsCard({ item }: { item: PublicCampaign }) {
-  const commission = item.approvalRate || item.priceFormatted;
-  const cookie = item.avgTime;
-  const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
-  const hasThumbnail = (item.thumbnailUrl || '').trim().length > 0;
-
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-cyan-300 transition-all flex flex-col">
-      {hasThumbnail ? (
-        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100 flex items-center justify-center">
-          <img
-            src={item.thumbnailUrl}
-            alt={item.title}
-            className="w-full h-full object-contain p-6"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-      ) : null}
-      <div className="p-6 flex-1">
-        <div className="flex justify-between items-start mb-4">
-          <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">
-            {item.category}
-          </span>
-          {item.badge && (
-            <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-cyan-100 text-cyan-800">{item.badge}</span>
-          )}
-        </div>
-
-        <h3 className="text-xl font-bold text-slate-900 mb-1">{item.title}</h3>
-        <div className="text-sm text-slate-500 mb-6">유형: CPS (구매/결제)</div>
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-cyan-50 rounded-xl p-3 border border-cyan-100/50">
-            <div className="text-xs text-cyan-800 mb-1">수수료율</div>
-            <div className="text-lg font-bold text-cyan-600">{commission}</div>
-          </div>
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-            <div className="text-xs text-slate-500 mb-1">쿠키 기간</div>
-            <div className="text-lg font-bold text-slate-700">{cookie || '-'}</div>
-          </div>
-        </div>
-
-        <div className="space-y-3 text-sm">
-          <div>
-            <span className="inline-block w-16 text-slate-400 font-medium">허용채널</span>
-            <span className="text-slate-700">{item.allowedChannels || '-'}</span>
-          </div>
-          <div>
-            <span className="inline-block w-16 text-slate-400 font-medium">금지채널</span>
-            <span className="text-red-500">{item.forbiddenChannels || '-'}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-2">
-        {hasLandingUrl && (
-          <button
-            type="button"
-            onClick={() => openLandingPage(item.landingUrl)}
-            className="w-full py-2.5 bg-white border border-cyan-200 hover:bg-cyan-50 text-cyan-700 font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-1.5"
-          >
-            <ExternalLink className="w-4 h-4" />
-            랜딩페이지 보기
-          </button>
-        )}
-        <div className="flex gap-3">
-          <Link to="/cps" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
-            상세보기
-          </Link>
-          <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
-            <LinkIcon className="w-4 h-4" />
-            홍보하기
-          </Link>
         </div>
       </div>
     </div>

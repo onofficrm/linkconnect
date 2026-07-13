@@ -69,8 +69,9 @@ if ($method === 'POST') {
     lc_api_require_admin();
     lc_api_require_method('POST');
 
-    $body = lc_api_read_json_body();
-    $action = isset($body['action']) ? (string) $body['action'] : '';
+    $is_multipart = !empty($_FILES);
+    $body = $is_multipart ? $_POST : lc_api_read_json_body();
+    $action = isset($body['action']) ? (string) $body['action'] : ($is_multipart ? 'import_logs' : '');
 
     if ($action === 'create_number') {
         $result = lc_call_number_create(array(
@@ -102,6 +103,50 @@ if ($method === 'POST') {
     if ($action === 'assign_request') {
         $result = lc_call_request_assign((int) ($body['carId'] ?? 0), (int) ($body['cnId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
+    }
+
+    if ($action === 'assign_direct') {
+        $result = lc_call_request_assign_direct(
+            (int) ($body['ptId'] ?? 0),
+            (int) ($body['cpId'] ?? 0),
+            (int) ($body['cnId'] ?? 0),
+            (string) ($body['adminMemo'] ?? '')
+        );
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
+    }
+
+    if ($action === 'import_logs') {
+        $file_key = '';
+        foreach (array('file', 'csv', 'excel') as $key) {
+            if (!empty($_FILES[$key]) && is_array($_FILES[$key]) && (int) ($_FILES[$key]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $file_key = $key;
+                break;
+            }
+        }
+        if ($file_key === '') {
+            lc_api_error('업로드 파일이 필요합니다.', 'NO_FILE', 400);
+        }
+
+        $file = $_FILES[$file_key];
+        $parsed = lc_call_logs_import_parse_file($file['tmp_name'], (string) ($file['name'] ?? 'upload.csv'));
+        if (!$parsed['ok']) {
+            lc_api_error($parsed['message'], 'PARSE_FAILED', 400);
+        }
+
+        $dry_run = !empty($body['dryRun']) || (isset($body['dryRun']) && (string) $body['dryRun'] === '1');
+        if ($dry_run) {
+            lc_api_success(array(
+                'message' => $parsed['message'],
+                'dryRun'  => true,
+                'total'   => count($parsed['rows'] ?? array()),
+                'headers' => $parsed['headers'] ?? array(),
+                'preview' => array_slice($parsed['rows'] ?? array(), 0, 5),
+            ));
+        }
+
+        $skip_conversion = !empty($body['skipConversion']) || (isset($body['skipConversion']) && (string) $body['skipConversion'] === '1');
+        $result = lc_call_logs_import_bulk($parsed['rows'] ?? array(), $skip_conversion);
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'IMPORT_FAILED', 400);
     }
 
     if ($action === 'reject_request') {

@@ -72,6 +72,22 @@ if ($method === 'GET') {
         )));
     }
 
+    if ($view === 'logs') {
+        $filters = array('mt_id' => $mt_id, 'limit' => 200);
+        if (isset($_GET['cpId']) && $_GET['cpId'] !== '') {
+            $cp_id = (int) $_GET['cpId'];
+            if (!lc_merchant_call_owns_campaign($mt_id, $cp_id)) {
+                lc_api_error('권한이 없습니다.', 'FORBIDDEN', 403);
+            }
+            $filters['cp_id'] = $cp_id;
+        }
+        $rows = array();
+        foreach (lc_call_logs_list($filters) as $row) {
+            $rows[] = lc_call_log_to_api($row, false, false);
+        }
+        lc_api_success(array('items' => $rows, 'dbReady' => lc_db_installed()));
+    }
+
     lc_api_error('유효하지 않은 view입니다.', 'INVALID_VIEW', 400);
 }
 

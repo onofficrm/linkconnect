@@ -2246,6 +2246,31 @@ export function revokeAdminCallRequest(payload: { carId: number; adminMemo?: str
   return adminApiPost<{ message: string }>('call.php', { action: 'revoke_request', ...payload });
 }
 
+export function assignAdminCallDirect(payload: { ptId: number; cpId: number; cnId: number; adminMemo?: string }) {
+  return adminApiPost<{ message: string; number?: string }>('call.php', { action: 'assign_direct', ...payload });
+}
+
+export type CallLogImportResult = {
+  message: string;
+  total: number;
+  imported: number;
+  duplicate: number;
+  failed: number;
+  unmatched: number;
+  items?: Array<{ row: number; virtualNumber: string; ok: boolean; message: string; clogId: number; duplicate?: boolean }>;
+  dryRun?: boolean;
+  preview?: Array<Record<string, unknown>>;
+};
+
+export function importAdminCallLogs(payload: { file: File; dryRun?: boolean; skipConversion?: boolean }) {
+  const formData = new FormData();
+  formData.append('action', 'import_logs');
+  formData.append('file', payload.file);
+  if (payload.dryRun) formData.append('dryRun', '1');
+  if (payload.skipConversion) formData.append('skipConversion', '1');
+  return adminApiPostFormData<CallLogImportResult>('call.php', formData);
+}
+
 export function fetchAdminCallSettings(cpId: number) {
   return adminApiGet<{ settings: Record<string, unknown> }>('call.php', { view: 'settings', cpId: String(cpId) });
 }
@@ -2840,6 +2865,13 @@ export function fetchMerchantCallCampaigns() {
 
 export function saveMerchantCallSettings(payload: { cpId: number; enabled: boolean; alias?: string; forward1?: string; forward2?: string }) {
   return merchantApiPost<{ message: string }>('call.php', { action: 'save_settings', ...payload });
+}
+
+export function fetchMerchantCallLogs(cpId?: number) {
+  return merchantApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', {
+    view: 'logs',
+    cpId: cpId != null ? String(cpId) : '',
+  });
 }
 
 export function toggleMerchantCall(payload: { cpId: number; enabled: boolean }) {

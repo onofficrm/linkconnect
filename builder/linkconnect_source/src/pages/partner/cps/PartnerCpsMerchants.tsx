@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Copy, CheckCircle2, Link2, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PartnerLayout } from '../../../layouts/PartnerLayout';
 import { SummaryCard } from '../../../components/partner/PartnerShared';
+import { CpsPartnerMerchantList } from '../../../components/cps/CpsPartnerMerchantList';
 import { CpsDeeplinkGuide, CpsPartnerNotice, PartnerCpsSubnav, formatWon } from '../../../components/cps/CpsShared';
 import {
   PartnerLpMerchant,
@@ -106,38 +107,17 @@ export function PartnerCpsMerchants() {
       ) : items.length === 0 ? (
         <div className="text-center py-16 text-slate-400 bg-white border rounded-2xl">홍보 가능한 CPS 광고주가 없습니다.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {items.map((m) => (
-            <article key={m.lpmId} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">
-              <div className="flex items-start gap-3">
-                {m.merchantLogo ? <img src={m.merchantLogo} alt="" className="w-12 h-12 rounded-xl object-contain border" /> : <div className="w-12 h-12 rounded-xl bg-slate-100" />}
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-slate-900 truncate">{m.merchantName}</div>
-                  <div className="text-xs text-slate-500">{m.categoryName || m.merchantCode}</div>
-                  <div className="text-sm text-emerald-700 font-bold mt-1">{m.commissionMobile || m.commissionPc || '—'}</div>
-                </div>
-              </div>
-              <div className="text-xs text-slate-500">클릭 {m.clicks} · 예상 {m.expectedOrders} · 확정 {m.confirmedOrders}</div>
-              {m.denyAd ? <div className="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 line-clamp-2">제한: {m.denyAd}</div> : null}
-              <div className="flex gap-2 mt-auto">
-                <button type="button" onClick={() => copyText(m.promoUrl, m.lpmId)} className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold">
-                  {copiedId === m.lpmId ? <CheckCircle2 size={16} /> : <Copy size={16} />} 링크 복사
-                </button>
-                {m.deeplinkYn === 'Y' ? (
-                  <button
-                    type="button"
-                    title="상품 URL로 딥링크 만들기"
-                    onClick={() => { setDeeplinkTarget(m); setProductUrl(''); setDeeplinkError(''); setDeeplinkResult(''); }}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border text-sm font-bold text-cyan-700 border-cyan-200 hover:bg-cyan-50"
-                  >
-                    <Link2 size={16} />
-                    <span className="hidden sm:inline">딥링크</span>
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
+        <CpsPartnerMerchantList
+          items={items}
+          copiedId={copiedId}
+          onCopy={copyText}
+          onDeeplink={(m) => {
+            setDeeplinkTarget(m);
+            setProductUrl('');
+            setDeeplinkError('');
+            setDeeplinkResult('');
+          }}
+        />
       )}
 
       {deeplinkTarget ? (

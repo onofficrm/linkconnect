@@ -1,12 +1,27 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
-import { PhoneCall, Save } from 'lucide-react';
-import { MerchantCallCampaign, fetchMerchantCallCampaigns, saveMerchantCallSettings } from '../../lib/api';
+import { PhoneCall, PhoneIncoming, Save } from 'lucide-react';
+import { CallLog, MerchantCallCampaign, fetchMerchantCallCampaigns, fetchMerchantCallLogs, saveMerchantCallSettings } from '../../lib/api';
 
 type Draft = { enabled: boolean; alias: string; forward1: string; forward2: string };
 
+const resultLabel: Record<string, { label: string; cls: string }> = {
+  success: { label: '통화성공', cls: 'text-emerald-600' },
+  missed: { label: '부재중', cls: 'text-amber-600' },
+  busy: { label: '통화중', cls: 'text-slate-500' },
+  fail: { label: '실패', cls: 'text-rose-600' },
+};
+
+function formatDuration(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}분 ${s}초`;
+}
+
 export function AdvertiserCall() {
   const [items, setItems] = useState<MerchantCallCampaign[]>([]);
+  const [logs, setLogs] = useState<CallLog[]>([]);
+  const [logCpFilter, setLogCpFilter] = useState('');
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -24,9 +39,19 @@ export function AdvertiserCall() {
       .catch(() => setItems([]));
   }, []);
 
+  const loadLogs = useCallback(() => {
+    fetchMerchantCallLogs(logCpFilter ? Number(logCpFilter) : undefined)
+      .then((d) => setLogs(d.items))
+      .catch(() => setLogs([]));
+  }, [logCpFilter]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    loadLogs();
+  }, [loadLogs]);
 
   const update = (cpId: number, patch: Partial<Draft>) => {
     setDrafts((prev) => ({ ...prev, [cpId]: { ...prev[cpId], ...patch } }));
@@ -57,7 +82,7 @@ export function AdvertiserCall() {
           </div>
           <p className="text-cyan-800/80">
             상품별로 <b>콜디비 수신 여부(ON/OFF)</b>와 <b>착신번호 1·2</b>, <b>상품 별칭</b>을 설정할 수 있습니다.
-            걸려온 통화는 CPA 디비처럼 <b>디비 확인</b> 메뉴에서 승인/취소할 수 있습니다.
+            관리자가 업로드한 통화내역은 아래 <b>통화 내역</b>에서 가상번호 기준으로 확인할 수 있습니다.
             (녹음 방식·업무시간·단가 등은 운영 정책상 관리자가 설정합니다.)
           </p>
         </div>
@@ -127,6 +152,52 @@ export function AdvertiserCall() {
             })}
           </div>
         )}
+
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-2 font-bold text-slate-800">
+              <PhoneIncoming size={18} className="text-cyan-500" />
+              통화 내역
+            </div>
+            <select value={logCpFilter} onChange={(e) => setLogCpFilter(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+              <option value="">전체 상품</option>
+              {items.map((c) => <option key={c.cpId} value={c.cpId}>{c.campaign}</option>)}
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-500 text-left">
+                <tr>
+                  <th className="px-4 py-3">일시</th>
+                  <th className="px-4 py-3">상품</th>
+                  <th className="px-4 py-3">가상번호</th>
+                  <th className="px-4 py-3">발신번호</th>
+                  <th className="px-4 py-3">파트너</th>
+                  <th className="px-4 py-3 text-center">통화시간</th>
+                  <th className="px-4 py-3 text-center">결과</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {logs.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">통화 내역이 없습니다.</td></tr>
+                ) : logs.map((l) => {
+                  const r = resultLabel[l.result] ?? { label: l.result, cls: 'text-slate-500' };
+                  return (
+                    <tr key={l.clogId} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{l.startedAt}</td>
+                      <td className="px-4 py-3">{l.campaign || '—'}</td>
+                      <td className="px-4 py-3 font-mono">{l.virtualNumber}</td>
+                      <td className="px-4 py-3 font-mono">{l.caller}</td>
+                      <td className="px-4 py-3">{l.partner || '—'}</td>
+                      <td className="px-4 py-3 text-center">{formatDuration(l.duration)}</td>
+                      <td className={`px-4 py-3 text-center font-bold ${r.cls}`}>{r.label}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </AdvertiserLayout>
   );

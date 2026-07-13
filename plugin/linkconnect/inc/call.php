@@ -801,6 +801,12 @@ if (!function_exists('lc_call_ingest_log')) {
             return $out;
         }
 
+        if (!empty($payload['skipConversion'])) {
+            $out['message'] = '통화 기록됨 (전환 생성 생략)';
+
+            return $out;
+        }
+
         // 전환 생성 조건 판정
         $create = lc_call_should_create_conversion($cp_id, $result, $duration);
         if (!$create['create']) {
@@ -945,6 +951,287 @@ if (!function_exists('lc_call_conversion_create')) {
         }
 
         return array('ok' => true, 'message' => '콜DB 전환 생성됨', 'cvId' => $cv_id, 'cvCode' => $cv_code);
+    }
+}
+
+if (!function_exists('lc_call_request_assign_direct')) {
+    /**
+     * API 연동 전 수동 운영: 관리자가 파트너·캠페인에 가상번호를 직접 배정.
+     * 파트너 신청이 없으면 신청 레코드를 만들고 즉시 배정합니다.
+     */
+    function lc_call_request_assign_direct($pt_id, $cp_id, $cn_id, $admin_memo = '')
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $pt_id = (int) $pt_id;
+        $cp_id = (int) $cp_id;
+        $cn_id = (int) $cn_id;
+        if ($pt_id <= 0 || $cp_id <= 0 || $cn_id <= 0) {
+            return array('ok' => false, 'message' => '파트너, 캠페인, 가상번호를 모두 선택해주세요.');
+        }
+
+        $pt_table = lc_table('partners');
+        $partner = lc_sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_id = '{$pt_id}' LIMIT 1 ");
+        if (!$partner) {
+            return array('ok' => false, 'message' => '파트너를 찾을 수 없습니다.');
+        }
+
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT cp_id, mt_id FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ");
+        if (!$campaign) {
+            return array('ok' => false, 'message' => '캠페인을 찾을 수 없습니다.');
+        }
+
+        $car_table = lc_table('call_requests');
+        $existing = lc_sql_fetch(" SELECT car_id, car_status FROM `{$car_table}`
+            WHERE pt_id = '{$pt_id}' AND cp_id = '{$cp_id}'
+              AND car_status IN ('" . LC_CALL_REQ_PENDING . "','" . LC_CALL_REQ_ASSIGNED . "')
+            ORDER BY car_id DESC LIMIT 1 ");
+
+        if ($existing && $existing['car_status'] === LC_CALL_REQ_ASSIGNED) {
+            return array('ok' => false, 'message' => '이미 배정된 파트너·캠페인입니다.');
+        }
+
+        $car_id = 0;
+        if ($existing && $existing['car_status'] === LC_CALL_REQ_PENDING) {
+            $car_id = (int) $existing['car_id'];
+        } else {
+            lc_sql_query(" INSERT INTO `{$car_table}` SET
+                pt_id = '{$pt_id}',
+                cp_id = '{$cp_id}',
+                mt_id = '" . (int) $campaign['mt_id'] . "',
+                car_status = '" . LC_CALL_REQ_PENDING . "',
+                car_request_memo = '관리자 직접 배정',
+                car_created_at = NOW() ", false);
+            $car_id = (int) lc_sql_insert_id();
+            if ($car_id <= 0) {
+                return array('ok' => false, 'message' => '배정 요청 생성에 실패했습니다.');
+            }
+        }
+
+        return lc_call_request_assign($car_id, $cn_id, $admin_memo !== '' ? $admin_memo : '관리자 직접 배정');
+    }
+}
+
+if (!function_exists('lc_call_logs_import_column_aliases')) {
+    function lc_call_logs_import_column_aliases()
+    {
+        return array(
+            'virtualNumber'  => array('가상번호', 'virtualnumber', 'virtual_number', 'did', 'callednumber', 'called_number', '착신번호', '수신번호', '050'),
+            'caller'         => array('발신번호', 'caller', 'from', '발신', '고객번호', '고객 전화번호', 'caller_number'),
+            'startedAt'      => array('통화시작', '통화일시', '시작일시', 'startedat', 'starttime', 'start_time', 'calledat', '일시'),
+            'duration'       => array('통화시간', '통화시간초', 'duration', 'durationsec', 'duration_sec', '초', '통화(초)'),
+            'result'         => array('결과', 'result', 'status', '통화결과', '상태'),
+            'providerCallId' => array('통화id', '통화고유id', 'providercallid', 'callid', 'call_id', '고유id'),
+            'recordingUrl'   => array('녹취url', 'recordingurl', 'recording_url', 'recordurl', '녹취', '녹취주소'),
+        );
+    }
+}
+
+if (!function_exists('lc_call_logs_import_normalize_header')) {
+    function lc_call_logs_import_normalize_header($value)
+    {
+        $value = strtolower(trim((string) $value));
+        $value = preg_replace('/\s+/u', '', $value);
+        $value = str_replace(array('_', '-', '.'), '', $value);
+
+        return $value;
+    }
+}
+
+if (!function_exists('lc_call_logs_import_map_headers')) {
+  /**
+   * @param array<int,string> $headers
+   * @return array<string,int>
+   */
+    function lc_call_logs_import_map_headers(array $headers)
+    {
+        $aliases = lc_call_logs_import_column_aliases();
+        $map = array();
+        foreach ($headers as $idx => $header) {
+            $norm = lc_call_logs_import_normalize_header($header);
+            if ($norm === '') {
+                continue;
+            }
+            foreach ($aliases as $field => $names) {
+                if (isset($map[$field])) {
+                    continue;
+                }
+                foreach ($names as $name) {
+                    if ($norm === lc_call_logs_import_normalize_header($name)) {
+                        $map[$field] = (int) $idx;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        return $map;
+    }
+}
+
+if (!function_exists('lc_call_logs_import_parse_rows')) {
+    /**
+     * 업로드 파일(xlsx/xls/csv)을 통화 ingest payload 배열로 변환.
+     *
+     * @return array{ok:bool,message:string,rows?:array<int,array<string,mixed>>,headers?:array<int,string>}
+     */
+    function lc_call_logs_import_parse_file($tmp_path, $filename)
+    {
+        if (!is_readable($tmp_path)) {
+            return array('ok' => false, 'message' => '파일을 읽을 수 없습니다.');
+        }
+
+        $ext = strtolower(pathinfo((string) $filename, PATHINFO_EXTENSION));
+        $matrix = array();
+
+        if (in_array($ext, array('xlsx', 'xls'), true) && defined('G5_LIB_PATH') && is_file(G5_LIB_PATH . '/PHPExcel/IOFactory.php')) {
+            include_once G5_LIB_PATH . '/PHPExcel/IOFactory.php';
+            try {
+                $obj = PHPExcel_IOFactory::load($tmp_path);
+                $sheet = $obj->getSheet(0);
+                $highest_row = (int) $sheet->getHighestRow();
+                $highest_col = $sheet->getHighestColumn();
+                $col_count = PHPExcel_Cell::columnIndexFromString($highest_col);
+                for ($r = 1; $r <= $highest_row; $r++) {
+                    $row = array();
+                    for ($c = 0; $c < $col_count; $c++) {
+                        $cell = $sheet->getCellByColumnAndRow($c, $r);
+                        $value = $cell ? trim((string) $cell->getFormattedValue()) : '';
+                        $row[] = $value;
+                    }
+                    if (implode('', $row) !== '') {
+                        $matrix[] = $row;
+                    }
+                }
+            } catch (Exception $e) {
+                return array('ok' => false, 'message' => '엑셀 파일을 읽지 못했습니다.');
+            }
+        } else {
+            $raw = file_get_contents($tmp_path);
+            if ($raw === false) {
+                return array('ok' => false, 'message' => '파일을 읽을 수 없습니다.');
+            }
+            if (strncmp($raw, "\xEF\xBB\xBF", 3) === 0) {
+                $raw = substr($raw, 3);
+            }
+            $delimiter = (substr_count($raw, "\t") > substr_count($raw, ',')) ? "\t" : ',';
+            $lines = preg_split('/\r\n|\r|\n/', $raw);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+                $row = str_getcsv($line, $delimiter);
+                if ($row && implode('', $row) !== '') {
+                    $matrix[] = $row;
+                }
+            }
+        }
+
+        if (count($matrix) < 2) {
+            return array('ok' => false, 'message' => '헤더와 데이터 행이 필요합니다.');
+        }
+
+        $headers = array_map('trim', $matrix[0]);
+        $map = lc_call_logs_import_map_headers($headers);
+        if (!isset($map['virtualNumber'])) {
+            return array('ok' => false, 'message' => '가상번호 열을 찾을 수 없습니다. (가상번호 / virtualNumber 등)');
+        }
+
+        $rows = array();
+        for ($i = 1, $n = count($matrix); $i < $n; $i++) {
+            $line = $matrix[$i];
+            $virtual = trim((string) ($line[$map['virtualNumber']] ?? ''));
+            if ($virtual === '') {
+                continue;
+            }
+
+            $payload = array(
+                'virtualNumber' => $virtual,
+                'caller'        => isset($map['caller']) ? (string) ($line[$map['caller']] ?? '') : '',
+                'startedAt'     => isset($map['startedAt']) ? (string) ($line[$map['startedAt']] ?? '') : '',
+                'duration'      => isset($map['duration']) ? (string) ($line[$map['duration']] ?? '') : '',
+                'result'        => isset($map['result']) ? (string) ($line[$map['result']] ?? '') : '',
+                'providerCallId'=> isset($map['providerCallId']) ? (string) ($line[$map['providerCallId']] ?? '') : '',
+                'recordingUrl'  => isset($map['recordingUrl']) ? (string) ($line[$map['recordingUrl']] ?? '') : '',
+                'importRow'     => $i + 1,
+            );
+
+            if ($payload['providerCallId'] === '') {
+                $payload['providerCallId'] = 'import-' . date('Ymd') . '-' . $i . '-' . substr(md5($virtual . $payload['caller'] . $payload['startedAt']), 0, 10);
+            }
+
+            $rows[] = $payload;
+        }
+
+        if (!$rows) {
+            return array('ok' => false, 'message' => '등록할 통화 데이터가 없습니다.');
+        }
+
+        return array('ok' => true, 'message' => count($rows) . '건 파싱됨', 'rows' => $rows, 'headers' => $headers);
+    }
+}
+
+if (!function_exists('lc_call_logs_import_bulk')) {
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     * @return array{ok:bool,message:string,total:int,imported:int,duplicate:int,failed:int,unmatched:int,items:array<int,array<string,mixed>>}
+     */
+    function lc_call_logs_import_bulk(array $rows, $skip_conversion = false)
+    {
+        $summary = array(
+            'ok'        => true,
+            'message'   => '',
+            'total'     => count($rows),
+            'imported'  => 0,
+            'duplicate' => 0,
+            'failed'    => 0,
+            'unmatched' => 0,
+            'items'     => array(),
+        );
+
+        foreach ($rows as $row) {
+            if ($skip_conversion) {
+                $row['skipConversion'] = true;
+            }
+            $res = lc_call_ingest_log($row);
+            $item = array(
+                'row'     => (int) ($row['importRow'] ?? 0),
+                'virtualNumber' => (string) ($row['virtualNumber'] ?? ''),
+                'ok'      => !empty($res['ok']),
+                'message' => (string) ($res['message'] ?? ''),
+                'clogId'  => (int) ($res['clogId'] ?? 0),
+                'duplicate' => !empty($res['duplicate']),
+            );
+            $summary['items'][] = $item;
+
+            if (!$res['ok']) {
+                $summary['failed']++;
+                continue;
+            }
+            if (!empty($res['duplicate'])) {
+                $summary['duplicate']++;
+                continue;
+            }
+            if (strpos((string) $res['message'], '미매칭') !== false) {
+                $summary['unmatched']++;
+            }
+            $summary['imported']++;
+        }
+
+        $summary['message'] = sprintf(
+            '총 %d건 · 신규 %d건 · 중복 %d건 · 실패 %d건 · 미매칭 %d건',
+            $summary['total'],
+            $summary['imported'],
+            $summary['duplicate'],
+            $summary['failed'],
+            $summary['unmatched']
+        );
+
+        return $summary;
     }
 }
 
