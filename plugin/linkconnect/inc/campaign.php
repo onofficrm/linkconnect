@@ -174,6 +174,13 @@ if (!function_exists('lc_campaign_list_for_api')) {
     {
         $type = !empty($filters['type']) ? strtolower((string) $filters['type']) : '';
 
+        if ($type === 'cps' && function_exists('lc_campaign_cps_linkprice_for_api')) {
+            $lp_items = lc_campaign_cps_linkprice_for_api($filters);
+            if (!empty($lp_items)) {
+                return $lp_items;
+            }
+        }
+
         if (lc_db_installed()) {
             $rows = lc_campaign_list_active($filters);
 
@@ -238,6 +245,118 @@ if (!function_exists('lc_campaign_list_for_api')) {
         }
 
         return $items;
+    }
+}
+
+if (!function_exists('lc_campaign_cps_linkprice_for_api')) {
+    /**
+     * LinkPrice에서 동기화된 CPS 광고주를 공개 CPS 상품 카드 형식으로 변환합니다.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    function lc_campaign_cps_linkprice_for_api(array $filters = array())
+    {
+        if (!function_exists('lc_lp_merchants_list') || !lc_db_table_exists(lc_table('lp_merchants'))) {
+            return array();
+        }
+
+        $list = lc_lp_merchants_list(array(
+            'partner_visible' => true,
+            'q'               => trim((string) ($filters['q'] ?? '')),
+            'limit'           => 300,
+        ));
+
+        $category_filter = trim((string) ($filters['category'] ?? ''));
+        $items = array();
+        foreach (($list['items'] ?? array()) as $row) {
+            if (!lc_lp_merchant_public_listable($row)) {
+                continue;
+            }
+
+            $category = trim((string) ($row['category_name'] ?? ''));
+            if ($category === '') {
+                $category = '기타';
+            }
+            if ($category_filter !== '' && $category_filter !== '전체' && $category !== $category_filter) {
+                continue;
+            }
+
+            $title = trim((string) ($row['campaign_alias'] ?? ''));
+            if ($title === '') {
+                $title = trim((string) ($row['merchant_name'] ?? ''));
+            }
+
+            $commission = function_exists('lc_lp_merchant_partner_display_commission')
+                ? lc_lp_merchant_partner_display_commission($row)
+                : trim((string) ($row['commission_pc'] ?? $row['commission_mobile'] ?? ''));
+            $return_day = (int) ($row['return_day'] ?? 0);
+            $notice = trim((string) ($row['partner_notice'] ?? ''));
+            if ($notice === '') {
+                $notice = trim((string) ($row['notice'] ?? ''));
+            }
+            $settlement = trim((string) ($row['commission_payment_standard'] ?? ''));
+            $description = $notice !== '' ? $notice : ($settlement !== '' ? $settlement : $title . ' 구매 연동 CPS 캠페인');
+
+            $deny = trim((string) ($row['deny_ad'] ?? ''));
+            $deny_product = trim((string) ($row['deny_product'] ?? ''));
+            $forbidden = trim(implode(', ', array_filter(array($deny, $deny_product))));
+
+            $items[] = array(
+                'id'                => (int) ($row['lpm_id'] ?? 0),
+                'code'              => (string) ($row['merchant_code'] ?? ''),
+                'title'             => $title,
+                'category'          => $category,
+                'type'              => 'cps',
+                'description'       => $description,
+                'price'             => 0,
+                'priceFormatted'    => $commission,
+                'approvalRate'      => $commission,
+                'avgTime'           => $return_day > 0 ? $return_day . '일' : '-',
+                'allowedChannels'   => '블로그, SNS, 유튜브, 커뮤니티',
+                'forbiddenChannels' => $forbidden !== '' ? $forbidden : '스팸, 브랜드 사칭, 허위광고',
+                'status'            => '진행중',
+                'statusCode'        => LC_STATUS_ACTIVE,
+                'badge'             => !empty($row['is_recommended']) ? '추천' : '',
+                'recommended'       => !empty($row['is_recommended']),
+                'landingUrl'        => (string) ($row['merchant_url'] ?? ''),
+                'thumbnailUrl'      => lc_lp_merchant_public_logo($row),
+            );
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('lc_campaign_cps_linkprice_categories')) {
+    /**
+     * @return string[]
+     */
+    function lc_campaign_cps_linkprice_categories()
+    {
+        $defaults = array('전체', '쇼핑몰', '뷰티', '건강', '생활', '기타');
+        if (!lc_db_table_exists(lc_table('lp_merchants'))) {
+            return $defaults;
+        }
+
+        $table = lc_table('lp_merchants');
+        $rows = lc_sql_query(" SELECT DISTINCT category_name FROM `{$table}`
+            WHERE subscript = 'APR'
+              AND visible = 1
+              AND sync_active = 1
+              AND click_url <> ''
+            ORDER BY category_name ASC ", false);
+
+        $categories = array('전체');
+        if ($rows) {
+            while ($row = sql_fetch_array($rows)) {
+                $cat = trim((string) ($row['category_name'] ?? ''));
+                if ($cat !== '' && !in_array($cat, $categories, true)) {
+                    $categories[] = $cat;
+                }
+            }
+        }
+
+        return count($categories) > 1 ? $categories : $defaults;
     }
 }
 

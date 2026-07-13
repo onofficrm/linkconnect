@@ -164,9 +164,21 @@ function CpsCard({ item }: { item: PublicCampaign }) {
   const commission = item.approvalRate || item.priceFormatted;
   const cookie = item.avgTime;
   const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
+  const hasThumbnail = (item.thumbnailUrl || '').trim().length > 0;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-cyan-300 transition-all flex flex-col">
+      {hasThumbnail ? (
+        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100 flex items-center justify-center">
+          <img
+            src={item.thumbnailUrl}
+            alt={item.title}
+            className="w-full h-full object-contain p-6"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      ) : null}
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
           <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">

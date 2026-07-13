@@ -222,8 +222,9 @@ if (!function_exists('lc_lp_config_save')) {
             $auth = (string) ($current['api_auth_key'] ?? '');
         }
 
-        $secret = array_key_exists('postback_secret', $values) ? trim((string) $values['postback_secret']) : '';
-        if ($secret === '') {
+        $clear_secret = !empty($values['postback_secret_clear']);
+        $secret = $clear_secret ? '' : (array_key_exists('postback_secret', $values) ? trim((string) $values['postback_secret']) : '');
+        if ($secret === '' && !$clear_secret) {
             $secret = (string) ($current['postback_secret'] ?? '');
         }
 
@@ -275,7 +276,9 @@ if (!function_exists('lc_lp_config_save')) {
             if (array_key_exists('api_auth_key', $values) && trim((string) $values['api_auth_key']) !== '') {
                 $mirror['lpAuthKey'] = trim((string) $values['api_auth_key']);
             }
-            if (array_key_exists('postback_secret', $values) && trim((string) $values['postback_secret']) !== '') {
+            if ($clear_secret) {
+                $mirror['lpPostbackSecret'] = '';
+            } elseif (array_key_exists('postback_secret', $values) && trim((string) $values['postback_secret']) !== '') {
                 $mirror['lpPostbackSecret'] = trim((string) $values['postback_secret']);
             }
             lc_settings_save($mirror);
@@ -1351,6 +1354,83 @@ if (!function_exists('lc_lp_sync_merchants')) {
     }
 }
 
+if (!function_exists('lc_lp_is_linkprice_brand_merchant')) {
+    /**
+     * 링크프라이스 네트워크 자체(광고주 엔트리) 여부 — 공개 목록·로고 노출 제외
+     */
+    function lc_lp_is_linkprice_brand_merchant(array $row)
+    {
+        $code = strtolower(trim((string) ($row['merchant_code'] ?? '')));
+        if (in_array($code, array('linkprice', 'lp'), true)) {
+            return true;
+        }
+
+        foreach (array('merchant_name', 'campaign_alias') as $key) {
+            $name = trim((string) ($row[$key] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            if (preg_match('/^(링크프라이스|link\s*price)$/iu', $name)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('lc_lp_merchant_logo_is_linkprice_brand')) {
+    /**
+     * merchant_logo URL이 링크프라이스 네트워크 브랜드 이미지인지 판별
+     */
+    function lc_lp_merchant_logo_is_linkprice_brand($url)
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return false;
+        }
+
+        $lower = strtolower($url);
+        if (preg_match('#/(?:linkprice|lp)[_-]?(?:logo|brand)(?:[._/\-?#]|$)#i', $lower)) {
+            return true;
+        }
+        if (preg_match('#/(?:logo/)?linkprice\.(?:png|jpe?g|gif|webp|svg)(?:\?|#|$)#i', $lower)) {
+            return true;
+        }
+        if (preg_match('#/(?:default|common)/linkprice#i', $lower)) {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('lc_lp_merchant_public_logo')) {
+    /**
+     * 파트너·공개 화면용 로고 — 링크프라이스 브랜드 이미지는 빈 문자열
+     */
+    function lc_lp_merchant_public_logo(array $row)
+    {
+        if (lc_lp_is_linkprice_brand_merchant($row)) {
+            return '';
+        }
+
+        $logo = trim((string) ($row['merchant_logo'] ?? ''));
+        if ($logo === '' || lc_lp_merchant_logo_is_linkprice_brand($logo)) {
+            return '';
+        }
+
+        return $logo;
+    }
+}
+
+if (!function_exists('lc_lp_merchant_public_listable')) {
+    function lc_lp_merchant_public_listable(array $row)
+    {
+        return !lc_lp_is_linkprice_brand_merchant($row);
+    }
+}
+
 if (!function_exists('lc_lp_merchant_partner_visible')) {
     /**
      * 파트너 화면 노출 조건:
@@ -1455,6 +1535,7 @@ if (!function_exists('lc_lp_merchants_list')) {
         }
         if (!empty($filters['partner_visible'])) {
             $where[] = "subscript = 'APR' AND visible = 1 AND sync_active = 1 AND click_url <> ''";
+            $where[] = "LOWER(merchant_code) NOT IN ('linkprice', 'lp')";
         }
 
         $where_sql = implode(' AND ', $where);
@@ -1954,7 +2035,7 @@ if (!function_exists('lc_lp_merchant_to_partner_api')) {
             'merchantCode'     => $code,
             'merchantName'     => $name,
             'originalName'     => (string) ($row['merchant_name'] ?? ''),
-            'merchantLogo'     => (string) ($row['merchant_logo'] ?? ''),
+            'merchantLogo'     => lc_lp_merchant_public_logo($row),
             'categoryName'     => (string) ($row['category_name'] ?? ''),
             'commissionPc'     => (string) ($row['commission_pc'] ?? ''),
             'commissionMobile' => (string) ($row['commission_mobile'] ?? ''),
@@ -2027,6 +2108,9 @@ if (!function_exists('lc_lp_partner_list_merchants')) {
         $stats = lc_lp_partner_merchant_stats($pt_id);
         $items = array();
         foreach ($list['items'] as $row) {
+            if (!lc_lp_merchant_public_listable($row)) {
+                continue;
+            }
             $id = (int) ($row['lpm_id'] ?? 0);
             $items[] = lc_lp_merchant_to_partner_api($row, $pt_id, $stats[$id] ?? array());
         }
@@ -2129,10 +2213,10 @@ if (!function_exists('lc_lp_postback_ip_allowed')) {
 
 if (!function_exists('lc_lp_postback_secret_ok')) {
     /**
-     * 공식 문서에 서명 필드는 없음. Secret은 헤더/쿼리로 검증.
+     * 공식 문서에 서명 필드는 없음. Secret을 설정한 경우에만 헤더/쿼리로 검증.
      *  - 헤더 X-LP-SECRET / X-Linkprice-Secret
      *  - 쿼리 ?secret=  (POSTBACK URL에 포함 가능)
-     * API 활성 시 Secret 필수. 비상 시 settings lpPostbackAllowOpen=1.
+     * Secret 미설정 시 공식 POSTBACK 그대로 수신한다. 필요하면 IP allowlist로 제한한다.
      */
     function lc_lp_postback_secret_ok()
     {
@@ -2141,14 +2225,8 @@ if (!function_exists('lc_lp_postback_secret_ok')) {
         if ($expected === '' && function_exists('lc_settings_get')) {
             $expected = trim((string) lc_settings_get('lpPostbackSecret', ''));
         }
-        $allow_open = function_exists('lc_settings_get')
-            && in_array((string) lc_settings_get('lpPostbackAllowOpen', '0'), array('1', 'true'), true);
 
         if ($expected === '') {
-            // 운영(API 활성)에서는 개방 수신 금지 — URL만으로 수신하면 스팸/위조 위험
-            if (!empty($cfg['api_enabled']) && !$allow_open) {
-                return false;
-            }
             return true;
         }
         $provided = '';

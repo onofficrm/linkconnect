@@ -336,6 +336,8 @@ if ($method === 'POST') {
             'api_auth_key'         => 'api_auth_key',
             'postbackSecret'       => 'postback_secret',
             'postback_secret'      => 'postback_secret',
+            'clearPostbackSecret'  => 'postback_secret_clear',
+            'postbackSecretClear'  => 'postback_secret_clear',
             'apiEnabled'           => 'api_enabled',
             'api_enabled'          => 'api_enabled',
             'defaultPartnerRate'   => 'default_partner_rate',
@@ -469,9 +471,10 @@ if ($method === 'POST') {
                 lc_settings_save($mirror);
             }
         }
-        if (array_key_exists('postbackSecret', $body) || array_key_exists('postback_secret', $body)) {
+        if (array_key_exists('postbackSecret', $body) || array_key_exists('postback_secret', $body) || !empty($body['clearPostbackSecret'] ?? $body['postbackSecretClear'] ?? false)) {
             lc_lp_config_save(array(
-                'postback_secret' => $body['postbackSecret'] ?? $body['postback_secret'] ?? '',
+                'postback_secret'       => $body['postbackSecret'] ?? $body['postback_secret'] ?? '',
+                'postback_secret_clear' => !empty($body['clearPostbackSecret'] ?? $body['postbackSecretClear'] ?? false),
             ));
         }
         lc_api_success(array(

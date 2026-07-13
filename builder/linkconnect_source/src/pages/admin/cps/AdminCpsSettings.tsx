@@ -16,6 +16,7 @@ export function AdminCpsSettings() {
   const [affiliateCode, setAffiliateCode] = useState('');
   const [authKey, setAuthKey] = useState('');
   const [secret, setSecret] = useState('');
+  const [useSecret, setUseSecret] = useState(false);
   const [apiEnabled, setApiEnabled] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [ipEnabled, setIpEnabled] = useState(false);
@@ -33,6 +34,7 @@ export function AdminCpsSettings() {
         setConfig(d.config);
         setAffiliateCode(d.config.affiliateCode || '');
         setApiEnabled(!!d.config.apiEnabled);
+        setUseSecret(!!d.config.postbackSecretSet);
         setDefaultRate(String(d.config.defaultPartnerRate ?? 70));
         setTestMode(!!d.config.security?.testMode);
         setIpEnabled(!!d.config.security?.postbackIpEnabled);
@@ -51,13 +53,15 @@ export function AdminCpsSettings() {
       const res = await saveAdminLpConfig({
         affiliateCode,
         apiAuthKey: authKey || undefined,
-        postbackSecret: secret || undefined,
+        postbackSecret: useSecret ? (secret || undefined) : undefined,
+        clearPostbackSecret: !useSecret,
         apiEnabled,
         defaultPartnerRate: Number(defaultRate) || 70,
       });
       await saveAdminLpPostbackSecurity({
         postbackIpEnabled: ipEnabled,
         postbackIpAllowlist: ipList,
+        clearPostbackSecret: !useSecret,
         testMode,
       });
       setConfig(res.config);
@@ -102,7 +106,16 @@ export function AdminCpsSettings() {
           </label>
           <label className="block text-sm">
             <span className="text-slate-600">POSTBACK Secret {config?.postbackSecretSet ? `(저장됨: ${config.postbackSecretMasked})` : ''}</span>
-            <input type="password" autoComplete="new-password" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="변경 시에만 입력" className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2" />
+            <input type="password" autoComplete="new-password" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder={useSecret ? '변경 시에만 입력' : 'Secret 미사용'} disabled={!useSecret} className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 disabled:bg-slate-100 disabled:text-slate-400" />
+          </label>
+          <label className="flex items-start gap-2 text-sm font-medium">
+            <input type="checkbox" checked={useSecret} onChange={(e) => setUseSecret(e.target.checked)} className="mt-1" />
+            <span>
+              POSTBACK Secret 사용
+              <span className="block text-xs font-normal text-slate-500">
+                링크프라이스가 별도 secret/code를 제공하지 않으면 해제하세요. 해제 시 IP 제한 사용을 권장합니다.
+              </span>
+            </span>
           </label>
           <label className="flex items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={apiEnabled} onChange={(e) => setApiEnabled(e.target.checked)} />

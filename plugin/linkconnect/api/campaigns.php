@@ -14,7 +14,7 @@ $items = lc_campaign_list_for_api(array(
 ));
 
 $categories = $type === 'cps'
-    ? array('전체', '쇼핑몰', '뷰티', '건강', '생활', '기타')
+    ? (function_exists('lc_campaign_cps_linkprice_categories') ? lc_campaign_cps_linkprice_categories() : array('전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'))
     : array('전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타');
 
 lc_api_success(array(

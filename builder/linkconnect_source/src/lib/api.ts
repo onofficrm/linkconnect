@@ -2658,6 +2658,7 @@ export function saveAdminLpPostbackSecurity(payload: {
   postbackIpEnabled?: boolean;
   postbackIpAllowlist?: string;
   postbackSecret?: string;
+  clearPostbackSecret?: boolean;
   testMode?: boolean;
 }) {
   return adminApiPost<{ message: string; config: LpNetworkConfig }>('linkprice.php', {
