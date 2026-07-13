@@ -55,6 +55,7 @@ export function CpsPartnerNotice() {
 }
 
 export const ADMIN_CPS_TABS = [
+  { id: 'setup', label: '운영 시작', path: '/admin/cps/setup' },
   { id: 'settings', label: '링크프라이스 설정', path: '/admin/cps/settings' },
   { id: 'merchants', label: 'CPS 광고주', path: '/admin/cps/merchants' },
   { id: 'clicks', label: '클릭 통계', path: '/admin/cps/clicks' },

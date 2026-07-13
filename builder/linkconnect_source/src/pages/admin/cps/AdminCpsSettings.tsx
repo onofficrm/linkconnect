@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '../../../layouts/AdminLayout';
 import { AdminCpsSubnav, formatWon } from '../../../components/cps/CpsShared';
 import {
   LpNetworkConfig,
   fetchAdminLpConfig,
+  fetchAdminLpSetup,
   saveAdminLpConfig,
   saveAdminLpPostbackSecurity,
   testAdminLpConnection,
@@ -22,6 +24,7 @@ export function AdminCpsSettings() {
   const [ipEnabled, setIpEnabled] = useState(false);
   const [ipList, setIpList] = useState('');
   const [defaultRate, setDefaultRate] = useState('70');
+  const [postbackUrl, setPostbackUrl] = useState('');
 
   const notify = (m: string) => {
     setMsg(m);
@@ -45,6 +48,9 @@ export function AdminCpsSettings() {
 
   useEffect(() => {
     load();
+    fetchAdminLpSetup()
+      .then((d) => setPostbackUrl(d.urls.postbackPrimary || ''))
+      .catch(() => undefined);
   }, [load]);
 
   const save = async () => {
@@ -91,6 +97,11 @@ export function AdminCpsSettings() {
   return (
     <AdminLayout activeMenu="cps" title="링크프라이스 설정" description="CPS API 인증·보안·동기화 상태">
       <AdminCpsSubnav active="settings" />
+      <div className="mb-4 text-sm">
+        <Link to="/admin/cps/setup" className="font-bold text-cyan-700 hover:underline">
+          ← 운영 체크리스트에서 전체 단계 확인
+        </Link>
+      </div>
       {msg ? <div className="mb-4 text-sm font-medium text-cyan-700 bg-cyan-50 border border-cyan-100 rounded-xl px-4 py-2">{msg}</div> : null}
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -138,6 +149,12 @@ export function AdminCpsSettings() {
         <div className="space-y-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
             <h3 className="font-bold text-slate-900">POSTBACK 보안</h3>
+            {postbackUrl ? (
+              <div className="text-xs bg-slate-50 rounded-xl p-3 space-y-2">
+                <div className="text-slate-500 font-bold">Affiliate Center 등록 URL</div>
+                <div className="font-mono break-all text-slate-700">{postbackUrl}</div>
+              </div>
+            ) : null}
             <label className="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={ipEnabled} onChange={(e) => setIpEnabled(e.target.checked)} />
               허용 IP 제한

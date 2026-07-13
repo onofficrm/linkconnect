@@ -192,6 +192,376 @@ if (!function_exists('lc_lp_health_snapshot')) {
     }
 }
 
+if (!function_exists('lc_lp_site_base_url')) {
+    function lc_lp_site_base_url()
+    {
+        return defined('G5_URL') ? rtrim((string) G5_URL, '/') : '';
+    }
+}
+
+if (!function_exists('lc_lp_merchant_admin_stats')) {
+    /**
+     * @return array{total:int,apr:int,visible:int,partnerVisible:int,hiddenApr:int,syncActive:int}
+     */
+    function lc_lp_merchant_admin_stats()
+    {
+        $defaults = array(
+            'total'          => 0,
+            'apr'            => 0,
+            'visible'        => 0,
+            'partnerVisible' => 0,
+            'hiddenApr'      => 0,
+            'syncActive'     => 0,
+        );
+        $table = lc_table('lp_merchants');
+        if (!lc_db_table_exists($table)) {
+            return $defaults;
+        }
+
+        $row = lc_sql_fetch(" SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN subscript = 'APR' THEN 1 ELSE 0 END) AS apr_cnt,
+            SUM(CASE WHEN visible = 1 THEN 1 ELSE 0 END) AS visible_cnt,
+            SUM(CASE WHEN sync_active = 1 THEN 1 ELSE 0 END) AS sync_active_cnt,
+            SUM(CASE WHEN subscript = 'APR' AND sync_active = 1 AND visible = 0 THEN 1 ELSE 0 END) AS hidden_apr_cnt,
+            SUM(CASE WHEN subscript = 'APR' AND visible = 1 AND sync_active = 1 AND click_url <> '' THEN 1 ELSE 0 END) AS partner_visible_cnt
+            FROM `{$table}` ", false);
+
+        if (!is_array($row)) {
+            return $defaults;
+        }
+
+        return array(
+            'total'          => (int) ($row['total'] ?? 0),
+            'apr'            => (int) ($row['apr_cnt'] ?? 0),
+            'visible'        => (int) ($row['visible_cnt'] ?? 0),
+            'partnerVisible' => (int) ($row['partner_visible_cnt'] ?? 0),
+            'hiddenApr'      => (int) ($row['hidden_apr_cnt'] ?? 0),
+            'syncActive'     => (int) ($row['sync_active_cnt'] ?? 0),
+        );
+    }
+}
+
+if (!function_exists('lc_lp_postback_recent_stats')) {
+    /**
+     * @return array{total:int,last24h:int,lastSuccessAt:string|null,lastErrorAt:string|null}
+     */
+    function lc_lp_postback_recent_stats()
+    {
+        $out = array(
+            'total'         => 0,
+            'last24h'       => 0,
+            'lastSuccessAt' => null,
+            'lastErrorAt'   => null,
+        );
+        $table = lc_table('lp_postbacks');
+        if (!lc_db_table_exists($table)) {
+            return $out;
+        }
+
+        $row = lc_sql_fetch(" SELECT COUNT(*) AS total,
+            SUM(CASE WHEN received_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS last24h
+            FROM `{$table}` ", false);
+        if (is_array($row)) {
+            $out['total'] = (int) ($row['total'] ?? 0);
+            $out['last24h'] = (int) ($row['last24h'] ?? 0);
+        }
+
+        $ok = lc_sql_fetch(" SELECT received_at FROM `{$table}`
+            WHERE process_status IN ('" . LC_LP_PB_PROCESSED . "','" . LC_LP_PB_DUPLICATE . "')
+            ORDER BY lpp_id DESC LIMIT 1 ", false);
+        if (is_array($ok) && !empty($ok['received_at'])) {
+            $out['lastSuccessAt'] = (string) $ok['received_at'];
+        }
+
+        $err = lc_sql_fetch(" SELECT received_at FROM `{$table}`
+            WHERE process_status = '" . LC_LP_PB_ERROR . "'
+            ORDER BY lpp_id DESC LIMIT 1 ", false);
+        if (is_array($err) && !empty($err['received_at'])) {
+            $out['lastErrorAt'] = (string) $err['received_at'];
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('lc_lp_setup_urls')) {
+    /**
+     * @return array{postbackPrimary:string,postbackAlt:string,postbackWithSecret:string,health:string,merchantCron:string,orderCron:string,publicCps:string,partnerCps:string}
+     */
+    function lc_lp_setup_urls()
+    {
+        $base = lc_lp_site_base_url();
+        $cfg = lc_lp_config_get();
+        $secret = trim((string) ($cfg['postback_secret'] ?? ''));
+        $token = function_exists('lc_settings_get') ? trim((string) lc_settings_get('lpCronToken', '')) : '';
+        if ($token === '' && getenv('LC_LP_CRON_TOKEN')) {
+            $token = trim((string) getenv('LC_LP_CRON_TOKEN'));
+        }
+
+        $postback = $base . '/api/external/linkprice/postback';
+        $postback_secret = $secret !== '' ? $postback . '?secret=' . rawurlencode($secret) : $postback;
+        $merchant_cron = $base . '/plugin/linkconnect/cron/linkprice_sync_merchants.php';
+        $order_cron = $base . '/plugin/linkconnect/cron/linkprice_sync_conversions.php?mode=last7';
+        if ($token !== '') {
+            $merchant_cron .= (strpos($merchant_cron, '?') === false ? '?' : '&') . 'token=' . rawurlencode($token);
+            $order_cron .= '&token=' . rawurlencode($token);
+        }
+
+        return array(
+            'postbackPrimary'     => $postback,
+            'postbackAlt'         => $base . '/plugin/linkconnect/api/lp_postback.php',
+            'postbackWithSecret'  => $postback_secret,
+            'health'              => $base . '/plugin/linkconnect/api/lp_health.php' . ($token !== '' ? '?token=' . rawurlencode($token) : ''),
+            'merchantCron'        => $merchant_cron,
+            'orderCron'           => $order_cron,
+            'publicCps'           => function_exists('lc_spa_url') ? lc_spa_url('/cps') : $base . '/cps',
+            'partnerCps'          => function_exists('lc_spa_url') ? lc_spa_url('/partner/cps') : $base . '/partner/cps',
+        );
+    }
+}
+
+if (!function_exists('lc_lp_setup_cron_commands')) {
+    /**
+     * @return array{merchant:string,order:string}
+     */
+    function lc_lp_setup_cron_commands()
+    {
+        $root = defined('G5_PATH') ? rtrim((string) G5_PATH, '/') : '/path/to/public_html';
+
+        return array(
+            'merchant' => '15 3 * * * cd ' . $root . ' && php cron/linkprice_sync_merchants.php >> /tmp/lp_merchant_cron.log 2>&1',
+            'order'    => '*/20 * * * * cd ' . $root . ' && php cron/linkprice_sync_conversions.php --mode=last7 >> /tmp/lp_order_cron.log 2>&1',
+        );
+    }
+}
+
+if (!function_exists('lc_lp_setup_steps')) {
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    function lc_lp_setup_steps()
+    {
+        $health = lc_lp_health_snapshot();
+        $cfg = lc_lp_config_to_api();
+        $merchants = lc_lp_merchant_admin_stats();
+        $postbacks = lc_lp_postback_recent_stats();
+        $security = function_exists('lc_lp_ui_security_settings') ? lc_lp_ui_security_settings() : array();
+
+        $connection_ok = !empty($cfg['ready']) && ($merchant_synced || $merchants['apr'] > 0);
+
+        $postback_guard_ok = empty($cfg['postbackSecretSet'])
+            || !empty($security['postbackIpEnabled']);
+
+        $merchant_synced = trim((string) ($cfg['lastMerchantSyncAt'] ?? '')) !== '';
+        $order_synced = trim((string) ($cfg['lastOrderSyncAt'] ?? '')) !== '';
+        $cron_hint_ok = !empty($health['checks']['cronTokenSet']) || $order_synced;
+
+        $make = function ($id, $title, $done, $description = '', $action = '') {
+            return array(
+                'id'          => $id,
+                'title'       => $title,
+                'status'      => $done ? 'done' : 'pending',
+                'description' => $description,
+                'action'      => $action,
+            );
+        };
+
+        $steps = array(
+            $make(
+                'db',
+                'DB 스키마 준비',
+                !empty($health['checks']['dbReady']),
+                'g5_lc_lp_* 테이블이 생성되어 있어야 합니다.'
+            ),
+            $make(
+                'api_config',
+                'A코드·API 키·API 활성',
+                !empty($cfg['ready']),
+                'Affiliate Center에서 발급한 A코드와 auth_key를 저장하고 API를 활성화하세요.',
+                'settings'
+            ),
+            $make(
+                'connection',
+                '링크프라이스 연결 테스트',
+                $connection_ok,
+                '광고주 조회 API 연결이 성공해야 동기화가 가능합니다.',
+                'test_connection'
+            ),
+            $make(
+                'postback_url',
+                'Affiliate Center POSTBACK URL 등록',
+                $postbacks['total'] > 0,
+                '리워드 API URL에 POSTBACK 주소를 등록하세요. Secret 미사용 시 IP 제한을 권장합니다.',
+                'copy_postback'
+            ),
+            $make(
+                'postback_security',
+                'POSTBACK 보안 설정',
+                $postback_guard_ok,
+                'Secret을 쓰지 않을 때는 허용 IP 제한을 켜세요.',
+                'settings_security'
+            ),
+            $make(
+                'merchant_sync',
+                'CPS 광고주 동기화',
+                $merchant_synced && $merchants['apr'] > 0,
+                'APR 승인 광고주를 최소 1회 동기화하세요.',
+                'sync_merchants'
+            ),
+            $make(
+                'merchant_visible',
+                '파트너·공개 노출 광고주 선택',
+                $merchants['partnerVisible'] > 0,
+                '동기화된 광고주 중 홍보할 몰만 visible=ON 하세요.',
+                'merchants'
+            ),
+            $make(
+                'cron',
+                '크론(또는 웹 크론) 등록',
+                $cron_hint_ok,
+                '광고주·실적 동기화 스케줄을 서버에 등록하세요.',
+                'copy_cron'
+            ),
+            $make(
+                'postback_received',
+                'POSTBACK 수신 확인',
+                $postbacks['last24h'] > 0 || $postbacks['total'] > 0,
+                '테스트 클릭·구매 후 POSTBACK 로그를 확인하세요.',
+                'postbacks'
+            ),
+            $make(
+                'order_sync',
+                '실적 동기화 확인',
+                $order_synced,
+                '확정·취소 상태는 translist API 동기화로 반영됩니다.',
+                'sync_orders'
+            ),
+            $make(
+                'public_cps',
+                '공개 /cps 페이지 노출',
+                $merchants['partnerVisible'] > 0,
+                '노출 ON된 광고주가 공개 CPS 목록에 표시됩니다.',
+                'public_cps'
+            ),
+        );
+
+        $done = 0;
+        foreach ($steps as $step) {
+            if (($step['status'] ?? '') === 'done') {
+                $done++;
+            }
+        }
+
+        return array(
+            'items'   => $steps,
+            'done'    => $done,
+            'total'   => count($steps),
+            'percent' => count($steps) > 0 ? (int) round(($done / count($steps)) * 100) : 0,
+        );
+    }
+}
+
+if (!function_exists('lc_lp_setup_snapshot')) {
+    /**
+     * CPS 운영 온보딩 스냅샷 (관리자)
+     *
+     * @return array<string,mixed>
+     */
+    function lc_lp_setup_snapshot()
+    {
+        $health = lc_lp_health_snapshot();
+        $cfg = lc_lp_config_to_api();
+        $steps = lc_lp_setup_steps();
+
+        return array(
+            'ok'        => !empty($health['ok']),
+            'health'    => $health,
+            'config'    => $cfg,
+            'urls'      => lc_lp_setup_urls(),
+            'cron'      => lc_lp_setup_cron_commands(),
+            'merchants' => lc_lp_merchant_admin_stats(),
+            'postbacks' => lc_lp_postback_recent_stats(),
+            'steps'     => $steps,
+            'ready'     => ($steps['percent'] ?? 0) >= 80,
+        );
+    }
+}
+
+if (!function_exists('lc_lp_merchant_bulk_update_admin')) {
+    /**
+     * @param int[] $lpm_ids
+     * @return array{ok:bool,message:string,updated:int,failed:int}
+     */
+    function lc_lp_merchant_bulk_update_admin(array $lpm_ids, array $values)
+    {
+        $updated = 0;
+        $failed = 0;
+        foreach ($lpm_ids as $lpm_id) {
+            $result = lc_lp_merchant_update_admin((int) $lpm_id, $values);
+            if (!empty($result['ok'])) {
+                $updated++;
+            } else {
+                $failed++;
+            }
+        }
+
+        return array(
+            'ok'      => $updated > 0,
+            'message' => $updated > 0
+                ? ($updated . '건 업데이트' . ($failed > 0 ? ', ' . $failed . '건 실패' : ''))
+                : '업데이트된 항목이 없습니다.',
+            'updated' => $updated,
+            'failed'  => $failed,
+        );
+    }
+}
+
+if (!function_exists('lc_lp_merchant_bulk_update_scope')) {
+    /**
+     * scope: apr_hidden | apr_all | partner_visible
+     *
+     * @return array{ok:bool,message:string,updated:int}
+     */
+    function lc_lp_merchant_bulk_update_scope($scope, array $values)
+    {
+        $table = lc_table('lp_merchants');
+        if (!lc_db_table_exists($table)) {
+            return array('ok' => false, 'message' => '광고주 테이블이 없습니다.', 'updated' => 0);
+        }
+
+        $where = array("subscript = 'APR'", 'sync_active = 1');
+        if ($scope === 'apr_hidden') {
+            $where[] = 'visible = 0';
+        } elseif ($scope === 'partner_visible') {
+            $where[] = "visible = 1 AND click_url <> ''";
+        } elseif ($scope !== 'apr_all') {
+            return array('ok' => false, 'message' => '유효하지 않은 scope입니다.', 'updated' => 0);
+        }
+        $where[] = "LOWER(merchant_code) NOT IN ('linkprice', 'lp')";
+
+        $rows = lc_sql_query(' SELECT lpm_id FROM `' . $table . '` WHERE ' . implode(' AND ', $where) . ' ', false);
+        $ids = array();
+        if ($rows) {
+            while ($row = sql_fetch_array($rows)) {
+                $ids[] = (int) ($row['lpm_id'] ?? 0);
+            }
+        }
+
+        if (!$ids) {
+            return array('ok' => false, 'message' => '대상 광고주가 없습니다.', 'updated' => 0);
+        }
+
+        $result = lc_lp_merchant_bulk_update_admin($ids, $values);
+
+        return array(
+            'ok'      => !empty($result['ok']),
+            'message' => $result['message'],
+            'updated' => (int) ($result['updated'] ?? 0),
+        );
+    }
+}
+
 if (!function_exists('lc_lp_config_save')) {
     /**
      * @param array $values affiliate_code, api_auth_key, postback_secret, api_enabled, default_partner_rate, network_name

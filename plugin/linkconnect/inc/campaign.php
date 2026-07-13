@@ -175,6 +175,9 @@ if (!function_exists('lc_campaign_list_for_api')) {
         $type = !empty($filters['type']) ? strtolower((string) $filters['type']) : '';
 
         if ($type === 'cps' && function_exists('lc_campaign_cps_linkprice_for_api')) {
+            if (lc_db_table_exists(lc_table('lp_merchants'))) {
+                return lc_campaign_cps_linkprice_for_api($filters);
+            }
             $lp_items = lc_campaign_cps_linkprice_for_api($filters);
             if (!empty($lp_items)) {
                 return $lp_items;

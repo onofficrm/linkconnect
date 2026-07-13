@@ -36,6 +36,13 @@ if ($method === 'GET') {
     lc_api_require_admin();
     $view = isset($_GET['view']) ? (string) $_GET['view'] : 'merchants';
 
+    if ($view === 'setup') {
+        lc_api_success(array_merge(
+            array('dbReady' => lc_db_table_exists(lc_table('lp_merchants'))),
+            function_exists('lc_lp_setup_snapshot') ? lc_lp_setup_snapshot() : array()
+        ));
+    }
+
     if ($view === 'config') {
         lc_api_success(array(
             'config'  => lc_lp_config_to_api(),
@@ -326,6 +333,51 @@ if ($method === 'POST') {
 
     $body = lc_api_read_json_body();
     $action = isset($body['action']) ? (string) $body['action'] : '';
+
+    if ($action === 'bulk_update_merchants') {
+        $values = array();
+        if (array_key_exists('visible', $body)) {
+            $values['visible'] = !empty($body['visible']);
+        }
+        if (array_key_exists('isRecommended', $body) || array_key_exists('is_recommended', $body)) {
+            $values['is_recommended'] = !empty($body['isRecommended'] ?? $body['is_recommended'] ?? false);
+        }
+        if (!$values) {
+            lc_api_error('변경할 항목이 없습니다.', 'INVALID_BODY', 400);
+        }
+
+        $scope = isset($body['scope']) ? trim((string) $body['scope']) : '';
+        if ($scope !== '') {
+            $result = lc_lp_merchant_bulk_update_scope($scope, $values);
+        } else {
+            $ids = $body['lpmIds'] ?? $body['lpm_ids'] ?? array();
+            if (!is_array($ids) || !$ids) {
+                lc_api_error('lpmIds 또는 scope가 필요합니다.', 'INVALID_BODY', 400);
+            }
+            $result = lc_lp_merchant_bulk_update_admin(array_map('intval', $ids), $values);
+        }
+
+        $result['ok']
+            ? lc_api_success(array(
+                'message'   => $result['message'],
+                'updated'   => (int) ($result['updated'] ?? 0),
+                'merchants' => lc_lp_merchant_admin_stats(),
+            ))
+            : lc_api_error($result['message'], 'BULK_UPDATE_FAILED', 400, array(
+                'updated'   => (int) ($result['updated'] ?? 0),
+                'merchants' => lc_lp_merchant_admin_stats(),
+            ));
+    }
+
+    if ($action === 'run_setup_check') {
+        $connection = lc_lp_connection_test(!empty($body['testMode']));
+        $snapshot = function_exists('lc_lp_setup_snapshot') ? lc_lp_setup_snapshot() : array();
+        lc_api_success(array(
+            'message'    => (string) ($connection['message'] ?? ''),
+            'connection' => $connection,
+            'setup'      => $snapshot,
+        ));
+    }
 
     if ($action === 'save_config') {
         $values = array();

@@ -2334,6 +2334,47 @@ export type LpSyncLog = {
   finishedAt: string | null;
 };
 
+export type LpSetupStep = {
+  id: string;
+  title: string;
+  status: 'done' | 'pending';
+  description: string;
+  action: string;
+};
+
+export type LpSetupSnapshot = {
+  ok: boolean;
+  dbReady: boolean;
+  ready: boolean;
+  config: LpNetworkConfig;
+  urls: {
+    postbackPrimary: string;
+    postbackAlt: string;
+    postbackWithSecret: string;
+    health: string;
+    merchantCron: string;
+    orderCron: string;
+    publicCps: string;
+    partnerCps: string;
+  };
+  cron: { merchant: string; order: string };
+  merchants: {
+    total: number;
+    apr: number;
+    visible: number;
+    partnerVisible: number;
+    hiddenApr: number;
+    syncActive: number;
+  };
+  postbacks: {
+    total: number;
+    last24h: number;
+    lastSuccessAt: string | null;
+    lastErrorAt: string | null;
+  };
+  steps: { items: LpSetupStep[]; done: number; total: number; percent: number };
+};
+
 export type LpSyncResult = {
   ok: boolean;
   message: string;
@@ -2641,6 +2682,31 @@ export function fetchAdminLpSyncLogs(limit = 30, type = '') {
 
 export function fetchAdminLpConfig() {
   return adminApiGet<{ config: LpNetworkConfig; dbReady: boolean }>('linkprice.php', { view: 'config' });
+}
+
+export function fetchAdminLpSetup() {
+  return adminApiGet<LpSetupSnapshot>('linkprice.php', { view: 'setup' });
+}
+
+export function runAdminLpSetupCheck(testMode?: boolean) {
+  return adminApiPost<{
+    message: string;
+    connection: { ok: boolean; message: string; resultCode?: string };
+    setup: LpSetupSnapshot;
+  }>('linkprice.php', { action: 'run_setup_check', testMode: !!testMode });
+}
+
+export function bulkUpdateAdminLpMerchants(payload: {
+  lpmIds?: number[];
+  scope?: 'apr_hidden' | 'apr_all' | 'partner_visible';
+  visible?: boolean;
+  isRecommended?: boolean;
+}) {
+  return adminApiPost<{
+    message: string;
+    updated: number;
+    merchants: LpSetupSnapshot['merchants'];
+  }>('linkprice.php', { action: 'bulk_update_merchants', ...payload });
 }
 
 export function testAdminLpConnection(testMode?: boolean) {
