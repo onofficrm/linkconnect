@@ -2,13 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, FileSignature } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, FileSignature, Megaphone } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
 import { getLcAuth, shouldShowMerchantContractNotice, shouldShowMerchantContractMenu, getMerchantContractPath } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { AdvertiserContractNotice } from '../components/advertiser/AdvertiserContractNotice';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { CenterNavItem } from '../components/center-ui';
 
 export function AdvertiserLayout({
   children,
@@ -35,50 +36,52 @@ export function AdvertiserLayout({
   const dbBadge = pendingBadge ?? (auth.dbReady ? undefined : 9);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50/80 flex flex-col">
       {!auth.isImpersonating ? <SuperAdminWidget /> : null}
       <ImpersonateBanner />
       <CenterTopBar center="advertiser" />
       <div className="flex flex-col md:flex-row flex-1">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-950 text-slate-300 shrink-0 border-r border-slate-800 overflow-x-auto md:overflow-visible z-10">
-        <div className="p-4 md:p-6 flex md:flex-col gap-2 md:gap-0 sticky top-0">
-          <div className="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Advertiser Menu</div>
-          <nav className="flex md:flex-col gap-2 md:space-y-1 min-w-max md:min-w-0">
-            <NavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" />
+      <aside className="w-full md:w-64 bg-slate-950 text-slate-300 shrink-0 border-r border-slate-800/80 overflow-x-auto md:overflow-visible z-10">
+        <div className="p-4 md:p-5 flex md:flex-col gap-2 md:gap-0 sticky top-0">
+          <div className="hidden md:block text-[11px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-4 px-1">Advertiser</div>
+          <nav className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
+            <CenterNavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" accent="cyan" />
             {showContractMenu ? (
-              <NavItem
+              <CenterNavItem
                 icon={<FileSignature size={20} />}
                 label={auth.merchantContractRequires ? 'CPA 계약 체결' : 'CPA 계약서'}
                 active={activeMenu === 'contract'}
                 badge={contractMenuBadge}
                 to={contractMenuPath}
+                accent="cyan"
               />
             ) : null}
-            <NavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" />
-            <NavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" />
-            <NavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" />
-            <NavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" />
-            <NavItem icon={<BarChart3 size={20} />} label="성과 리포트" active={activeMenu === 'reports'} to="/advertiser/reports" />
-            <NavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" />
+            <CenterNavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" accent="cyan" />
+            <CenterNavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" accent="cyan" />
+            <CenterNavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" accent="cyan" />
+            <CenterNavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" accent="cyan" />
+            <CenterNavItem icon={<Megaphone size={20} />} label="마케팅 성과" active={activeMenu === 'marketing'} to="/advertiser/marketing" accent="cyan" />
+            <CenterNavItem icon={<BarChart3 size={20} />} label="성과 리포트" active={activeMenu === 'reports'} to="/advertiser/reports" accent="cyan" />
+            <CenterNavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" accent="cyan" />
           </nav>
-          <MemberAuthMenu variant="sidebar" logoutReturnPath="/advertiser" />
+          <div className="mt-4 pt-4 border-t border-slate-800/80">
+            <MemberAuthMenu variant="sidebar" logoutReturnPath="/advertiser" />
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-x-hidden bg-slate-50">
-        {/* Header */}
+      <main className="flex-1 p-4 md:p-8 overflow-x-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-slate-50 to-slate-50">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-            <p className="text-slate-500">{displayCompany}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-cyan-600 mb-1">Advertiser Center</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
+            <p className="text-slate-500 mt-1">{displayCompany}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SuperAdminHeaderButton />
-            <div className="flex flex-col items-end bg-white px-4 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-              <span className="text-xs text-slate-500">현재 광고비 잔액</span>
-              <span className="font-bold text-cyan-600">{displayBalance} 원</span>
+            <div className="flex flex-col items-end bg-white/90 backdrop-blur px-4 py-2 rounded-xl border border-slate-200/80 shadow-sm">
+              <span className="text-[11px] text-slate-500">현재 광고비 잔액</span>
+              <span className="font-bold text-cyan-600 tabular-nums">{displayBalance} 원</span>
             </div>
             <NotificationCenter center="merchant" />
             <MemberAuthMenu variant="compact" logoutReturnPath="/advertiser" />
@@ -92,19 +95,5 @@ export function AdvertiserLayout({
       </div>
       <AiGuideChat page="advertiser" role="merchant" />
     </div>
-  );
-}
-
-function NavItem({ icon, label, active = false, badge, to }: any) {
-  return (
-    <Link to={to} className={`flex items-center justify-between px-4 py-3 rounded-xl transition-colors ${active ? 'bg-cyan-500/10 text-cyan-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
-      <div className="flex items-center gap-3">
-        {icon}
-        <span>{label}</span>
-      </div>
-      {badge && (
-        <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{badge}</span>
-      )}
-    </Link>
   );
 }

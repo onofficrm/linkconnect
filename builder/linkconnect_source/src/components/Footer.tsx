@@ -1,8 +1,38 @@
 import { Link as LinkIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { campaignNavItems, centerNavItems, companyNavItems } from '../lib/publicNav';
+import { handleSectionLink, scrollToSection } from '../lib/navigation';
 import { MemberAuthMenu } from './MemberAuthMenu';
 import { g5BbsUrl } from '../lib/urls';
+import type { NavLinkItem } from '../lib/publicNav';
+
+function FooterNavLink({ item }: { item: NavLinkItem }) {
+  const location = useLocation();
+
+  if (item.scrollTarget) {
+    return (
+      <Link
+        to="/"
+        onClick={(e) => {
+          handleSectionLink(item.scrollTarget!);
+          if (location.pathname === '/') {
+            e.preventDefault();
+            scrollToSection(item.scrollTarget!);
+          }
+        }}
+        className="hover:text-emerald-400 transition-colors"
+      >
+        {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <Link to={item.to} className="hover:text-emerald-400 transition-colors">
+      {item.label}
+    </Link>
+  );
+}
 
 export function Footer() {
   return (
@@ -43,10 +73,8 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4">캠페인 · 서비스</h4>
             <ul className="space-y-3 text-sm text-slate-400">
               {campaignNavItems.map((item) => (
-                <li key={item.to}>
-                  <Link to={item.to} className="hover:text-emerald-400 transition-colors">
-                    {item.label}
-                  </Link>
+                <li key={item.label}>
+                  <FooterNavLink item={item} />
                 </li>
               ))}
               {centerNavItems.map((item) => (

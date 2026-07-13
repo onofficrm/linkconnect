@@ -463,6 +463,133 @@ if (!function_exists('lc_demo_wallet_seed_for_merchant')) {
     }
 }
 
+if (!function_exists('lc_demo_contract_default_form')) {
+    /**
+     * 데모·샘플 계약서에 채울 광고주 정보
+     *
+     * @return array<string,string>
+     */
+    function lc_demo_contract_default_form($mt_id)
+    {
+        $mt_id = (int) $mt_id;
+        $merchant = function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+        $member = null;
+        if (is_array($merchant) && !empty($merchant['mb_id'])) {
+            $member = lc_merchant_contract_get_member_row((string) $merchant['mb_id']);
+        }
+
+        $company = trim((string) (is_array($merchant) ? ($merchant['mt_company'] ?? '') : ''));
+        if ($company === '') {
+            $company = '데모광고주';
+        }
+        if (mb_strpos($company, '(주)', 0, 'UTF-8') === false && mb_strpos($company, '주)', 0, 'UTF-8') === false) {
+            $company .= ' (주)';
+        }
+
+        $mb_id = is_array($merchant) ? (string) ($merchant['mb_id'] ?? '') : '';
+        $email = is_array($member) && !empty($member['mb_email'])
+            ? (string) $member['mb_email']
+            : ($mb_id !== '' ? $mb_id . '@linkconnect.demo' : 'demo@linkconnect.demo');
+        $contact_name = is_array($member) && !empty($member['mb_name']) ? (string) $member['mb_name'] : '이마케팅';
+
+        return array(
+            'companyName'        => $company,
+            'representativeName' => '김데모',
+            'businessNumber'     => '123-45-67890',
+            'companyAddress'     => '서울특별시 강남구 테헤란로 123, 링크커넥트빌딩 10층',
+            'companyPhone'       => '02-1234-5678',
+            'contactName'        => $contact_name,
+            'contactPhone'       => '010-9876-5432',
+            'contactEmail'       => $email,
+            'signerName'         => '김데모',
+            'signerPosition'     => '대표이사',
+            'signerPhone'        => '010-9876-5432',
+            'signerEmail'        => $email,
+        );
+    }
+}
+
+if (!function_exists('lc_demo_contract_signature_png')) {
+    function lc_demo_contract_signature_png()
+    {
+        $binary = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', true);
+
+        return $binary === false ? '' : $binary;
+    }
+}
+
+if (!function_exists('lc_demo_contract_seed_for_merchant')) {
+    /**
+     * 데모·샘플용 체결 완료 계약서 생성 (전자서명 + PDF 포함)
+     *
+     * @return array{ok:bool,message:string,skipped?:bool,contractCode?:string}
+     */
+    function lc_demo_contract_seed_for_merchant($mt_id)
+    {
+        $mt_id = (int) $mt_id;
+        if ($mt_id <= 0) {
+            return array('ok' => false, 'message' => '광고주 ID가 필요합니다.');
+        }
+
+        if (!function_exists('lc_merchant_contract_sign')) {
+            return array('ok' => false, 'message' => '계약 모듈을 사용할 수 없습니다.');
+        }
+
+        if (function_exists('lc_merchant_contract_db_ensure_schema')) {
+            $schema = lc_merchant_contract_db_ensure_schema();
+            if (empty($schema['ok'])) {
+                return array('ok' => false, 'message' => $schema['message'] ?? '계약 테이블 준비 실패');
+            }
+        }
+
+        if (lc_merchant_contract_is_signed($mt_id)) {
+            $existing = lc_merchant_contract_get($mt_id);
+            $code = is_array($existing) ? (string) ($existing['mc_contract_code'] ?? '') : '';
+
+            return array(
+                'ok'           => true,
+                'message'      => '이미 체결된 계약이 있습니다.' . ($code !== '' ? " ({$code})" : ''),
+                'skipped'      => true,
+                'contractCode' => $code,
+            );
+        }
+
+        $form = lc_demo_contract_default_form($mt_id);
+        $png = lc_demo_contract_signature_png();
+        if ($png === '') {
+            return array('ok' => false, 'message' => '샘플 서명 이미지를 준비하지 못했습니다.');
+        }
+
+        $payload = array_merge($form, array(
+            'agreements' => array(
+                'readAll'      => true,
+                'hasAuthority' => true,
+                'electronic'   => true,
+                'noModify'     => true,
+            ),
+            'signatureDataUrl' => 'data:image/png;base64,' . base64_encode($png),
+        ));
+
+        $result = lc_merchant_contract_sign($mt_id, $payload);
+        if (empty($result['ok'])) {
+            return array(
+                'ok'      => false,
+                'message' => (string) ($result['message'] ?? '샘플 계약 생성에 실패했습니다.'),
+            );
+        }
+
+        $contract = isset($result['contract']) && is_array($result['contract']) ? $result['contract'] : lc_merchant_contract_get($mt_id);
+        $code = is_array($contract) ? (string) ($contract['mc_contract_code'] ?? '') : '';
+
+        return array(
+            'ok'           => true,
+            'message'      => '샘플 계약이 체결되었습니다.' . ($code !== '' ? " ({$code})" : ''),
+            'skipped'      => false,
+            'contractCode' => $code,
+        );
+    }
+}
+
 if (!function_exists('lc_demo_seed_run')) {
     /**
      * @return array{ok:bool,message:string,details:array}
@@ -509,12 +636,14 @@ if (!function_exists('lc_demo_seed_run')) {
         $links = lc_demo_link_seed_for_partner($pt_id, $mt_id);
         $conversions = lc_demo_conversion_seed_for_pair($mt_id, $pt_id, $links['map']);
         $wallet = lc_demo_wallet_seed_for_merchant($mt_id);
+        $contract = lc_demo_contract_seed_for_merchant($mt_id);
 
         $message = "데모 계정 준비 완료\n";
         $message .= "파트너: {$partner['partner']['pt_code']} ({$partner_mb})\n";
         $message .= "광고주: {$merchant['merchant']['mt_code']} ({$advertiser_mb})\n";
         $message .= "비밀번호: {$password}\n";
-        $message .= "캠페인: " . (int) $merchant['campaigns'] . "건, 전환: " . (int) $conversions . "건, 링크: " . (int) $links['inserted'] . "건";
+        $message .= "캠페인: " . (int) $merchant['campaigns'] . "건, 전환: " . (int) $conversions . "건, 링크: " . (int) $links['inserted'] . "건\n";
+        $message .= "계약: " . ($contract['message'] ?? '—');
 
         return array(
             'ok'      => true,
@@ -531,6 +660,7 @@ if (!function_exists('lc_demo_seed_run')) {
                 'conversionsInserted'    => (int) $conversions,
                 'linksInserted'          => (int) $links['inserted'],
                 'walletInserted'         => (int) $wallet,
+                'contract'               => $contract,
             ),
         );
     }

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { PhoneCall, PhoneIncoming, Save } from 'lucide-react';
-import { CallLog, MerchantCallCampaign, fetchMerchantCallCampaigns, fetchMerchantCallLogs, saveMerchantCallSettings } from '../../lib/api';
+import { CallLog, MerchantCallCampaign, fetchMerchantCallCampaigns, fetchMerchantCallLogs, requestMerchantCallRecording, saveMerchantCallSettings } from '../../lib/api';
+import { CallRecordingCell } from '../../components/call/CallRecordingCell';
 
 type Draft = { enabled: boolean; alias: string; forward1: string; forward2: string };
 
@@ -22,6 +23,7 @@ export function AdvertiserCall() {
   const [items, setItems] = useState<MerchantCallCampaign[]>([]);
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [logCpFilter, setLogCpFilter] = useState('');
+  const [logNumberFilter, setLogNumberFilter] = useState('');
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -40,10 +42,13 @@ export function AdvertiserCall() {
   }, []);
 
   const loadLogs = useCallback(() => {
-    fetchMerchantCallLogs(logCpFilter ? Number(logCpFilter) : undefined)
+    fetchMerchantCallLogs({
+      cpId: logCpFilter ? Number(logCpFilter) : undefined,
+      virtualNumber: logNumberFilter || undefined,
+    })
       .then((d) => setLogs(d.items))
       .catch(() => setLogs([]));
-  }, [logCpFilter]);
+  }, [logCpFilter, logNumberFilter]);
 
   useEffect(() => {
     load();
@@ -55,6 +60,16 @@ export function AdvertiserCall() {
 
   const update = (cpId: number, patch: Partial<Draft>) => {
     setDrafts((prev) => ({ ...prev, [cpId]: { ...prev[cpId], ...patch } }));
+  };
+
+  const handleRecordingRequest = async (clogId: number, memo?: string) => {
+    try {
+      const res = await requestMerchantCallRecording({ clogId, memo });
+      setMessage(res.message);
+      loadLogs();
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : '녹음 요청에 실패했습니다.');
+    }
   };
 
   const handleSave = async (cpId: number) => {
@@ -80,10 +95,10 @@ export function AdvertiserCall() {
           <div className="flex items-center gap-2 font-bold mb-1">
             <PhoneCall size={18} /> 콜디비 안내
           </div>
-          <p className="text-cyan-800/80">
-            상품별로 <b>콜디비 수신 여부(ON/OFF)</b>와 <b>착신번호 1·2</b>, <b>상품 별칭</b>을 설정할 수 있습니다.
-            관리자가 업로드한 통화내역은 아래 <b>통화 내역</b>에서 가상번호 기준으로 확인할 수 있습니다.
-            (녹음 방식·업무시간·단가 등은 운영 정책상 관리자가 설정합니다.)
+          <p className="text-cyan-800/80 leading-relaxed">
+            상품별 <b>콜디비 수신 ON/OFF</b>, <b>착신번호</b>, <b>상품 별칭</b>을 설정할 수 있습니다.
+            관리자가 통화내역 엑셀을 업로드하면, 내 상품에 배정된 <b>가상번호 기준</b>으로 통화내역이 아래에 표시됩니다.
+            녹음이 필요한 통화는 <b>녹음 요청</b> 후 관리자가 등록하면 재생할 수 있습니다.
           </p>
         </div>
 
@@ -163,7 +178,17 @@ export function AdvertiserCall() {
               <option value="">전체 상품</option>
               {items.map((c) => <option key={c.cpId} value={c.cpId}>{c.campaign}</option>)}
             </select>
+            <input
+              type="text"
+              value={logNumberFilter}
+              onChange={(e) => setLogNumberFilter(e.target.value)}
+              placeholder="가상번호 필터"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono w-40"
+            />
           </div>
+          <p className="px-5 py-2 text-xs text-slate-500 border-b border-slate-50">
+            내 광고상품에 연결된 가상번호의 통화내역만 표시됩니다. 상품·가상번호로 필터할 수 있습니다.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-slate-500 text-left">
@@ -175,11 +200,12 @@ export function AdvertiserCall() {
                   <th className="px-4 py-3">파트너</th>
                   <th className="px-4 py-3 text-center">통화시간</th>
                   <th className="px-4 py-3 text-center">결과</th>
+                  <th className="px-4 py-3 text-center">녹음</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {logs.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">통화 내역이 없습니다.</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">통화 내역이 없습니다. 관리자가 엑셀 업로드 후 표시됩니다.</td></tr>
                 ) : logs.map((l) => {
                   const r = resultLabel[l.result] ?? { label: l.result, cls: 'text-slate-500' };
                   return (
@@ -191,6 +217,13 @@ export function AdvertiserCall() {
                       <td className="px-4 py-3">{l.partner || '—'}</td>
                       <td className="px-4 py-3 text-center">{formatDuration(l.duration)}</td>
                       <td className={`px-4 py-3 text-center font-bold ${r.cls}`}>{r.label}</td>
+                      <td className="px-4 py-3 text-center">
+                        <CallRecordingCell
+                          meta={l.recordingRequest}
+                          onRequest={(memo) => handleRecordingRequest(l.clogId, memo)}
+                          compact
+                        />
+                      </td>
                     </tr>
                   );
                 })}

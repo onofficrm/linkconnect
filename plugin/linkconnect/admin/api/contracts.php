@@ -45,6 +45,38 @@ if ($method === 'POST') {
     lc_api_require_method('POST');
     $body = lc_api_read_json_body();
     $action = isset($body['action']) ? (string) $body['action'] : '';
+
+    if ($action === 'seed_demo') {
+        if (!function_exists('lc_demo_contract_seed_for_merchant')) {
+            if (is_file(LC_PLUGIN_PATH . '/inc/demo_seed.php')) {
+                require_once LC_PLUGIN_PATH . '/inc/demo_seed.php';
+            }
+        }
+
+        $mt_id = isset($body['mtId']) ? (int) $body['mtId'] : 0;
+        if ($mt_id <= 0 && function_exists('lc_demo_default_advertiser_mb_id') && function_exists('lc_get_merchant_by_mb_id')) {
+            $demo = lc_get_merchant_by_mb_id(lc_demo_default_advertiser_mb_id());
+            if (is_array($demo)) {
+                $mt_id = (int) ($demo['mt_id'] ?? 0);
+            }
+        }
+        if ($mt_id <= 0) {
+            lc_api_error('광고주 ID(mtId)가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+
+        $result = lc_demo_contract_seed_for_merchant($mt_id);
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'SEED_FAILED', 400);
+        }
+
+        lc_api_success(array(
+            'message'      => $result['message'],
+            'skipped'      => !empty($result['skipped']),
+            'contractCode' => (string) ($result['contractCode'] ?? ''),
+            'mtId'         => $mt_id,
+        ));
+    }
+
     $mc_id = isset($body['mcId']) ? (int) $body['mcId'] : 0;
     $reason = isset($body['reason']) ? (string) $body['reason'] : '';
 

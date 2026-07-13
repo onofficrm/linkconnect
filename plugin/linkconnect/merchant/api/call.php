@@ -81,9 +81,16 @@ if ($method === 'GET') {
             }
             $filters['cp_id'] = $cp_id;
         }
+        if (isset($_GET['virtualNumber']) && $_GET['virtualNumber'] !== '') {
+            $filters['virtual_number'] = (string) $_GET['virtualNumber'];
+        }
         $rows = array();
         foreach (lc_call_logs_list($filters) as $row) {
-            $rows[] = lc_call_log_to_api($row, false, false);
+            $api = lc_call_log_to_api($row, false, false);
+            if (function_exists('lc_call_recording_request_meta_for_log')) {
+                $api['recordingRequest'] = lc_call_recording_request_meta_for_log((int) $row['clog_id'], 'merchant', $mt_id);
+            }
+            $rows[] = $api;
         }
         lc_api_success(array('items' => $rows, 'dbReady' => lc_db_installed()));
     }
@@ -116,6 +123,11 @@ if ($method === 'POST') {
     if ($action === 'toggle') {
         $result = lc_call_settings_save($cp_id, array('enabled' => !empty($body['enabled'])), 'merchant');
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'SAVE_FAILED', 400);
+    }
+
+    if ($action === 'request_recording') {
+        $result = lc_call_recording_request_create((int) ($body['clogId'] ?? 0), 'merchant', $mt_id, (string) ($body['memo'] ?? ''));
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REQUEST_FAILED', 400);
     }
 
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);

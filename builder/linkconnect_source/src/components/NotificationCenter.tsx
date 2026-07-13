@@ -24,6 +24,8 @@ const typeLabels: Record<string, string> = {
   campaign: '캠페인',
   notice: '공지',
   system: '시스템',
+  call: '콜디비',
+  contract: '계약',
 };
 
 function fetchByCenter(center: LcNotificationCenter) {

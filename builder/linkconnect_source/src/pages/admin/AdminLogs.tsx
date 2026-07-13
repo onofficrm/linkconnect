@@ -58,6 +58,12 @@ export function AdminLogs() {
               <option value="event_reward_reject">리워드 거절</option>
               <option value="event_auto_ranking">랭킹 자동정산</option>
               <option value="wallet_adjust">광고비 조정</option>
+              <option value="call_assign_request">콜 번호 배정</option>
+              <option value="call_assign_direct">콜 직접 배정</option>
+              <option value="call_import_logs">콜 엑셀 업로드</option>
+              <option value="call_recording_upload">녹음 업로드</option>
+              <option value="call_recording_reject">녹음 반려</option>
+              <option value="contract_status">계약 상태 변경</option>
             </select>
           </div>
         </div>

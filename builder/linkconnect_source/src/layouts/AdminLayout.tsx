@@ -8,26 +8,47 @@ import { g5MemberEditUrl } from '../lib/urls';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
 import { ImpersonateHistoryBar } from '../components/ImpersonateHistoryBar';
+import { CenterNavItem } from '../components/center-ui';
 
-const sidebarMenus = [
-  { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
-  { id: 'partners', label: '파트너 관리', icon: <Users size={20} />, path: '/admin/partners' },
-  { id: 'review', label: '자동 심사 큐', icon: <ClipboardList size={20} />, path: '/admin/review-queue' },
-  { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
-  { id: 'contracts', label: '광고주 계약', icon: <FileText size={20} />, path: '/admin/contracts' },
-  { id: 'campaigns', label: '광고상품 관리', icon: <Briefcase size={20} />, path: '/admin/campaigns' },
-  { id: 'cps', label: 'CPS 관리', icon: <Store size={20} />, path: '/admin/cps/setup' },
-  { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin/conversions' },
-  { id: 'call', label: '콜디비 관리', icon: <PhoneCall size={20} />, path: '/admin/call' },
-  { id: 'inspections', label: '취소/무효 검수', icon: <ShieldAlert size={20} />, path: '/admin/inspections' },
-  { id: 'channel_reports', label: '금지 채널 신고', icon: <AlertTriangle size={20} />, path: '/admin/channel-reports' },
-  { id: 'billing', label: '광고비 관리', icon: <CreditCard size={20} />, path: '/admin/billing' },
-  { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
-  { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin/api' },
-  { id: 'events', label: '이벤트/프로모션', icon: <Gift size={20} />, path: '/admin/events' },
-  { id: 'logs', label: '작업 로그', icon: <ScrollText size={20} />, path: '/admin/logs' },
-  { id: 'support', label: '문의 관리', icon: <MessageSquare size={20} />, path: '/admin/support' },
-  { id: 'settings', label: '환경설정', icon: <Settings size={20} />, path: '/admin/settings' },
+const sidebarSections = [
+  {
+    label: '운영',
+    items: [
+      { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
+      { id: 'partners', label: '파트너 관리', icon: <Users size={20} />, path: '/admin/partners' },
+      { id: 'review', label: '자동 심사 큐', icon: <ClipboardList size={20} />, path: '/admin/review-queue' },
+      { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
+      { id: 'contracts', label: '광고주 계약', icon: <FileText size={20} />, path: '/admin/contracts' },
+    ],
+  },
+  {
+    label: '캠페인',
+    items: [
+      { id: 'campaigns', label: '광고상품 관리', icon: <Briefcase size={20} />, path: '/admin/campaigns' },
+      { id: 'cps', label: 'CPS 관리', icon: <Store size={20} />, path: '/admin/cps/setup' },
+      { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin/conversions' },
+      { id: 'call', label: '콜디비 관리', icon: <PhoneCall size={20} />, path: '/admin/call' },
+    ],
+  },
+  {
+    label: '정산 · 품질',
+    items: [
+      { id: 'inspections', label: '취소/무효 검수', icon: <ShieldAlert size={20} />, path: '/admin/inspections' },
+      { id: 'channel_reports', label: '금지 채널 신고', icon: <AlertTriangle size={20} />, path: '/admin/channel-reports' },
+      { id: 'billing', label: '광고비 관리', icon: <CreditCard size={20} />, path: '/admin/billing' },
+      { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
+    ],
+  },
+  {
+    label: '시스템',
+    items: [
+      { id: 'api', label: 'API 관리', icon: <Code size={20} />, path: '/admin/api' },
+      { id: 'events', label: '이벤트/프로모션', icon: <Gift size={20} />, path: '/admin/events' },
+      { id: 'logs', label: '작업 로그', icon: <ScrollText size={20} />, path: '/admin/logs' },
+      { id: 'support', label: '문의 관리', icon: <MessageSquare size={20} />, path: '/admin/support' },
+      { id: 'settings', label: '환경설정', icon: <Settings size={20} />, path: '/admin/settings' },
+    ],
+  },
 ];
 
 export function AdminLayout({ children, activeMenu, title, description }: { children: React.ReactNode, activeMenu: string, title: string, description?: string }) {
@@ -115,20 +136,24 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           flex flex-col
           ${isSidebarOpen ? 'translate-x-0 pt-16' : '-translate-x-full'}
         `}>
-          <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 hide-scrollbar">
-            {sidebarMenus.map((menu) => (
-              <Link
-                key={menu.id}
-                to={menu.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  activeMenu === menu.id 
-                    ? 'bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/20' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-900 font-medium'
-                }`}
-              >
-                {menu.icon}
-                <span>{menu.label}</span>
-              </Link>
+          <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6 hide-scrollbar">
+            {sidebarSections.map((section) => (
+              <div key={section.label}>
+                <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{section.label}</div>
+                <div className="space-y-1">
+                  {section.items.map((menu) => (
+                    <CenterNavItem
+                      key={menu.id}
+                      icon={menu.icon}
+                      label={menu.label}
+                      to={menu.path}
+                      active={activeMenu === menu.id}
+                      accent="slate"
+                      onClick={() => setIsSidebarOpen(false)}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
           
@@ -146,7 +171,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+        <main className="flex-1 overflow-y-auto bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-slate-50 to-slate-50 relative">
           <div className="p-4 sm:p-8 max-w-[1600px] mx-auto min-h-full flex flex-col">
             <div className="mb-8">
               <div className="flex items-center gap-2 text-sm text-slate-500 mb-2 font-medium">
@@ -154,6 +179,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
                 <ChevronRight size={14} />
                 <span className="text-slate-900">{title}</span>
               </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-cyan-600 mb-1">Admin Center</p>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-2">{title}</h1>
               {description && <p className="text-slate-500">{description}</p>}
             </div>

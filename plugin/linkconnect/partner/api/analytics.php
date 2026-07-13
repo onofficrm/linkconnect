@@ -10,9 +10,12 @@ $filters = array(
     'dateFrom'   => isset($_GET['dateFrom']) ? $_GET['dateFrom'] : '',
     'dateTo'     => isset($_GET['dateTo']) ? $_GET['dateTo'] : '',
     'linkId'     => isset($_GET['linkId']) ? $_GET['linkId'] : 0,
+    'lpmId'      => isset($_GET['lpmId']) ? $_GET['lpmId'] : 0,
     'channel'    => isset($_GET['channel']) ? $_GET['channel'] : '',
     'linkName'   => isset($_GET['linkName']) ? $_GET['linkName'] : '',
+    'source'     => isset($_GET['source']) ? $_GET['source'] : 'cpa',
     'compareIds' => isset($_GET['compareIds']) ? $_GET['compareIds'] : '',
+    'compareLpmIds' => isset($_GET['compareLpmIds']) ? $_GET['compareLpmIds'] : '',
 );
 
 if (function_exists('lc_partner_analytics_for_api')) {

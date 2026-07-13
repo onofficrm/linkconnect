@@ -655,6 +655,8 @@ export type AdminDashboardResponse = {
     pendingMerchants: number;
     pendingSettlements?: number;
     pendingInspections?: number;
+    pendingCallRequests?: number;
+    pendingRecordingRequests?: number;
   };
   chart7d: Array<{ date: string; received: number; approved: number; rejected: number; revenue: number }>;
   recent: AdminConversion[];
@@ -1352,14 +1354,19 @@ export function requestPartnerSettlement(payload: { amount: number; memo?: strin
   return partnerApiPost<{ message: string; settlement: PartnerSettlementItem | null; summary: PartnerSettlementSummary }>('settlements.php', payload);
 }
 
+export type PartnerAnalyticsSource = 'cpa' | 'cps';
+
 export type PartnerAnalyticsFilters = {
   period?: 7 | 30 | 90;
   dateFrom?: string;
   dateTo?: string;
+  source?: 'cpa' | 'cps';
   linkId?: number;
+  lpmId?: number;
   channel?: string;
   linkName?: string;
   compareIds?: number[];
+  compareLpmIds?: number[];
 };
 
 export type PartnerAnalyticsLinkRow = {
@@ -1379,6 +1386,7 @@ export type PartnerAnalyticsLinkRow = {
 };
 
 export type PartnerAnalyticsResponse = {
+  source?: 'cpa' | 'cps';
   summary: {
     totalClicks: number;
     uniqueVisitors: number;
@@ -1406,6 +1414,7 @@ export type PartnerAnalyticsResponse = {
   channels: Array<{ channel: string; clicks: number; dbs: number; approved: number; percentage: number }>;
   linkNames: Array<{ linkName: string; channel: string; clicks: number; dbs: number; approved: number }>;
   links: PartnerAnalyticsLinkRow[];
+  cpsLinks?: PartnerAnalyticsLinkRow[];
   compareLinks: PartnerAnalyticsLinkRow[];
   referrers: Array<{ domain: string; clicks: number; percentage: number }>;
   devices: Array<{ device: string; deviceCode: string; clicks: number; percentage: number }>;
@@ -1414,6 +1423,7 @@ export type PartnerAnalyticsResponse = {
     links: Array<{ id: number; code: string; campaign: string; channel: string; linkName: string }>;
     channels: string[];
     linkNames: string[];
+    cpsLinks?: Array<{ id: number; merchantCode: string; merchantName: string; promoUrl?: string }>;
   };
   dbReady: boolean;
 };
@@ -1423,10 +1433,13 @@ export function fetchPartnerAnalytics(filters?: PartnerAnalyticsFilters) {
   if (filters?.period) query.period = String(filters.period);
   if (filters?.dateFrom) query.dateFrom = filters.dateFrom;
   if (filters?.dateTo) query.dateTo = filters.dateTo;
+  if (filters?.source) query.source = filters.source;
   if (filters?.linkId) query.linkId = String(filters.linkId);
+  if (filters?.lpmId) query.lpmId = String(filters.lpmId);
   if (filters?.channel) query.channel = filters.channel;
   if (filters?.linkName) query.linkName = filters.linkName;
   if (filters?.compareIds?.length) query.compareIds = filters.compareIds.join(',');
+  if (filters?.compareLpmIds?.length) query.compareLpmIds = filters.compareLpmIds.join(',');
   return partnerApiGet<PartnerAnalyticsResponse>('analytics.php', query);
 }
 
@@ -1716,6 +1729,70 @@ export type MerchantReportResponse = {
 
 export function fetchMerchantReports() {
   return merchantApiGet<MerchantReportResponse>('reports.php');
+}
+
+export type MerchantMarketingFilters = {
+  period?: 7 | 30 | 90;
+  dateFrom?: string;
+  dateTo?: string;
+  cpId?: number;
+};
+
+export type MerchantMarketingResponse = {
+  summary: {
+    activePartners: number;
+    promoLinks: number;
+    totalClicks: number;
+    uniqueVisitors: number;
+    totalDb: number;
+    approvedDb: number;
+    rejectedDb: number;
+    convRate: number;
+    approvalRate: number;
+    activeCampaigns: number;
+  };
+  range: { dateFrom: string; dateTo: string; period: number };
+  funnel: { links: number; clicks: number; received: number; approved: number };
+  chart: Array<{ date: string; click: number; db: number; approval: number }>;
+  campaigns: Array<{
+    id: number;
+    name: string;
+    status: string;
+    partnerCount: number;
+    linkCount: number;
+    clicks: number;
+    dbCount: number;
+    approved: number;
+    rejected: number;
+    convRate: number;
+    approvalRate: number;
+    isActive: boolean;
+  }>;
+  partners: Array<{
+    id: number;
+    code: string;
+    name: string;
+    campaignCount: number;
+    linkCount: number;
+    clicks: number;
+    dbCount: number;
+    approved: number;
+    convRate: number;
+    approvalRate: number;
+    lastActivity: string;
+  }>;
+  channels: Array<{ channel: string; dbCount: number; approved: number; percentage: number }>;
+  filterOptions: { campaigns: Array<{ id: number; name: string; status: string }> };
+  dbReady: boolean;
+};
+
+export function fetchMerchantMarketing(filters?: MerchantMarketingFilters) {
+  const query: Record<string, string> = {};
+  if (filters?.period) query.period = String(filters.period);
+  if (filters?.dateFrom) query.dateFrom = filters.dateFrom;
+  if (filters?.dateTo) query.dateTo = filters.dateTo;
+  if (filters?.cpId) query.cpId = String(filters.cpId);
+  return merchantApiGet<MerchantMarketingResponse>('marketing.php', query);
 }
 
 export type AdminWalletSummary = {
@@ -2189,6 +2266,41 @@ export type CallLog = {
   cvId: number;
   hasRecording: boolean;
   recordingUrl?: string;
+  recordingRequest?: CallRecordingRequestMeta;
+};
+
+export type CallRecordingRequestMeta = {
+  crrId: number;
+  status: string;
+  statusLabel: string;
+  canPlay: boolean;
+  playUrl: string;
+  canRequest: boolean;
+};
+
+export type CallRecordingRequestItem = {
+  crrId: number;
+  clogId: number;
+  requesterType: string;
+  ptId: number;
+  mtId: number;
+  status: string;
+  statusLabel: string;
+  requestMemo: string;
+  adminMemo: string;
+  originalName: string;
+  requestedAt: string;
+  processedAt: string;
+  virtualNumber: string;
+  caller: string;
+  campaign: string;
+  partner: string;
+  merchant: string;
+  startedAt: string;
+  duration: number;
+  callResult: string;
+  canPlay: boolean;
+  playUrl?: string;
 };
 
 export type CallSettings = {
@@ -2222,12 +2334,8 @@ export function fetchAdminCallLogs(filters?: { result?: string; unmatched?: bool
   });
 }
 
-export function createAdminCallNumber(payload: { number: string; provider?: string; providerNumberId?: string; memo?: string }) {
+export function createAdminCallNumber(payload: { number: string; provider?: string; memo?: string }) {
   return adminApiPost<{ message: string; cnId?: number }>('call.php', { action: 'create_number', ...payload });
-}
-
-export function provisionAdminCallNumber(payload?: { areaCode?: string; memo?: string }) {
-  return adminApiPost<{ message: string; cnId?: number }>('call.php', { action: 'provision_number', ...(payload ?? {}) });
 }
 
 export function updateAdminCallNumber(payload: { cnId: number; status?: string; memo?: string }) {
@@ -2259,6 +2367,7 @@ export type CallLogImportResult = {
   unmatched: number;
   items?: Array<{ row: number; virtualNumber: string; ok: boolean; message: string; clogId: number; duplicate?: boolean }>;
   dryRun?: boolean;
+  headers?: string[];
   preview?: Array<Record<string, unknown>>;
 };
 
@@ -2279,12 +2388,28 @@ export function saveAdminCallSettings(payload: Record<string, unknown> & { cpId:
   return adminApiPost<{ message: string }>('call.php', { action: 'save_settings', ...payload });
 }
 
-export function fetchAdminCallRecording(clogId: number) {
-  return adminApiGet<{ url: string }>('call.php', { view: 'recording', clogId: String(clogId) });
-}
-
 export function finalizeAdminConversion(payload: { cvId: number; finalAction: 'approve' | 'reject' | 'lock' | 'unlock'; memo?: string }) {
   return adminApiPost<{ message: string }>('call.php', { action: 'final_status', ...payload });
+}
+
+export function fetchAdminCallRecordingRequests(status?: string) {
+  return adminApiGet<{ items: CallRecordingRequestItem[]; dbReady: boolean; isSuperAdmin: boolean }>('call.php', {
+    view: 'recording_requests',
+    status: status ?? '',
+  });
+}
+
+export function uploadAdminCallRecordingWav(payload: { crrId: number; file: File; adminMemo?: string }) {
+  const formData = new FormData();
+  formData.append('action', 'upload_recording_wav');
+  formData.append('crrId', String(payload.crrId));
+  formData.append('wav', payload.file);
+  if (payload.adminMemo) formData.append('adminMemo', payload.adminMemo);
+  return adminApiPostFormData<{ message: string }>('call.php', formData);
+}
+
+export function rejectAdminCallRecordingRequest(payload: { crrId: number; adminMemo?: string }) {
+  return adminApiPost<{ message: string }>('call.php', { action: 'reject_recording_request', ...payload });
 }
 
 /* ── 링크프라이스 CPS ── */
@@ -2867,11 +2992,16 @@ export function saveMerchantCallSettings(payload: { cpId: number; enabled: boole
   return merchantApiPost<{ message: string }>('call.php', { action: 'save_settings', ...payload });
 }
 
-export function fetchMerchantCallLogs(cpId?: number) {
+export function fetchMerchantCallLogs(filters?: { cpId?: number; virtualNumber?: string }) {
   return merchantApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', {
     view: 'logs',
-    cpId: cpId != null ? String(cpId) : '',
+    cpId: filters?.cpId != null ? String(filters.cpId) : '',
+    virtualNumber: filters?.virtualNumber ?? '',
   });
+}
+
+export function requestMerchantCallRecording(payload: { clogId: number; memo?: string }) {
+  return merchantApiPost<{ message: string; crrId?: number }>('call.php', { action: 'request_recording', ...payload });
 }
 
 export function toggleMerchantCall(payload: { cpId: number; enabled: boolean }) {
@@ -2883,12 +3013,20 @@ export function fetchPartnerCallRequests() {
   return partnerApiGet<{ items: CallRequest[]; dbReady: boolean }>('call.php', { view: 'requests' });
 }
 
-export function fetchPartnerCallLogs() {
-  return partnerApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', { view: 'logs' });
+export function fetchPartnerCallLogs(filters?: { cpId?: number; virtualNumber?: string }) {
+  return partnerApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', {
+    view: 'logs',
+    cpId: filters?.cpId != null ? String(filters.cpId) : '',
+    virtualNumber: filters?.virtualNumber ?? '',
+  });
 }
 
 export function requestPartnerCallNumber(payload: { cpId: number; memo?: string }) {
   return partnerApiPost<{ message: string; carId?: number }>('call.php', { action: 'request', ...payload });
+}
+
+export function requestPartnerCallRecording(payload: { clogId: number; memo?: string }) {
+  return partnerApiPost<{ message: string; crrId?: number }>('call.php', { action: 'request_recording', ...payload });
 }
 
 export type MerchantContractParty = {
@@ -3144,4 +3282,11 @@ export function updateAdminContractStatus(payload: {
   reason: string;
 }) {
   return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', payload);
+}
+
+export function seedAdminDemoContract(mtId?: number) {
+  return adminApiPost<{ message: string; skipped?: boolean; contractCode?: string; mtId?: number }>('contracts.php', {
+    action: 'seed_demo',
+    mtId: mtId ?? 0,
+  });
 }

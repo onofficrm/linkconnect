@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { fetchPartnerDashboard, PartnerConversion, PartnerDashboardResponse } from '../../lib/api';
+import { InsightBanner, SkeletonCardGrid, DataTableEmpty, tableRowClass } from '../../components/center-ui';
 
 const fallbackChartData = [
   { date: '—', click: 0, db: 0, approval: 0 },
@@ -34,16 +35,28 @@ export function PartnerDashboard() {
 
   return (
     <PartnerLayout activeMenu="dashboard" title="파트너센터">
-      {loading && <p className="text-slate-500 mb-4">대시보드를 불러오는 중...</p>}
+      <InsightBanner
+        accent="emerald"
+        message={<>오늘 클릭 <strong>{summary?.todayClicks ?? 0}회</strong>, 접수 DB <strong>{summary?.todayReceived ?? 0}건</strong>, 예상수입 <strong>{(summary?.todayEstRevenue ?? 0).toLocaleString()}원</strong></>}
+        subMessage="성과가 좋은 상품을 먼저 홍보하면 수익 상승 속도가 빨라집니다."
+        actions={[
+          { label: '광고상품 찾기', to: '/partner/search' },
+          { label: '유입 분석', to: '/partner/analytics', variant: 'secondary' },
+        ]}
+      />
 
+      {loading ? (
+        <SkeletonCardGrid count={6} />
+      ) : (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <SummaryCard title="오늘 클릭 수" value={String(summary?.todayClicks ?? 0)} icon={<MousePointerClick className="text-blue-500" />} />
+        <SummaryCard title="오늘 클릭 수" value={String(summary?.todayClicks ?? 0)} icon={<MousePointerClick className="text-blue-500" />} caption="실시간 유입" />
         <SummaryCard title="오늘 접수 DB" value={String(summary?.todayReceived ?? 0)} icon={<Target className="text-cyan-500" />} />
-        <SummaryCard title="승인완료 DB" value={String(summary?.approved ?? 0)} icon={<Target className="text-emerald-500" />} />
+        <SummaryCard title="승인완료 DB" value={String(summary?.approved ?? 0)} icon={<Target className="text-emerald-500" />} color="emerald" highlight />
         <SummaryCard title="취소/무효 DB" value={String(summary?.rejected ?? 0)} icon={<XCircle className="text-red-500" />} />
-        <SummaryCard title="오늘 예상수입" value={(summary?.todayEstRevenue ?? 0).toLocaleString()} suffix="원" highlight />
+        <SummaryCard title="오늘 예상수입" value={(summary?.todayEstRevenue ?? 0).toLocaleString()} suffix="원" highlight color="emerald" caption="오늘 기준" />
         <SummaryCard title="확정수익" value={(summary?.confRevenue ?? 0).toLocaleString()} suffix="원" highlight dark />
       </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-8 mb-8">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -80,7 +93,7 @@ export function PartnerDashboard() {
                   <InflowItem label={item.channel} percentage={item.percentage} color="bg-emerald-500" />
                 </div>
               )) : (
-                <p className="text-sm text-slate-500">아직 유입 데이터가 없습니다.</p>
+                <p className="text-sm text-slate-500">아직 유입 데이터가 없습니다. 홍보 링크를 생성해 트래픽을 모아보세요.</p>
               )}
             </div>
           </div>
@@ -109,14 +122,12 @@ export function PartnerDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recent.length > 0 ? recent.map((row) => (
+                {recent.length > 0 ? recent.map((row, index) => (
                   <Fragment key={row.id}>
-                    <TableRow row={row} />
+                    <TableRow row={row} rank={index + 1} />
                   </Fragment>
                 )) : (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">접수된 디비가 없습니다.</td>
-                  </tr>
+                  <DataTableEmpty colSpan={6} title="접수된 디비가 없습니다" description="홍보 링크를 통해 유입이 시작되면 최근 접수 내역이 표시됩니다." actionLabel="광고상품 찾기" actionTo="/partner/search" />
                 )}
               </tbody>
             </table>
@@ -167,12 +178,12 @@ function InflowItem({ label, percentage, color }: { label: string, percentage: n
   );
 }
 
-function TableRow({ row }: { row: PartnerConversion }) {
+function TableRow({ row, rank }: { row: PartnerConversion; rank?: number }) {
   const isStrike = row.statusCode === 'rejected';
   const revenue = row.estRevenue;
 
   return (
-    <tr className="hover:bg-slate-50 transition-colors">
+    <tr className={tableRowClass(rank)}>
       <td className="px-4 py-3 text-slate-500">{row.date}</td>
       <td className={`px-4 py-3 font-medium ${isStrike ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{row.campaign}</td>
       <td className="px-4 py-3 text-slate-600">{row.name}</td>

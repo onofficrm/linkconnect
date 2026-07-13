@@ -113,6 +113,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/partner_analytics.php')) {
     require_once LC_PLUGIN_PATH . '/inc/partner_analytics.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_marketing.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_marketing.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/api.php')) {
     require_once LC_PLUGIN_PATH . '/inc/api.php';
 }
@@ -160,6 +163,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/channel_report.php')) {
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/call.php')) {
     require_once LC_PLUGIN_PATH . '/inc/call.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/call_recording_request.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/call_recording_request.php';
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/linkprice.php')) {
     require_once LC_PLUGIN_PATH . '/inc/linkprice.php';

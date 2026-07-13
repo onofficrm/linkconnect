@@ -3,13 +3,16 @@ import {
   BadgeDollarSign,
   BarChart3,
   Handshake,
+  Headphones,
   Link2,
+  PhoneCall,
+  Route,
   ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
-  Zap,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
@@ -49,8 +52,8 @@ const coreValues = [
 
 const highlights = [
   { value: '300억+', label: '연간 견인 매출', sub: '자체 운영 노하우', icon: <TrendingUp className="w-5 h-5" /> },
-  { value: 'CPA/CPS', label: '성과형 네트워크', sub: 'CPS · CPA 전문', icon: <Link2 className="w-5 h-5" /> },
-  { value: '실시간', label: '성과 추적', sub: '투명한 데이터', icon: <Zap className="w-5 h-5" /> },
+  { value: 'CPA/CPS', label: '성과형 네트워크', sub: 'CPS · CPA · 콜디비', icon: <Link2 className="w-5 h-5" /> },
+  { value: '0503', label: '콜디비', sub: '파트너 단독 번호', icon: <PhoneCall className="w-5 h-5" /> },
   { value: 'Win-Win', label: '상생 파트너십', sub: '광고주 · 파트너', icon: <Handshake className="w-5 h-5" /> },
 ];
 
@@ -70,6 +73,14 @@ const introPoints = [
 ];
 
 export function About() {
+  useEffect(() => {
+    if (window.location.hash === '#call-db') {
+      window.requestAnimationFrame(() => {
+        document.getElementById('call-db')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, []);
+
   return (
     <main>
       {/* Hero */}
@@ -93,9 +104,9 @@ export function About() {
                 </span>
                 하다.
               </h1>
-              <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                대한민국 성과 중심 제휴 마케팅 플랫폼, 링크커넥트(LinkConnect)입니다.
-              </p>
+            <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              CPA·CPS·콜디비를 아우르는 성과 중심 제휴 마케팅 플랫폼, 링크커넥트(LinkConnect)입니다.
+            </p>
             </div>
 
             <div className="relative">
@@ -142,6 +153,108 @@ export function About() {
                   </div>
                 </article>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 콜디비 */}
+      <section id="call-db" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-violet-50/60 to-white border-y border-slate-100 scroll-mt-24">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-xs font-bold mb-4">
+                <Headphones className="w-4 h-4" />
+                CALL DB
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight">
+                전화 문의까지 잡는
+                <br />
+                <span className="text-violet-600">콜디비(Call DB)</span>
+              </h2>
+              <p className="text-slate-600 leading-relaxed mb-6">
+                CPA는 폼 신청이 핵심이지만, 실제 고객은 전화로 문의하는 경우가 많습니다.
+                링크커넥트는 파트너에게 <b>단독 0503 가상번호</b>를 발급해 전화 유입도 성과로 추적합니다.
+              </p>
+              <ul className="space-y-4 mb-8">
+                <li className="flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
+                    <PhoneCall className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">파트너별 고유 번호 발급</p>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      예: <span className="font-mono font-semibold text-violet-700">0503-6982-0000</span> 형태로 파트너마다 단독 번호를 제공합니다.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
+                    <Route className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">번호 기준 자동 매칭</p>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      고객 전화가 들어오면 가상번호로 파트너·광고주 캠페인을 식별하고, 유효 콜 DB로 기록합니다.
+                    </p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">CPA 수익 극대화</p>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      신청폼을 작성하지 않고 전화만 한 고객도 전환으로 잡혀, CPA 캠페인의 수익 기회를 넓힙니다.
+                    </p>
+                  </div>
+                </li>
+              </ul>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/partner/call"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-colors"
+                >
+                  파트너 콜디비 바로가기
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-violet-200 text-violet-700 hover:bg-violet-50 font-bold text-sm bg-white transition-colors"
+                >
+                  홈에서 콜디비 보기
+                </Link>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-3 bg-violet-500/10 rounded-3xl blur-xl" aria-hidden />
+              <div className="relative rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-700 to-indigo-800 p-8 md:p-10 text-white shadow-2xl">
+                <p className="text-violet-200 text-sm font-semibold mb-2">콜디비 운영 흐름</p>
+                <ol className="space-y-4 text-sm">
+                  <li className="flex gap-3 items-start">
+                    <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                    <span>파트너가 CPA 캠페인 홍보 + 전용 0503 번호 노출</span>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                    <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                    <span>고객이 전화 문의 → 가상번호로 파트너·캠페인 식별</span>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                    <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold shrink-0">3</span>
+                    <span>광고주 착신 연결 + 통화 로그·콜 DB 적재</span>
+                  </li>
+                  <li className="flex gap-3 items-start">
+                    <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold shrink-0">4</span>
+                    <span>유효 전환 확정 시 CPA 수익 정산</span>
+                  </li>
+                </ol>
+                <div className="mt-8 pt-6 border-t border-white/15">
+                  <p className="text-violet-200 text-xs mb-1">파트너 전용 번호 예시</p>
+                  <p className="text-2xl md:text-3xl font-bold tracking-wide tabular-nums">0503-6982-0000</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -219,8 +332,8 @@ export function About() {
               <span className="text-cyan-400">한눈에 보는 성과</span>
             </h2>
             <p className="text-slate-400 leading-relaxed mb-6">
-              CPA DB 캠페인과 CPS 구매 캠페인의 클릭·전환·수익 데이터를 실시간 대시보드에서 확인하세요.
-              광고주와 파트너 모두 투명한 데이터로 안심하고 운영할 수 있습니다.
+              CPA DB 캠페인, CPS 구매 캠페인, 그리고 파트너 단독 0503 번호 기반 콜디비까지.
+              클릭·신청·전화 문의의 모든 전환을 실시간 대시보드에서 확인하세요.
             </p>
             <Link
               to="/affiliate"

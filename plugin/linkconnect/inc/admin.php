@@ -322,6 +322,19 @@ if (!function_exists('lc_admin_dashboard_data')) {
         $settlement_summary = function_exists('lc_settlement_admin_summary') ? lc_settlement_admin_summary() : array('pending' => 0);
         $inspection_summary = function_exists('lc_conversion_inspection_summary') ? lc_conversion_inspection_summary() : array('pending' => 0);
 
+        $pending_call_requests = 0;
+        $pending_recording_requests = 0;
+        if (lc_db_table_exists(lc_table('call_requests'))) {
+            $car = lc_table('call_requests');
+            $pending_call_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$car}` WHERE car_status = '" . lc_sql_escape(LC_CALL_REQ_PENDING) . "' ", false);
+            $pending_call_requests = (int) ($pending_call_row['cnt'] ?? 0);
+        }
+        if (lc_db_table_exists(lc_table('call_recording_requests'))) {
+            $crr = lc_table('call_recording_requests');
+            $pending_rec_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$crr}` WHERE crr_status = '" . lc_sql_escape(LC_CALL_REC_REQ_PENDING) . "' ", false);
+            $pending_recording_requests = (int) ($pending_rec_row['cnt'] ?? 0);
+        }
+
         return array(
             'summary' => array(
                 'todayReceived'  => $received,
@@ -335,6 +348,8 @@ if (!function_exists('lc_admin_dashboard_data')) {
                 'pendingMerchants'=> (int) (lc_admin_merchant_summary()['pending'] ?? 0),
                 'pendingSettlements' => (int) ($settlement_summary['pending'] ?? 0),
                 'pendingInspections' => (int) ($inspection_summary['pending'] ?? 0),
+                'pendingCallRequests' => $pending_call_requests,
+                'pendingRecordingRequests' => $pending_recording_requests,
             ),
             'chart7d' => $chart,
             'recent'  => array_map('lc_admin_conversion_to_api', lc_admin_list_conversions(array(), 8)),

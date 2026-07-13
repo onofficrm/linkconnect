@@ -200,6 +200,38 @@ if (!function_exists('lc_merchant_contract_admin_update_status')) {
             'reason'     => $reason,
         ));
 
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write(
+                'contract_status',
+                'merchant_contract',
+                $mc_id,
+                '계약 상태 변경: ' . $old_status . ' → ' . $new_status,
+                array(
+                    'mtId'   => (int) $contract['mc_mt_id'],
+                    'reason' => $reason,
+                )
+            );
+        }
+
+        if (function_exists('lc_notification_create')) {
+            $status_labels = array(
+                LC_MERCHANT_CONTRACT_STATUS_CANCELLED => '해지',
+                LC_MERCHANT_CONTRACT_STATUS_EXPIRED   => '만료',
+                LC_MERCHANT_CONTRACT_STATUS_RENEWAL   => '갱신 필요',
+            );
+            $label = $status_labels[$new_status] ?? $new_status;
+            lc_notification_create(array(
+                'center'  => 'merchant',
+                'userId'  => (int) $contract['mc_mt_id'],
+                'type'    => 'contract',
+                'title'   => '계약 상태가 변경되었습니다',
+                'body'    => $label . ' · ' . $reason,
+                'link'    => '/advertiser/contract',
+                'refType' => 'merchant_contract',
+                'refId'   => $mc_id,
+            ));
+        }
+
         $fresh = lc_merchant_contract_get_by_id($mc_id);
 
         return array(

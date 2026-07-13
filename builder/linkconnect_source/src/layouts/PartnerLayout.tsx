@@ -1,14 +1,14 @@
 import React from "react";
 import {
-  BarChart3, 
-  Copy, 
-  CreditCard, 
-  LayoutDashboard, 
-  Link as LinkIcon, 
-  MessageSquare, 
-  PieChart, 
-  Search, 
-  Target, 
+  BarChart3,
+  Copy,
+  CreditCard,
+  LayoutDashboard,
+  Link as LinkIcon,
+  MessageSquare,
+  PieChart,
+  Search,
+  Target,
   XCircle,
   PhoneCall,
   Store
@@ -21,6 +21,7 @@ import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdm
 import { getLcAuth } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { CenterNavItem } from '../components/center-ui';
 
 interface PartnerLayoutProps {
   children: React.ReactNode;
@@ -52,48 +53,45 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50/80 flex flex-col">
       {!auth.isImpersonating ? <SuperAdminWidget /> : null}
       <ImpersonateBanner />
       <CenterTopBar center="partner" />
       <div className="flex flex-col md:flex-row flex-1">
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 md:min-h-screen shrink-0 overflow-x-auto md:overflow-visible flex flex-col">
-        <div className="p-4 md:p-6 flex md:flex-col gap-2 md:gap-0 flex-1">
-          <div className="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Menu</div>
-          <nav className="flex md:flex-col gap-2 md:space-y-1 min-w-max md:min-w-0 flex-1">
+      <aside className="w-full md:w-64 bg-slate-950 text-slate-300 md:min-h-screen shrink-0 overflow-x-auto md:overflow-visible flex flex-col border-r border-slate-800/80">
+        <div className="p-4 md:p-5 flex md:flex-col gap-2 md:gap-0 flex-1">
+          <div className="hidden md:block text-[11px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-4 px-1">Partner</div>
+          <nav className="flex md:flex-col gap-1.5 min-w-max md:min-w-0 flex-1">
             {menuItems.map((item) => (
-              <Link
+              <CenterNavItem
                 key={item.id}
+                icon={item.icon}
+                label={item.label}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  activeMenu === item.id 
-                    ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </Link>
+                active={activeMenu === item.id}
+                accent="emerald"
+              />
             ))}
           </nav>
-          <MemberAuthMenu variant="sidebar" logoutReturnPath="/partner" />
+          <div className="mt-4 pt-4 border-t border-slate-800/80">
+            <MemberAuthMenu variant="sidebar" logoutReturnPath="/partner" />
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-hidden">
-        {/* Header */}
+      <main className="flex-1 p-4 md:p-8 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-50/40 via-slate-50 to-slate-50">
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-            <p className="text-slate-500">{dateLabel}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-1">Partner Center</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
+            <p className="text-slate-500 mt-1">{dateLabel}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <SuperAdminHeaderButton />
-            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-2 rounded-xl border border-slate-200/80 shadow-sm">
               <span className="text-sm text-slate-500">파트너 코드</span>
               <span className="font-mono font-bold text-slate-700">{partnerCode}</span>
-              <button className="text-slate-400 hover:text-emerald-500"><Copy size={14} /></button>
+              <button type="button" className="text-slate-400 hover:text-emerald-500 transition-colors" aria-label="코드 복사"><Copy size={14} /></button>
             </div>
             <NotificationCenter center="partner" />
             <MemberAuthMenu variant="compact" logoutReturnPath="/partner" />

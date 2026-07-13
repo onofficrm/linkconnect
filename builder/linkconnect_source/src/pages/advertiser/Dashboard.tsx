@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
 import { 
-  AlertCircle,
   BarChart3, 
   Bell, 
   Building2, 
-  ChevronRight, 
   CreditCard, 
   FileText, 
   LayoutDashboard, 
@@ -21,6 +19,7 @@ import { SummaryCard, StatusBadge } from '../../components/advertiser/Advertiser
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
 import { fetchMerchantDashboard } from '../../lib/api';
 import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
+import { InsightBanner, SkeletonCardGrid, DataTableEmpty, tableRowClass } from '../../components/center-ui';
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -42,6 +41,7 @@ export function AdvertiserDashboard() {
   const [chartData, setChartData] = useState(fallbackChartData);
   const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
   const [pendingAction, setPendingAction] = useState(9);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMerchantDashboard()
@@ -54,20 +54,34 @@ export function AdvertiserDashboard() {
       })
       .catch(() => {
         // 샘플 UI fallback
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
         {showContractCard ? <AdvertiserContractNotice /> : null}
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <SummaryCard title="광고비 잔액" value={balance} suffix="원" highlight color="cyan" />
-          <SummaryCard title="승인대기 DB" value={String(summary.pending)} suffix="건" color="blue" />
-          <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" />
-          <SummaryCard title="오늘 사용 광고비" value={summary.todaySpend.toLocaleString()} suffix="원" />
+        <InsightBanner
+          accent="cyan"
+          message={<>오늘 접수 DB <strong>{summary.todayReceived}건</strong>, 승인 대기 <strong>{summary.pending}건</strong>입니다.</>}
+          subMessage="처리가 필요한 디비를 먼저 확인하면 광고비 소진과 전환율 관리가 수월해집니다."
+          actions={[
+            { label: '디비 처리하기', to: '/advertiser/db', variant: 'primary' },
+            { label: '마케팅 성과 보기', to: '/advertiser/marketing', variant: 'secondary' },
+          ]}
+        />
+
+        {loading ? (
+          <SkeletonCardGrid count={4} />
+        ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+          <SummaryCard title="광고비 잔액" value={balance} suffix="원" highlight color="cyan" caption="실시간 잔액" />
+          <SummaryCard title="승인대기 DB" value={String(summary.pending)} suffix="건" color="blue" highlight caption="즉시 처리 권장" />
+          <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" caption="금일 유입" />
+          <SummaryCard title="오늘 사용 광고비" value={summary.todaySpend.toLocaleString()} suffix="원" caption="일일 소진" />
         </div>
+        )}
 
         {/* Middle Area: Chart & Tables */}
         <div className="grid lg:grid-cols-3 gap-8 mb-8">
@@ -135,18 +149,13 @@ export function AdvertiserDashboard() {
           </div>
         </div>
 
-        {/* Bottom Area: Recent DB & Notification */}
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
-              <AlertCircle size={20} />
-            </div>
-            <p className="text-blue-900 font-medium">현재 승인 또는 취소 처리가 필요한 디비가 <strong>{pendingAction}건</strong> 있습니다.</p>
-          </div>
-          <Link to="/advertiser/db" className="text-sm font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1">
-            바로 처리하기 <ChevronRight size={16} />
-          </Link>
-        </div>
+        {pendingAction > 0 && (
+          <InsightBanner
+            accent="cyan"
+            message={<>현재 승인 또는 취소 처리가 필요한 디비가 <strong>{pendingAction}건</strong> 있습니다.</>}
+            actions={[{ label: '바로 처리하기', to: '/advertiser/db' }]}
+          />
+        )}
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden flex flex-col">
           <div className="flex justify-between items-center mb-6">
@@ -166,7 +175,9 @@ export function AdvertiserDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recent.map((row) => (
+                {recent.length === 0 ? (
+                  <DataTableEmpty colSpan={6} title="접수된 디비가 없습니다" description="새 DB가 접수되면 이곳에 최근 내역이 표시됩니다." actionLabel="디비 관리로 이동" actionTo="/advertiser/db" />
+                ) : recent.map((row) => (
                   <TableRow
                     key={row.id}
                     date={row.date}
@@ -188,7 +199,7 @@ export function AdvertiserDashboard() {
 
 function TableRow({ date, name, phone, product, status, needsAction = false }: any) {
   return (
-    <tr className="hover:bg-slate-50 transition-colors">
+    <tr className={tableRowClass(undefined, needsAction)}>
       <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{date}</td>
       <td className="px-4 py-4 text-slate-900 font-medium whitespace-nowrap">{name}</td>
       <td className="px-4 py-4 text-slate-600 font-mono text-xs whitespace-nowrap">{phone}</td>

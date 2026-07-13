@@ -2,6 +2,8 @@ export interface NavLinkItem {
   to: string;
   label: string;
   accent?: 'emerald' | 'cyan';
+  /** 홈 섹션 앵커 (예: call-db → /#call-db) */
+  scrollTarget?: string;
 }
 
 /** 회사소개 드롭다운 하위 메뉴 */
@@ -18,6 +20,7 @@ export const companyNavItems = companySubItems;
 export const campaignNavItems: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
+  { to: '/', label: '콜디비', scrollTarget: 'call-db' },
   { to: '/events', label: '이벤트/프로모션' },
 ];
 

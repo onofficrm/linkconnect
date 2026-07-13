@@ -40,7 +40,7 @@ if ($method === 'GET') {
         }
         $rows = array();
         foreach (lc_call_logs_list($filters) as $row) {
-            $rows[] = lc_call_log_to_api($row, false, false);
+            $rows[] = lc_call_log_to_api($row, true, false);
         }
         lc_api_success(array('items' => $rows, 'dbReady' => lc_db_installed()));
     }
@@ -62,6 +62,22 @@ if ($method === 'GET') {
         lc_api_success(array('url' => $res['url']));
     }
 
+    if ($view === 'recording_requests') {
+        $filters = array();
+        if (isset($_GET['status']) && $_GET['status'] !== '') {
+            $filters['status'] = (string) $_GET['status'];
+        }
+        $rows = array();
+        foreach (lc_call_recording_requests_list($filters) as $row) {
+            $rows[] = lc_call_recording_request_to_api($row, true);
+        }
+        lc_api_success(array(
+            'items'       => $rows,
+            'dbReady'     => lc_db_installed(),
+            'isSuperAdmin' => function_exists('lc_is_super_admin') ? lc_is_super_admin() : false,
+        ));
+    }
+
     lc_api_error('유효하지 않은 view입니다.', 'INVALID_VIEW', 400);
 }
 
@@ -71,7 +87,10 @@ if ($method === 'POST') {
 
     $is_multipart = !empty($_FILES);
     $body = $is_multipart ? $_POST : lc_api_read_json_body();
-    $action = isset($body['action']) ? (string) $body['action'] : ($is_multipart ? 'import_logs' : '');
+    $action = isset($body['action']) ? (string) $body['action'] : '';
+    if ($action === '' && $is_multipart) {
+        $action = 'import_logs';
+    }
 
     if ($action === 'create_number') {
         $result = lc_call_number_create(array(
@@ -80,15 +99,12 @@ if ($method === 'POST') {
             'providerNumberId' => $body['providerNumberId'] ?? '',
             'memo'     => $body['memo'] ?? '',
         ));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_create_number', 'call_number', (int) ($result['cnId'] ?? 0), (string) ($result['message'] ?? ''), array(
+                'number' => (string) ($body['number'] ?? ''),
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'CREATE_FAILED', 400);
-    }
-
-    if ($action === 'provision_number') {
-        $result = lc_call_number_provision(array(
-            'areaCode' => $body['areaCode'] ?? '',
-            'memo'     => $body['memo'] ?? '',
-        ));
-        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'PROVISION_FAILED', 400);
     }
 
     if ($action === 'update_number') {
@@ -97,11 +113,21 @@ if ($method === 'POST') {
             'memo'   => $body['memo'] ?? null,
             'providerNumberId' => $body['providerNumberId'] ?? null,
         ));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_update_number', 'call_number', (int) ($body['cnId'] ?? 0), (string) ($result['message'] ?? ''), array(
+                'status' => (string) ($body['status'] ?? ''),
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'UPDATE_FAILED', 400);
     }
 
     if ($action === 'assign_request') {
         $result = lc_call_request_assign((int) ($body['carId'] ?? 0), (int) ($body['cnId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_assign_request', 'call_request', (int) ($body['carId'] ?? 0), (string) ($result['message'] ?? ''), array(
+                'cnId' => (int) ($body['cnId'] ?? 0),
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
     }
 
@@ -112,6 +138,13 @@ if ($method === 'POST') {
             (int) ($body['cnId'] ?? 0),
             (string) ($body['adminMemo'] ?? '')
         );
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_assign_direct', 'call_request', (int) ($result['carId'] ?? 0), (string) ($result['message'] ?? ''), array(
+                'ptId' => (int) ($body['ptId'] ?? 0),
+                'cpId' => (int) ($body['cpId'] ?? 0),
+                'cnId' => (int) ($body['cnId'] ?? 0),
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'ASSIGN_FAILED', 400);
     }
 
@@ -146,27 +179,81 @@ if ($method === 'POST') {
 
         $skip_conversion = !empty($body['skipConversion']) || (isset($body['skipConversion']) && (string) $body['skipConversion'] === '1');
         $result = lc_call_logs_import_bulk($parsed['rows'] ?? array(), $skip_conversion);
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_import_logs', 'call_log', 0, (string) ($result['message'] ?? '통화내역 업로드'), array(
+                'total'     => (int) ($result['total'] ?? 0),
+                'imported'  => (int) ($result['imported'] ?? 0),
+                'duplicate' => (int) ($result['duplicate'] ?? 0),
+                'failed'    => (int) ($result['failed'] ?? 0),
+                'unmatched' => (int) ($result['unmatched'] ?? 0),
+                'skipConversion' => $skip_conversion,
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'IMPORT_FAILED', 400);
     }
 
     if ($action === 'reject_request') {
         $result = lc_call_request_reject((int) ($body['carId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_reject_request', 'call_request', (int) ($body['carId'] ?? 0), (string) ($result['message'] ?? ''));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REJECT_FAILED', 400);
     }
 
     if ($action === 'revoke_request') {
         $result = lc_call_request_revoke((int) ($body['carId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_revoke_request', 'call_request', (int) ($body['carId'] ?? 0), (string) ($result['message'] ?? ''));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REVOKE_FAILED', 400);
     }
 
     if ($action === 'save_settings') {
         $result = lc_call_settings_save((int) ($body['cpId'] ?? 0), $body, 'admin');
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_save_settings', 'campaign', (int) ($body['cpId'] ?? 0), (string) ($result['message'] ?? ''));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'SAVE_FAILED', 400);
     }
 
     if ($action === 'final_status') {
         $result = lc_conversion_admin_final_status((int) ($body['cvId'] ?? 0), (string) ($body['finalAction'] ?? ''), (string) ($body['memo'] ?? ''));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_final_status', 'conversion', (int) ($body['cvId'] ?? 0), (string) ($result['message'] ?? ''), array(
+                'finalAction' => (string) ($body['finalAction'] ?? ''),
+            ));
+        }
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'FINAL_FAILED', 400);
+    }
+
+    if ($action === 'upload_recording_wav') {
+        $file_key = '';
+        foreach (array('wav', 'file') as $key) {
+            if (!empty($_FILES[$key]) && is_array($_FILES[$key]) && (int) ($_FILES[$key]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $file_key = $key;
+                break;
+            }
+        }
+        if ($file_key === '') {
+            lc_api_error('WAV 파일이 필요합니다.', 'NO_FILE', 400);
+        }
+        $result = lc_call_recording_request_upload_wav(
+            (int) ($body['crrId'] ?? 0),
+            $_FILES[$file_key],
+            (string) ($body['adminMemo'] ?? '')
+        );
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_recording_upload', 'call_recording_request', (int) ($body['crrId'] ?? 0), (string) ($result['message'] ?? ''));
+        }
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'UPLOAD_FAILED', 400);
+    }
+
+    if ($action === 'reject_recording_request') {
+        $result = lc_call_recording_request_reject((int) ($body['crrId'] ?? 0), (string) ($body['adminMemo'] ?? ''));
+        if ($result['ok'] && function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('call_recording_reject', 'call_recording_request', (int) ($body['crrId'] ?? 0), (string) ($result['message'] ?? ''));
+        }
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REJECT_FAILED', 400);
     }
 
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);

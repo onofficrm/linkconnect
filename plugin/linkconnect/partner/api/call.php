@@ -30,9 +30,20 @@ if ($method === 'GET') {
     }
 
     if ($view === 'logs') {
+        $filters = array('pt_id' => $pt_id, 'limit' => 200);
+        if (isset($_GET['virtualNumber']) && $_GET['virtualNumber'] !== '') {
+            $filters['virtual_number'] = (string) $_GET['virtualNumber'];
+        }
+        if (isset($_GET['cpId']) && $_GET['cpId'] !== '') {
+            $filters['cp_id'] = (int) $_GET['cpId'];
+        }
         $rows = array();
-        foreach (lc_call_logs_list(array('pt_id' => $pt_id, 'limit' => 200)) as $row) {
-            $rows[] = lc_call_log_to_api($row, false, true);
+        foreach (lc_call_logs_list($filters) as $row) {
+            $api = lc_call_log_to_api($row, false, true);
+            if (function_exists('lc_call_recording_request_meta_for_log')) {
+                $api['recordingRequest'] = lc_call_recording_request_meta_for_log((int) $row['clog_id'], 'partner', $pt_id);
+            }
+            $rows[] = $api;
         }
         lc_api_success(array('items' => $rows, 'dbReady' => lc_db_installed()));
     }
@@ -49,6 +60,11 @@ if ($method === 'POST') {
 
     if ($action === 'request') {
         $result = lc_call_request_create($pt_id, (int) ($body['cpId'] ?? 0), (string) ($body['memo'] ?? ''));
+        $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REQUEST_FAILED', 400);
+    }
+
+    if ($action === 'request_recording') {
+        $result = lc_call_recording_request_create((int) ($body['clogId'] ?? 0), 'partner', $pt_id, (string) ($body['memo'] ?? ''));
         $result['ok'] ? lc_api_success($result) : lc_api_error($result['message'], 'REQUEST_FAILED', 400);
     }
 

@@ -9,6 +9,7 @@ import {
   isCompanyNavActive,
   type NavLinkItem,
 } from '../lib/publicNav';
+import { handleSectionLink, scrollToSection } from '../lib/navigation';
 import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 
 function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
@@ -23,6 +24,46 @@ function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
 
 function isActive(pathname: string, to: string) {
   return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function PublicNavLink({
+  item,
+  className,
+  onNavigate,
+}: {
+  item: NavLinkItem;
+  className: string;
+  onNavigate?: () => void;
+}) {
+  const location = useLocation();
+  const active = item.scrollTarget
+    ? location.pathname === '/' && location.hash === `#${item.scrollTarget}`
+    : isActive(location.pathname, item.to);
+
+  if (item.scrollTarget) {
+    return (
+      <Link
+        to="/"
+        onClick={(e) => {
+          handleSectionLink(item.scrollTarget!);
+          if (location.pathname === '/') {
+            e.preventDefault();
+            scrollToSection(item.scrollTarget!);
+          }
+          onNavigate?.();
+        }}
+        className={className}
+      >
+        {item.label}
+      </Link>
+    );
+  }
+
+  return (
+    <Link to={item.to} onClick={onNavigate} className={className}>
+      {item.label}
+    </Link>
+  );
 }
 
 function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
@@ -120,9 +161,11 @@ export function Header() {
             <CompanyNavDropdown />
             <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 min-w-0 overflow-x-auto">
             {campaignNavItems.map((item) => (
-              <Link key={item.to} to={item.to} className={navLinkClass(isActive(location.pathname, item.to))}>
-                {item.label}
-              </Link>
+              <PublicNavLink
+                key={item.label}
+                item={item}
+                className={navLinkClass(isActive(location.pathname, item.to) || Boolean(item.scrollTarget && location.pathname === '/'))}
+              />
             ))}
             {centerNavItems.map((item) => (
               <Link
@@ -175,14 +218,12 @@ export function Header() {
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">캠페인</p>
           {campaignNavItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={closeMobile}
+            <PublicNavLink
+              key={item.label}
+              item={item}
+              onNavigate={closeMobile}
               className="block px-3 py-2.5 pl-5 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg"
-            >
-              {item.label}
-            </Link>
+            />
           ))}
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">센터</p>

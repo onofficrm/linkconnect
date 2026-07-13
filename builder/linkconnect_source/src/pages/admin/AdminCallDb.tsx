@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X, Upload, Info } from 'lucide-react';
+import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X, Upload, Info, Headphones } from 'lucide-react';
 import {
   CallLog,
   CallNumber,
   CallRequest,
+  CallRecordingRequestItem,
   AdminCampaign,
   AdminPartner,
   assignAdminCallDirect,
@@ -12,21 +13,23 @@ import {
   createAdminCallNumber,
   fetchAdminCallLogs,
   fetchAdminCallNumbers,
-  fetchAdminCallRecording,
+  fetchAdminCallRecordingRequests,
   fetchAdminCallRequests,
   fetchAdminCallSettings,
   fetchAdminCampaigns,
   fetchAdminPartners,
   finalizeAdminConversion,
   importAdminCallLogs,
-  provisionAdminCallNumber,
+  rejectAdminCallRecordingRequest,
   rejectAdminCallRequest,
   revokeAdminCallRequest,
   saveAdminCallSettings,
   updateAdminCallNumber,
+  uploadAdminCallRecordingWav,
 } from '../../lib/api';
+import { isLcSuperAdmin } from '../../lib/auth';
 
-type Tab = 'numbers' | 'requests' | 'logs';
+type Tab = 'numbers' | 'requests' | 'logs' | 'recordings';
 
 const numberStatusLabel: Record<string, { label: string; cls: string }> = {
   available: { label: '사용가능', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -40,6 +43,12 @@ const reqStatusLabel: Record<string, { label: string; cls: string }> = {
   assigned: { label: '배정완료', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   rejected: { label: '반려', cls: 'bg-slate-100 text-slate-500 border-slate-200' },
   revoked: { label: '회수', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+};
+
+const recReqStatusLabel: Record<string, { label: string; cls: string }> = {
+  pending: { label: '요청 대기', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  fulfilled: { label: '등록 완료', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: '반려', cls: 'bg-slate-100 text-slate-500 border-slate-200' },
 };
 
 const resultLabel: Record<string, { label: string; cls: string }> = {
@@ -60,6 +69,12 @@ export function AdminCallDb() {
   const [numbers, setNumbers] = useState<CallNumber[]>([]);
   const [requests, setRequests] = useState<CallRequest[]>([]);
   const [logs, setLogs] = useState<CallLog[]>([]);
+  const [recordingRequests, setRecordingRequests] = useState<CallRecordingRequestItem[]>([]);
+  const [recStatusFilter, setRecStatusFilter] = useState('');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(isLcSuperAdmin());
+  const [uploadTarget, setUploadTarget] = useState<CallRecordingRequestItem | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadMemo, setUploadMemo] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -83,21 +98,41 @@ export function AdminCallDb() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [skipConversionOnImport, setSkipConversionOnImport] = useState(true);
   const [importResult, setImportResult] = useState('');
+  const [importPreview, setImportPreview] = useState<Array<Record<string, unknown>>>([]);
+  const [importHeaders, setImportHeaders] = useState<string[]>([]);
+  const [importTotal, setImportTotal] = useState(0);
+  const [importPreviewMsg, setImportPreviewMsg] = useState('');
   // 콜 설정 모달
   const [settingsCp, setSettingsCp] = useState<{ cpId: number; name: string } | null>(null);
   const [settingsDraft, setSettingsDraft] = useState<Record<string, unknown>>({});
+
+  const loadRecordingRequests = useCallback(() => {
+    fetchAdminCallRecordingRequests(recStatusFilter || undefined)
+      .then((d) => {
+        setRecordingRequests(d.items);
+        setIsSuperAdmin(d.isSuperAdmin);
+      })
+      .catch(() => setRecordingRequests([]));
+  }, [recStatusFilter]);
 
   const loadAll = useCallback(() => {
     fetchAdminCallNumbers().then((d) => setNumbers(d.items)).catch(() => setNumbers([]));
     fetchAdminCallRequests().then((d) => setRequests(d.items)).catch(() => setRequests([]));
     fetchAdminCallLogs().then((d) => setLogs(d.items)).catch(() => setLogs([]));
-  }, []);
+    loadRecordingRequests();
+  }, [loadRecordingRequests]);
 
   useEffect(() => {
     loadAll();
     fetchAdminPartners({ status: 'active' }).then((d) => setPartners(d.items)).catch(() => setPartners([]));
     fetchAdminCampaigns({ status: 'active' }).then((d) => setCampaigns(d.items)).catch(() => setCampaigns([]));
   }, [loadAll]);
+
+  useEffect(() => {
+    if (tab === 'recordings') {
+      loadRecordingRequests();
+    }
+  }, [tab, loadRecordingRequests]);
 
   const notify = (msg: string) => {
     setMessage(msg);
@@ -115,19 +150,6 @@ export function AdminCallDb() {
       loadAll();
     } catch (e) {
       notify(e instanceof Error ? e.message : '등록 실패');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleProvision = async () => {
-    setBusy(true);
-    try {
-      const res = await provisionAdminCallNumber();
-      notify(res.message);
-      loadAll();
-    } catch (e) {
-      notify(e instanceof Error ? e.message : '자동 발급 실패');
     } finally {
       setBusy(false);
     }
@@ -191,6 +213,33 @@ export function AdminCallDb() {
     }
   };
 
+  const clearImportPreview = () => {
+    setImportPreview([]);
+    setImportHeaders([]);
+    setImportTotal(0);
+    setImportPreviewMsg('');
+  };
+
+  const handlePreviewLogs = async () => {
+    if (!importFile) return;
+    setBusy(true);
+    setImportResult('');
+    clearImportPreview();
+    try {
+      const res = await importAdminCallLogs({ file: importFile, dryRun: true });
+      setImportPreview(res.preview ?? []);
+      setImportHeaders(res.headers ?? []);
+      setImportTotal(res.total ?? 0);
+      setImportPreviewMsg(res.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '미리보기 실패';
+      setImportPreviewMsg(msg);
+      notify(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleImportLogs = async () => {
     if (!importFile) return;
     setBusy(true);
@@ -203,6 +252,7 @@ export function AdminCallDb() {
       setImportResult(res.message);
       notify(res.message);
       setImportFile(null);
+      clearImportPreview();
       loadAll();
     } catch (e) {
       const msg = e instanceof Error ? e.message : '업로드 실패';
@@ -250,13 +300,12 @@ export function AdminCallDb() {
     }
   };
 
-  const playRecording = async (clogId: number) => {
-    try {
-      const res = await fetchAdminCallRecording(clogId);
-      window.open(res.url, '_blank', 'noopener');
-    } catch (e) {
-      notify(e instanceof Error ? e.message : '녹취를 불러올 수 없습니다.');
+  const playRecording = (url: string) => {
+    if (!url) {
+      notify('녹취 URL이 없습니다.');
+      return;
     }
+    window.open(url, '_blank', 'noopener');
   };
 
   const handleFinal = async (cvId: number, finalAction: 'approve' | 'reject' | 'lock') => {
@@ -266,20 +315,60 @@ export function AdminCallDb() {
     loadAll();
   };
 
+  const openUploadModal = (item: CallRecordingRequestItem) => {
+    setUploadTarget(item);
+    setUploadFile(null);
+    setUploadMemo('');
+  };
+
+  const handleUploadWav = async () => {
+    if (!uploadTarget || !uploadFile) return;
+    setBusy(true);
+    try {
+      const res = await uploadAdminCallRecordingWav({
+        crrId: uploadTarget.crrId,
+        file: uploadFile,
+        adminMemo: uploadMemo || undefined,
+      });
+      notify(res.message);
+      setUploadTarget(null);
+      loadRecordingRequests();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : '업로드 실패');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRejectRecording = async (item: CallRecordingRequestItem) => {
+    if (!window.confirm('이 녹음 요청을 반려하시겠습니까?')) return;
+    setBusy(true);
+    try {
+      const res = await rejectAdminCallRecordingRequest({ crrId: item.crrId });
+      notify(res.message);
+      loadRecordingRequests();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : '반려 실패');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const availableNumbers = numbers.filter((n) => n.status === 'available');
   const setDraft = (k: string, v: unknown) => setSettingsDraft((p) => ({ ...p, [k]: v }));
 
   return (
-    <AdminLayout activeMenu="call" title="콜디비 관리" description="API 연동 전 수동 운영 · 가상번호 등록/배정 · 통화 엑셀 업로드">
-      <div className="mb-6 bg-amber-50 border border-amber-100 rounded-2xl p-4 text-sm text-amber-900">
+    <AdminLayout activeMenu="call" title="콜디비 관리" description="수동 운영 · 가상번호 등록/배정 · 통화내역 엑셀 업로드">
+      <div className="mb-6 bg-violet-50 border border-violet-100 rounded-2xl p-4 text-sm text-violet-900">
         <div className="flex items-start gap-2">
           <Info className="w-5 h-5 shrink-0 mt-0.5" />
           <div>
-            <div className="font-bold mb-1">수동 운영 모드 (API 연동 전)</div>
-            <ol className="list-decimal pl-5 space-y-1 text-amber-900/90">
-              <li>가상번호 풀에 콜업체에서 받은 번호를 <b>수동 등록</b>합니다.</li>
-              <li>파트너·캠페인에 번호를 <b>직접 배정</b>합니다. (파트너 신청 없이도 가능)</li>
-              <li>콜업체 통화내역 엑셀/CSV를 업로드하면 <b>가상번호 기준</b>으로 파트너·광고주 화면에 표시됩니다.</li>
+            <div className="font-bold mb-1">콜디비 수동 운영 절차</div>
+            <ol className="list-decimal pl-5 space-y-1 text-violet-900/90">
+              <li>파트너가 캠페인별 <b>가상번호 신청</b> → 관리자가 풀에서 번호를 <b>수동 배정</b></li>
+              <li>콜업체 통화내역 엑셀/CSV를 <b>업로드</b> (가상번호 열 필수)</li>
+              <li>가상번호 기준으로 파트너·광고주 화면에 <b>담당 통화내역만</b> 자동 표시</li>
+              <li>파트너·광고주가 <b>녹음 요청</b> → 최고관리자가 .wav 업로드 후 요청자가 재생</li>
             </ol>
           </div>
         </div>
@@ -294,6 +383,7 @@ export function AdminCallDb() {
           ['requests', '번호 신청', <PhoneCall size={16} key="r" />],
           ['numbers', '가상번호 풀', <Phone size={16} key="n" />],
           ['logs', '통화 로그', <PhoneIncoming size={16} key="l" />],
+          ['recordings', '녹음 요청', <Headphones size={16} key="rec" />],
         ] as Array<[Tab, string, React.ReactNode]>).map(([id, label, icon]) => (
           <button
             key={id}
@@ -370,17 +460,14 @@ export function AdminCallDb() {
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div className="font-bold text-slate-800 mb-1">가상번호 수동 등록</div>
-            <p className="text-xs text-slate-500 mb-3">콜업체 API 연동 전까지 관리자가 직접 050 가상번호를 입력해 풀에 등록합니다.</p>
+            <p className="text-xs text-slate-500 mb-3">콜업체에서 발급받은 050 가상번호를 관리자가 직접 풀에 등록합니다.</p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="text" value={newNumber} onChange={(e) => setNewNumber(e.target.value)} placeholder="가상번호 (예: 0507xxxxxxx)"
+              <input type="text" value={newNumber} onChange={(e) => setNewNumber(e.target.value)} placeholder="가상번호 (예: 050369820000)"
                 className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
               <input type="text" value={newMemo} onChange={(e) => setNewMemo(e.target.value)} placeholder="메모 (선택)"
                 className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
               <button type="button" onClick={handleAddNumber} disabled={busy} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm disabled:opacity-50">
-                <Plus size={16} /> 수동 등록
-              </button>
-              <button type="button" onClick={handleProvision} disabled={busy} className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm disabled:opacity-50 whitespace-nowrap">
-                <PhoneCall size={16} /> API 자동발급
+                <Plus size={16} /> 등록
               </button>
             </div>
           </div>
@@ -417,7 +504,6 @@ export function AdminCallDb() {
                 <thead className="bg-slate-50 text-slate-500 text-left">
                   <tr>
                     <th className="px-4 py-3">번호</th>
-                    <th className="px-4 py-3">콜업체</th>
                     <th className="px-4 py-3 text-center">상태</th>
                     <th className="px-4 py-3">메모</th>
                     <th className="px-4 py-3 text-center">관리</th>
@@ -425,13 +511,12 @@ export function AdminCallDb() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {numbers.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400">등록된 가상번호가 없습니다.</td></tr>
+                    <tr><td colSpan={4} className="px-4 py-12 text-center text-slate-400">등록된 가상번호가 없습니다.</td></tr>
                   ) : numbers.map((n) => {
                     const s = numberStatusLabel[n.status] ?? { label: n.status, cls: 'bg-slate-100 text-slate-500 border-slate-200' };
                     return (
                       <tr key={n.cnId} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-mono font-bold text-slate-800">{n.number}</td>
-                        <td className="px-4 py-3 text-slate-500">{n.provider || '—'}</td>
                         <td className="px-4 py-3 text-center"><span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${s.cls}`}>{s.label}</span></td>
                         <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{n.memo || '—'}</td>
                         <td className="px-4 py-3 text-center">
@@ -466,22 +551,65 @@ export function AdminCallDb() {
             <div className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4">
               필수 열: <b>가상번호</b> · 권장 열: 발신번호, 통화시작, 통화시간(초), 결과, 통화ID, 녹취URL
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-wrap">
               <input
                 type="file"
                 accept=".xlsx,.xls,.csv"
-                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  setImportFile(e.target.files?.[0] ?? null);
+                  clearImportPreview();
+                  setImportResult('');
+                }}
                 className="text-sm"
               />
               <label className="inline-flex items-center gap-2 text-sm text-slate-600">
                 <input type="checkbox" checked={skipConversionOnImport} onChange={(e) => setSkipConversionOnImport(e.target.checked)} className="accent-cyan-500" />
                 콜DB 전환 자동 생성 안 함 (통화내역만 표시)
               </label>
+              <button type="button" onClick={handlePreviewLogs} disabled={busy || !importFile}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm disabled:opacity-50">
+                미리보기
+              </button>
               <button type="button" onClick={handleImportLogs} disabled={busy || !importFile}
                 className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">
                 <Upload size={16} /> 업로드
               </button>
             </div>
+            {importPreviewMsg ? <p className="mt-3 text-sm text-slate-600">{importPreviewMsg}</p> : null}
+            {importPreview.length > 0 && (
+              <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-2 bg-slate-50 text-xs font-bold text-slate-600 border-b border-slate-200">
+                  미리보기 (총 {importTotal.toLocaleString()}행 중 상위 {importPreview.length}행)
+                  {importHeaders.length > 0 && <span className="font-normal text-slate-400 ml-2">원본 열: {importHeaders.join(', ')}</span>}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500 text-left">
+                      <tr>
+                        <th className="px-3 py-2">행</th>
+                        <th className="px-3 py-2">가상번호</th>
+                        <th className="px-3 py-2">발신번호</th>
+                        <th className="px-3 py-2">통화시작</th>
+                        <th className="px-3 py-2">통화시간</th>
+                        <th className="px-3 py-2">결과</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {importPreview.map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50">
+                          <td className="px-3 py-2 text-slate-400">{String(row.importRow ?? i + 1)}</td>
+                          <td className="px-3 py-2 font-mono text-violet-700">{String(row.virtualNumber ?? '—')}</td>
+                          <td className="px-3 py-2 font-mono">{String(row.caller ?? '—')}</td>
+                          <td className="px-3 py-2">{String(row.startedAt ?? '—')}</td>
+                          <td className="px-3 py-2">{String(row.duration ?? '—')}</td>
+                          <td className="px-3 py-2">{String(row.result ?? '—')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             {importResult ? <p className="mt-3 text-sm text-cyan-700">{importResult}</p> : null}
           </div>
 
@@ -518,8 +646,8 @@ export function AdminCallDb() {
                       <td className="px-4 py-3 text-center font-mono">{fmtDuration(l.duration)}</td>
                       <td className={`px-4 py-3 text-center font-bold ${r.cls}`}>{r.label}</td>
                       <td className="px-4 py-3 text-center">
-                        {l.hasRecording ? (
-                          <button type="button" onClick={() => playRecording(l.clogId)} className="inline-flex items-center gap-1 text-cyan-600 font-bold text-xs">
+                        {l.hasRecording && l.recordingUrl ? (
+                          <button type="button" onClick={() => playRecording(l.recordingUrl!)} className="inline-flex items-center gap-1 text-cyan-600 font-bold text-xs">
                             <PlayCircle size={16} /> 재생
                           </button>
                         ) : <span className="text-slate-300 text-xs">없음</span>}
@@ -543,6 +671,155 @@ export function AdminCallDb() {
         </div>
       )}
 
+      {/* 녹음 요청 */}
+      {tab === 'recordings' && (
+        <div className="space-y-5">
+          {!isSuperAdmin && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900">
+              녹음 파일(.wav) 업로드는 <b>최고관리자</b>만 가능합니다. 요청 목록은 확인할 수 있습니다.
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+              <div className="font-bold text-slate-800">녹음 파일 요청 목록</div>
+              <select
+                value={recStatusFilter}
+                onChange={(e) => setRecStatusFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+              >
+                <option value="">전체 상태</option>
+                <option value="pending">요청 대기</option>
+                <option value="fulfilled">등록 완료</option>
+                <option value="rejected">반려</option>
+              </select>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-500 text-left">
+                  <tr>
+                    <th className="px-4 py-3">요청일</th>
+                    <th className="px-4 py-3">요청자</th>
+                    <th className="px-4 py-3">통화 정보</th>
+                    <th className="px-4 py-3">요청 메모</th>
+                    <th className="px-4 py-3 text-center">상태</th>
+                    <th className="px-4 py-3 text-center">녹음</th>
+                    {isSuperAdmin && <th className="px-4 py-3 text-center">관리</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recordingRequests.length === 0 ? (
+                    <tr>
+                      <td colSpan={isSuperAdmin ? 7 : 6} className="px-4 py-12 text-center text-slate-400">
+                        녹음 요청이 없습니다.
+                      </td>
+                    </tr>
+                  ) : recordingRequests.map((item) => {
+                    const s = recReqStatusLabel[item.status] ?? { label: item.statusLabel || item.status, cls: 'bg-slate-100 text-slate-500 border-slate-200' };
+                    const requester = item.requesterType === 'partner'
+                      ? `파트너 · ${item.partner || `#${item.ptId}`}`
+                      : `광고주 · ${item.merchant || `#${item.mtId}`}`;
+                    return (
+                      <tr key={item.crrId} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{item.requestedAt}</td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-800">{requester}</div>
+                          <div className="text-xs text-slate-400">요청 #{item.crrId}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-mono text-slate-800">{item.virtualNumber}</div>
+                          <div className="text-xs text-slate-500">{item.startedAt} · {item.caller}</div>
+                          <div className="text-xs text-slate-400">{item.campaign || '—'}</div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{item.requestMemo || '—'}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${s.cls}`}>{s.label}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {item.canPlay && item.playUrl ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <a href={item.playUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-cyan-600 font-bold text-xs">
+                                <PlayCircle size={16} /> 재생
+                              </a>
+                              {item.originalName && <span className="text-xs text-slate-400 truncate max-w-[8rem]">{item.originalName}</span>}
+                            </div>
+                          ) : (
+                            <span className="text-slate-300 text-xs">—</span>
+                          )}
+                        </td>
+                        {isSuperAdmin && (
+                          <td className="px-4 py-3 text-center">
+                            {item.status === 'pending' ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openUploadModal(item)}
+                                  className="px-2.5 py-1 text-xs font-bold bg-cyan-50 text-cyan-700 rounded-lg"
+                                >
+                                  .wav 업로드
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectRecording(item)}
+                                  className="px-2.5 py-1 text-xs font-bold bg-slate-50 rounded-lg"
+                                >
+                                  반려
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">{item.adminMemo || '완료'}</span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 녹음 업로드 모달 */}
+      {uploadTarget && (
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setUploadTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="font-bold text-lg text-slate-900 mb-1">녹음 파일 업로드</div>
+            <p className="text-sm text-slate-500 mb-1">
+              {uploadTarget.requesterType === 'partner' ? uploadTarget.partner : uploadTarget.merchant} · {uploadTarget.virtualNumber}
+            </p>
+            <p className="text-xs text-slate-400 mb-4">{uploadTarget.startedAt} · {uploadTarget.caller}</p>
+            <label className="block text-xs font-bold text-slate-500 mb-1">.wav 파일</label>
+            <input
+              type="file"
+              accept=".wav,audio/wav,audio/x-wav"
+              onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm mb-3"
+            />
+            <label className="block text-xs font-bold text-slate-500 mb-1">관리자 메모 (선택)</label>
+            <input
+              type="text"
+              value={uploadMemo}
+              onChange={(e) => setUploadMemo(e.target.value)}
+              placeholder="처리 메모"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-4"
+            />
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setUploadTarget(null)} className="px-4 py-2 text-sm font-bold text-slate-500">취소</button>
+              <button
+                type="button"
+                onClick={handleUploadWav}
+                disabled={busy || !uploadFile}
+                className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50"
+              >
+                업로드
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 배정 모달 */}
       {assignTarget && (
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setAssignTarget(null)}>
@@ -554,7 +831,7 @@ export function AdminCallDb() {
               <option value="">번호 선택</option>
               {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
             </select>
-            {availableNumbers.length === 0 && <p className="text-xs text-rose-500 mb-3">사용 가능한 번호가 없습니다. 가상번호 풀에서 먼저 등록/발급하세요.</p>}
+            {availableNumbers.length === 0 && <p className="text-xs text-rose-500 mb-3">사용 가능한 번호가 없습니다. 가상번호 풀에서 먼저 등록하세요.</p>}
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setAssignTarget(null)} className="px-4 py-2 text-sm font-bold text-slate-500">취소</button>
               <button type="button" onClick={handleAssign} disabled={busy || !assignCn} className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">배정하기</button>

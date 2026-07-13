@@ -111,6 +111,10 @@ define('LC_CALL_RESULT_SUCCESS', 'success');
 define('LC_CALL_RESULT_MISSED', 'missed');
 define('LC_CALL_RESULT_BUSY', 'busy');
 define('LC_CALL_RESULT_FAIL', 'fail');
+
+define('LC_CALL_REC_REQ_PENDING', 'pending');
+define('LC_CALL_REC_REQ_FULFILLED', 'fulfilled');
+define('LC_CALL_REC_REQ_REJECTED', 'rejected');
 /** 관리자 최종확정 상태 */
 define('LC_FINAL_APPROVED', 'approved');
 define('LC_FINAL_REJECTED', 'rejected');

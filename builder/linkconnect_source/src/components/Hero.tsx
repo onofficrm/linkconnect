@@ -21,8 +21,8 @@ export function Hero() {
             </h1>
 
             <p className="text-lg text-slate-400 leading-relaxed max-w-xl">
-              CPA DB 캠페인과 CPS 구매 캠페인을 한곳에서 확인하고,
-              실시간 성과와 정산 내역까지 링크커넥트에서 관리하세요.
+              CPA DB 캠페인, CPS 구매 캠페인, 파트너 단독 0503 콜디비까지.
+              실시간 성과와 정산 내역을 링크커넥트에서 관리하세요.
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -32,6 +32,13 @@ export function Hero() {
               </Link>
               <Link to="/cps" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors">
                 CPS 상품 둘러보기
+              </Link>
+              <Link
+                to="/"
+                onClick={() => handleSectionLink('call-db')}
+                className="px-8 py-4 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 font-medium rounded-xl border border-violet-500/30 transition-colors"
+              >
+                콜디비 알아보기
               </Link>
               <Link
                 to="/"

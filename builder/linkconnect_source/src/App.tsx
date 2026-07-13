@@ -35,6 +35,7 @@ import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
 import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
 import { AdvertiserReports } from './pages/advertiser/AdvertiserReports';
+import { AdvertiserMarketing } from './pages/advertiser/AdvertiserMarketing';
 import { AdvertiserSupport } from './pages/advertiser/AdvertiserSupport';
 
 import { AdvertiserDashboard } from './pages/advertiser/Dashboard';
@@ -128,6 +129,7 @@ export default function App() {
             <Route path="advertiser/db" element={<AdvertiserDb />} />
             <Route path="advertiser/call" element={<AdvertiserCall />} />
             <Route path="advertiser/billing" element={<AdvertiserBilling />} />
+            <Route path="advertiser/marketing" element={<AdvertiserMarketing />} />
             <Route path="advertiser/reports" element={<AdvertiserReports />} />
           </Route>
         </Route>

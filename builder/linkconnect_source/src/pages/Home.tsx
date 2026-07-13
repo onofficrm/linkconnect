@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AdvertiserIntro } from '../components/AdvertiserIntro';
 import { CategoryLinks } from '../components/CategoryLinks';
+import { CallDbIntro } from '../components/CallDbIntro';
 import { CPAList } from '../components/CPAList';
 import { CPSList } from '../components/CPSList';
 import { EventBoard } from '../components/EventBoard';
@@ -24,6 +25,7 @@ export function Home() {
       <CategoryLinks />
       <CPAList />
       <CPSList />
+      <CallDbIntro />
       <Features />
       <PartnerIntro />
       <AdvertiserIntro />

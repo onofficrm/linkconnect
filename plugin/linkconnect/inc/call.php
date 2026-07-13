@@ -1,105 +1,21 @@
 <?php
 /**
- * LinkConnect 콜디비(Call DB)
+ * LinkConnect 콜디비(Call DB) — 수동 운영
  *
- * - 콜업체(Call Provider) API 연동: 가상번호 발급/해제, 녹취 조회
- * - 통화 웹훅 수신 → 통화로그 적재 → CPA 전환 자동 생성
- * - 역할별 책임
- *   · 광고주: 콜디비 on/off, 착신번호1/2, 상품 별칭
- *   · 파트너: 가상번호 신청(관리자 배정 후 노출)
- *   · 관리자: 번호풀 관리, 신청 배정/반려, 녹음/콜설정, 콜DB 최종 승인/불가, 녹취 열람
+ * - 관리자: 가상번호 풀 등록, 파트너 신청 배정, 통화내역 엑셀 업로드
+ * - 파트너: 가상번호 신청 → 배정 번호로 홍보 → 통화내역 조회
+ * - 광고주: 착신번호·콜디비 설정, 담당 가상번호 기준 통화내역 조회
  */
 if (!defined('_GNUBOARD_')) {
     exit;
 }
 
-/* ───────────────────────────── 설정 / 콜업체 API ───────────────────────────── */
+/* ───────────────────────────── 설정 ───────────────────────────── */
 
 if (!function_exists('lc_call_enabled')) {
     function lc_call_enabled()
     {
         return lc_settings_get_bool('callEnabled', false);
-    }
-}
-
-if (!function_exists('lc_call_provider_config')) {
-    /**
-     * @return array{provider:string,baseUrl:string,apiKey:string,apiSecret:string,webhookToken:string}
-     */
-    function lc_call_provider_config()
-    {
-        return array(
-            'provider'     => trim((string) lc_settings_get('callProvider', '')),
-            'baseUrl'      => rtrim(trim((string) lc_settings_get('callApiBaseUrl', '')), '/'),
-            'apiKey'       => trim((string) lc_settings_get('callApiKey', '')),
-            'apiSecret'    => trim((string) lc_settings_get('callApiSecret', '')),
-            'webhookToken' => trim((string) lc_settings_get('callWebhookToken', '')),
-        );
-    }
-}
-
-if (!function_exists('lc_call_api_request')) {
-    /**
-     * 콜업체 REST API 호출 (아웃바운드)
-     *
-     * @param string $method GET|POST|DELETE
-     * @param string $path   /virtual-numbers 처럼 baseUrl 뒤에 붙는 경로
-     * @param array  $body   요청 바디 (POST)
-     * @return array{ok:bool,status:int,data:array,message:string,raw:string}
-     */
-    function lc_call_api_request($method, $path, array $body = array(), array $options = array())
-    {
-        $cfg = lc_call_provider_config();
-        if ($cfg['baseUrl'] === '') {
-            return array('ok' => false, 'status' => 0, 'data' => array(), 'message' => '콜업체 API 주소가 설정되지 않았습니다.', 'raw' => '');
-        }
-        if (!function_exists('curl_init')) {
-            return array('ok' => false, 'status' => 0, 'data' => array(), 'message' => 'PHP curl 확장이 필요합니다.', 'raw' => '');
-        }
-
-        $method = strtoupper($method);
-        $url = $cfg['baseUrl'] . '/' . ltrim((string) $path, '/');
-
-        $headers = array(
-            'Content-Type: application/json',
-            'Accept: application/json',
-        );
-        if ($cfg['apiKey'] !== '') {
-            $headers[] = 'X-API-KEY: ' . $cfg['apiKey'];
-            $headers[] = 'Authorization: Bearer ' . $cfg['apiKey'];
-        }
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, isset($options['timeout']) ? (int) $options['timeout'] : 15);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        if ($method !== 'GET' && $body) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body, JSON_UNESCAPED_UNICODE));
-        }
-
-        $raw = curl_exec($ch);
-        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err = curl_error($ch);
-        curl_close($ch);
-
-        if ($raw === false) {
-            return array('ok' => false, 'status' => $status, 'data' => array(), 'message' => 'API 호출 실패: ' . $err, 'raw' => '');
-        }
-
-        $decoded = json_decode((string) $raw, true);
-        $data = is_array($decoded) ? $decoded : array();
-        $ok = $status >= 200 && $status < 300;
-
-        return array(
-            'ok'      => $ok,
-            'status'  => $status,
-            'data'    => $data,
-            'message' => $ok ? 'OK' : ('API 오류(' . $status . ')'),
-            'raw'     => (string) $raw,
-        );
     }
 }
 
@@ -218,41 +134,6 @@ if (!function_exists('lc_call_number_update')) {
         lc_sql_query(" UPDATE `{$table}` SET " . implode(', ', $sets) . " WHERE cn_id = '{$cn_id}' ", false);
 
         return array('ok' => true, 'message' => '수정되었습니다.');
-    }
-}
-
-if (!function_exists('lc_call_number_provision')) {
-    /**
-     * 콜업체 API로 가상번호 발급 요청 후 풀에 등록.
-     * 실패 시 수동 등록으로 대체 가능.
-     */
-    function lc_call_number_provision(array $payload = array())
-    {
-        $cfg = lc_call_provider_config();
-        if ($cfg['baseUrl'] === '') {
-            return array('ok' => false, 'message' => '콜업체 API가 설정되지 않아 자동 발급할 수 없습니다. 수동 등록을 이용하세요.');
-        }
-
-        $res = lc_call_api_request('POST', 'virtual-numbers', array(
-            'areaCode' => $payload['areaCode'] ?? '',
-            'memo'     => $payload['memo'] ?? '',
-        ));
-        if (!$res['ok']) {
-            return array('ok' => false, 'message' => $res['message']);
-        }
-
-        $data = $res['data'];
-        $number = (string) ($data['number'] ?? $data['virtualNumber'] ?? $data['phone'] ?? '');
-        $providerId = (string) ($data['id'] ?? $data['numberId'] ?? '');
-        if ($number === '') {
-            return array('ok' => false, 'message' => '콜업체 응답에 번호가 없습니다.');
-        }
-
-        return lc_call_number_create(array(
-            'number'           => $number,
-            'providerNumberId' => $providerId,
-            'memo'             => $payload['memo'] ?? '',
-        ));
     }
 }
 
@@ -555,9 +436,6 @@ if (!function_exists('lc_call_request_assign')) {
 
         lc_sql_query(" UPDATE `{$cn_table}` SET cn_status = '" . LC_CALL_NUMBER_ASSIGNED . "', cn_updated_at = NOW() WHERE cn_id = '{$cn_id}' ", false);
 
-        // 콜업체에 착신 매핑 등록 (설정된 경우)
-        lc_call_provider_bind_number($number, $request);
-
         if (function_exists('lc_notification_create')) {
             lc_notification_create(array(
                 'center'  => 'partner',
@@ -572,30 +450,6 @@ if (!function_exists('lc_call_request_assign')) {
         }
 
         return array('ok' => true, 'message' => '가상번호를 배정했습니다.', 'number' => $number['cn_number']);
-    }
-}
-
-if (!function_exists('lc_call_provider_bind_number')) {
-    /**
-     * 콜업체 API에 "가상번호 → 착신번호" 라우팅 등록.
-     * baseUrl 미설정 시 조용히 skip (수동 운영).
-     */
-    function lc_call_provider_bind_number(array $number, array $request)
-    {
-        $cfg = lc_call_provider_config();
-        if ($cfg['baseUrl'] === '' || empty($number['cn_provider_number_id'])) {
-            return array('ok' => false, 'message' => 'skip');
-        }
-
-        $settings = lc_call_settings_get((int) $request['cp_id']);
-
-        return lc_call_api_request('POST', 'virtual-numbers/' . rawurlencode((string) $number['cn_provider_number_id']) . '/route', array(
-            'forward1'      => (string) ($settings['cs_forward1'] ?? ''),
-            'forward2'      => (string) ($settings['cs_forward2'] ?? ''),
-            'recordingMode' => (string) ($settings['cs_recording_mode'] ?? 'normal'),
-            'coloring'      => (string) ($settings['cs_coloring'] ?? ''),
-            'ment'          => (string) ($settings['cs_call_ment'] ?? ''),
-        ));
     }
 }
 
@@ -1264,6 +1118,12 @@ if (!function_exists('lc_call_logs_list')) {
         if (isset($filters['unmatched']) && $filters['unmatched']) {
             $where .= " AND l.pt_id = '0' ";
         }
+        if (!empty($filters['virtual_number'])) {
+            $vn = lc_call_number_normalize($filters['virtual_number']);
+            if ($vn !== '') {
+                $where .= " AND l.clog_virtual_number = '" . lc_sql_escape($vn) . "' ";
+            }
+        }
 
         $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
 
@@ -1299,7 +1159,7 @@ if (!function_exists('lc_call_log_get')) {
 
 if (!function_exists('lc_call_recording_url')) {
     /**
-     * 녹취 URL (관리자 전용). 저장된 URL 없으면 콜업체 API로 조회.
+     * 녹취 URL (엑셀 업로드 시 저장된 URL만 사용)
      */
     function lc_call_recording_url($clog_id)
     {
@@ -1310,23 +1170,8 @@ if (!function_exists('lc_call_recording_url')) {
         if (!empty($log['clog_recording_url'])) {
             return array('ok' => true, 'url' => (string) $log['clog_recording_url']);
         }
-        if (empty($log['clog_recording_id'])) {
-            return array('ok' => false, 'message' => '녹취 파일이 없습니다.');
-        }
 
-        $res = lc_call_api_request('GET', 'recordings/' . rawurlencode((string) $log['clog_recording_id']));
-        if (!$res['ok']) {
-            return array('ok' => false, 'message' => $res['message']);
-        }
-        $url = (string) ($res['data']['url'] ?? $res['data']['recordingUrl'] ?? '');
-        if ($url === '') {
-            return array('ok' => false, 'message' => '녹취 URL을 가져오지 못했습니다.');
-        }
-
-        $table = lc_table('call_logs');
-        lc_sql_query(" UPDATE `{$table}` SET clog_recording_url = '" . lc_sql_escape($url) . "' WHERE clog_id = '" . (int) $clog_id . "' ", false);
-
-        return array('ok' => true, 'url' => $url);
+        return array('ok' => false, 'message' => '녹취 URL이 없습니다. 엑셀 업로드 시 녹취URL 열을 포함해 주세요.');
     }
 }
 
@@ -1382,10 +1227,10 @@ if (!function_exists('lc_call_log_to_api')) {
             'duration'      => (int) $row['clog_duration'],
             'result'        => (string) $row['clog_result'],
             'cvId'          => (int) $row['cv_id'],
-            'hasRecording'  => !empty($row['clog_recording_url']) || !empty($row['clog_recording_id']),
+            'hasRecording'  => !empty($row['clog_recording_url']),
         );
         if ($with_recording) {
-            $out['recordingUrl'] = (string) $row['clog_recording_url'];
+            $out['recordingUrl'] = (string) ($row['clog_recording_url'] ?? '');
         }
 
         return $out;

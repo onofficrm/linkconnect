@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { AdvertiserContractLayout } from '../../layouts/AdvertiserContractLayout';
 import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
+import { ContractProcessGuide } from '../../components/contract/ContractProcessGuide';
 import { SignatureCanvas } from '../../components/advertiser/contract/SignatureCanvas';
 import {
   CONTRACT_REQUIRED_AGREEMENTS,
@@ -361,8 +362,9 @@ export function AdvertiserContract() {
   return (
     <AdvertiserContractLayout
       title="CPA 계약서 작성"
-      subtitle={`계약서 버전 ${state?.contractVersion ?? ''}`}
+      subtitle={`계약서 버전 ${state?.contractVersion ?? ''} · 3단계 작성 후 즉시 체결 (관리자 승인 없음)`}
     >
+      <ContractProcessGuide audience="advertiser" className="mb-6" />
       <ContractStepIndicator currentStep={step} />
 
       {step === 1 ? (

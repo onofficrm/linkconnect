@@ -2,15 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard } from '../../components/admin/AdminShared';
 import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
+import { ContractProcessGuide } from '../../components/contract/ContractProcessGuide';
 import {
   fetchAdminContractDetail,
   fetchAdminContracts,
+  seedAdminDemoContract,
   updateAdminContractStatus,
   type AdminContractDetail,
   type AdminContractListItem,
   type AdminContractSummary,
 } from '../../lib/api';
-import { FileText, Search, X, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { FileText, Search, X, Clock, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 
 type DetailTab = 'document' | 'admin';
 
@@ -51,6 +53,8 @@ export function AdminContracts() {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState('');
   const [error, setError] = useState('');
   const [detailTab, setDetailTab] = useState<DetailTab>('document');
 
@@ -134,8 +138,46 @@ export function AdminContracts() {
     }
   };
 
+  const handleSeedDemo = async () => {
+    if (!window.confirm('데모광고주(lc_advertiser)에 샘플 CPA 계약을 생성합니다. 이미 체결된 경우 건너뜁니다.')) {
+      return;
+    }
+    setSeeding(true);
+    setSeedMessage('');
+    setError('');
+    try {
+      const result = await seedAdminDemoContract();
+      setSeedMessage(result.message);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '샘플 계약 생성에 실패했습니다.');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <AdminLayout activeMenu="contracts" title="광고주 계약 관리" description="광고주 CPA 계약서 체결 현황을 조회하고 상태를 관리합니다.">
+      <ContractProcessGuide audience="admin" className="mb-6" />
+
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-sm text-slate-600">
+          체결은 광고주가 직접 진행합니다. 관리자는 이 화면에서 <b>조회·상태 변경</b>만 합니다.
+        </p>
+        <button
+          type="button"
+          disabled={seeding}
+          onClick={() => void handleSeedDemo()}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold disabled:opacity-50 shrink-0"
+        >
+          <Sparkles size={16} />
+          {seeding ? '생성 중...' : '데모광고주 샘플 계약 생성'}
+        </button>
+      </div>
+
+      {seedMessage ? (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{seedMessage}</div>
+      ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
         <SummaryCard title="전체" value={summary.total.toLocaleString()} suffix="건" icon={<FileText size={18} />} />
         <SummaryCard title="체결" value={summary.signed.toLocaleString()} suffix="건" color="emerald" icon={<CheckCircle2 size={18} />} />
@@ -182,7 +224,15 @@ export function AdminContracts() {
             {loading ? (
               <p className="p-6 text-sm text-slate-500">불러오는 중...</p>
             ) : items.length === 0 ? (
-              <p className="p-6 text-sm text-slate-500">계약 데이터가 없습니다.</p>
+              <div className="p-6 text-sm text-slate-600 space-y-3">
+                <p className="font-semibold text-slate-800">아직 체결된 계약이 없습니다.</p>
+                <p className="leading-relaxed">
+                  광고주가 <b>광고주센터 → CPA 계약 체결</b>에서 3단계(정보 입력 → 계약서 동의 → 서명)를 완료하면 이 목록에 표시됩니다.
+                </p>
+                <p className="text-xs text-slate-500">
+                  데모 테스트: 위 「데모광고주 샘플 계약 생성」 버튼으로 lc_advertiser 계정에 샘플 계약을 바로 넣을 수 있습니다.
+                </p>
+              </div>
             ) : (
               items.map((item) => (
                 <button

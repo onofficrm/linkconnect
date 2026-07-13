@@ -968,6 +968,32 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        $call_recording_requests = lc_table('call_recording_requests');
+        if (!lc_db_table_exists($call_recording_requests)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$call_recording_requests}` (
+                `crr_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `clog_id` bigint unsigned NOT NULL,
+                `requester_type` varchar(20) NOT NULL DEFAULT 'partner',
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `mt_id` int unsigned NOT NULL DEFAULT 0,
+                `crr_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `crr_request_memo` varchar(500) NOT NULL DEFAULT '',
+                `crr_admin_memo` varchar(500) NOT NULL DEFAULT '',
+                `crr_file_path` varchar(500) NOT NULL DEFAULT '',
+                `crr_original_name` varchar(255) NOT NULL DEFAULT '',
+                `crr_requested_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `crr_processed_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`crr_id`),
+                KEY `idx_crr_clog_id` (`clog_id`),
+                KEY `idx_crr_status` (`crr_status`),
+                KEY `idx_crr_pt_id` (`pt_id`),
+                KEY `idx_crr_mt_id` (`mt_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'call_recording_requests 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
         // ── 광고주 CPA 계약서 (기존 merchants 테이블과 분리) ──
         $mc = lc_merchant_contract_db_ensure_schema();
         if (empty($mc['ok'])) {
