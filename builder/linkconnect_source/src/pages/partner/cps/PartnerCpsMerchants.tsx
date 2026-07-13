@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Copy, CheckCircle2, Link2, Search } from 'lucide-react';
 import { PartnerLayout } from '../../../layouts/PartnerLayout';
 import { SummaryCard } from '../../../components/partner/PartnerShared';
-import { CpsPartnerNotice, PartnerCpsSubnav, formatWon } from '../../../components/cps/CpsShared';
+import { CpsDeeplinkGuide, CpsPartnerNotice, PartnerCpsSubnav, formatWon } from '../../../components/cps/CpsShared';
 import {
   PartnerLpMerchant,
   PartnerLpStats,
@@ -92,10 +92,13 @@ export function PartnerCpsMerchants() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="광고주 검색" className="w-full pl-9 pr-3 py-2 border rounded-xl text-sm" />
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm" title="특정 상품 URL로 홍보 링크를 만들 수 있는 광고주만 보기">
           <input type="checkbox" checked={deeplinkOnly} onChange={(e) => setDeeplinkOnly(e.target.checked)} />
-          딥링크만
+          딥링크 지원만
         </label>
+      </div>
+      <div className="mb-4 px-1">
+        <CpsDeeplinkGuide compact />
       </div>
 
       {loading ? (
@@ -121,8 +124,14 @@ export function PartnerCpsMerchants() {
                   {copiedId === m.lpmId ? <CheckCircle2 size={16} /> : <Copy size={16} />} 링크 복사
                 </button>
                 {m.deeplinkYn === 'Y' ? (
-                  <button type="button" onClick={() => { setDeeplinkTarget(m); setProductUrl(''); setDeeplinkError(''); setDeeplinkResult(''); }} className="px-3 py-2 rounded-xl border text-sm font-bold">
+                  <button
+                    type="button"
+                    title="상품 URL로 딥링크 만들기"
+                    onClick={() => { setDeeplinkTarget(m); setProductUrl(''); setDeeplinkError(''); setDeeplinkResult(''); }}
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border text-sm font-bold text-cyan-700 border-cyan-200 hover:bg-cyan-50"
+                  >
                     <Link2 size={16} />
+                    <span className="hidden sm:inline">딥링크</span>
                   </button>
                 ) : null}
               </div>
@@ -133,22 +142,48 @@ export function PartnerCpsMerchants() {
 
       {deeplinkTarget ? (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={() => setDeeplinkTarget(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-bold">딥링크 — {deeplinkTarget.merchantName}</h3>
-            <input value={productUrl} onChange={(e) => setProductUrl(e.target.value)} placeholder="상품 URL" className="w-full border rounded-xl px-3 py-2 text-sm" />
-            {deeplinkError ? <p className="text-sm text-rose-600">{deeplinkError}</p> : null}
-            {deeplinkResult ? (
-              <div className="text-xs break-all bg-slate-50 rounded-xl p-3">
-                {deeplinkResult}
-                <button type="button" className="block mt-2 text-emerald-700 font-bold" onClick={() => copyText(deeplinkResult)}>복사</button>
+          <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <h3 className="font-bold text-lg text-slate-900">상품 딥링크 만들기</h3>
+              <p className="text-sm text-slate-500 mt-1">{deeplinkTarget.merchantName}</p>
+            </div>
+
+            <CpsDeeplinkGuide />
+
+            <label className="block text-sm">
+              <span className="font-medium text-slate-700">상품 페이지 URL</span>
+              <span className="block text-xs text-slate-400 mt-0.5">쇼핑몰에서 홍보할 상품을 연 뒤, 브라우저 주소창 URL을 붙여넣으세요.</span>
+              <input
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                placeholder="https://..."
+                className="mt-2 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono"
+              />
+            </label>
+
+            {deeplinkError ? (
+              <div className="text-sm text-rose-700 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
+                {deeplinkError}
+                <p className="text-xs text-rose-600/80 mt-1">해당 쇼핑몰 상품 주소인지, https로 시작하는지 확인해 주세요.</p>
               </div>
             ) : null}
-            <div className="flex gap-2 justify-end">
+
+            {deeplinkResult ? (
+              <div className="text-xs break-all bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                <div className="font-bold text-emerald-800 mb-1">생성된 홍보 링크</div>
+                <div className="text-slate-700">{deeplinkResult}</div>
+                <button type="button" className="mt-2 text-emerald-700 font-bold" onClick={() => copyText(deeplinkResult)}>
+                  링크 복사
+                </button>
+              </div>
+            ) : null}
+
+            <div className="flex gap-2 justify-end pt-1">
               <button type="button" className="px-4 py-2 border rounded-xl text-sm" onClick={() => setDeeplinkTarget(null)}>닫기</button>
               <button
                 type="button"
-                disabled={busy}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold"
+                disabled={busy || !productUrl.trim()}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold disabled:opacity-50"
                 onClick={async () => {
                   setBusy(true);
                   setDeeplinkError('');
@@ -156,13 +191,13 @@ export function PartnerCpsMerchants() {
                     const res = await buildPartnerLpDeeplink({ merchantCode: deeplinkTarget.merchantCode, productUrl });
                     setDeeplinkResult(res.promoUrl);
                   } catch (e) {
-                    setDeeplinkError(e instanceof Error ? e.message : '실패');
+                    setDeeplinkError(e instanceof Error ? e.message : '딥링크 생성에 실패했습니다.');
                   } finally {
                     setBusy(false);
                   }
                 }}
               >
-                생성
+                {busy ? '생성 중…' : '딥링크 생성'}
               </button>
             </div>
           </div>

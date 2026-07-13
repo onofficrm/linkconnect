@@ -54,6 +54,55 @@ export function CpsPartnerNotice() {
   );
 }
 
+export const CPS_DEEPLINK_SUMMARY =
+  '딥링크는 쇼핑몰 메인이 아니라, 홍보하려는 특정 상품 페이지로 바로 연결되는 추적 링크입니다.';
+
+export const CPS_DEEPLINK_STEPS = [
+  '홍보할 상품 페이지를 쇼핑몰에서 연 뒤, 주소창 URL을 복사합니다.',
+  '아래 입력란에 상품 URL을 붙여넣고 [생성]을 누릅니다.',
+  '생성된 링크를 블로그·SNS·유튜브 설명란 등에 게시합니다.',
+  '해당 링크를 통해 구매가 발생하면 CPS 수익이 적립됩니다.',
+];
+
+export const CPS_DEEPLINK_TIPS = [
+  '「링크 복사」는 쇼핑몰 메인용, 딥링크는 리뷰·추천한 그 상품용입니다.',
+  '상품 URL은 해당 쇼핑몰 도메인 주소여야 합니다. (다른 사이트 URL은 사용 불가)',
+  '모바일 앱 전용 주소보다 PC 브라우저에서 복사한 주소가 더 안정적입니다.',
+  '광고주별 금지 채널·키워드 광고 제한은 일반 링크와 동일하게 적용됩니다.',
+];
+
+export function CpsDeeplinkGuide({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <p className="text-xs text-slate-500 leading-relaxed">
+        <span className="font-bold text-slate-700">Tip.</span> {CPS_DEEPLINK_SUMMARY}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-slate-600 leading-relaxed">{CPS_DEEPLINK_SUMMARY}</p>
+      <div>
+        <div className="text-xs font-bold text-slate-700 mb-1.5">사용 방법</div>
+        <ol className="list-decimal pl-5 space-y-1 text-slate-600">
+          {CPS_DEEPLINK_STEPS.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ol>
+      </div>
+      <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-3">
+        <div className="text-xs font-bold text-cyan-800 mb-1.5">알아두면 좋아요</div>
+        <ul className="list-disc pl-5 space-y-1 text-cyan-900/90 text-xs">
+          {CPS_DEEPLINK_TIPS.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export const ADMIN_CPS_TABS = [
   { id: 'setup', label: '운영 시작', path: '/admin/cps/setup' },
   { id: 'e2e', label: 'E2E 검증', path: '/admin/cps/e2e' },
