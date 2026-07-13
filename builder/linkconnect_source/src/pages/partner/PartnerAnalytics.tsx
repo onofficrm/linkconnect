@@ -83,6 +83,33 @@ function funnelRate(current: number, previous: number) {
   return `${((current / previous) * 100).toFixed(1)}%`;
 }
 
+function normalizeAnalyticsResponse(result: PartnerAnalyticsResponse): PartnerAnalyticsResponse {
+  return {
+    ...emptyData,
+    ...result,
+    summary: { ...emptyData.summary, ...(result.summary ?? {}) },
+    range: { ...emptyData.range, ...(result.range ?? {}) },
+    funnel: { ...emptyData.funnel, ...(result.funnel ?? {}) },
+    chart: result.chart ?? [],
+    chart7d: result.chart7d ?? [],
+    channels: result.channels ?? [],
+    linkNames: result.linkNames ?? [],
+    links: result.links ?? [],
+    compareLinks: result.compareLinks ?? [],
+    referrers: result.referrers ?? [],
+    devices: result.devices ?? [],
+    campaigns: result.campaigns ?? [],
+    filterOptions: {
+      ...emptyData.filterOptions,
+      ...(result.filterOptions ?? {}),
+      links: result.filterOptions?.links ?? [],
+      channels: result.filterOptions?.channels ?? [],
+      linkNames: result.filterOptions?.linkNames ?? [],
+      cpsLinks: result.filterOptions?.cpsLinks ?? [],
+    },
+  };
+}
+
 export function PartnerAnalytics() {
   const [data, setData] = useState<PartnerAnalyticsResponse>(emptyData);
   const [loading, setLoading] = useState(true);
@@ -103,9 +130,10 @@ export function PartnerAnalytics() {
     setError('');
     try {
       const result = await fetchPartnerAnalytics(filters);
-      setData(result);
+      setData(normalizeAnalyticsResponse(result));
     } catch (err) {
       setError(err instanceof Error ? err.message : '분석 데이터를 불러오지 못했습니다.');
+      setData(emptyData);
     } finally {
       setLoading(false);
     }
@@ -150,10 +178,10 @@ export function PartnerAnalytics() {
     });
   };
 
-  const chartData = data.chart.length ? data.chart : data.chart7d;
-  const tableRows = isCps ? (data.cpsLinks?.length ? data.cpsLinks : data.links) : data.links;
+  const chartData = (data.chart ?? []).length ? data.chart : (data.chart7d ?? []);
+  const tableRows = isCps ? (data.cpsLinks?.length ? data.cpsLinks : (data.links ?? [])) : (data.links ?? []);
   const activeCompareIds = isCps ? compareLpmIds : compareIds;
-  const compareRows = data.compareLinks.length
+  const compareRows = (data.compareLinks ?? []).length
     ? data.compareLinks
     : tableRows.filter((link) => activeCompareIds.includes(link.id));
 

@@ -7,6 +7,7 @@ import { fetchPartnerCampaigns, createPartnerLink, fetchPartnerPromoGuide, Partn
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
+import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
 
 const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 const fallbackCpsCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
@@ -82,11 +83,6 @@ export function PartnerSearch() {
 
   const cpaCampaigns = useMemo(() => campaigns.filter((i) => !isCpsCampaign(i)), [campaigns]);
   const cpsCampaigns = useMemo(() => campaigns.filter((i) => isCpsCampaign(i)), [campaigns]);
-
-  const recommendedItems = useMemo(
-    () => campaigns.filter((item) => item.recommended || item.badge).slice(0, 3),
-    [campaigns],
-  );
 
   const avgPrice = useMemo(() => {
     if (!cpaCampaigns.length) {
@@ -263,50 +259,14 @@ export function PartnerSearch() {
       </div>
 
       {loading ? (
-        <p className="text-slate-500 mb-8">캠페인 목록을 불러오는 중...</p>
+        <SkeletonTable rows={8} cols={7} />
       ) : (
-        <>
-          {recommendedItems.length > 0 && (
-            <div className="mb-12">
-              <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                추천 상품
-              </h2>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recommendedItems.map((item) => (
-                  <div key={`rec-${item.id}`}>
-                    <CampaignCard
-                      campaign={item}
-                      onOpenDetail={() => openDetailModal(item, 'intro')}
-                      onOpenGuide={() => openDetailModal(item, 'guide')}
-                      onCreateLink={() => openLinkModal(item)}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="h-px bg-slate-200 w-full mb-10"></div>
-
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">
-              전체 캠페인 <span className="text-emerald-600 font-bold">({campaigns.length})</span>
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {campaigns.map((item) => (
-              <div key={item.id}>
-                <CampaignCard
-                  campaign={item}
-                  onOpenDetail={() => openDetailModal(item, 'intro')}
-                  onOpenGuide={() => openDetailModal(item, 'guide')}
-                  onCreateLink={() => openLinkModal(item)}
-                />
-              </div>
-            ))}
-          </div>
-        </>
+        <CampaignListTable
+          campaigns={campaigns}
+          onOpenDetail={(item) => openDetailModal(item, 'intro')}
+          onOpenGuide={(item) => openDetailModal(item, 'guide')}
+          onCreateLink={openLinkModal}
+        />
       )}
 
       <div className="bg-slate-900 rounded-2xl p-6 md:p-8 text-white shadow-lg">
@@ -412,6 +372,182 @@ export function PartnerSearch() {
       )}
 
     </PartnerLayout>
+  );
+}
+
+function CampaignListTable({
+  campaigns,
+  onOpenDetail,
+  onOpenGuide,
+  onCreateLink,
+}: {
+  campaigns: PartnerCampaign[];
+  onOpenDetail: (campaign: PartnerCampaign) => void;
+  onOpenGuide: (campaign: PartnerCampaign) => void;
+  onCreateLink: (campaign: PartnerCampaign) => void;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-16">
+      <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            광고상품 목록 <span className="text-emerald-600">({campaigns.length})</span>
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">단가, 승인율, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.</p>
+        </div>
+        <div className="text-xs text-slate-500">카드형 대신 목록형으로 한눈에 비교합니다.</div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th className="px-5 py-4 font-medium min-w-[280px]">광고상품</th>
+              <th className="px-5 py-4 font-medium text-center">유형</th>
+              <th className="px-5 py-4 font-medium text-right">단가/수수료</th>
+              <th className="px-5 py-4 font-medium text-center">승인율</th>
+              <th className="px-5 py-4 font-medium min-w-[220px]">채널 조건</th>
+              <th className="px-5 py-4 font-medium text-center">상태</th>
+              <th className="px-5 py-4 font-medium text-right min-w-[260px]">액션</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {campaigns.length === 0 ? (
+              <DataTableEmpty
+                colSpan={7}
+                title="검색된 광고상품이 없습니다"
+                description="검색어 또는 카테고리 필터를 변경해 다시 확인해 주세요."
+              />
+            ) : campaigns.map((campaign, index) => {
+              const isCps = isCpsCampaign(campaign);
+              const hasLandingUrl = campaign.landingUrl.trim().length > 0;
+              const hasGuide = Boolean(campaign.hasPublishedGuide);
+              const highlighted = campaign.recommended || Boolean(campaign.badge);
+
+              return (
+                <tr key={campaign.id} className={tableRowClass(index < 3 && highlighted ? index + 1 : undefined, highlighted)}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      {campaign.thumbnailUrl ? (
+                        <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                          <img
+                            src={campaign.thumbnailUrl}
+                            alt={campaign.title}
+                            className={isCps ? 'w-full h-full object-contain p-2' : 'w-full h-full object-cover'}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0">
+                          <Briefcase className="w-6 h-6 text-slate-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {highlighted ? <RankBadge rank={index + 1} /> : null}
+                          <button
+                            type="button"
+                            onClick={() => onOpenDetail(campaign)}
+                            className="font-bold text-slate-900 hover:text-emerald-600 text-left"
+                          >
+                            {campaign.title}
+                          </button>
+                          {campaign.badge && (
+                            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md ${
+                              campaign.badge === '추천' ? 'bg-emerald-100 text-emerald-800' :
+                              campaign.badge === '인기' ? 'bg-blue-100 text-blue-800' :
+                              'bg-purple-100 text-purple-800'
+                            }`}>
+                              {campaign.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-1">{campaign.description}</p>
+                        <div className="text-[11px] text-slate-400 mt-1">
+                          {campaign.category} · {campaign.code}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-center">
+                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${
+                      isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      {isCps ? 'CPS' : 'CPA'}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-right whitespace-nowrap">
+                    {isCps ? (
+                      <div className="font-bold text-cyan-700">{campaign.approvalRate}</div>
+                    ) : (
+                      <div className="font-bold text-emerald-700">{campaign.priceFormatted}원</div>
+                    )}
+                    <div className="text-[11px] text-slate-400">{isCps ? '구매 수수료' : '파트너 단가'}</div>
+                  </td>
+                  <td className="px-5 py-4 text-center whitespace-nowrap">
+                    <div className="font-semibold text-slate-800">{campaign.approvalRate}</div>
+                    {!isCps && <div className="text-[11px] text-slate-400">{campaign.avgTime}</div>}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="text-xs">
+                      <div className="text-slate-700 line-clamp-1"><span className="text-slate-400">허용</span> {campaign.allowedChannels}</div>
+                      <div className="text-red-500 line-clamp-1 mt-1"><span className="text-slate-400">금지</span> {campaign.forbiddenChannels}</div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-center">
+                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${
+                      campaign.status === '진행중' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
+                    }`}>
+                      {campaign.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {hasGuide ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenGuide(campaign)}
+                          className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-bold inline-flex items-center gap-1"
+                        >
+                          <BookOpen className="w-3.5 h-3.5" />
+                          가이드
+                        </button>
+                      ) : null}
+                      {hasLandingUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => openLandingPage(campaign.landingUrl)}
+                          className="px-3 py-2 bg-white border border-cyan-200 text-cyan-700 hover:bg-cyan-50 rounded-xl text-xs font-bold inline-flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          랜딩
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onOpenDetail(campaign)}
+                        className="px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold"
+                      >
+                        상세
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onCreateLink(campaign)}
+                        className="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1 shadow-sm"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        {isCps ? '복사' : '링크 생성'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
