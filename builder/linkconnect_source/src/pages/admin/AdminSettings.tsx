@@ -19,7 +19,7 @@ const defaultRaw: RawSettings = {
   settlementPeriod: '매월 1일 ~ 5일',
   apiRetryCount: '3',
   geminiEnabled: '1',
-  geminiModel: 'gemini-2.0-flash',
+  geminiModel: 'gemini-2.5-flash',
   geminiApiKeySet: '0',
   geminiApiKeyMasked: '',
   aiChatDailyLimit: '30',
@@ -176,7 +176,7 @@ export function AdminSettings() {
         },
         ai: {
           geminiEnabled: boolVal(raw, 'geminiEnabled'),
-          geminiModel: raw.geminiModel || 'gemini-2.0-flash',
+          geminiModel: raw.geminiModel || 'gemini-2.5-flash',
           geminiApiKey: geminiKeyInput.trim(),
           aiChatDailyLimit: Number(raw.aiChatDailyLimit || 30),
           aiPromoDailyLimit: Number(raw.aiPromoDailyLimit || 20),

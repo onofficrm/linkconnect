@@ -24,9 +24,19 @@ if (!function_exists('lc_gemini_enabled')) {
 if (!function_exists('lc_gemini_model')) {
     function lc_gemini_model()
     {
-        $model = trim((string) lc_settings_get('geminiModel', 'gemini-2.0-flash'));
+        $model = trim((string) lc_settings_get('geminiModel', 'gemini-2.5-flash'));
         if ($model === '') {
-            $model = 'gemini-2.0-flash';
+            $model = 'gemini-2.5-flash';
+        }
+
+        $deprecated = array(
+            'gemini-2.0-flash'           => 'gemini-2.5-flash',
+            'gemini-2.0-flash-001'       => 'gemini-2.5-flash',
+            'gemini-2.0-flash-lite'      => 'gemini-2.5-flash-lite',
+            'gemini-2.0-flash-lite-001' => 'gemini-2.5-flash-lite',
+        );
+        if (isset($deprecated[$model])) {
+            $model = $deprecated[$model];
         }
 
         return $model;

@@ -41,7 +41,7 @@ if (!function_exists('lc_settings_defaults')) {
             'apiRetryCount'         => 3,
             'geminiApiKey'          => '',
             'geminiEnabled'         => '1',
-            'geminiModel'           => 'gemini-2.0-flash',
+            'geminiModel'           => 'gemini-2.5-flash',
             'aiChatDailyLimit'      => 30,
             'aiPromoDailyLimit'     => 20,
             'aiSummaryDailyLimit'   => 10,
@@ -429,7 +429,7 @@ if (!function_exists('lc_settings_to_api')) {
             ),
             'ai' => array(
                 'geminiEnabled'       => lc_settings_get_bool('geminiEnabled', true),
-                'geminiModel'         => (string) ($settings['geminiModel'] ?? 'gemini-2.0-flash'),
+                'geminiModel'         => (string) ($settings['geminiModel'] ?? 'gemini-2.5-flash'),
                 'geminiApiKeySet'     => trim((string) ($settings['geminiApiKey'] ?? '')) !== '',
                 'geminiApiKeyMasked'  => lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? '')),
                 'aiChatDailyLimit'    => (int) ($settings['aiChatDailyLimit'] ?? 30),
