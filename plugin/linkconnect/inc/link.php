@@ -275,6 +275,75 @@ if (!function_exists('lc_cpa_partner_create_shortlink')) {
     }
 }
 
+if (!function_exists('lc_cpa_partner_shortlink_for_campaign')) {
+    /**
+     * 캠페인 기준 원클릭 숏링크: 기존 활성 링크 재사용 또는 신규 생성 후 /s/{code}
+     *
+     * @return array{ok:bool,message:string,shortUrl:string,promoUrl:string,shortCode:string,link:array|null}
+     */
+    function lc_cpa_partner_shortlink_for_campaign($pt_id, $cp_id)
+    {
+        $pt_id = (int) $pt_id;
+        $cp_id = (int) $cp_id;
+        $empty = array(
+            'ok'        => false,
+            'message'   => '',
+            'shortUrl'  => '',
+            'promoUrl'  => '',
+            'shortCode' => '',
+            'link'      => null,
+        );
+
+        if ($pt_id <= 0 || $cp_id <= 0) {
+            $empty['message'] = '캠페인 정보가 올바르지 않습니다.';
+
+            return $empty;
+        }
+
+        $lk_table = lc_table('links');
+        $existing = lc_sql_fetch(
+            " SELECT * FROM `{$lk_table}`
+              WHERE pt_id = {$pt_id} AND cp_id = {$cp_id} AND lk_status = 'active'
+              ORDER BY lk_id DESC
+              LIMIT 1 ",
+            false
+        );
+
+        $lk_id = 0;
+        $link_api = null;
+        if (is_array($existing) && !empty($existing['lk_id'])) {
+            $lk_id = (int) $existing['lk_id'];
+            $with = lc_link_get_with_campaign((string) ($existing['lk_code'] ?? ''));
+            $link_api = $with ? lc_link_to_api($with) : lc_link_to_api($existing);
+        } else {
+            $created = lc_link_create($pt_id, $cp_id, '숏코드', '');
+            if (!$created['ok'] || empty($created['link']['id'])) {
+                $empty['message'] = $created['message'] !== '' ? $created['message'] : '홍보 링크를 준비하지 못했습니다.';
+
+                return $empty;
+            }
+            $lk_id = (int) $created['link']['id'];
+            $link_api = $created['link'];
+        }
+
+        $short = lc_cpa_partner_create_shortlink($pt_id, $lk_id);
+        if (!$short['ok']) {
+            $empty['message'] = $short['message'];
+
+            return $empty;
+        }
+
+        return array(
+            'ok'        => true,
+            'message'   => '숏코드 링크가 준비되었습니다.',
+            'shortUrl'  => $short['shortUrl'],
+            'promoUrl'  => $short['promoUrl'],
+            'shortCode' => $short['shortCode'],
+            'link'      => $link_api,
+        );
+    }
+}
+
 if (!function_exists('lc_link_create')) {
     /**
      * @return array{ok:bool,message:string,link:array|null}

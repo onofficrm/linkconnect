@@ -16,6 +16,8 @@ import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
+import { CpsChannelGuide, parseChannelItems } from '../../components/cps/CpsChannelGuide';
+import { formatCpsCommissionRate } from '../../components/cps/CpsShared';
 
 const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 const fallbackCpsCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
@@ -303,8 +305,12 @@ export function PartnerSearch() {
         </div>
       </div>
 
+      {copyNotice && !linkModal ? (
+        <div className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2">{copyNotice}</div>
+      ) : null}
+
       {loading ? (
-        <SkeletonTable rows={8} cols={productType === 'cps' ? 6 : 7} />
+        <SkeletonTable rows={8} cols={productType === 'cps' ? 5 : 7} />
       ) : (
         <CampaignListTable
           campaigns={campaigns}
@@ -312,6 +318,25 @@ export function PartnerSearch() {
           onOpenDetail={(item) => openDetailModal(item, 'intro')}
           onOpenGuide={(item) => openDetailModal(item, 'guide')}
           onCreateLink={openLinkModal}
+          onCopyShortlink={async (campaign) => {
+            try {
+              if (isCpsCampaign(campaign)) {
+                const res = await buildPartnerLpShortlink({
+                  merchantCode: campaign.merchantCode || campaign.code || '',
+                });
+                await navigator.clipboard.writeText(res.shortUrl);
+                setCopyNotice('CPS 숏코드 링크를 복사했습니다.');
+              } else {
+                const res = await buildPartnerCpaShortlink({ campaignId: campaign.id });
+                await navigator.clipboard.writeText(res.shortUrl);
+                setCopyNotice('CPA 숏코드 링크를 복사했습니다.');
+              }
+            } catch (err) {
+              setCopyNotice(err instanceof Error ? err.message : '숏코드 복사에 실패했습니다.');
+            } finally {
+              window.setTimeout(() => setCopyNotice(''), 2500);
+            }
+          }}
         />
       )}
 
@@ -487,50 +512,102 @@ export function PartnerSearch() {
   );
 }
 
+function ChannelCompact({
+  allowed,
+  forbidden,
+  merchantName,
+  compactGuide,
+}: {
+  allowed: string;
+  forbidden: string;
+  merchantName: string;
+  compactGuide?: boolean;
+}) {
+  if (compactGuide) {
+    return (
+      <CpsChannelGuide
+        allowedChannels={allowed}
+        forbiddenChannels={forbidden}
+        merchantName={merchantName}
+        compact
+      />
+    );
+  }
+
+  const allowItems = parseChannelItems(allowed).slice(0, 3);
+  const forbidCount = parseChannelItems(forbidden).length;
+
+  return (
+    <div className="space-y-1.5 min-w-0">
+      <div className="flex flex-wrap gap-1">
+        {allowItems.length ? (
+          allowItems.map((item) => (
+            <span
+              key={item}
+              className="inline-flex px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-100 text-[10px] font-medium text-slate-600"
+            >
+              {item.length > 12 ? `${item.slice(0, 12)}…` : item}
+            </span>
+          ))
+        ) : (
+          <span className="text-[11px] text-slate-400">허용 채널 없음</span>
+        )}
+      </div>
+      {forbidCount > 0 ? (
+        <div className="text-[11px] text-rose-600 font-medium">금지 {forbidCount}건 · 상세에서 확인</div>
+      ) : (
+        <div className="text-[11px] text-slate-400">금지 항목 없음</div>
+      )}
+    </div>
+  );
+}
+
 function CampaignListTable({
   campaigns,
   hideApprovalRate = false,
   onOpenDetail,
   onOpenGuide,
   onCreateLink,
+  onCopyShortlink,
 }: {
   campaigns: PartnerCampaign[];
   hideApprovalRate?: boolean;
   onOpenDetail: (campaign: PartnerCampaign) => void;
   onOpenGuide: (campaign: PartnerCampaign) => void;
   onCreateLink: (campaign: PartnerCampaign) => void;
+  onCopyShortlink: (campaign: PartnerCampaign) => Promise<void>;
 }) {
-  const colSpan = hideApprovalRate ? 6 : 7;
+  const isCpsList = hideApprovalRate;
+  const colSpan = isCpsList ? 5 : 7;
+  const [shortBusyId, setShortBusyId] = useState<number | null>(null);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-16">
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold text-slate-900">
-            광고상품 목록 <span className="text-emerald-600">({campaigns.length})</span>
+            광고상품 목록 <span className={isCpsList ? 'text-cyan-600' : 'text-emerald-600'}>({campaigns.length})</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            {hideApprovalRate
-              ? '수수료, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.'
-              : '단가, 승인율, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.'}
+            {isCpsList
+              ? '수수료와 채널을 비교한 뒤 숏코드 링크를 바로 복사하세요.'
+              : '단가·승인율을 비교한 뒤 링크 생성 또는 숏코드를 복사하세요.'}
           </p>
         </div>
-        <div className="text-xs text-slate-500">카드형 대신 목록형으로 한눈에 비교합니다.</div>
+        <div className="text-xs text-slate-500">목록에서 숏코드 복사가 가능합니다.</div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-5 py-4 font-medium min-w-[280px]">광고상품</th>
-              <th className="px-5 py-4 font-medium text-center">유형</th>
-              <th className="px-5 py-4 font-medium text-right">{hideApprovalRate ? '수수료' : '단가/수수료'}</th>
-              {!hideApprovalRate ? (
-                <th className="px-5 py-4 font-medium text-center">승인율</th>
-              ) : null}
-              <th className="px-5 py-4 font-medium min-w-[220px]">채널 조건</th>
-              <th className="px-5 py-4 font-medium text-center">상태</th>
-              <th className="px-5 py-4 font-medium text-right min-w-[260px]">액션</th>
+              <th className="px-5 py-3.5 font-medium min-w-[240px]">{isCpsList ? '광고주' : '광고상품'}</th>
+              {!isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[72px]">유형</th> : null}
+              <th className="px-4 py-3.5 font-medium text-right w-[110px]">{isCpsList ? '수수료' : '단가'}</th>
+              {!isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[88px]">승인율</th> : null}
+              {isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[72px]">쿠키</th> : null}
+              <th className="px-4 py-3.5 font-medium min-w-[160px]">채널</th>
+              <th className="px-4 py-3.5 font-medium text-right min-w-[220px]">액션</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -545,70 +622,94 @@ function CampaignListTable({
               const hasLandingUrl = campaign.landingUrl.trim().length > 0;
               const hasGuide = Boolean(campaign.hasPublishedGuide);
               const highlighted = campaign.recommended || Boolean(campaign.badge);
+              const commission = isCps
+                ? formatCpsCommissionRate(campaign.approvalRate || campaign.priceFormatted || '-')
+                : `${campaign.priceFormatted}원`;
+              const cookie = (campaign.avgTime || campaign.returnDay != null)
+                ? (campaign.avgTime || `${campaign.returnDay}일`)
+                : '-';
 
               return (
-                <tr key={campaign.id} className={tableRowClass(index < 3 && highlighted ? index + 1 : undefined, highlighted)}>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
+                <tr
+                  key={campaign.id}
+                  className={tableRowClass(index < 3 && highlighted ? index + 1 : undefined, highlighted)}
+                >
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3 min-w-0">
                       {campaign.thumbnailUrl ? (
-                        <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className={`shrink-0 rounded-xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center ${
+                          isCpsList ? 'w-12 h-10' : 'w-14 h-14'
+                        }`}>
                           <img
                             src={campaign.thumbnailUrl}
-                            alt={campaign.title}
-                            className={isCps ? 'w-full h-full object-contain p-2' : 'w-full h-full object-cover'}
+                            alt=""
+                            className={isCps ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover'}
                             loading="lazy"
                             referrerPolicy="no-referrer"
                           />
                         </div>
                       ) : (
-                        <div className="w-14 h-14 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0">
-                          <Briefcase className="w-6 h-6 text-slate-400" />
+                        <div className={`shrink-0 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center ${
+                          isCpsList ? 'w-12 h-10' : 'w-14 h-14'
+                        }`}>
+                          <Briefcase className="w-5 h-5 text-slate-400" />
                         </div>
                       )}
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {highlighted ? <RankBadge rank={index + 1} /> : null}
+                          {!isCpsList ? (
+                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                              isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {isCps ? 'CPS' : 'CPA'}
+                            </span>
+                          ) : null}
                           <button
                             type="button"
                             onClick={() => onOpenDetail(campaign)}
-                            className="font-bold text-slate-900 hover:text-emerald-600 text-left"
+                            className="font-bold text-slate-900 hover:text-emerald-600 text-left truncate max-w-[220px]"
                           >
                             {campaign.title}
                           </button>
-                          {campaign.badge && (
-                            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md ${
-                              campaign.badge === '추천' ? 'bg-emerald-100 text-emerald-800' :
-                              campaign.badge === '인기' ? 'bg-blue-100 text-blue-800' :
-                              'bg-purple-100 text-purple-800'
-                            }`}>
+                          {campaign.badge ? (
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-100">
                               {campaign.badge}
                             </span>
-                          )}
+                          ) : null}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-1">{campaign.description}</p>
-                        <div className="text-[11px] text-slate-400 mt-1">
-                          {campaign.category} · {campaign.code}
+                        {!isCpsList && campaign.description ? (
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{campaign.description}</p>
+                        ) : null}
+                        <div className="text-[11px] text-slate-400 mt-0.5 truncate">
+                          {campaign.category}
+                          {campaign.merchantCode || campaign.code ? ` · ${campaign.merchantCode || campaign.code}` : ''}
+                          {campaign.status === '진행중' ? (
+                            <span className="ml-1.5 text-emerald-600 font-semibold">진행중</span>
+                          ) : (
+                            <span className="ml-1.5 text-rose-500 font-semibold">{campaign.status}</span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-center">
-                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${
-                      isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    }`}>
-                      {isCps ? 'CPS' : 'CPA'}
-                    </span>
+                  {!isCpsList ? (
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`inline-flex px-2 py-1 rounded-md text-xs font-bold border ${
+                        isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {isCps ? 'CPS' : 'CPA'}
+                      </span>
+                    </td>
+                  ) : null}
+                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <div className={`font-bold tabular-nums ${isCps ? 'text-cyan-700' : 'text-emerald-700'}`}>
+                      {commission}
+                    </div>
+                    <div className="text-[10px] text-slate-400">{isCps ? '구매 수수료' : '파트너 단가'}</div>
                   </td>
-                  <td className="px-5 py-4 text-right whitespace-nowrap">
-                    {isCps ? (
-                      <div className="font-bold text-cyan-700">{campaign.approvalRate}</div>
-                    ) : (
-                      <div className="font-bold text-emerald-700">{campaign.priceFormatted}원</div>
-                    )}
-                    <div className="text-[11px] text-slate-400">{isCps ? '구매 수수료' : '파트너 단가'}</div>
-                  </td>
-                  {!hideApprovalRate ? (
-                    <td className="px-5 py-4 text-center whitespace-nowrap">
+                  {!isCpsList ? (
+                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
                       {isCps ? (
                         <span className="text-slate-300">—</span>
                       ) : (
@@ -619,36 +720,36 @@ function CampaignListTable({
                       )}
                     </td>
                   ) : null}
-                  <td className="px-5 py-4">
-                    <div className="text-xs">
-                      <div className="text-slate-700 line-clamp-1"><span className="text-slate-400">허용</span> {campaign.allowedChannels}</div>
-                      <div className="text-red-500 line-clamp-1 mt-1"><span className="text-slate-400">금지</span> {campaign.forbiddenChannels}</div>
-                    </div>
+                  {isCpsList ? (
+                    <td className="px-4 py-3.5 text-center text-xs font-semibold text-slate-600 tabular-nums">
+                      {cookie}
+                    </td>
+                  ) : null}
+                  <td className="px-4 py-3.5">
+                    <ChannelCompact
+                      allowed={campaign.allowedChannels}
+                      forbidden={campaign.forbiddenChannels}
+                      merchantName={campaign.title}
+                      compactGuide={isCpsList}
+                    />
                   </td>
-                  <td className="px-5 py-4 text-center">
-                    <span className={`inline-flex px-2.5 py-1 rounded-md text-xs font-bold border ${
-                      campaign.status === '진행중' ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-white border-red-200 text-red-500'
-                    }`}>
-                      {campaign.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {hasGuide ? (
+                  <td className="px-4 py-3.5">
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {hasGuide && !isCpsList ? (
                         <button
                           type="button"
                           onClick={() => onOpenGuide(campaign)}
-                          className="px-3 py-2 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-bold inline-flex items-center gap-1"
+                          className="px-2.5 py-1.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-bold inline-flex items-center gap-1"
                         >
                           <BookOpen className="w-3.5 h-3.5" />
                           가이드
                         </button>
                       ) : null}
-                      {hasLandingUrl ? (
+                      {hasLandingUrl && !isCpsList ? (
                         <button
                           type="button"
                           onClick={() => openLandingPage(campaign.landingUrl)}
-                          className="px-3 py-2 bg-white border border-cyan-200 text-cyan-700 hover:bg-cyan-50 rounded-xl text-xs font-bold inline-flex items-center gap-1"
+                          className="px-2.5 py-1.5 bg-white border border-cyan-200 text-cyan-700 hover:bg-cyan-50 rounded-lg text-xs font-bold inline-flex items-center gap-1"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           랜딩
@@ -657,17 +758,36 @@ function CampaignListTable({
                       <button
                         type="button"
                         onClick={() => onOpenDetail(campaign)}
-                        className="px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-bold"
+                        className="px-2.5 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-bold"
                       >
                         상세
                       </button>
                       <button
                         type="button"
+                        disabled={shortBusyId === campaign.id}
+                        onClick={async () => {
+                          setShortBusyId(campaign.id);
+                          try {
+                            await onCopyShortlink(campaign);
+                          } finally {
+                            setShortBusyId(null);
+                          }
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-bold inline-flex items-center gap-1 disabled:opacity-50"
+                        title="숏코드 링크 복사"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        {shortBusyId === campaign.id ? '변환…' : '숏코드'}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => onCreateLink(campaign)}
-                        className="px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1 shadow-sm"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1 shadow-sm text-white ${
+                          isCps ? 'bg-cyan-600 hover:bg-cyan-500' : 'bg-emerald-500 hover:bg-emerald-400'
+                        }`}
                       >
                         <LinkIcon className="w-3.5 h-3.5" />
-                        {isCps ? '복사' : '링크 생성'}
+                        {isCps ? '링크' : '생성'}
                       </button>
                     </div>
                   </td>

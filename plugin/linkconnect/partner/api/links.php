@@ -22,6 +22,8 @@ if ($method === 'POST') {
 
     if ($action === 'shortlink' || $action === 'short_link' || $action === 'create_shortlink') {
         $lk_id = isset($body['linkId']) ? (int) $body['linkId'] : (isset($body['lk_id']) ? (int) $body['lk_id'] : 0);
+        $cp_id = isset($body['campaignId']) ? (int) $body['campaignId'] : (isset($body['cp_id']) ? (int) $body['cp_id'] : 0);
+
         if ($lk_id <= 0 && function_exists('lc_link_get_by_code')) {
             $code = trim((string) ($body['code'] ?? $body['lkCode'] ?? $body['lk_code'] ?? ''));
             if ($code !== '') {
@@ -31,6 +33,21 @@ if ($method === 'POST') {
                 }
             }
         }
+
+        if ($lk_id <= 0 && $cp_id > 0 && function_exists('lc_cpa_partner_shortlink_for_campaign')) {
+            $result = lc_cpa_partner_shortlink_for_campaign($pt_id, $cp_id);
+            if (!$result['ok']) {
+                lc_api_error($result['message'], 'SHORTLINK_INVALID', 400);
+            }
+            lc_api_success(array(
+                'message'   => $result['message'],
+                'shortUrl'  => $result['shortUrl'],
+                'promoUrl'  => $result['promoUrl'],
+                'shortCode' => $result['shortCode'],
+                'link'      => $result['link'],
+            ));
+        }
+
         if (!function_exists('lc_cpa_partner_create_shortlink')) {
             lc_api_error('숏링크 기능을 사용할 수 없습니다.', 'NOT_AVAILABLE', 500);
         }
