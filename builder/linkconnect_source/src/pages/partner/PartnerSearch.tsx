@@ -640,7 +640,6 @@ function CampaignListTable({
             ) : campaigns.map((campaign, index) => {
               const isCps = isCpsCampaign(campaign);
               const hasLandingUrl = campaign.landingUrl.trim().length > 0;
-              const hasGuide = Boolean(campaign.hasPublishedGuide);
               const highlighted = campaign.recommended || Boolean(campaign.badge);
               const commission = isCps
                 ? formatCpsCommissionRate(campaign.approvalRate || campaign.priceFormatted || '-')
