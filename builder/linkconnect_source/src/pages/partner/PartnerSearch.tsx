@@ -598,16 +598,36 @@ function CampaignListTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
+        <table className="w-full table-fixed text-sm text-left">
+          <colgroup>
+            {isCpsList ? (
+              <>
+                <col className="w-[22%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+                <col className="w-[28%]" />
+                <col className="w-[32%]" />
+              </>
+            ) : (
+              <>
+                <col className="w-[22%]" />
+                <col className="w-[7%]" />
+                <col className="w-[10%]" />
+                <col className="w-[9%]" />
+                <col className="w-[22%]" />
+                <col className="w-[30%]" />
+              </>
+            )}
+          </colgroup>
           <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-5 py-3.5 font-medium min-w-[240px]">{isCpsList ? '광고주' : '광고상품'}</th>
-              {!isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[72px]">유형</th> : null}
-              <th className="px-4 py-3.5 font-medium text-right w-[110px]">{isCpsList ? '수수료' : '단가'}</th>
-              {!isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[88px]">승인율</th> : null}
-              {isCpsList ? <th className="px-4 py-3.5 font-medium text-center w-[72px]">쿠키</th> : null}
-              <th className="px-4 py-3.5 font-medium min-w-[160px]">채널</th>
-              <th className="px-4 py-3.5 font-medium text-right min-w-[220px]">액션</th>
+              <th className="px-4 py-3.5 font-medium">{isCpsList ? '광고주' : '광고상품'}</th>
+              {!isCpsList ? <th className="px-3 py-3.5 font-medium text-center">유형</th> : null}
+              <th className="px-3 py-3.5 font-medium text-right">{isCpsList ? '수수료' : '단가'}</th>
+              {!isCpsList ? <th className="px-3 py-3.5 font-medium text-center">승인율</th> : null}
+              {isCpsList ? <th className="px-3 py-3.5 font-medium text-center">쿠키</th> : null}
+              <th className="px-3 py-3.5 font-medium">채널</th>
+              <th className="px-3 py-3.5 font-medium text-right">액션</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -634,56 +654,42 @@ function CampaignListTable({
                   key={campaign.id}
                   className={tableRowClass(index < 3 && highlighted ? index + 1 : undefined, highlighted)}
                 >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <td className="px-3 py-3.5 align-middle">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       {campaign.thumbnailUrl ? (
-                        <div className={`shrink-0 rounded-xl border border-slate-200 bg-white overflow-hidden flex items-center justify-center ${
-                          isCpsList ? 'w-12 h-10' : 'w-14 h-14'
-                        }`}>
+                        <div className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
                           <img
                             src={campaign.thumbnailUrl}
                             alt=""
-                            className={isCps ? 'w-full h-full object-contain p-1.5' : 'w-full h-full object-cover'}
+                            className={isCps ? 'w-full h-full object-contain p-1' : 'w-full h-full object-cover'}
                             loading="lazy"
                             referrerPolicy="no-referrer"
                           />
                         </div>
                       ) : (
-                        <div className={`shrink-0 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center ${
-                          isCpsList ? 'w-12 h-10' : 'w-14 h-14'
-                        }`}>
-                          <Briefcase className="w-5 h-5 text-slate-400" />
+                        <div className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center">
+                          <Briefcase className="w-4 h-4 text-slate-400" />
                         </div>
                       )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 min-w-0">
                           {highlighted ? <RankBadge rank={index + 1} /> : null}
-                          {!isCpsList ? (
-                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                              isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            }`}>
-                              {isCps ? 'CPS' : 'CPA'}
-                            </span>
-                          ) : null}
                           <button
                             type="button"
                             onClick={() => onOpenDetail(campaign)}
-                            className="font-bold text-slate-900 hover:text-emerald-600 text-left truncate max-w-[220px]"
+                            className="font-bold text-slate-900 hover:text-emerald-600 text-left truncate"
+                            title={campaign.title}
                           >
                             {campaign.title}
                           </button>
                           {campaign.badge ? (
-                            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                            <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-100">
                               {campaign.badge}
                             </span>
                           ) : null}
                         </div>
-                        {!isCpsList && campaign.description ? (
-                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{campaign.description}</p>
-                        ) : null}
                         <div className="text-[11px] text-slate-400 mt-0.5 truncate">
                           {campaign.category}
-                          {campaign.merchantCode || campaign.code ? ` · ${campaign.merchantCode || campaign.code}` : ''}
                           {campaign.status === '진행중' ? (
                             <span className="ml-1.5 text-emerald-600 font-semibold">진행중</span>
                           ) : (
@@ -694,7 +700,7 @@ function CampaignListTable({
                     </div>
                   </td>
                   {!isCpsList ? (
-                    <td className="px-4 py-3.5 text-center">
+                    <td className="px-3 py-3.5 text-center align-middle">
                       <span className={`inline-flex px-2 py-1 rounded-md text-xs font-bold border ${
                         isCps ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
@@ -702,14 +708,14 @@ function CampaignListTable({
                       </span>
                     </td>
                   ) : null}
-                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                  <td className="px-3 py-3.5 text-right whitespace-nowrap align-middle">
                     <div className={`font-bold tabular-nums ${isCps ? 'text-cyan-700' : 'text-emerald-700'}`}>
                       {commission}
                     </div>
                     <div className="text-[10px] text-slate-400">{isCps ? '구매 수수료' : '파트너 단가'}</div>
                   </td>
                   {!isCpsList ? (
-                    <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                    <td className="px-3 py-3.5 text-center whitespace-nowrap align-middle">
                       {isCps ? (
                         <span className="text-slate-300">—</span>
                       ) : (
@@ -721,11 +727,11 @@ function CampaignListTable({
                     </td>
                   ) : null}
                   {isCpsList ? (
-                    <td className="px-4 py-3.5 text-center text-xs font-semibold text-slate-600 tabular-nums">
+                    <td className="px-3 py-3.5 text-center text-xs font-semibold text-slate-600 tabular-nums align-middle">
                       {cookie}
                     </td>
                   ) : null}
-                  <td className="px-4 py-3.5">
+                  <td className="px-3 py-3.5 align-middle">
                     <ChannelCompact
                       allowed={campaign.allowedChannels}
                       forbidden={campaign.forbiddenChannels}
@@ -733,18 +739,8 @@ function CampaignListTable({
                       compactGuide={isCpsList}
                     />
                   </td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      {hasGuide && !isCpsList ? (
-                        <button
-                          type="button"
-                          onClick={() => onOpenGuide(campaign)}
-                          className="px-2.5 py-1.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs font-bold inline-flex items-center gap-1"
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          가이드
-                        </button>
-                      ) : null}
+                  <td className="px-3 py-3.5 align-middle">
+                    <div className="flex flex-wrap justify-end content-center gap-1.5 min-w-[200px]">
                       {hasLandingUrl && !isCpsList ? (
                         <button
                           type="button"
