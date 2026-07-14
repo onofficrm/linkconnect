@@ -247,7 +247,10 @@ export function PartnerSearch() {
           />
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          {['단가 높은순', '승인율 높은순', '신규 캠페인', '인기 캠페인'].map((filter) => (
+          {(productType === 'cps'
+            ? ['수수료 높은순', '신규 캠페인', '인기 캠페인']
+            : ['단가 높은순', '승인율 높은순', '신규 캠페인', '인기 캠페인']
+          ).map((filter) => (
             <button key={filter} className="px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2">
               {filter}
             </button>
@@ -259,10 +262,11 @@ export function PartnerSearch() {
       </div>
 
       {loading ? (
-        <SkeletonTable rows={8} cols={7} />
+        <SkeletonTable rows={8} cols={productType === 'cps' ? 6 : 7} />
       ) : (
         <CampaignListTable
           campaigns={campaigns}
+          hideApprovalRate={productType === 'cps'}
           onOpenDetail={(item) => openDetailModal(item, 'intro')}
           onOpenGuide={(item) => openDetailModal(item, 'guide')}
           onCreateLink={openLinkModal}
@@ -377,15 +381,19 @@ export function PartnerSearch() {
 
 function CampaignListTable({
   campaigns,
+  hideApprovalRate = false,
   onOpenDetail,
   onOpenGuide,
   onCreateLink,
 }: {
   campaigns: PartnerCampaign[];
+  hideApprovalRate?: boolean;
   onOpenDetail: (campaign: PartnerCampaign) => void;
   onOpenGuide: (campaign: PartnerCampaign) => void;
   onCreateLink: (campaign: PartnerCampaign) => void;
 }) {
+  const colSpan = hideApprovalRate ? 6 : 7;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-16">
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -393,7 +401,11 @@ function CampaignListTable({
           <h2 className="text-lg font-bold text-slate-900">
             광고상품 목록 <span className="text-emerald-600">({campaigns.length})</span>
           </h2>
-          <p className="text-xs text-slate-500 mt-1">단가, 승인율, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {hideApprovalRate
+              ? '수수료, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.'
+              : '단가, 승인율, 채널 조건을 비교한 뒤 바로 홍보 링크를 생성하세요.'}
+          </p>
         </div>
         <div className="text-xs text-slate-500">카드형 대신 목록형으로 한눈에 비교합니다.</div>
       </div>
@@ -404,8 +416,10 @@ function CampaignListTable({
             <tr>
               <th className="px-5 py-4 font-medium min-w-[280px]">광고상품</th>
               <th className="px-5 py-4 font-medium text-center">유형</th>
-              <th className="px-5 py-4 font-medium text-right">단가/수수료</th>
-              <th className="px-5 py-4 font-medium text-center">승인율</th>
+              <th className="px-5 py-4 font-medium text-right">{hideApprovalRate ? '수수료' : '단가/수수료'}</th>
+              {!hideApprovalRate ? (
+                <th className="px-5 py-4 font-medium text-center">승인율</th>
+              ) : null}
               <th className="px-5 py-4 font-medium min-w-[220px]">채널 조건</th>
               <th className="px-5 py-4 font-medium text-center">상태</th>
               <th className="px-5 py-4 font-medium text-right min-w-[260px]">액션</th>
@@ -414,7 +428,7 @@ function CampaignListTable({
           <tbody className="divide-y divide-slate-100">
             {campaigns.length === 0 ? (
               <DataTableEmpty
-                colSpan={7}
+                colSpan={colSpan}
                 title="검색된 광고상품이 없습니다"
                 description="검색어 또는 카테고리 필터를 변경해 다시 확인해 주세요."
               />
@@ -485,10 +499,18 @@ function CampaignListTable({
                     )}
                     <div className="text-[11px] text-slate-400">{isCps ? '구매 수수료' : '파트너 단가'}</div>
                   </td>
-                  <td className="px-5 py-4 text-center whitespace-nowrap">
-                    <div className="font-semibold text-slate-800">{campaign.approvalRate}</div>
-                    {!isCps && <div className="text-[11px] text-slate-400">{campaign.avgTime}</div>}
-                  </td>
+                  {!hideApprovalRate ? (
+                    <td className="px-5 py-4 text-center whitespace-nowrap">
+                      {isCps ? (
+                        <span className="text-slate-300">—</span>
+                      ) : (
+                        <>
+                          <div className="font-semibold text-slate-800">{campaign.approvalRate}</div>
+                          <div className="text-[11px] text-slate-400">{campaign.avgTime}</div>
+                        </>
+                      )}
+                    </td>
+                  ) : null}
                   <td className="px-5 py-4">
                     <div className="text-xs">
                       <div className="text-slate-700 line-clamp-1"><span className="text-slate-400">허용</span> {campaign.allowedChannels}</div>

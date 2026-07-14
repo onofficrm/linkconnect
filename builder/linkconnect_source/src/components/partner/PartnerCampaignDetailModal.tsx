@@ -298,12 +298,23 @@ function IntroTab({
         ) : null}
       </div>
 
-      {(campaign.approvalRate || campaign.avgTime) && (
-        <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-          {campaign.approvalRate ? <span>승인율 {campaign.approvalRate}</span> : null}
-          {campaign.avgTime ? <span>평균 처리 {campaign.avgTime}</span> : null}
-        </div>
-      )}
+      {(() => {
+        const isCps = campaign.campaignType === 'cps' || campaign.type === 'cps';
+        if (isCps) {
+          return campaign.avgTime ? (
+            <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+              <span>쿠키 기간 {campaign.avgTime}</span>
+            </div>
+          ) : null;
+        }
+        if (!campaign.approvalRate && !campaign.avgTime) return null;
+        return (
+          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
+            {campaign.approvalRate ? <span>승인율 {campaign.approvalRate}</span> : null}
+            {campaign.avgTime ? <span>평균 처리 {campaign.avgTime}</span> : null}
+          </div>
+        );
+      })()}
 
       <div className="flex flex-wrap gap-2">
         {onOpenGuide ? (
