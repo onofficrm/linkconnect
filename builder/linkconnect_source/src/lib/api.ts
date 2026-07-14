@@ -1115,6 +1115,9 @@ export type MerchantCampaign = {
   spend: number;
   dbCount: number;
   category: string;
+  guideExists?: boolean;
+  guideStatus?: string;
+  guideStatusLabel?: string;
 };
 
 export type MerchantCampaignSummary = {

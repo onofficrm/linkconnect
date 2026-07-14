@@ -835,6 +835,15 @@ if (!function_exists('lc_campaign_list_for_merchant')) {
         $mt_id = (int) $mt_id;
         $cp_table = lc_table('campaigns');
         $cv_table = lc_table('conversions');
+        $pg_table = function_exists('lc_campaign_promo_guide_table')
+            ? lc_campaign_promo_guide_table()
+            : lc_table('campaign_promo_guides');
+        $pg_join = '';
+        $pg_select = ", '' AS guide_status, 0 AS guide_exists";
+        if ($pg_table && function_exists('lc_db_table_exists') && lc_db_table_exists($pg_table)) {
+            $pg_join = " LEFT JOIN `{$pg_table}` g ON g.cpg_cp_id = c.cp_id ";
+            $pg_select = ", IFNULL(MAX(g.cpg_status), '') AS guide_status, MAX(CASE WHEN g.cpg_id IS NULL THEN 0 ELSE 1 END) AS guide_exists";
+        }
         $where = " c.mt_id = '{$mt_id}' ";
 
         if (!empty($filters['status'])) {
@@ -844,7 +853,9 @@ if (!function_exists('lc_campaign_list_for_merchant')) {
         $sql = " SELECT c.*,
             COUNT(cv.cv_id) AS total_db,
             SUM(CASE WHEN cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "' THEN cv.cv_price ELSE 0 END) AS spend
+            {$pg_select}
             FROM `{$cp_table}` c
+            {$pg_join}
             LEFT JOIN `{$cv_table}` cv ON cv.cp_id = c.cp_id
             WHERE {$where}
             GROUP BY c.cp_id
@@ -865,7 +876,9 @@ if (!function_exists('lc_campaign_list_for_merchant')) {
 if (!function_exists('lc_campaign_merchant_to_api')) {
     function lc_campaign_merchant_to_api(array $row)
     {
-        return array(
+        $guide_status = isset($row['guide_status']) ? trim((string) $row['guide_status']) : '';
+        $guide_exists = !empty($row['guide_exists']);
+        $payload = array(
             'id'       => (int) $row['cp_id'],
             'code'     => (string) $row['cp_code'],
             'name'     => (string) $row['cp_name'],
@@ -877,7 +890,16 @@ if (!function_exists('lc_campaign_merchant_to_api')) {
             'spend'    => (int) ($row['spend'] ?? 0),
             'dbCount'  => (int) ($row['total_db'] ?? 0),
             'category' => (string) $row['cp_category'],
+            'guideExists' => $guide_exists,
+            'guideStatus' => $guide_status,
         );
+        if (function_exists('lc_campaign_promo_guide_status_label') && $guide_status !== '') {
+            $payload['guideStatusLabel'] = lc_campaign_promo_guide_status_label($guide_status);
+        } else {
+            $payload['guideStatusLabel'] = $guide_exists ? $guide_status : '미작성';
+        }
+
+        return $payload;
     }
 }
 

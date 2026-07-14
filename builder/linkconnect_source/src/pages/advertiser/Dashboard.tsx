@@ -17,8 +17,9 @@ import {
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
-import { fetchMerchantDashboard } from '../../lib/api';
+import { fetchMerchantCampaigns, fetchMerchantDashboard } from '../../lib/api';
 import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
+import { guideNeedsAttention } from '../../lib/advertiserOnboarding';
 import { InsightBanner, SkeletonCardGrid, DataTableEmpty, tableRowClass } from '../../components/center-ui';
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -42,6 +43,7 @@ export function AdvertiserDashboard() {
   const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
   const [pendingAction, setPendingAction] = useState(9);
   const [loading, setLoading] = useState(true);
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
   useEffect(() => {
     fetchMerchantDashboard()
@@ -58,9 +60,43 @@ export function AdvertiserDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (showContractCard || !auth.merchantContractSigned) {
+      setShowOnboardingBanner(false);
+      return;
+    }
+    let cancelled = false;
+    fetchMerchantCampaigns()
+      .then((data) => {
+        if (cancelled) return;
+        const needsGuide =
+          data.items.length === 0 ||
+          data.items.some((c) => guideNeedsAttention(c.guideStatus || (c.guideExists ? 'draft' : '')));
+        setShowOnboardingBanner(needsGuide);
+      })
+      .catch(() => {
+        if (!cancelled) setShowOnboardingBanner(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.merchantContractSigned, showContractCard]);
+
   return (
     <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
         {showContractCard ? <AdvertiserContractNotice /> : null}
+
+        {showOnboardingBanner ? (
+          <InsightBanner
+            accent="cyan"
+            message={<>광고주 온보딩을 이어서 진행할 수 있습니다.</>}
+            subMessage="계약 · 광고상품 · 홍보 가이드(키워드·이미지)를 스텝별로 완료하면 파트너 모집이 시작됩니다."
+            actions={[
+              { label: '온보딩 이어하기', to: '/advertiser/onboarding', variant: 'primary' },
+              { label: '내 광고상품', to: '/advertiser/campaigns', variant: 'secondary' },
+            ]}
+          />
+        ) : null}
 
         <InsightBanner
           accent="cyan"

@@ -32,6 +32,7 @@ import { PartnerCpsEarnings } from './pages/partner/cps/PartnerCpsEarnings';
 
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
+import { AdvertiserOnboarding } from './pages/advertiser/AdvertiserOnboarding';
 import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
 import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
@@ -130,6 +131,7 @@ export default function App() {
           <Route path="advertiser/support" element={<AdvertiserSupport />} />
           <Route element={<AdvertiserContractAccessGuard />}>
             <Route path="advertiser" element={<AdvertiserDashboard />} />
+            <Route path="advertiser/onboarding" element={<AdvertiserOnboarding />} />
             <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
             <Route path="advertiser/campaigns/:cpId/guide" element={<AdvertiserCampaignGuide />} />
             <Route path="advertiser/db" element={<AdvertiserDb />} />

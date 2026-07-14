@@ -108,12 +108,16 @@ export function AdvertiserContractComplete() {
           </div>
         </dl>
 
+        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+          다음 단계: 광고상품별 <strong>홍보 가이드</strong>(추천키워드 · 이미지 · 운영 규칙)를 스텝별로 작성하면 파트너 모집을 시작할 수 있습니다.
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            to="/advertiser"
+            to="/advertiser/onboarding"
             className="inline-flex justify-center items-center px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
           >
-            광고주센터 시작하기
+            온보딩 이어서하기
           </Link>
           <Link
             to="/advertiser/contract/view"
@@ -129,6 +133,12 @@ export function AdvertiserContractComplete() {
             <FileDown size={18} />
             계약서 PDF 다운로드
           </a>
+          <Link
+            to="/advertiser"
+            className="inline-flex justify-center items-center px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"
+          >
+            대시보드
+          </Link>
         </div>
       </div>
     </AdvertiserContractLayout>

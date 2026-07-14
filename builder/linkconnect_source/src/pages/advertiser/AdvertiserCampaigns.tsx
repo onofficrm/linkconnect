@@ -50,10 +50,17 @@ export function AdvertiserCampaigns() {
 
   return (
     <AdvertiserLayout activeMenu="campaigns" title="내 광고상품">
-      <div className="flex flex-col mb-8 -mt-2">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-8 -mt-2">
         <p className="text-slate-500">
           운영 중인 광고 캠페인을 관리하고 실시간 성과를 확인하세요.
         </p>
+        <Link
+          to="/advertiser/onboarding"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-800 text-sm font-bold hover:bg-cyan-100 shrink-0"
+        >
+          <BookOpen size={15} />
+          온보딩 · 가이드 작성
+        </Link>
       </div>
 
       {showContractNotice ? <AdvertiserContractNotice /> : null}
