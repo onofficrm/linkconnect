@@ -12,11 +12,10 @@ type CpsPublicListProps = {
 export function CpsPublicList({ items, compact = false }: CpsPublicListProps) {
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
-      <div className="hidden md:grid md:grid-cols-[80px_minmax(0,1.5fr)_108px_80px_minmax(0,1.2fr)_140px] gap-4 px-5 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+      <div className="hidden md:grid md:grid-cols-[80px_minmax(0,1.5fr)_108px_minmax(0,1.2fr)_140px] gap-4 px-5 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
         <span>로고</span>
         <span>광고주</span>
         <span className="text-center">수수료율</span>
-        <span className="text-center">쿠키</span>
         <span>채널 안내</span>
         <span className="text-right">홍보</span>
       </div>
@@ -31,7 +30,6 @@ export function CpsPublicList({ items, compact = false }: CpsPublicListProps) {
 
 function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: boolean }) {
   const commission = item.approvalRate || item.priceFormatted || '-';
-  const cookie = item.avgTime || '-';
   const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
   const hasThumbnail = (item.thumbnailUrl || '').trim().length > 0;
   const merchantCode = (item.merchantCode || item.code || '').trim();
@@ -48,7 +46,7 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-400 to-cyan-600" aria-hidden />
       ) : null}
 
-      <div className="flex flex-col md:grid md:grid-cols-[80px_minmax(0,1.5fr)_108px_80px_minmax(0,1.2fr)_140px] gap-3 md:gap-4 md:items-center px-4 md:px-5 py-4">
+      <div className="flex flex-col md:grid md:grid-cols-[80px_minmax(0,1.5fr)_108px_minmax(0,1.2fr)_140px] gap-3 md:gap-4 md:items-center px-4 md:px-5 py-4">
         {/* Logo + mobile header */}
         <div className="flex items-center gap-3 md:block">
           <div className="w-[68px] h-[44px] shrink-0 rounded-xl border border-slate-200/80 bg-white shadow-sm flex items-center justify-center overflow-hidden group-hover:border-slate-300 transition-colors">
@@ -76,9 +74,8 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
             {merchantCode ? <p className="text-[11px] text-slate-400 truncate mt-0.5">{merchantCode}</p> : null}
           </div>
 
-          <div className="md:hidden ml-auto text-right shrink-0 space-y-0.5">
+          <div className="md:hidden ml-auto text-right shrink-0">
             <CommissionBadge value={commission} />
-            <CookieChip value={cookie} />
           </div>
         </div>
 
@@ -108,11 +105,6 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
         {/* Commission */}
         <div className="hidden md:flex justify-center">
           <CommissionBadge value={commission} />
-        </div>
-
-        {/* Cookie */}
-        <div className="hidden md:flex justify-center">
-          <CookieChip value={cookie} />
         </div>
 
         {/* Channel guide */}
@@ -181,14 +173,6 @@ function FeaturedBadge({ label }: { label: string }) {
 function CommissionBadge({ value }: { value: string }) {
   return (
     <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-cyan-50 border border-cyan-100 text-sm font-bold text-cyan-700 tabular-nums">
-      {value}
-    </span>
-  );
-}
-
-function CookieChip({ value }: { value: string }) {
-  return (
-    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-slate-100 text-xs font-medium text-slate-600 tabular-nums">
       {value}
     </span>
   );
