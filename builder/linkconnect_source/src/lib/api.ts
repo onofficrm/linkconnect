@@ -349,6 +349,18 @@ export function buildPartnerLpDeeplink(payload: { merchantCode: string; productU
   });
 }
 
+/** CPS 대표/딥링크 → /s/{code} 숏링크 */
+export function buildPartnerLpShortlink(payload: { merchantCode: string; productUrl?: string }) {
+  return partnerApiPost<{ message: string; shortUrl: string; promoUrl: string; shortCode: string }>(
+    'linkprice.php',
+    {
+      action: 'shortlink',
+      merchantCode: payload.merchantCode,
+      productUrl: payload.productUrl ?? '',
+    },
+  );
+}
+
 export function fetchPartnerConversions(filters?: { status?: string; q?: string; rejected?: boolean }) {
   return partnerApiGet<{ items: PartnerConversion[]; summary: PartnerDashboardResponse['summary']; total: number }>(
     'conversions.php',

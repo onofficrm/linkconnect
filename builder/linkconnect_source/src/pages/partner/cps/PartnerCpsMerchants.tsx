@@ -8,6 +8,7 @@ import {
   PartnerLpMerchant,
   PartnerLpStats,
   buildPartnerLpDeeplink,
+  buildPartnerLpShortlink,
   fetchPartnerLpMerchants,
 } from '../../../lib/api';
 
@@ -34,7 +35,9 @@ export function PartnerCpsMerchants() {
   const [productUrl, setProductUrl] = useState('');
   const [deeplinkError, setDeeplinkError] = useState('');
   const [deeplinkResult, setDeeplinkResult] = useState('');
+  const [deepShortUrl, setDeepShortUrl] = useState('');
   const [busy, setBusy] = useState(false);
+  const [shortBusy, setShortBusy] = useState(false);
   const [error, setError] = useState('');
 
   const notify = (msg: string) => {
@@ -135,7 +138,10 @@ export function PartnerCpsMerchants() {
               <span className="block text-xs text-slate-400 mt-0.5">쇼핑몰에서 홍보할 상품을 연 뒤, 브라우저 주소창 URL을 붙여넣으세요.</span>
               <input
                 value={productUrl}
-                onChange={(e) => setProductUrl(e.target.value)}
+                onChange={(e) => {
+                  setProductUrl(e.target.value);
+                  setDeepShortUrl('');
+                }}
                 placeholder="https://..."
                 className="mt-2 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono"
               />
@@ -149,17 +155,54 @@ export function PartnerCpsMerchants() {
             ) : null}
 
             {deeplinkResult ? (
-              <div className="text-xs break-all bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                <div className="font-bold text-emerald-800 mb-1">생성된 홍보 링크</div>
-                <div className="text-slate-700">{deeplinkResult}</div>
-                <button type="button" className="mt-2 text-emerald-700 font-bold" onClick={() => copyText(deeplinkResult)}>
-                  링크 복사
-                </button>
+              <div className="text-xs break-all bg-emerald-50 border border-emerald-100 rounded-xl p-3 space-y-2">
+                <div className="font-bold text-emerald-800">생성된 홍보 링크</div>
+                <div className="text-slate-700 font-mono">{deepShortUrl || deeplinkResult}</div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={shortBusy}
+                    className="px-3 py-1.5 rounded-lg border border-cyan-200 bg-white text-cyan-800 text-xs font-bold disabled:opacity-50"
+                    onClick={async () => {
+                      setShortBusy(true);
+                      try {
+                        const res = await buildPartnerLpShortlink({
+                          merchantCode: deeplinkTarget.merchantCode,
+                          productUrl,
+                        });
+                        setDeepShortUrl(res.shortUrl);
+                        notify('숏링크로 변환되었습니다.');
+                      } catch (e) {
+                        notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                      } finally {
+                        setShortBusy(false);
+                      }
+                    }}
+                  >
+                    {shortBusy ? '변환 중…' : '숏링크 변환'}
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+                    onClick={() => copyText(deepShortUrl || deeplinkResult)}
+                  >
+                    복사
+                  </button>
+                </div>
               </div>
             ) : null}
 
             <div className="flex gap-2 justify-end pt-1">
-              <button type="button" className="px-4 py-2 border rounded-xl text-sm" onClick={() => setDeeplinkTarget(null)}>닫기</button>
+              <button
+                type="button"
+                className="px-4 py-2 border rounded-xl text-sm"
+                onClick={() => {
+                  setDeeplinkTarget(null);
+                  setDeepShortUrl('');
+                }}
+              >
+                닫기
+              </button>
               <button
                 type="button"
                 disabled={busy || !productUrl.trim()}
@@ -167,6 +210,7 @@ export function PartnerCpsMerchants() {
                 onClick={async () => {
                   setBusy(true);
                   setDeeplinkError('');
+                  setDeepShortUrl('');
                   try {
                     const res = await buildPartnerLpDeeplink({ merchantCode: deeplinkTarget.merchantCode, productUrl });
                     setDeeplinkResult(res.promoUrl);

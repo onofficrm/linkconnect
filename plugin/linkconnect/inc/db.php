@@ -1418,6 +1418,29 @@ if (!function_exists('lc_lp_db_ensure_schema')) {
             }
         }
 
+        $shortlinks = lc_table('lp_shortlinks');
+        if (!lc_db_table_exists($shortlinks)) {
+            $create = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$shortlinks}` (
+                `lpsh_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `pt_id` int unsigned NOT NULL DEFAULT 0,
+                `lpm_id` int unsigned NOT NULL DEFAULT 0,
+                `merchant_code` varchar(20) NOT NULL DEFAULT '',
+                `short_code` varchar(16) NOT NULL DEFAULT '',
+                `target_url` varchar(2000) NOT NULL DEFAULT '',
+                `target_hash` char(64) NOT NULL DEFAULT '',
+                `product_url` varchar(1000) NOT NULL DEFAULT '',
+                `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`lpsh_id`),
+                UNIQUE KEY `uk_lp_short_code` (`short_code`),
+                UNIQUE KEY `uk_lp_short_pt_hash` (`pt_id`, `target_hash`),
+                KEY `idx_lp_short_pt` (`pt_id`),
+                KEY `idx_lp_short_merchant` (`merchant_code`)
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}", false);
+            if ($create === false) {
+                return array('ok' => false, 'message' => 'lp_shortlinks 테이블 생성 실패: ' . lc_sql_error());
+            }
+        }
+
         // 기본 LINKPRICE 네트워크 행 시드
         $row = lc_sql_fetch(" SELECT network_id FROM `{$networks}` WHERE network_code = 'LINKPRICE' LIMIT 1 ", false);
         if (!$row) {

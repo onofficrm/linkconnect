@@ -218,6 +218,21 @@ if ($method === 'POST') {
         ));
     }
 
+    if ($action === 'shortlink' || $action === 'short_link' || $action === 'create_shortlink') {
+        $code = (string) ($body['merchantCode'] ?? $body['merchant_code'] ?? '');
+        $product = (string) ($body['productUrl'] ?? $body['product_url'] ?? $body['url'] ?? '');
+        $result = lc_lp_partner_create_shortlink($pt_id, $code, $product);
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'SHORTLINK_INVALID', 400);
+        }
+        lc_api_success(array(
+            'message'   => $result['message'],
+            'shortUrl'  => $result['shortUrl'],
+            'promoUrl'  => $result['promoUrl'],
+            'shortCode' => $result['shortCode'],
+        ));
+    }
+
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);
 }
 

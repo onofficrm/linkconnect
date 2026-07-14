@@ -12,6 +12,7 @@ import {
   PartnerLpMerchant,
   PublicCampaign,
   buildPartnerLpDeeplink,
+  buildPartnerLpShortlink,
   fetchPartnerLpMerchant,
   fetchPublicCpsMerchant,
 } from '../../lib/api';
@@ -36,7 +37,10 @@ export function CpsMerchantDetail() {
   const [productUrl, setProductUrl] = useState('');
   const [deeplinkResult, setDeeplinkResult] = useState('');
   const [deeplinkError, setDeeplinkError] = useState('');
+  const [mainShortUrl, setMainShortUrl] = useState('');
+  const [deepShortUrl, setDeepShortUrl] = useState('');
   const [busy, setBusy] = useState(false);
+  const [shortBusy, setShortBusy] = useState<'main' | 'deep' | null>(null);
 
   const auth = getLcAuth();
   const loggedIn = isLcLoggedIn();
@@ -74,6 +78,9 @@ export function CpsMerchantDetail() {
       setPartnerItem(null);
       return;
     }
+    setMainShortUrl('');
+    setDeepShortUrl('');
+    setDeeplinkResult('');
     const merchantCode = (merchant.merchantCode || merchant.code || '').trim();
     fetchPartnerLpMerchant({ code: merchantCode, lpmId: merchant.lpmId || merchant.id })
       .then((d) => setPartnerItem(d.item))
@@ -287,18 +294,45 @@ export function CpsMerchantDetail() {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <div className="text-xs font-bold text-slate-500 mb-1.5">메인 홍보 링크</div>
+                    <div className="text-xs font-bold text-slate-500 mb-1.5">대표 홍보 링크</div>
                     <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 text-xs font-mono break-all text-slate-700">
-                      {promoUrl}
+                      {mainShortUrl || promoUrl}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => copyText(promoUrl)}
-                      className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold"
-                    >
-                      {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-                      링크 복사
-                    </button>
+                    <div className="mt-2 flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        disabled={shortBusy === 'main'}
+                        onClick={async () => {
+                          setShortBusy('main');
+                          try {
+                            const res = await buildPartnerLpShortlink({ merchantCode });
+                            setMainShortUrl(res.shortUrl);
+                            notify('숏링크로 변환되었습니다.');
+                          } catch (e) {
+                            notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                          } finally {
+                            setShortBusy(null);
+                          }
+                        }}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-cyan-200 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-sm font-bold disabled:opacity-50"
+                      >
+                        <Link2 size={16} />
+                        {shortBusy === 'main' ? '변환 중…' : mainShortUrl ? '숏링크 다시 변환' : '숏링크 변환'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyText(mainShortUrl || promoUrl)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold"
+                      >
+                        {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                        복사
+                      </button>
+                    </div>
+                    {mainShortUrl ? (
+                      <p className="mt-2 text-[11px] text-slate-400">
+                        원본: <span className="font-mono break-all">{promoUrl}</span>
+                      </p>
+                    ) : null}
                   </div>
 
                   {deeplinkYn === 'Y' ? (
@@ -313,7 +347,10 @@ export function CpsMerchantDetail() {
                         <span className="font-medium text-slate-700">상품 페이지 URL</span>
                         <input
                           value={productUrl}
-                          onChange={(e) => setProductUrl(e.target.value)}
+                          onChange={(e) => {
+                            setProductUrl(e.target.value);
+                            setDeepShortUrl('');
+                          }}
                           placeholder="https://..."
                           className="mt-1.5 w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono"
                         />
@@ -324,16 +361,42 @@ export function CpsMerchantDetail() {
                         </div>
                       ) : null}
                       {deeplinkResult ? (
-                        <div className="text-xs break-all bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                          <div className="font-bold text-emerald-800 mb-1">생성된 딥링크</div>
-                          <div className="text-slate-700">{deeplinkResult}</div>
-                          <button
-                            type="button"
-                            className="mt-2 text-emerald-700 font-bold"
-                            onClick={() => copyText(deeplinkResult)}
-                          >
-                            복사
-                          </button>
+                        <div className="text-xs break-all bg-emerald-50 border border-emerald-100 rounded-xl p-3 space-y-2">
+                          <div className="font-bold text-emerald-800">생성된 딥링크</div>
+                          <div className="text-slate-700 font-mono">{deepShortUrl || deeplinkResult}</div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <button
+                              type="button"
+                              disabled={shortBusy === 'deep'}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-cyan-200 bg-white text-cyan-800 text-xs font-bold disabled:opacity-50"
+                              onClick={async () => {
+                                setShortBusy('deep');
+                                try {
+                                  const res = await buildPartnerLpShortlink({
+                                    merchantCode,
+                                    productUrl,
+                                  });
+                                  setDeepShortUrl(res.shortUrl);
+                                  notify('딥링크를 숏링크로 변환했습니다.');
+                                } catch (e) {
+                                  notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                                } finally {
+                                  setShortBusy(null);
+                                }
+                              }}
+                            >
+                              <Link2 size={14} />
+                              {shortBusy === 'deep' ? '변환 중…' : '숏링크 변환'}
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+                              onClick={() => copyText(deepShortUrl || deeplinkResult)}
+                            >
+                              <Copy size={14} />
+                              복사
+                            </button>
+                          </div>
                         </div>
                       ) : null}
                       <button
@@ -343,6 +406,7 @@ export function CpsMerchantDetail() {
                         onClick={async () => {
                           setBusy(true);
                           setDeeplinkError('');
+                          setDeepShortUrl('');
                           try {
                             const res = await buildPartnerLpDeeplink({
                               merchantCode,

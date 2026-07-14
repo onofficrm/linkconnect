@@ -10,6 +10,7 @@ RewriteRule ^ - [L]
 # LinkConnect 홍보 링크·랜딩 (클릭 추적)
 RewriteRule ^r/([a-zA-Z0-9_-]+)$ r/index.php?code=$1 [L,QSA]
 RewriteRule ^c/([a-zA-Z0-9_-]+)$ c/index.php?code=$1 [L,QSA]
+RewriteRule ^s/([a-zA-Z0-9_-]+)$ s/index.php?code=$1 [L,QSA]
 RewriteRule ^go/lp/([A-Za-z0-9_-]+)$ go/lp/index.php?m=$1 [L,QSA]
 RewriteRule ^api/external/linkprice/postback/?$ api/external/linkprice/postback.php [L,QSA]
 

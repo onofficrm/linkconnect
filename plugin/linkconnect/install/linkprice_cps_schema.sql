@@ -222,6 +222,23 @@ CREATE TABLE IF NOT EXISTS `g5_lc_lp_ledger` (
   KEY `idx_lp_ledger_type` (`entry_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `g5_lc_lp_shortlinks` (
+  `lpsh_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `pt_id` int unsigned NOT NULL DEFAULT 0,
+  `lpm_id` int unsigned NOT NULL DEFAULT 0,
+  `merchant_code` varchar(20) NOT NULL DEFAULT '',
+  `short_code` varchar(16) NOT NULL DEFAULT '',
+  `target_url` varchar(2000) NOT NULL DEFAULT '',
+  `target_hash` char(64) NOT NULL DEFAULT '',
+  `product_url` varchar(1000) NOT NULL DEFAULT '',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`lpsh_id`),
+  UNIQUE KEY `uk_lp_short_code` (`short_code`),
+  UNIQUE KEY `uk_lp_short_pt_hash` (`pt_id`, `target_hash`),
+  KEY `idx_lp_short_pt` (`pt_id`),
+  KEY `idx_lp_short_merchant` (`merchant_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT INTO `g5_lc_lp_networks`
   (`network_code`, `network_name`, `api_enabled`, `default_partner_rate`, `created_at`, `updated_at`)
 SELECT 'LINKPRICE', '링크프라이스', 0, 70.00, NOW(), NOW()

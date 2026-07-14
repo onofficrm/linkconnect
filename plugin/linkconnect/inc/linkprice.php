@@ -2817,6 +2817,195 @@ if (!function_exists('lc_lp_partner_build_deeplink')) {
     }
 }
 
+if (!function_exists('lc_lp_shortlink_public_url')) {
+    function lc_lp_shortlink_public_url($short_code)
+    {
+        $short_code = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $short_code);
+        if ($short_code === '') {
+            return '';
+        }
+
+        return (defined('G5_URL') ? rtrim(G5_URL, '/') : '') . '/s/' . rawurlencode($short_code);
+    }
+}
+
+if (!function_exists('lc_lp_shortlink_generate_code')) {
+    function lc_lp_shortlink_generate_code()
+    {
+        // 읽기 쉬운 짧은 코드 (혼동 문자 제외)
+        $alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $max = strlen($alphabet) - 1;
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $code .= $alphabet[random_int(0, $max)];
+        }
+
+        return $code;
+    }
+}
+
+if (!function_exists('lc_lp_shortlink_ensure_table')) {
+    function lc_lp_shortlink_ensure_table()
+    {
+        $table = lc_table('lp_shortlinks');
+        if (lc_db_table_exists($table)) {
+            return true;
+        }
+        if (function_exists('lc_lp_db_ensure_schema')) {
+            lc_lp_db_ensure_schema();
+        }
+
+        return lc_db_table_exists($table);
+    }
+}
+
+if (!function_exists('lc_lp_shortlink_get_by_code')) {
+    function lc_lp_shortlink_get_by_code($short_code)
+    {
+        $short_code = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $short_code);
+        if ($short_code === '' || !lc_lp_shortlink_ensure_table()) {
+            return null;
+        }
+        $table = lc_table('lp_shortlinks');
+        $row = lc_sql_fetch(
+            " SELECT * FROM `{$table}` WHERE short_code = '" . lc_sql_escape($short_code) . "' LIMIT 1 ",
+            false
+        );
+
+        return is_array($row) ? $row : null;
+    }
+}
+
+if (!function_exists('lc_lp_partner_create_shortlink')) {
+    /**
+     * 대표/딥링크 홍보 URL을 /s/{code} 숏링크로 변환 (동일 대상 재사용)
+     *
+     * @return array{ok:bool,message:string,shortUrl:string,promoUrl:string,shortCode:string}
+     */
+    function lc_lp_partner_create_shortlink($pt_id, $merchant_code, $product_url = '')
+    {
+        $pt_id = (int) $pt_id;
+        $merchant_code = trim((string) $merchant_code);
+        $product_url = trim((string) $product_url);
+        $empty = array('ok' => false, 'message' => '', 'shortUrl' => '', 'promoUrl' => '', 'shortCode' => '');
+
+        if ($pt_id <= 0 || $merchant_code === '') {
+            $empty['message'] = '광고주 정보가 올바르지 않습니다.';
+
+            return $empty;
+        }
+        if (!lc_lp_shortlink_ensure_table()) {
+            $empty['message'] = '숏링크 저장소를 준비하지 못했습니다.';
+
+            return $empty;
+        }
+
+        $merchant = lc_lp_repo_get_merchant_by_code($merchant_code);
+        if (!is_array($merchant) || !lc_lp_merchant_partner_visible($merchant)) {
+            $empty['message'] = '홍보 가능한 광고주가 아닙니다.';
+
+            return $empty;
+        }
+
+        $deeplink = '';
+        if ($product_url !== '') {
+            $dl = lc_lp_validate_deeplink($product_url, $merchant);
+            if (!$dl['ok']) {
+                $empty['message'] = $dl['message'];
+
+                return $empty;
+            }
+            $deeplink = $dl['url'];
+        }
+
+        $promo_url = lc_lp_public_promo_url((string) $merchant['merchant_code'], $pt_id, $deeplink);
+        if ($promo_url === '') {
+            $empty['message'] = '홍보 링크를 만들 수 없습니다.';
+
+            return $empty;
+        }
+
+        $table = lc_table('lp_shortlinks');
+        $target_hash = hash('sha256', $promo_url);
+        $existing = lc_sql_fetch(
+            " SELECT * FROM `{$table}`
+              WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
+              LIMIT 1 ",
+            false
+        );
+        if (is_array($existing) && !empty($existing['short_code'])) {
+            $code = (string) $existing['short_code'];
+
+            return array(
+                'ok'        => true,
+                'message'   => '숏링크가 준비되었습니다.',
+                'shortUrl'  => lc_lp_shortlink_public_url($code),
+                'promoUrl'  => $promo_url,
+                'shortCode' => $code,
+            );
+        }
+
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $candidate = lc_lp_shortlink_generate_code();
+            if (!lc_lp_shortlink_get_by_code($candidate)) {
+                $code = $candidate;
+                break;
+            }
+        }
+        if ($code === '') {
+            $empty['message'] = '숏코드 생성에 실패했습니다. 다시 시도해 주세요.';
+
+            return $empty;
+        }
+
+        $lpm_id = (int) ($merchant['lpm_id'] ?? 0);
+        $ok = lc_sql_query(
+            " INSERT INTO `{$table}` SET
+                pt_id = {$pt_id},
+                lpm_id = {$lpm_id},
+                merchant_code = '" . lc_sql_escape((string) $merchant['merchant_code']) . "',
+                short_code = '" . lc_sql_escape($code) . "',
+                target_url = '" . lc_sql_escape($promo_url) . "',
+                target_hash = '" . lc_sql_escape($target_hash) . "',
+                product_url = '" . lc_sql_escape($deeplink) . "',
+                created_at = NOW() ",
+            false
+        );
+        if ($ok === false) {
+            // 동시 요청 시 unique 충돌 → 기존 행 재조회
+            $existing = lc_sql_fetch(
+                " SELECT * FROM `{$table}`
+                  WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
+                  LIMIT 1 ",
+                false
+            );
+            if (is_array($existing) && !empty($existing['short_code'])) {
+                $code = (string) $existing['short_code'];
+
+                return array(
+                    'ok'        => true,
+                    'message'   => '숏링크가 준비되었습니다.',
+                    'shortUrl'  => lc_lp_shortlink_public_url($code),
+                    'promoUrl'  => $promo_url,
+                    'shortCode' => $code,
+                );
+            }
+            $empty['message'] = '숏링크 저장에 실패했습니다.';
+
+            return $empty;
+        }
+
+        return array(
+            'ok'        => true,
+            'message'   => '숏링크가 생성되었습니다.',
+            'shortUrl'  => lc_lp_shortlink_public_url($code),
+            'promoUrl'  => $promo_url,
+            'shortCode' => $code,
+        );
+    }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * LinkpricePostback — Reward API 수신 / 예상 실적 등록
  * 공식: POST JSON, 타임아웃 최대 10초, 필드명 commision(공식 오타)

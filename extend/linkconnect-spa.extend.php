@@ -41,6 +41,7 @@ if (!function_exists('linkconnect_add_tracking_rewrite_rules')) {
         $extra = "# LinkConnect tracking / landing\n";
         $extra .= 'RewriteRule ^r/([a-zA-Z0-9_-]+)$ r/index.php?code=$1 [L,QSA]' . "\n";
         $extra .= 'RewriteRule ^c/([a-zA-Z0-9_-]+)$ c/index.php?code=$1 [L,QSA]' . "\n";
+        $extra .= 'RewriteRule ^s/([a-zA-Z0-9_-]+)$ s/index.php?code=$1 [L,QSA]' . "\n";
         $extra .= 'RewriteRule ^go/lp/([A-Za-z0-9_-]+)$ go/lp/index.php?m=$1 [L,QSA]' . "\n";
         $extra .= 'RewriteRule ^api/external/linkprice/postback/?$ api/external/linkprice/postback.php [L,QSA]' . "\n";
 
