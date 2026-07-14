@@ -2168,17 +2168,14 @@ if (!function_exists('lc_lp_merchants_list')) {
 }
 
 if (!function_exists('lc_lp_merchant_partner_display_commission')) {
-    /** 파트너 노출용 커미션 안내 (LP 커미션 × 지급률 요약) */
+    /** 파트너·공개 노출용 커미션 안내 (머천트 최대 수수료율만) */
     function lc_lp_merchant_partner_display_commission(array $row)
     {
-        $rate = (float) ($row['partner_rate'] ?? 70);
         $pc = trim((string) ($row['commission_pc'] ?? ''));
         $mo = trim((string) ($row['commission_mobile'] ?? ''));
         $base = $mo !== '' ? $mo : $pc;
-        if ($base === '') {
-            return '지급률 ' . rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.') . '%';
-        }
-        return $base . ' × ' . rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.') . '%';
+
+        return $base !== '' ? $base : '-';
     }
 }
 
