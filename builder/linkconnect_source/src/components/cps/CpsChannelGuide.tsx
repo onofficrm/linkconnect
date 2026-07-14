@@ -6,18 +6,58 @@ type CpsChannelGuideProps = {
   forbiddenChannels?: string;
   merchantName?: string;
   compact?: boolean;
+  /** 상세페이지 등 — 모달 없이 항목을 바로 나열 */
+  expanded?: boolean;
 };
+
+/** 채널·제한 문구를 한 줄 덩어리가 아닌 항목 목록으로 분리 */
+export function parseChannelItems(raw?: string): string[] {
+  let text = (raw || '').trim();
+  if (!text || text === '-') return [];
+
+  text = text
+    .replace(/\r\n/g, '\n')
+    .replace(/[※＊*•∙ㆍ●○]/g, '\n')
+    .replace(/\s*[;/|]\s*/g, '\n')
+    .replace(/\s{2,}/g, '\n');
+
+  let parts = text
+    .split('\n')
+    .map((s) => s.replace(/^[\s.\-–—)\]>]+/, '').replace(/[\s.\-–—]+$/, '').trim())
+    .filter(Boolean);
+
+  if (parts.length === 1) {
+    const byComma = parts[0]
+      .split(/[,，、]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (byComma.length >= 2 && byComma.every((p) => p.length <= 48)) {
+      parts = byComma;
+    }
+  }
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of parts) {
+    const key = part.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(part);
+  }
+  return out;
+}
 
 export function CpsChannelGuide({
   allowedChannels,
   forbiddenChannels,
   merchantName,
   compact = false,
+  expanded = false,
 }: CpsChannelGuideProps) {
   const [open, setOpen] = useState(false);
-  const allowed = (allowedChannels || '').trim();
-  const forbidden = (forbiddenChannels || '').trim();
-  const hasForbidden = forbidden.length > 0 && forbidden !== '-';
+  const allowedItems = parseChannelItems(allowedChannels);
+  const forbiddenItems = parseChannelItems(forbiddenChannels);
+  const hasForbidden = forbiddenItems.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +73,59 @@ export function CpsChannelGuide({
     };
   }, [open]);
 
+  if (expanded) {
+    return (
+      <div className="space-y-5">
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+            <h3 className="text-sm font-bold text-slate-900">허용 채널</h3>
+          </div>
+          {allowedItems.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {allowedItems.map((item) => (
+                <li
+                  key={item}
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-sm font-medium text-emerald-800"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-400">안내된 허용 채널이 없습니다.</p>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 mb-2.5">
+            <AlertTriangle size={16} className="text-rose-500 shrink-0" />
+            <h3 className="text-sm font-bold text-slate-900">금지 채널 · 제한 사항</h3>
+          </div>
+          {hasForbidden ? (
+            <ul className="space-y-2">
+              {forbiddenItems.map((item, index) => (
+                <li
+                  key={`${index}-${item.slice(0, 24)}`}
+                  className="flex gap-3 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-2.5"
+                >
+                  <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-rose-100 text-[11px] font-bold text-rose-700">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm text-rose-950 leading-relaxed break-keep">{item}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-400 rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-2.5">
+              등록된 금지 채널이 없습니다.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className={`space-y-1.5 ${compact ? 'text-[11px]' : 'text-xs'}`}>
@@ -40,7 +133,7 @@ export function CpsChannelGuide({
           <CheckCircle2 size={compact ? 12 : 13} className="text-emerald-500 shrink-0 mt-0.5" />
           <p className="leading-relaxed line-clamp-2">
             <span className="font-semibold text-slate-500">허용 </span>
-            {allowed || '—'}
+            {allowedItems.length > 0 ? allowedItems.join(', ') : '—'}
           </p>
         </div>
         {hasForbidden ? (
@@ -88,7 +181,19 @@ export function CpsChannelGuide({
               </button>
             </div>
             <div className="px-5 py-4 max-h-[60vh] overflow-y-auto">
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{forbidden}</p>
+              <ul className="space-y-2">
+                {forbiddenItems.map((item, index) => (
+                  <li
+                    key={`${index}-${item.slice(0, 24)}`}
+                    className="flex gap-3 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-2.5"
+                  >
+                    <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-rose-100 text-[11px] font-bold text-rose-700">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm text-rose-950 leading-relaxed break-keep">{item}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50">
               <button

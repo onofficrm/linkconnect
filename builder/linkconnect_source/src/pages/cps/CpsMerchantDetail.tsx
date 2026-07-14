@@ -221,28 +221,13 @@ export function CpsMerchantDetail() {
             </article>
 
             <article className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-900 mb-3">홍보 채널 안내</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-4">홍보 채널 안내</h2>
               <CpsChannelGuide
                 allowedChannels={allowed}
-                forbiddenChannels={forbidden}
+                forbiddenChannels={[forbidden, denyAd, denyProduct].filter(Boolean).join('\n')}
                 merchantName={title}
+                expanded
               />
-              {(denyAd || denyProduct) ? (
-                <div className="mt-4 space-y-2 text-sm">
-                  {denyAd ? (
-                    <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-amber-900">
-                      <span className="font-bold">광고 제한: </span>
-                      {denyAd}
-                    </div>
-                  ) : null}
-                  {denyProduct ? (
-                    <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-rose-900">
-                      <span className="font-bold">상품 제한: </span>
-                      {denyProduct}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
             </article>
 
             {landingUrl ? (
