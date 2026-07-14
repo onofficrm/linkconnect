@@ -51,25 +51,19 @@ const coreValues = [
 ];
 
 const highlights = [
-  { value: '300억+', label: '연간 견인 매출', sub: '자체 운영 노하우', icon: <TrendingUp className="w-5 h-5" /> },
-  { value: 'CPA/CPS', label: '성과형 네트워크', sub: 'CPS · CPA · 콜디비', icon: <Link2 className="w-5 h-5" /> },
-  { value: '0503', label: '콜디비', sub: '파트너 단독 번호', icon: <PhoneCall className="w-5 h-5" /> },
-  { value: 'Win-Win', label: '상생 파트너십', sub: '광고주 · 파트너', icon: <Handshake className="w-5 h-5" /> },
+  { value: '800억+', label: '견인 매출', sub: '최근 2년', icon: <TrendingUp className="w-5 h-5" /> },
+  { value: '50억+', label: '자체 매출', sub: '운영 성과 기반', icon: <BadgeDollarSign className="w-5 h-5" /> },
+  { value: 'CPS·CPA', label: '성과형 네트워크', sub: 'CPS · CPA · 콜디비', icon: <Link2 className="w-5 h-5" /> },
+  { value: 'Win-Win', label: '상생 파트너십', sub: '광고주 · 마케터', icon: <Handshake className="w-5 h-5" /> },
 ];
 
-const introPoints = [
-  {
-    title: '성장하는 제휴 마케팅 시장',
-    text: '해외는 수십 조원 규모, 국내는 무궁무진한 잠재력. 링크커넥트는 연간 300억 원 이상의 견인 매출 노하우로 새로운 기준을 제시합니다.',
-  },
-  {
-    title: '광고주와 파트너를 잇는 네트워크',
-    text: '비즈니스 성장을 원하는 광고주와, 영향력을 수익으로 전환하고 싶은 파트너(마케터·인플루언서·블로거)를 효율적으로 연결합니다.',
-  },
-  {
-    title: '모두가 이기는 Win-Win',
-    text: 'CPS/CPA 전문 네트워크로 광고주와 마케터 모두 확실한 성과와 수익을 만들 수 있도록 함께합니다.',
-  },
+const storyParagraphs = [
+  '링크커넥트는 CPS·CPA 기반의 제휴마케팅 사업을 직접 운영하며 축적한 경험과 성과를 바탕으로 탄생한 제휴마케팅 플랫폼입니다.',
+  '트립닷컴, 호텔스닷컴, 아고다, 알리익스프레스, 테무 등 글로벌 기업의 어필리에이트 시스템을 활용하여 최근 2년간 800억 원 이상의 견인 매출을 창출했으며, 이를 기반으로 50억 원 이상의 매출을 달성했습니다.',
+  '우리는 단순히 제휴마케팅의 구조를 이해하는 데 그치지 않습니다. 직접 마케터의 위치에서 수많은 제휴 프로그램을 운영하고 성과를 만들어 온 경험을 통해 광고주와 마케터가 무엇을 원하고, 어떤 부분에서 어려움을 겪는지 누구보다 깊이 이해하고 있습니다.',
+  '광고주는 불필요한 광고비 지출을 줄이면서 실질적인 매출 성과를 만들어낼 수 있는 환경을 원합니다. 마케터는 자신의 노력과 성과를 투명하게 인정받고, 더 많은 수익과 새로운 성장의 기회를 얻기를 원합니다.',
+  '이러한 경험과 고민에서 링크커넥트는 시작되었습니다. 광고주에게는 광고비 부담을 줄이면서 실질적인 매출 성장을 만들어갈 수 있는 기회를, 마케터에게는 투명한 성과 측정과 합리적인 보상을 통해 더 큰 수익을 만들어갈 수 있는 환경을 제공하고자 합니다.',
+  '단순히 광고주와 마케터를 연결하는 것을 넘어, 서로의 성과가 서로의 성장으로 이어지는 선순환의 구조. 링크 하나로, 모두가 성장하는 연결. 링크커넥트입니다.',
 ];
 
 export function About() {
@@ -97,16 +91,18 @@ export function About() {
                 About LinkConnect
               </p>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-                가치를 연결하고,
+                링크 하나로,
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                  성과로 증명
+                  모두가 성장하는 연결
                 </span>
-                하다.
               </h1>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              CPA·CPS·콜디비를 아우르는 성과 중심 제휴 마케팅 플랫폼, 링크커넥트(LinkConnect)입니다.
-            </p>
+              <p className="text-lg text-slate-300 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-3">
+                안녕하세요. 링크커넥트입니다.
+              </p>
+              <p className="text-base text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                CPS·CPA 기반 제휴마케팅을 직접 운영하며 쌓은 경험으로, 광고주와 마케터가 함께 성장하는 플랫폼을 만듭니다.
+              </p>
             </div>
 
             <div className="relative">
@@ -135,23 +131,15 @@ export function About() {
             </div>
           </div>
 
-          <div className="space-y-6 order-1 lg:order-2">
+          <div className="space-y-5 order-1 lg:order-2">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900 leading-snug">
-              연결을 수익으로 바꾸는
+              링크 하나로,
               <br />
-              <span className="text-emerald-600">성과형 제휴 마케팅</span>
+              <span className="text-emerald-600">모두가 성장하는 연결</span>
             </h2>
-            <div className="space-y-5">
-              {introPoints.map((point, i) => (
-                <article key={point.title} className="flex gap-4">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">
-                    {i + 1}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1">{point.title}</h3>
-                    <p className="text-slate-600 text-sm md:text-base leading-relaxed">{point.text}</p>
-                  </div>
-                </article>
+            <div className="space-y-4 text-slate-600 text-sm md:text-base leading-relaxed">
+              {storyParagraphs.map((paragraph) => (
+                <p key={paragraph.slice(0, 24)}>{paragraph}</p>
               ))}
             </div>
           </div>
@@ -368,13 +356,13 @@ export function About() {
             </div>
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-            연결이 곧 수익이 되는 곳,
+            링크 하나로,
             <br />
-            <span className="text-emerald-400">링크커넥트</span>
+            <span className="text-emerald-400">모두가 성장하는 연결</span>
           </h2>
           <p className="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto mb-10">
-            연간 300억 매출 견인의 저력, 투명한 데이터와 강력한 네트워크로
-            여러분의 비즈니스를 다음 단계로 도약시켜 드립니다.
+            서로의 성과가 서로의 성장으로 이어지는 선순환. 광고주와 마케터 모두가
+            더 큰 기회를 만드는 곳, 링크커넥트입니다.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
