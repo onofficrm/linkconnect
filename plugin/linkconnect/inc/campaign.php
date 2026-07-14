@@ -263,6 +263,24 @@ if (!function_exists('lc_campaign_cps_linkprice_for_api')) {
             return array();
         }
 
+        $id_filter = (int) ($filters['id'] ?? 0);
+        $code_filter = trim((string) ($filters['code'] ?? ''));
+
+        if ($id_filter > 0 || $code_filter !== '') {
+            $row = null;
+            if ($id_filter > 0 && function_exists('lc_lp_repo_get_merchant')) {
+                $row = lc_lp_repo_get_merchant($id_filter);
+            }
+            if (!is_array($row) && $code_filter !== '' && function_exists('lc_lp_repo_get_merchant_by_code')) {
+                $row = lc_lp_repo_get_merchant_by_code($code_filter);
+            }
+            if (!is_array($row) || !lc_lp_merchant_public_listable($row)) {
+                return array();
+            }
+            $mapped = lc_campaign_cps_linkprice_map_row($row);
+            return $mapped ? array($mapped) : array();
+        }
+
         $list = lc_lp_merchants_list(array(
             'partner_visible' => true,
             'q'               => trim((string) ($filters['q'] ?? '')),
@@ -284,49 +302,80 @@ if (!function_exists('lc_campaign_cps_linkprice_for_api')) {
                 continue;
             }
 
-            $title = trim((string) ($row['campaign_alias'] ?? ''));
-            if ($title === '') {
-                $title = trim((string) ($row['merchant_name'] ?? ''));
+            $mapped = lc_campaign_cps_linkprice_map_row($row);
+            if ($mapped) {
+                $items[] = $mapped;
             }
-
-            $commission = function_exists('lc_lp_merchant_partner_display_commission')
-                ? lc_lp_merchant_partner_display_commission($row)
-                : trim((string) ($row['commission_pc'] ?? $row['commission_mobile'] ?? ''));
-            $return_day = (int) ($row['return_day'] ?? 0);
-            $notice = trim((string) ($row['partner_notice'] ?? ''));
-            if ($notice === '') {
-                $notice = trim((string) ($row['notice'] ?? ''));
-            }
-            $settlement = trim((string) ($row['commission_payment_standard'] ?? ''));
-            $description = $notice !== '' ? $notice : ($settlement !== '' ? $settlement : $title . ' 구매 연동 CPS 캠페인');
-
-            $deny = trim((string) ($row['deny_ad'] ?? ''));
-            $deny_product = trim((string) ($row['deny_product'] ?? ''));
-            $forbidden = trim(implode(', ', array_filter(array($deny, $deny_product))));
-
-            $items[] = array(
-                'id'                => (int) ($row['lpm_id'] ?? 0),
-                'code'              => (string) ($row['merchant_code'] ?? ''),
-                'title'             => $title,
-                'category'          => $category,
-                'type'              => 'cps',
-                'description'       => $description,
-                'price'             => 0,
-                'priceFormatted'    => $commission,
-                'approvalRate'      => $commission,
-                'avgTime'           => $return_day > 0 ? $return_day . '일' : '-',
-                'allowedChannels'   => '블로그, SNS, 유튜브, 커뮤니티',
-                'forbiddenChannels' => $forbidden !== '' ? $forbidden : '스팸, 브랜드 사칭, 허위광고',
-                'status'            => '진행중',
-                'statusCode'        => LC_STATUS_ACTIVE,
-                'badge'             => !empty($row['is_recommended']) ? '추천' : '',
-                'recommended'       => !empty($row['is_recommended']),
-                'landingUrl'        => (string) ($row['merchant_url'] ?? ''),
-                'thumbnailUrl'      => lc_lp_merchant_public_logo($row),
-            );
         }
 
         return $items;
+    }
+}
+
+if (!function_exists('lc_campaign_cps_linkprice_map_row')) {
+    /**
+     * @return array<string,mixed>|null
+     */
+    function lc_campaign_cps_linkprice_map_row(array $row)
+    {
+        $title = trim((string) ($row['campaign_alias'] ?? ''));
+        if ($title === '') {
+            $title = trim((string) ($row['merchant_name'] ?? ''));
+        }
+        if ($title === '') {
+            return null;
+        }
+
+        $category = trim((string) ($row['category_name'] ?? ''));
+        if ($category === '') {
+            $category = '기타';
+        }
+
+        $commission = function_exists('lc_lp_merchant_partner_display_commission')
+            ? lc_lp_merchant_partner_display_commission($row)
+            : trim((string) ($row['commission_pc'] ?? $row['commission_mobile'] ?? ''));
+        $return_day = (int) ($row['return_day'] ?? 0);
+        $notice = trim((string) ($row['partner_notice'] ?? ''));
+        if ($notice === '') {
+            $notice = trim((string) ($row['notice'] ?? ''));
+        }
+        $settlement = trim((string) ($row['commission_payment_standard'] ?? ''));
+        $description = $notice !== '' ? $notice : ($settlement !== '' ? $settlement : $title . ' 구매 연동 CPS 캠페인');
+
+        $deny = trim((string) ($row['deny_ad'] ?? ''));
+        $deny_product = trim((string) ($row['deny_product'] ?? ''));
+        $forbidden = trim(implode(', ', array_filter(array($deny, $deny_product))));
+        $code = (string) ($row['merchant_code'] ?? '');
+
+        return array(
+            'id'                => (int) ($row['lpm_id'] ?? 0),
+            'code'              => $code,
+            'merchantCode'      => $code,
+            'lpmId'             => (int) ($row['lpm_id'] ?? 0),
+            'title'             => $title,
+            'category'          => $category,
+            'type'              => 'cps',
+            'campaignType'      => 'cps',
+            'description'       => $description,
+            'price'             => 0,
+            'priceFormatted'    => $commission,
+            'approvalRate'      => $commission,
+            'avgTime'           => $return_day > 0 ? $return_day . '일' : '-',
+            'returnDay'         => $return_day,
+            'allowedChannels'   => '블로그, SNS, 유튜브, 커뮤니티',
+            'forbiddenChannels' => $forbidden !== '' ? $forbidden : '스팸, 브랜드 사칭, 허위광고',
+            'denyAd'            => $deny,
+            'denyProduct'       => $deny_product,
+            'settlement'        => $settlement,
+            'whenTrans'         => (string) ($row['when_trans'] ?? ''),
+            'deeplinkYn'        => (string) ($row['deeplink_yn'] ?? 'N'),
+            'status'            => '진행중',
+            'statusCode'        => LC_STATUS_ACTIVE,
+            'badge'             => !empty($row['is_recommended']) ? '추천' : '',
+            'recommended'       => !empty($row['is_recommended']),
+            'landingUrl'        => (string) ($row['merchant_url'] ?? ''),
+            'thumbnailUrl'      => lc_lp_merchant_public_logo($row),
+        );
     }
 }
 

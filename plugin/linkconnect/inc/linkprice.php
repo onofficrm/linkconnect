@@ -1493,6 +1493,19 @@ if (!function_exists('lc_lp_repo_get_merchant_by_code')) {
     }
 }
 
+if (!function_exists('lc_lp_repo_get_merchant')) {
+    function lc_lp_repo_get_merchant($lpm_id)
+    {
+        $table = lc_table('lp_merchants');
+        $lpm_id = (int) $lpm_id;
+        if (!lc_db_table_exists($table) || $lpm_id <= 0) {
+            return null;
+        }
+        $row = lc_sql_fetch(" SELECT * FROM `{$table}` WHERE lpm_id = {$lpm_id} LIMIT 1 ", false);
+        return is_array($row) ? $row : null;
+    }
+}
+
 if (!function_exists('lc_lp_repo_get_order_by_trlog')) {
     function lc_lp_repo_get_order_by_trlog($trlog_id)
     {
@@ -2624,18 +2637,26 @@ if (!function_exists('lc_lp_merchant_to_partner_api')) {
         $code = (string) ($row['merchant_code'] ?? '');
         $pt_id = (int) $pt_id;
 
+        $return_day = (int) ($row['return_day'] ?? 0);
+        $partner_commission = function_exists('lc_lp_merchant_partner_display_commission')
+            ? lc_lp_merchant_partner_display_commission($row)
+            : '';
+
         return array(
             'lpmId'            => (int) ($row['lpm_id'] ?? 0),
             'merchantCode'     => $code,
             'merchantName'     => $name,
             'originalName'     => (string) ($row['merchant_name'] ?? ''),
             'merchantLogo'     => lc_lp_merchant_public_logo($row),
+            'merchantUrl'      => (string) ($row['merchant_url'] ?? ''),
             'categoryName'     => (string) ($row['category_name'] ?? ''),
             'commissionPc'     => (string) ($row['commission_pc'] ?? ''),
             'commissionMobile' => (string) ($row['commission_mobile'] ?? ''),
+            'partnerCommission'=> $partner_commission,
             'partnerRate'      => (float) ($row['partner_rate'] ?? 70),
             'settlement'       => (string) ($row['commission_payment_standard'] ?? ''),
             'whenTrans'        => (string) ($row['when_trans'] ?? ''),
+            'returnDay'        => $return_day,
             'denyAd'           => (string) ($row['deny_ad'] ?? ''),
             'denyProduct'      => (string) ($row['deny_product'] ?? ''),
             'notice'           => (string) (($row['partner_notice'] ?? '') !== '' ? $row['partner_notice'] : ($row['notice'] ?? '')),

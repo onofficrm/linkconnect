@@ -81,6 +81,31 @@ if ($method === 'GET') {
         ));
     }
 
+    if ($view === 'merchant') {
+        $code = isset($_GET['merchantCode']) ? trim((string) $_GET['merchantCode']) : '';
+        if ($code === '' && !empty($_GET['code'])) {
+            $code = trim((string) $_GET['code']);
+        }
+        $lpm_id = isset($_GET['lpmId']) ? (int) $_GET['lpmId'] : 0;
+        $merchant = null;
+        if ($lpm_id > 0 && function_exists('lc_lp_repo_get_merchant')) {
+            $merchant = lc_lp_repo_get_merchant($lpm_id);
+        }
+        if (!is_array($merchant) && $code !== '') {
+            $merchant = lc_lp_repo_get_merchant_by_code($code);
+        }
+        if (!is_array($merchant) || !lc_lp_merchant_public_listable($merchant)) {
+            lc_api_error('홍보 가능한 광고주가 아닙니다.', 'NOT_AVAILABLE', 404);
+        }
+        $stats = lc_lp_partner_merchant_stats($pt_id);
+        $id = (int) ($merchant['lpm_id'] ?? 0);
+        lc_api_success(array(
+            'item'         => lc_lp_merchant_to_partner_api($merchant, $pt_id, $stats[$id] ?? array()),
+            'partnerToken' => lc_lp_partner_public_token($pt_id),
+            'dbReady'      => true,
+        ));
+    }
+
     if ($view === 'clicks') {
         $filters = array(
             'pt_id'  => $pt_id,

@@ -138,6 +138,12 @@ export type PartnerCampaign = {
   merchantCode?: string;
   promoUrl?: string;
   lpmId?: number;
+  returnDay?: number;
+  denyAd?: string;
+  denyProduct?: string;
+  settlement?: string;
+  whenTrans?: string;
+  deeplinkYn?: string;
 };
 
 export type PartnerCampaignsResponse = {
@@ -287,12 +293,15 @@ export type PartnerLpMerchant = {
   merchantName: string;
   originalName: string;
   merchantLogo: string;
+  merchantUrl?: string;
   categoryName: string;
   commissionPc: string;
   commissionMobile: string;
+  partnerCommission?: string;
   partnerRate: number;
   settlement: string;
   whenTrans: string;
+  returnDay?: number;
   denyAd: string;
   denyProduct: string;
   notice: string;
@@ -317,6 +326,19 @@ export function fetchPartnerLpMerchants(filters?: { q?: string; code?: string; d
     q: filters?.q ?? '',
     code: filters?.code ?? '',
     deeplink: filters?.deeplink ? '1' : '',
+  });
+}
+
+export function fetchPartnerLpMerchant(filters: { code?: string; lpmId?: number }) {
+  return partnerApiGet<{
+    item: PartnerLpMerchant;
+    partnerToken: string;
+    dbReady: boolean;
+  }>('linkprice.php', {
+    view: 'merchant',
+    code: filters.code ?? '',
+    merchantCode: filters.code ?? '',
+    lpmId: filters.lpmId != null ? String(filters.lpmId) : '',
   });
 }
 
@@ -1314,12 +1336,38 @@ async function publicApiPost<T>(endpoint: string, payload?: Record<string, unkno
 
 export type PublicCampaign = PartnerCampaign;
 
-export function fetchPublicCampaigns(filters?: { category?: string; q?: string; type?: string }) {
+export function fetchPublicCampaigns(filters?: {
+  category?: string;
+  q?: string;
+  type?: string;
+  id?: number | string;
+  code?: string;
+}) {
   return publicApiGet<{ items: PublicCampaign[]; categories: string[]; dbReady: boolean }>('campaigns.php', {
     category: filters?.category ?? '',
     q: filters?.q ?? '',
     type: filters?.type ?? '',
+    id: filters?.id != null ? String(filters.id) : '',
+    code: filters?.code ?? '',
   });
+}
+
+export async function fetchPublicCpsMerchant(codeOrId: string) {
+  const key = codeOrId.trim();
+  if (!key) {
+    throw new Error('광고주 코드가 없습니다.');
+  }
+  const byCode = await fetchPublicCampaigns({ type: 'cps', code: key });
+  if (byCode.items[0]) {
+    return byCode.items[0];
+  }
+  if (/^\d+$/.test(key)) {
+    const byId = await fetchPublicCampaigns({ type: 'cps', id: key });
+    if (byId.items[0]) {
+      return byId.items[0];
+    }
+  }
+  throw new Error('광고주를 찾을 수 없습니다.');
 }
 
 export type PartnerSettlementSummary = {

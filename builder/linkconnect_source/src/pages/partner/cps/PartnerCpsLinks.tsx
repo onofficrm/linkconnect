@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Copy, CheckCircle2 } from 'lucide-react';
 import { PartnerLayout } from '../../../layouts/PartnerLayout';
 import { CpsPartnerNotice, PartnerCpsSubnav } from '../../../components/cps/CpsShared';
@@ -30,7 +31,9 @@ export function PartnerCpsLinks() {
         ) : items.map((m) => (
           <div key={m.lpmId} className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="min-w-0 flex-1">
-              <div className="font-bold truncate">{m.merchantName}</div>
+              <Link to={`/cps/${encodeURIComponent(m.merchantCode)}`} className="font-bold truncate hover:text-emerald-700 block">
+                {m.merchantName}
+              </Link>
               <div className="text-xs text-slate-500 font-mono break-all mt-1">{m.promoUrl}</div>
             </div>
             <button

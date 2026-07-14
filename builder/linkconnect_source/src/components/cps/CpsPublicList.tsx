@@ -35,6 +35,7 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
   const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
   const hasThumbnail = (item.thumbnailUrl || '').trim().length > 0;
   const merchantCode = (item.merchantCode || item.code || '').trim();
+  const detailPath = merchantCode ? `/cps/${encodeURIComponent(merchantCode)}` : '/cps';
   const isFeatured = item.recommended || Boolean(item.badge);
 
   return (
@@ -69,7 +70,9 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
               <CategoryBadge label={item.category} />
               {item.badge ? <FeaturedBadge label={item.badge} /> : null}
             </div>
-            <h3 className="font-bold text-slate-900 truncate text-[15px]">{item.title}</h3>
+            <Link to={detailPath} className="font-bold text-slate-900 truncate text-[15px] hover:text-cyan-700 block">
+              {item.title}
+            </Link>
             {merchantCode ? <p className="text-[11px] text-slate-400 truncate mt-0.5">{merchantCode}</p> : null}
           </div>
 
@@ -93,7 +96,9 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
             ) : null}
           </div>
           <h3 className="font-bold text-slate-900 truncate text-[15px] leading-tight">
-            {item.title}
+            <Link to={detailPath} className="hover:text-cyan-700 transition-colors">
+              {item.title}
+            </Link>
             {merchantCode ? (
               <span className="font-normal text-slate-400 text-sm ml-1.5">({merchantCode})</span>
             ) : null}
@@ -136,7 +141,7 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
             </button>
           ) : null}
           <Link
-            to="/partner/search"
+            to={detailPath}
             className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 min-w-[100px] px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow transition-all"
           >
             <LinkIcon className="w-3.5 h-3.5" />
