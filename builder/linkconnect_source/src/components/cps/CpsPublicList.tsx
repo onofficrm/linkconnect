@@ -3,6 +3,7 @@ import { ExternalLink, Link as LinkIcon, Sparkles } from 'lucide-react';
 import { PublicCampaign } from '../../lib/api';
 import { openLandingPage } from '../../lib/utils';
 import { CpsChannelGuide } from './CpsChannelGuide';
+import { formatCpsCommissionRate } from './CpsShared';
 
 type CpsPublicListProps = {
   items: PublicCampaign[];
@@ -29,7 +30,7 @@ export function CpsPublicList({ items, compact = false }: CpsPublicListProps) {
 }
 
 function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: boolean }) {
-  const commission = item.approvalRate || item.priceFormatted || '-';
+  const commission = formatCpsCommissionRate(item.approvalRate || item.priceFormatted || '-');
   const hasLandingUrl = (item.landingUrl || '').trim().length > 0;
   const hasThumbnail = (item.thumbnailUrl || '').trim().length > 0;
   const merchantCode = (item.merchantCode || item.code || '').trim();

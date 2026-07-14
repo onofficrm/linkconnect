@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Copy, Link2 } from 'lucide-react';
 import { PartnerLpMerchant } from '../../lib/api';
-import { formatWon } from './CpsShared';
+import { formatCpsCommissionRate, formatWon } from './CpsShared';
 
 type CpsPartnerMerchantListProps = {
   items: PartnerLpMerchant[];
@@ -46,7 +46,7 @@ function CpsPartnerMerchantRow({
   onCopy: () => void;
   onDeeplink: () => void;
 }) {
-  const commission = m.partnerCommission || m.commissionMobile || m.commissionPc || '—';
+  const commission = formatCpsCommissionRate(m.partnerCommission || m.commissionMobile || m.commissionPc || '—');
   const detailPath = `/cps/${encodeURIComponent(m.merchantCode)}`;
 
   return (

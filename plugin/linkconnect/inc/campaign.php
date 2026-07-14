@@ -333,19 +333,33 @@ if (!function_exists('lc_campaign_cps_linkprice_map_row')) {
 
         $commission = function_exists('lc_lp_merchant_partner_display_commission')
             ? lc_lp_merchant_partner_display_commission($row)
-            : trim((string) ($row['commission_pc'] ?? $row['commission_mobile'] ?? ''));
+            : (function_exists('lc_lp_format_commission_rate_display')
+                ? lc_lp_format_commission_rate_display(trim((string) ($row['commission_mobile'] ?? $row['commission_pc'] ?? '')))
+                : trim((string) ($row['commission_pc'] ?? $row['commission_mobile'] ?? '')));
         $return_day = (int) ($row['return_day'] ?? 0);
         $notice = trim((string) ($row['partner_notice'] ?? ''));
         if ($notice === '') {
             $notice = trim((string) ($row['notice'] ?? ''));
         }
         $settlement = trim((string) ($row['commission_payment_standard'] ?? ''));
+        if (function_exists('lc_lp_public_brand_copy')) {
+            $notice = lc_lp_public_brand_copy($notice);
+            $settlement = lc_lp_public_brand_copy($settlement);
+        }
         $description = $notice !== '' ? $notice : ($settlement !== '' ? $settlement : $title . ' 구매 연동 CPS 캠페인');
 
         $deny = trim((string) ($row['deny_ad'] ?? ''));
         $deny_product = trim((string) ($row['deny_product'] ?? ''));
+        if (function_exists('lc_lp_public_brand_copy')) {
+            $deny = lc_lp_public_brand_copy($deny);
+            $deny_product = lc_lp_public_brand_copy($deny_product);
+        }
         $forbidden = trim(implode(', ', array_filter(array($deny, $deny_product))));
         $code = (string) ($row['merchant_code'] ?? '');
+        $when_trans = (string) ($row['when_trans'] ?? '');
+        if (function_exists('lc_lp_public_brand_copy')) {
+            $when_trans = lc_lp_public_brand_copy($when_trans);
+        }
 
         return array(
             'id'                => (int) ($row['lpm_id'] ?? 0),
@@ -367,7 +381,7 @@ if (!function_exists('lc_campaign_cps_linkprice_map_row')) {
             'denyAd'            => $deny,
             'denyProduct'       => $deny_product,
             'settlement'        => $settlement,
-            'whenTrans'         => (string) ($row['when_trans'] ?? ''),
+            'whenTrans'         => $when_trans,
             'deeplinkYn'        => (string) ($row['deeplink_yn'] ?? 'N'),
             'status'            => '진행중',
             'statusCode'        => LC_STATUS_ACTIVE,

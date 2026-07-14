@@ -27,6 +27,38 @@ export function formatWon(n: number | null | undefined) {
   return v.toLocaleString('ko-KR');
 }
 
+/** CPS 수수료율 표기 — % 통일, 잘못된 '원' 표기 보정 */
+export function formatCpsCommissionRate(raw: string | null | undefined) {
+  const s = (raw || '').trim();
+  if (!s || s === '-') return '-';
+
+  const formula = s.match(/^\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*[×xX]\s*/);
+  if (formula) return `${formula[1]}%`;
+
+  const wonAsRate = s.match(/^\s*([0-9]+(?:\.[0-9]+)?)\s*원\s*$/);
+  if (wonAsRate) return `${wonAsRate[1]}%`;
+
+  const plain = s.match(/^\s*([0-9]+(?:\.[0-9]+)?)\s*$/);
+  if (plain) return `${plain[1]}%`;
+
+  const cleaned = s.replace(/\s*원\s*$/u, '').trim();
+  if (cleaned.includes('%')) return cleaned;
+
+  const trailingNum = cleaned.match(/([0-9]+(?:\.[0-9]+)?)\s*$/);
+  if (trailingNum) {
+    return cleaned.replace(/([0-9]+(?:\.[0-9]+)?)\s*$/, `${trailingNum[1]}%`);
+  }
+
+  return cleaned || '-';
+}
+
+/** 파트너·공개 안내 문구 브랜드명 치환 */
+export function sanitizeCpsPublicCopy(raw: string | null | undefined) {
+  return (raw || '')
+    .replace(/링크프라이스/g, '링크커넥트')
+    .replace(/LinkPrice/gi, '링크커넥트');
+}
+
 export function truncate(s: string, n = 28) {
   const t = (s || '').trim();
   if (t.length <= n) return t;
@@ -37,7 +69,7 @@ export const CPS_PARTNER_NOTICE = [
   'CPS 실적은 구매 직후 예상 실적으로 표시됩니다.',
   '반품, 취소, 광고주 검수에 따라 실적이 취소될 수 있습니다.',
   '최종 확정된 수익만 출금 가능합니다.',
-  '링크프라이스 최종 정산 금액에 따라 예상수익이 변경될 수 있습니다.',
+  '링크커넥트 최종 정산 금액에 따라 예상수익이 변경될 수 있습니다.',
   '광고주별 광고 제한사항을 위반하면 실적이 취소될 수 있습니다.',
 ];
 

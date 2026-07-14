@@ -2167,15 +2167,73 @@ if (!function_exists('lc_lp_merchants_list')) {
     }
 }
 
+if (!function_exists('lc_lp_public_brand_copy')) {
+    /** 파트너·공개 문구에서 외부망 브랜드명을 링크커넥트로 치환 */
+    function lc_lp_public_brand_copy($text)
+    {
+        $text = (string) $text;
+        if ($text === '') {
+            return '';
+        }
+
+        $pairs = array(
+            '링크프라이스' => '링크커넥트',
+            'LinkPrice'   => '링크커넥트',
+            'Linkprice'   => '링크커넥트',
+            'linkprice'   => '링크커넥트',
+            'LINKPRICE'   => '링크커넥트',
+        );
+
+        return strtr($text, $pairs);
+    }
+}
+
+if (!function_exists('lc_lp_format_commission_rate_display')) {
+    /** CPS 수수료는 % 단위로 통일 표기 */
+    function lc_lp_format_commission_rate_display($raw)
+    {
+        $s = trim((string) $raw);
+        if ($s === '' || $s === '-') {
+            return '-';
+        }
+
+        // "3.5% × 70%" → 앞 비율만
+        if (preg_match('/^\s*([0-9]+(?:\.[0-9]+)?)\s*%?\s*[×xX]\s*/u', $s, $m)) {
+            return $m[1] . '%';
+        }
+
+        // "3.5원" / "3.5 원" 처럼 %인데 원으로 오는 경우
+        if (preg_match('/^\s*([0-9]+(?:\.[0-9]+)?)\s*원\s*$/u', $s, $m)) {
+            return $m[1] . '%';
+        }
+
+        // 숫자만 → %
+        if (preg_match('/^\s*([0-9]+(?:\.[0-9]+)?)\s*$/u', $s, $m)) {
+            return $m[1] . '%';
+        }
+
+        // 이미 % 포함이면 잘못된 꼬리 '원'만 제거
+        $s = preg_replace('/\s*원\s*$/u', '', $s);
+        if (strpos($s, '%') === false && preg_match('/[0-9]/', $s)) {
+            // "최대 3.5" 형태
+            if (preg_match('/([0-9]+(?:\.[0-9]+)?)\s*$/u', $s, $m)) {
+                return preg_replace('/([0-9]+(?:\.[0-9]+)?)\s*$/u', $m[1] . '%', $s);
+            }
+        }
+
+        return trim((string) $s);
+    }
+}
+
 if (!function_exists('lc_lp_merchant_partner_display_commission')) {
-    /** 파트너·공개 노출용 커미션 안내 (머천트 최대 수수료율만) */
+    /** 파트너·공개 노출용 커미션 안내 (머천트 최대 수수료율만, % 통일) */
     function lc_lp_merchant_partner_display_commission(array $row)
     {
         $pc = trim((string) ($row['commission_pc'] ?? ''));
         $mo = trim((string) ($row['commission_mobile'] ?? ''));
         $base = $mo !== '' ? $mo : $pc;
 
-        return $base !== '' ? $base : '-';
+        return lc_lp_format_commission_rate_display($base);
     }
 }
 
@@ -2638,6 +2696,11 @@ if (!function_exists('lc_lp_merchant_to_partner_api')) {
         $partner_commission = function_exists('lc_lp_merchant_partner_display_commission')
             ? lc_lp_merchant_partner_display_commission($row)
             : '';
+        $notice = (string) (($row['partner_notice'] ?? '') !== '' ? $row['partner_notice'] : ($row['notice'] ?? ''));
+        $settlement = (string) ($row['commission_payment_standard'] ?? '');
+        $when_trans = (string) ($row['when_trans'] ?? '');
+        $deny_ad = (string) ($row['deny_ad'] ?? '');
+        $deny_product = (string) ($row['deny_product'] ?? '');
 
         return array(
             'lpmId'            => (int) ($row['lpm_id'] ?? 0),
@@ -2647,16 +2710,16 @@ if (!function_exists('lc_lp_merchant_to_partner_api')) {
             'merchantLogo'     => lc_lp_merchant_public_logo($row),
             'merchantUrl'      => (string) ($row['merchant_url'] ?? ''),
             'categoryName'     => (string) ($row['category_name'] ?? ''),
-            'commissionPc'     => (string) ($row['commission_pc'] ?? ''),
-            'commissionMobile' => (string) ($row['commission_mobile'] ?? ''),
+            'commissionPc'     => lc_lp_format_commission_rate_display((string) ($row['commission_pc'] ?? '')),
+            'commissionMobile' => lc_lp_format_commission_rate_display((string) ($row['commission_mobile'] ?? '')),
             'partnerCommission'=> $partner_commission,
             'partnerRate'      => (float) ($row['partner_rate'] ?? 70),
-            'settlement'       => (string) ($row['commission_payment_standard'] ?? ''),
-            'whenTrans'        => (string) ($row['when_trans'] ?? ''),
+            'settlement'       => lc_lp_public_brand_copy($settlement),
+            'whenTrans'        => lc_lp_public_brand_copy($when_trans),
             'returnDay'        => $return_day,
-            'denyAd'           => (string) ($row['deny_ad'] ?? ''),
-            'denyProduct'      => (string) ($row['deny_product'] ?? ''),
-            'notice'           => (string) (($row['partner_notice'] ?? '') !== '' ? $row['partner_notice'] : ($row['notice'] ?? '')),
+            'denyAd'           => lc_lp_public_brand_copy($deny_ad),
+            'denyProduct'      => lc_lp_public_brand_copy($deny_product),
+            'notice'           => lc_lp_public_brand_copy($notice),
             'deeplinkYn'       => (string) ($row['deeplink_yn'] ?? 'N'),
             'isRecommended'    => !empty($row['is_recommended']),
             'promoUrl'         => lc_lp_public_promo_url($code, $pt_id),
@@ -4294,7 +4357,7 @@ if (!function_exists('lc_lp_order_settle_hint')) {
             return '취소 처리 — 수익에서 제외됩니다.';
         }
         if ($s === LC_LP_ORDER_REVIEW || $s === LC_LP_ORDER_HOLD) {
-            return '정산 대기 — 광고주·링크프라이스 검수 후 확정됩니다.';
+            return '정산 대기 — 광고주·링크커넥트 검수 후 확정됩니다.';
         }
         if ($s === LC_LP_ORDER_UNMATCHED) {
             return '미매칭 — 관리자 확인이 필요합니다.';

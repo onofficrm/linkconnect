@@ -19,7 +19,11 @@ import { getLcAuth, isLcActivePartner, isLcLoggedIn } from '../../lib/auth';
 import { g5LoginUrl, spaReturnUrl } from '../../lib/urls';
 import { openLandingPage } from '../../lib/utils';
 import { CpsChannelGuide } from '../../components/cps/CpsChannelGuide';
-import { CpsDeeplinkGuide } from '../../components/cps/CpsShared';
+import {
+  CpsDeeplinkGuide,
+  formatCpsCommissionRate,
+  sanitizeCpsPublicCopy,
+} from '../../components/cps/CpsShared';
 
 export function CpsMerchantDetail() {
   const { code = '' } = useParams<{ code: string }>();
@@ -78,24 +82,30 @@ export function CpsMerchantDetail() {
 
   const promoUrl = partnerItem?.promoUrl || '';
   const deeplinkYn = partnerItem?.deeplinkYn || merchant?.deeplinkYn || 'N';
-  const commission =
+  const commission = formatCpsCommissionRate(
     partnerItem?.partnerCommission ||
-    partnerItem?.commissionMobile ||
-    partnerItem?.commissionPc ||
-    merchant?.approvalRate ||
-    merchant?.priceFormatted ||
-    '-';
+      partnerItem?.commissionMobile ||
+      partnerItem?.commissionPc ||
+      merchant?.approvalRate ||
+      merchant?.priceFormatted ||
+      '-',
+  );
   const cookie = merchant?.avgTime || (partnerItem?.returnDay ? `${partnerItem.returnDay}일` : '-');
-  const notice = partnerItem?.notice || merchant?.description || '';
+  const notice = sanitizeCpsPublicCopy(partnerItem?.notice || merchant?.description || '');
+  const settlement = sanitizeCpsPublicCopy(partnerItem?.settlement || merchant?.settlement || '');
+  const whenTrans = sanitizeCpsPublicCopy(partnerItem?.whenTrans || merchant?.whenTrans || '');
   const landingUrl = partnerItem?.merchantUrl || merchant?.landingUrl || '';
   const logo = partnerItem?.merchantLogo || merchant?.thumbnailUrl || '';
   const title = partnerItem?.merchantName || merchant?.title || '';
   const merchantCode = partnerItem?.merchantCode || merchant?.merchantCode || merchant?.code || code;
   const category = partnerItem?.categoryName || merchant?.category || '';
-  const forbidden =
+  const forbidden = sanitizeCpsPublicCopy(
     merchant?.forbiddenChannels ||
-    [partnerItem?.denyAd, partnerItem?.denyProduct].filter(Boolean).join(', ');
+      [partnerItem?.denyAd, partnerItem?.denyProduct].filter(Boolean).join(', '),
+  );
   const allowed = merchant?.allowedChannels || '블로그, SNS, 유튜브, 커뮤니티';
+  const denyAd = sanitizeCpsPublicCopy(partnerItem?.denyAd || '');
+  const denyProduct = sanitizeCpsPublicCopy(partnerItem?.denyProduct || '');
 
   const copyText = async (text: string) => {
     try {
@@ -192,18 +202,18 @@ export function CpsMerchantDetail() {
               <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
                 {notice || '상세 안내가 등록되지 않았습니다.'}
               </p>
-              {(partnerItem?.settlement || merchant.settlement || partnerItem?.whenTrans || merchant.whenTrans) ? (
+              {(settlement || whenTrans) ? (
                 <dl className="mt-5 grid sm:grid-cols-2 gap-3 text-sm">
-                  {(partnerItem?.settlement || merchant.settlement) ? (
+                  {settlement ? (
                     <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
                       <dt className="text-xs font-bold text-slate-400 mb-0.5">정산 기준</dt>
-                      <dd className="text-slate-700">{partnerItem?.settlement || merchant.settlement}</dd>
+                      <dd className="text-slate-700">{settlement}</dd>
                     </div>
                   ) : null}
-                  {(partnerItem?.whenTrans || merchant.whenTrans) ? (
+                  {whenTrans ? (
                     <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
                       <dt className="text-xs font-bold text-slate-400 mb-0.5">실적 반영</dt>
-                      <dd className="text-slate-700">{partnerItem?.whenTrans || merchant.whenTrans}</dd>
+                      <dd className="text-slate-700">{whenTrans}</dd>
                     </div>
                   ) : null}
                 </dl>
@@ -217,18 +227,18 @@ export function CpsMerchantDetail() {
                 forbiddenChannels={forbidden}
                 merchantName={title}
               />
-              {(partnerItem?.denyAd || partnerItem?.denyProduct) ? (
+              {(denyAd || denyProduct) ? (
                 <div className="mt-4 space-y-2 text-sm">
-                  {partnerItem?.denyAd ? (
+                  {denyAd ? (
                     <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-amber-900">
                       <span className="font-bold">광고 제한: </span>
-                      {partnerItem.denyAd}
+                      {denyAd}
                     </div>
                   ) : null}
-                  {partnerItem?.denyProduct ? (
+                  {denyProduct ? (
                     <div className="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-rose-900">
                       <span className="font-bold">상품 제한: </span>
-                      {partnerItem.denyProduct}
+                      {denyProduct}
                     </div>
                   ) : null}
                 </div>
