@@ -1,6 +1,8 @@
 <?php
 /**
- * CPS 숏링크 리다이렉트 — /s/{code} → /go/lp/... (클릭 추적 유지)
+ * 숏링크 리다이렉트 — /s/{code}
+ *  - CPS: → /go/lp/...
+ *  - CPA: → /r/...
  */
 require_once dirname(__DIR__) . '/plugin/linkconnect/_common.php';
 
@@ -26,15 +28,31 @@ if ($target === '' || !preg_match('#^https?://#i', $target)) {
     exit('만료되었거나 유효하지 않은 숏링크입니다.');
 }
 
-// 오픈 리다이렉트 방지: 자사 /go/lp/ 추적 URL만 허용
-$host = parse_url($target, PHP_URL_HOST);
+$host = strtolower((string) parse_url($target, PHP_URL_HOST));
 $path = (string) parse_url($target, PHP_URL_PATH);
-$base_host = defined('G5_URL') ? parse_url(G5_URL, PHP_URL_HOST) : '';
-if (!$host || !$base_host || strtolower((string) $host) !== strtolower((string) $base_host)) {
+
+$allowed_hosts = array();
+if (defined('G5_URL')) {
+    $h = parse_url(G5_URL, PHP_URL_HOST);
+    if ($h) {
+        $allowed_hosts[] = strtolower((string) $h);
+    }
+}
+if (function_exists('lc_link_tracking_base_url')) {
+    $h = parse_url(lc_link_tracking_base_url(), PHP_URL_HOST);
+    if ($h) {
+        $allowed_hosts[] = strtolower((string) $h);
+    }
+}
+$allowed_hosts = array_values(array_unique(array_filter($allowed_hosts)));
+
+if ($host === '' || !in_array($host, $allowed_hosts, true)) {
     header('HTTP/1.1 400 Bad Request');
     exit('잘못된 숏링크입니다.');
 }
-if (strpos($path, '/go/lp/') !== 0) {
+
+$allowed_path = (strpos($path, '/go/lp/') === 0) || (bool) preg_match('#^/r/[A-Za-z0-9_-]+$#', $path);
+if (!$allowed_path) {
     header('HTTP/1.1 400 Bad Request');
     exit('잘못된 숏링크입니다.');
 }

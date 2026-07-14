@@ -285,6 +285,17 @@ export function createPartnerLink(payload: { campaignId: number; channel?: strin
   return partnerApiPost<{ message: string; link: PartnerLink | null }>('links.php', payload);
 }
 
+/** CPA /r/{code} → /s/{short} 숏링크 */
+export function buildPartnerCpaShortlink(payload: { linkId: number } | { code: string }) {
+  return partnerApiPost<{ message: string; shortUrl: string; promoUrl: string; shortCode: string }>(
+    'links.php',
+    {
+      action: 'shortlink',
+      ...payload,
+    },
+  );
+}
+
 /* ── 파트너 링크프라이스 CPS ── */
 
 export type PartnerLpMerchant = {

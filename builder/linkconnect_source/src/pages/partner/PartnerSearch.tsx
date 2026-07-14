@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, DollarSign, ExternalLink, BookOpen, ShoppingBag, Copy } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
-import { fetchPartnerCampaigns, createPartnerLink, fetchPartnerPromoGuide, PartnerCampaign } from '../../lib/api';
+import {
+  fetchPartnerCampaigns,
+  createPartnerLink,
+  buildPartnerCpaShortlink,
+  buildPartnerLpShortlink,
+  fetchPartnerPromoGuide,
+  PartnerCampaign,
+  PartnerLink,
+} from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
@@ -34,6 +42,10 @@ export function PartnerSearch() {
   const [linkName, setLinkName] = useState('');
   const [linkCreating, setLinkCreating] = useState(false);
   const [linkResult, setLinkResult] = useState('');
+  const [createdCpaLink, setCreatedCpaLink] = useState<PartnerLink | null>(null);
+  const [shortUrl, setShortUrl] = useState('');
+  const [shortBusy, setShortBusy] = useState(false);
+  const [copyNotice, setCopyNotice] = useState('');
   const [detailModal, setDetailModal] = useState<{ campaign: PartnerCampaign; tab: DetailTab } | null>(null);
   const [guideConfirmed, setGuideConfirmed] = useState<Record<number, boolean>>({});
   const [linkGuideWarning, setLinkGuideWarning] = useState(false);
@@ -97,26 +109,33 @@ export function PartnerSearch() {
     setLinkChannelCustom('');
     setLinkName('');
     setLinkResult('');
+    setCreatedCpaLink(null);
+    setShortUrl('');
+    setShortBusy(false);
+    setCopyNotice('');
     setLinkGuideWarning(false);
+  };
+
+  const copyUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyNotice('클립보드에 복사되었습니다.');
+      window.setTimeout(() => setCopyNotice(''), 2500);
+    } catch {
+      setCopyNotice('복사에 실패했습니다.');
+    }
   };
 
   const openLinkModal = async (campaign: PartnerCampaign) => {
     if (isCpsCampaign(campaign)) {
       const url = (campaign.promoUrl || '').trim();
+      resetLinkModalFields();
+      setLinkModal(campaign);
       if (!url) {
         setLinkResult('홍보 링크를 불러올 수 없습니다.');
-        setLinkModal(campaign);
-        resetLinkModalFields();
         return;
       }
-      try {
-        await navigator.clipboard.writeText(url);
-        setLinkResult(url);
-      } catch {
-        setLinkResult(url);
-      }
-      setLinkModal(campaign);
-      resetLinkModalFields();
+      setLinkResult(url);
       return;
     }
 
@@ -148,19 +167,17 @@ export function PartnerSearch() {
   const handleCreateLink = async () => {
     if (!linkModal) return;
     if (isCpsCampaign(linkModal)) {
-      const url = (linkModal.promoUrl || '').trim();
-      if (url) {
-        try {
-          await navigator.clipboard.writeText(url);
-        } catch {
-          /* ignore */
-        }
-        setLinkResult(url);
-      }
+      const url = (shortUrl || linkModal.promoUrl || linkResult || '').trim();
+      if (url) await copyUrl(url);
+      return;
+    }
+    if (createdCpaLink?.url) {
+      await copyUrl(shortUrl || createdCpaLink.url);
       return;
     }
     setLinkCreating(true);
     setLinkResult('');
+    setShortUrl('');
     try {
       const result = await createPartnerLink({
         campaignId: linkModal.id,
@@ -168,13 +185,38 @@ export function PartnerSearch() {
         subId: linkName,
       });
       if (result.link?.url) {
+        setCreatedCpaLink(result.link);
         setLinkResult(result.link.url);
-        await navigator.clipboard.writeText(result.link.url);
+        await copyUrl(result.link.url);
       }
     } catch (err) {
       setLinkResult(err instanceof Error ? err.message : '링크 생성에 실패했습니다.');
     } finally {
       setLinkCreating(false);
+    }
+  };
+
+  const handleShortlinkConvert = async () => {
+    if (!linkModal) return;
+    setShortBusy(true);
+    setCopyNotice('');
+    try {
+      if (isCpsCampaign(linkModal)) {
+        const res = await buildPartnerLpShortlink({
+          merchantCode: linkModal.merchantCode || linkModal.code || '',
+        });
+        setShortUrl(res.shortUrl);
+        setCopyNotice('숏링크로 변환되었습니다.');
+      } else if (createdCpaLink) {
+        const res = await buildPartnerCpaShortlink({ linkId: createdCpaLink.id });
+        setShortUrl(res.shortUrl);
+        setCopyNotice('숏링크로 변환되었습니다.');
+      }
+    } catch (err) {
+      setCopyNotice(err instanceof Error ? err.message : '숏링크 변환에 실패했습니다.');
+    } finally {
+      setShortBusy(false);
+      window.setTimeout(() => setCopyNotice(''), 2500);
     }
   };
 
@@ -320,11 +362,27 @@ export function PartnerSearch() {
                 <>
                   <p className="text-sm text-slate-600">아래 링크를 복사해 채널에 게시하세요. 구매 발생 시 수익이 적립됩니다.</p>
                   <div className="text-xs break-all bg-slate-50 rounded-xl p-3 font-mono border">
-                    {(linkModal.promoUrl || linkResult || '').trim() || '링크를 불러오지 못했습니다.'}
+                    {(shortUrl || linkModal.promoUrl || linkResult || '').trim() || '링크를 불러오지 못했습니다.'}
                   </div>
-                  {linkResult ? (
-                    <p className="text-sm text-emerald-600">클립보드에 복사되었습니다.</p>
-                  ) : null}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={shortBusy || !(linkModal.promoUrl || linkResult)}
+                      onClick={handleShortlinkConvert}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-800 text-sm font-bold disabled:opacity-50"
+                    >
+                      <LinkIcon size={16} />
+                      {shortBusy ? '변환 중…' : '숏링크 변환'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copyUrl((shortUrl || linkModal.promoUrl || linkResult || '').trim())}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold"
+                    >
+                      <Copy size={16} />
+                      복사
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
@@ -343,33 +401,83 @@ export function PartnerSearch() {
                       </button>
                     </div>
                   ) : null}
-                  <PartnerLinkCreateFields
-                    channelPreset={linkChannelPreset}
-                    channelCustom={linkChannelCustom}
-                    linkName={linkName}
-                    onChannelPresetChange={setLinkChannelPreset}
-                    onChannelCustomChange={setLinkChannelCustom}
-                    onLinkNameChange={setLinkName}
-                  />
-                  {linkResult && (
-                    <p className={`text-sm ${linkResult.startsWith('http') ? 'text-emerald-600 break-all' : 'text-red-600'}`}>
-                      {linkResult.startsWith('http') ? `생성 완료 (클립보드 복사됨): ${linkResult}` : linkResult}
-                    </p>
-                  )}
+                  {!createdCpaLink ? (
+                    <PartnerLinkCreateFields
+                      channelPreset={linkChannelPreset}
+                      channelCustom={linkChannelCustom}
+                      linkName={linkName}
+                      onChannelPresetChange={setLinkChannelPreset}
+                      onChannelCustomChange={setLinkChannelCustom}
+                      onLinkNameChange={setLinkName}
+                    />
+                  ) : null}
+                  {linkResult && !linkResult.startsWith('http') ? (
+                    <p className="text-sm text-red-600">{linkResult}</p>
+                  ) : null}
+                  {createdCpaLink?.url ? (
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold text-slate-500">대표 홍보 링크</div>
+                      <div className="text-xs break-all bg-slate-50 rounded-xl p-3 font-mono border">
+                        {shortUrl || createdCpaLink.url}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={shortBusy}
+                          onClick={handleShortlinkConvert}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-800 text-sm font-bold disabled:opacity-50"
+                        >
+                          <LinkIcon size={16} />
+                          {shortBusy ? '변환 중…' : '숏링크 변환'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyUrl(shortUrl || createdCpaLink.url)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold"
+                        >
+                          <Copy size={16} />
+                          복사
+                        </button>
+                      </div>
+                      {shortUrl ? (
+                        <p className="text-[11px] text-slate-400 break-all">원본: {createdCpaLink.url}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </>
               )}
+              {copyNotice ? (
+                <p className={`text-sm ${copyNotice.includes('실패') ? 'text-red-600' : 'text-emerald-600'}`}>{copyNotice}</p>
+              ) : null}
             </div>
             <div className="px-6 py-4 bg-slate-50 flex gap-3">
               <button type="button" onClick={() => setLinkModal(null)} className="flex-1 py-3 border border-slate-200 rounded-xl">닫기</button>
-              <button type="button" disabled={linkCreating} onClick={handleCreateLink} className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-2">
-                {isCpsCampaign(linkModal) ? (
-                  <><Copy size={16} /> 링크 복사</>
-                ) : linkCreating ? (
-                  '생성 중...'
-                ) : (
-                  '링크 생성'
-                )}
-              </button>
+              {isCpsCampaign(linkModal) ? (
+                <button
+                  type="button"
+                  onClick={handleCreateLink}
+                  className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                >
+                  <Copy size={16} /> 링크 복사
+                </button>
+              ) : createdCpaLink ? (
+                <button
+                  type="button"
+                  onClick={handleCreateLink}
+                  className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2"
+                >
+                  <Copy size={16} /> 링크 복사
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={linkCreating}
+                  onClick={handleCreateLink}
+                  className="flex-1 py-3 bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-60"
+                >
+                  {linkCreating ? '생성 중...' : '링크 생성'}
+                </button>
+              )}
             </div>
           </div>
         </div>

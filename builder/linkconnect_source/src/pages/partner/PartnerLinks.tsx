@@ -1,9 +1,15 @@
-import { Search, Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X } from 'lucide-react';
+import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X } from 'lucide-react';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { useEffect, useMemo, useState } from 'react';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
-import { createPartnerLink, fetchPartnerCampaigns, fetchPartnerLinks, PartnerLink } from '../../lib/api';
+import {
+  buildPartnerCpaShortlink,
+  createPartnerLink,
+  fetchPartnerCampaigns,
+  fetchPartnerLinks,
+  PartnerLink,
+} from '../../lib/api';
 
 export function PartnerLinks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +22,15 @@ export function PartnerLinks() {
   const [linkName, setLinkName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [shortUrls, setShortUrls] = useState<Record<number, string>>({});
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const notify = (msg: string) => {
+    setMessage(msg);
+    window.setTimeout(() => setMessage(''), 2500);
+  };
 
   const loadLinks = () => {
     setLoading(true);
@@ -33,7 +48,9 @@ export function PartnerLinks() {
     if (!isModalOpen) return;
     fetchPartnerCampaigns()
       .then((data) => {
-        const items = data.items.map((c) => ({ id: c.id, title: c.title }));
+        const items = data.items
+          .filter((c) => c.campaignType !== 'cps' && c.type !== 'cps')
+          .map((c) => ({ id: c.id, title: c.title }));
         setCampaigns(items);
         if (items.length && campaignId === 0) {
           setCampaignId(items[0].id);
@@ -65,6 +82,7 @@ export function PartnerLinks() {
       setChannelCustom('');
       setLinkName('');
       loadLinks();
+      notify('홍보 링크가 생성되었습니다.');
     } catch (err) {
       setError(err instanceof Error ? err.message : '링크 생성에 실패했습니다.');
     } finally {
@@ -72,11 +90,14 @@ export function PartnerLinks() {
     }
   };
 
-  const copyUrl = async (url: string) => {
+  const copyUrl = async (url: string, id: number) => {
     try {
       await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      notify('링크가 복사되었습니다.');
+      window.setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      // ignore
+      notify('복사에 실패했습니다.');
     }
   };
 
@@ -91,6 +112,10 @@ export function PartnerLinks() {
           <Plus size={18} /> 새 홍보 링크 만들기
         </button>
       </div>
+
+      {message ? (
+        <div className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2">{message}</div>
+      ) : null}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <SummaryCard title="전체 홍보 링크 수" value={String(totals.count)} suffix="개" icon={<LinkIcon className="text-slate-500" />} />
@@ -120,7 +145,9 @@ export function PartnerLinks() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {links.length > 0 ? links.map((link) => (
+                    {links.length > 0 ? links.map((link) => {
+                      const displayUrl = shortUrls[link.id] || link.url;
+                      return (
                       <tr key={link.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-4">
                           <div className="flex flex-col min-w-[140px]">
@@ -130,16 +157,44 @@ export function PartnerLinks() {
                         </td>
                         <td className="px-4 py-4 font-medium text-slate-600">{link.subId || '-'}</td>
                         <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-mono text-xs border border-slate-200 max-w-[150px] truncate">
-                              {link.url}
+                          <div className="flex flex-col gap-2 min-w-[220px]">
+                            <div className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-mono text-xs border border-slate-200 max-w-[260px] truncate" title={displayUrl}>
+                              {displayUrl}
                             </div>
-                            <button type="button" onClick={() => copyUrl(link.url)} className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors" title="링크 복사">
-                              <Copy size={16} />
-                            </button>
-                            <a href={link.url} target="_blank" rel="noreferrer" className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="새 창으로 열기">
-                              <ExternalLink size={16} />
-                            </a>
+                            <div className="flex flex-wrap gap-1.5">
+                              <button
+                                type="button"
+                                disabled={busyId === link.id}
+                                onClick={async () => {
+                                  setBusyId(link.id);
+                                  try {
+                                    const res = await buildPartnerCpaShortlink({ linkId: link.id });
+                                    setShortUrls((prev) => ({ ...prev, [link.id]: res.shortUrl }));
+                                    notify('숏링크로 변환되었습니다.');
+                                  } catch (e) {
+                                    notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                                  } finally {
+                                    setBusyId(null);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-800 text-xs font-bold disabled:opacity-50"
+                              >
+                                <LinkIcon size={14} />
+                                {busyId === link.id ? '변환 중…' : '숏링크 변환'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copyUrl(displayUrl, link.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+                                title="링크 복사"
+                              >
+                                {copiedId === link.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                복사
+                              </button>
+                              <a href={displayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50" title="새 창으로 열기">
+                                <ExternalLink size={14} />
+                              </a>
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-4 text-right font-bold text-slate-700">{link.clicks.toLocaleString()}</td>
@@ -162,7 +217,8 @@ export function PartnerLinks() {
                           <StatusBadge status={link.status} />
                         </td>
                       </tr>
-                    )) : (
+                    );
+                    }) : (
                       <tr>
                         <td colSpan={7} className="px-4 py-12 text-center text-slate-500">생성된 홍보 링크가 없습니다.</td>
                       </tr>
@@ -182,6 +238,9 @@ export function PartnerLinks() {
             </div>
             <div className="space-y-4 text-sm text-slate-300">
               <p><strong className="text-emerald-400 font-semibold">링크이름</strong>을 구분해서 생성하면 채널별 성과를 쉽게 비교할 수 있습니다.</p>
+              <p className="text-slate-400 text-xs leading-relaxed">
+                숏링크 변환으로 <code className="text-cyan-300">/s/</code> 짧은 주소를 만든 뒤 복사해 채널에 게시하세요. 클릭은 기존 추적 링크로 연결됩니다.
+              </p>
             </div>
           </div>
         </div>

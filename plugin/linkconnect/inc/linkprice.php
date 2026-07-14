@@ -2876,9 +2876,115 @@ if (!function_exists('lc_lp_shortlink_get_by_code')) {
     }
 }
 
+if (!function_exists('lc_shortlink_store_for_partner')) {
+    /**
+     * 파트너 소유 추적 URL → /s/{code} 저장 (동일 target 재사용)
+     *
+     * @param array{lpm_id?:int,merchant_code?:string,product_url?:string} $meta
+     * @return array{ok:bool,message:string,shortUrl:string,promoUrl:string,shortCode:string}
+     */
+    function lc_shortlink_store_for_partner($pt_id, $target_url, array $meta = array())
+    {
+        $pt_id = (int) $pt_id;
+        $target_url = trim((string) $target_url);
+        $empty = array('ok' => false, 'message' => '', 'shortUrl' => '', 'promoUrl' => '', 'shortCode' => '');
+
+        if ($pt_id <= 0 || $target_url === '' || !preg_match('#^https?://#i', $target_url)) {
+            $empty['message'] = '숏링크로 변환할 대상 URL이 올바르지 않습니다.';
+
+            return $empty;
+        }
+        if (!function_exists('lc_lp_shortlink_ensure_table') || !lc_lp_shortlink_ensure_table()) {
+            $empty['message'] = '숏링크 저장소를 준비하지 못했습니다.';
+
+            return $empty;
+        }
+
+        $table = lc_table('lp_shortlinks');
+        $target_hash = hash('sha256', $target_url);
+        $existing = lc_sql_fetch(
+            " SELECT * FROM `{$table}`
+              WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
+              LIMIT 1 ",
+            false
+        );
+        if (is_array($existing) && !empty($existing['short_code'])) {
+            $code = (string) $existing['short_code'];
+
+            return array(
+                'ok'        => true,
+                'message'   => '숏링크가 준비되었습니다.',
+                'shortUrl'  => lc_lp_shortlink_public_url($code),
+                'promoUrl'  => $target_url,
+                'shortCode' => $code,
+            );
+        }
+
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $candidate = lc_lp_shortlink_generate_code();
+            if (!lc_lp_shortlink_get_by_code($candidate)) {
+                $code = $candidate;
+                break;
+            }
+        }
+        if ($code === '') {
+            $empty['message'] = '숏코드 생성에 실패했습니다. 다시 시도해 주세요.';
+
+            return $empty;
+        }
+
+        $lpm_id = (int) ($meta['lpm_id'] ?? 0);
+        $merchant_code = trim((string) ($meta['merchant_code'] ?? ''));
+        $product_url = trim((string) ($meta['product_url'] ?? ''));
+        $ok = lc_sql_query(
+            " INSERT INTO `{$table}` SET
+                pt_id = {$pt_id},
+                lpm_id = {$lpm_id},
+                merchant_code = '" . lc_sql_escape($merchant_code) . "',
+                short_code = '" . lc_sql_escape($code) . "',
+                target_url = '" . lc_sql_escape($target_url) . "',
+                target_hash = '" . lc_sql_escape($target_hash) . "',
+                product_url = '" . lc_sql_escape($product_url) . "',
+                created_at = NOW() ",
+            false
+        );
+        if ($ok === false) {
+            $existing = lc_sql_fetch(
+                " SELECT * FROM `{$table}`
+                  WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
+                  LIMIT 1 ",
+                false
+            );
+            if (is_array($existing) && !empty($existing['short_code'])) {
+                $code = (string) $existing['short_code'];
+
+                return array(
+                    'ok'        => true,
+                    'message'   => '숏링크가 준비되었습니다.',
+                    'shortUrl'  => lc_lp_shortlink_public_url($code),
+                    'promoUrl'  => $target_url,
+                    'shortCode' => $code,
+                );
+            }
+            $empty['message'] = '숏링크 저장에 실패했습니다.';
+
+            return $empty;
+        }
+
+        return array(
+            'ok'        => true,
+            'message'   => '숏링크가 생성되었습니다.',
+            'shortUrl'  => lc_lp_shortlink_public_url($code),
+            'promoUrl'  => $target_url,
+            'shortCode' => $code,
+        );
+    }
+}
+
 if (!function_exists('lc_lp_partner_create_shortlink')) {
     /**
-     * 대표/딥링크 홍보 URL을 /s/{code} 숏링크로 변환 (동일 대상 재사용)
+     * CPS 대표/딥링크 홍보 URL을 /s/{code} 숏링크로 변환 (동일 대상 재사용)
      *
      * @return array{ok:bool,message:string,shortUrl:string,promoUrl:string,shortCode:string}
      */
@@ -2891,11 +2997,6 @@ if (!function_exists('lc_lp_partner_create_shortlink')) {
 
         if ($pt_id <= 0 || $merchant_code === '') {
             $empty['message'] = '광고주 정보가 올바르지 않습니다.';
-
-            return $empty;
-        }
-        if (!lc_lp_shortlink_ensure_table()) {
-            $empty['message'] = '숏링크 저장소를 준비하지 못했습니다.';
 
             return $empty;
         }
@@ -2925,84 +3026,11 @@ if (!function_exists('lc_lp_partner_create_shortlink')) {
             return $empty;
         }
 
-        $table = lc_table('lp_shortlinks');
-        $target_hash = hash('sha256', $promo_url);
-        $existing = lc_sql_fetch(
-            " SELECT * FROM `{$table}`
-              WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
-              LIMIT 1 ",
-            false
-        );
-        if (is_array($existing) && !empty($existing['short_code'])) {
-            $code = (string) $existing['short_code'];
-
-            return array(
-                'ok'        => true,
-                'message'   => '숏링크가 준비되었습니다.',
-                'shortUrl'  => lc_lp_shortlink_public_url($code),
-                'promoUrl'  => $promo_url,
-                'shortCode' => $code,
-            );
-        }
-
-        $code = '';
-        for ($i = 0; $i < 8; $i++) {
-            $candidate = lc_lp_shortlink_generate_code();
-            if (!lc_lp_shortlink_get_by_code($candidate)) {
-                $code = $candidate;
-                break;
-            }
-        }
-        if ($code === '') {
-            $empty['message'] = '숏코드 생성에 실패했습니다. 다시 시도해 주세요.';
-
-            return $empty;
-        }
-
-        $lpm_id = (int) ($merchant['lpm_id'] ?? 0);
-        $ok = lc_sql_query(
-            " INSERT INTO `{$table}` SET
-                pt_id = {$pt_id},
-                lpm_id = {$lpm_id},
-                merchant_code = '" . lc_sql_escape((string) $merchant['merchant_code']) . "',
-                short_code = '" . lc_sql_escape($code) . "',
-                target_url = '" . lc_sql_escape($promo_url) . "',
-                target_hash = '" . lc_sql_escape($target_hash) . "',
-                product_url = '" . lc_sql_escape($deeplink) . "',
-                created_at = NOW() ",
-            false
-        );
-        if ($ok === false) {
-            // 동시 요청 시 unique 충돌 → 기존 행 재조회
-            $existing = lc_sql_fetch(
-                " SELECT * FROM `{$table}`
-                  WHERE pt_id = {$pt_id} AND target_hash = '" . lc_sql_escape($target_hash) . "'
-                  LIMIT 1 ",
-                false
-            );
-            if (is_array($existing) && !empty($existing['short_code'])) {
-                $code = (string) $existing['short_code'];
-
-                return array(
-                    'ok'        => true,
-                    'message'   => '숏링크가 준비되었습니다.',
-                    'shortUrl'  => lc_lp_shortlink_public_url($code),
-                    'promoUrl'  => $promo_url,
-                    'shortCode' => $code,
-                );
-            }
-            $empty['message'] = '숏링크 저장에 실패했습니다.';
-
-            return $empty;
-        }
-
-        return array(
-            'ok'        => true,
-            'message'   => '숏링크가 생성되었습니다.',
-            'shortUrl'  => lc_lp_shortlink_public_url($code),
-            'promoUrl'  => $promo_url,
-            'shortCode' => $code,
-        );
+        return lc_shortlink_store_for_partner($pt_id, $promo_url, array(
+            'lpm_id'         => (int) ($merchant['lpm_id'] ?? 0),
+            'merchant_code'  => (string) $merchant['merchant_code'],
+            'product_url'    => $deeplink,
+        ));
     }
 }
 

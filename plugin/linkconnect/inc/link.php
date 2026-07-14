@@ -231,6 +231,50 @@ if (!function_exists('lc_link_to_api')) {
     }
 }
 
+if (!function_exists('lc_cpa_partner_create_shortlink')) {
+    /**
+     * CPA /r/{code} 추적 링크를 /s/{short} 숏링크로 변환
+     *
+     * @return array{ok:bool,message:string,shortUrl:string,promoUrl:string,shortCode:string}
+     */
+    function lc_cpa_partner_create_shortlink($pt_id, $lk_id)
+    {
+        $pt_id = (int) $pt_id;
+        $lk_id = (int) $lk_id;
+        $empty = array('ok' => false, 'message' => '', 'shortUrl' => '', 'promoUrl' => '', 'shortCode' => '');
+
+        if ($pt_id <= 0 || $lk_id <= 0) {
+            $empty['message'] = '링크 정보가 올바르지 않습니다.';
+
+            return $empty;
+        }
+
+        $link = lc_link_get_by_id($lk_id);
+        if (!$link || (int) ($link['pt_id'] ?? 0) !== $pt_id) {
+            $empty['message'] = '본인 홍보 링크만 숏코드로 변환할 수 있습니다.';
+
+            return $empty;
+        }
+        if (($link['lk_status'] ?? '') !== 'active') {
+            $empty['message'] = '운영중인 링크만 숏코드로 변환할 수 있습니다.';
+
+            return $empty;
+        }
+
+        $promo_url = lc_link_public_url((string) ($link['lk_code'] ?? ''));
+        if ($promo_url === '' || !function_exists('lc_shortlink_store_for_partner')) {
+            $empty['message'] = '숏링크를 만들 수 없습니다.';
+
+            return $empty;
+        }
+
+        return lc_shortlink_store_for_partner($pt_id, $promo_url, array(
+            'merchant_code' => 'cpa:' . (string) ($link['lk_code'] ?? ''),
+            'product_url'   => 'lk:' . $lk_id,
+        ));
+    }
+}
+
 if (!function_exists('lc_link_create')) {
     /**
      * @return array{ok:bool,message:string,link:array|null}
