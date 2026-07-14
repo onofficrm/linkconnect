@@ -362,7 +362,7 @@ body.lc-app.lc-nav-open { overflow: hidden; }
 .lc-feature-card__desc { margin: 0; font-size: 0.85rem; color: var(--lc-slate-500); line-height: 1.55; }
 
 /* Final CTA */
-.lc-final-cta { padding: 5rem 1rem; text-align: center; background: #047857; color: #fff; position: relative; overflow: hidden; }
+.lc-final-cta { padding: 5rem 1rem; text-align: center; background: #059669; color: #fff; position: relative; overflow: hidden; }
 .lc-final-cta::before {
   content: '';
   position: absolute;
@@ -370,7 +370,7 @@ body.lc-app.lc-nav-open { overflow: hidden; }
   background-image: var(--lc-final-cta-bg);
   background-size: cover;
   background-position: center;
-  opacity: 0.72;
+  opacity: 0.9;
   transform: scale(1.05);
   z-index: 0;
 }
@@ -379,9 +379,9 @@ body.lc-app.lc-nav-open { overflow: hidden; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(167, 243, 208, 0.22), transparent 58%),
-    radial-gradient(ellipse 80% 70% at 50% 40%, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.45) 48%, rgba(4, 97, 69, 0.78) 100%),
-    linear-gradient(180deg, rgba(6, 95, 70, 0.35) 0%, rgba(4, 120, 87, 0.28) 42%, rgba(6, 78, 59, 0.72) 100%);
+    radial-gradient(ellipse 70% 50% at 50% 38%, rgba(167, 243, 208, 0.18), transparent 58%),
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(6, 95, 70, 0.28) 0%, rgba(4, 120, 87, 0.42) 45%, rgba(6, 78, 59, 0.72) 100%),
+    linear-gradient(180deg, rgba(6, 95, 70, 0.25) 0%, rgba(5, 150, 105, 0.2) 40%, rgba(6, 78, 59, 0.65) 100%);
   z-index: 1;
   pointer-events: none;
 }

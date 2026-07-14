@@ -193,7 +193,7 @@ $merchant_url = lc_url('merchant/dashboard.php');
   </div>
 </section>
 
-<section class="lc-final-cta" style="--lc-final-cta-bg: url('<?php echo lc_h(lc_builder_asset_url('about/about_hero.png')); ?>')">
+<section class="lc-final-cta" style="--lc-final-cta-bg: url('<?php echo lc_h(lc_builder_asset_url('about/about_partners_activity.png')); ?>')">
   <div class="lc-section__inner">
     <h2 class="lc-final-cta__title">광고주는 성과를 만들고,<br>파트너는 수익을 만듭니다.</h2>
     <p class="lc-final-cta__lead">지금 바로 링크커넥트에서 완벽한 제휴마케팅을 시작하세요.</p>
