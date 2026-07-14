@@ -103,9 +103,6 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
               <span className="font-normal text-slate-400 text-sm ml-1.5">({merchantCode})</span>
             ) : null}
           </h3>
-          {!compact && item.description ? (
-            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{item.description}</p>
-          ) : null}
         </div>
 
         {/* Commission */}
