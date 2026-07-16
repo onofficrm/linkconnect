@@ -1,5 +1,12 @@
 import { GripVertical, Plus, Trash2, X } from 'lucide-react';
 import { KeyboardEvent, useState } from 'react';
+import {
+  formatPromoAssetSize,
+  PromoAssetSizeGuide,
+  PromoAssetSizePreset,
+  PROMO_ASSET_SIZE_PRESETS,
+  suggestTitleForPreset,
+} from './PromoAssetSizeGuide';
 
 export function SectionCard({
   title,
@@ -219,6 +226,11 @@ export function ImageUploader({
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
+
+  const handleSizeSelect = (preset: PromoAssetSizePreset) => {
+    setSelectedSizeId(preset.id);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -243,8 +255,18 @@ export function ImageUploader({
     ? `${(maxBytes / (1024 * 1024)).toFixed(1)}MB`
     : `${Math.round(maxBytes / 1024)}KB`;
 
+  const selectedPreset = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedSizeId) ?? null;
+  const titlePlaceholder = selectedPreset
+    ? `예: ${suggestTitleForPreset(selectedPreset)}`
+    : '이미지 제목 (예: 네이버 블로그 상단 배너)';
+
   return (
     <div className="space-y-4">
+      <PromoAssetSizeGuide
+        selectedId={selectedSizeId}
+        onSelect={disabled ? undefined : handleSizeSelect}
+      />
+
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -257,7 +279,14 @@ export function ImageUploader({
         } ${disabled ? 'opacity-60' : ''}`}
       >
         <p className="text-sm text-slate-600 mb-2">이미지를 드래그하거나 파일을 선택하세요.</p>
-        <p className="text-xs text-slate-400 mb-4">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
+        <p className="text-xs text-slate-400 mb-1">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
+        {selectedPreset ? (
+          <p className="text-xs text-cyan-700 font-medium mb-4">
+            선택 규격: {selectedPreset.title} ({formatPromoAssetSize(selectedPreset.width, selectedPreset.height)})
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 mb-4">위 사이즈 안내에서 용도를 고른 뒤 업로드하면 관리가 쉽습니다.</p>
+        )}
         <label className={`inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-100 ${disabled || uploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
           파일 선택
           <input
@@ -308,7 +337,7 @@ export function ImageUploader({
                   type="text"
                   value={img.imageTitle}
                   disabled={disabled}
-                  placeholder="이미지 제목 (예: 메인 배너)"
+                  placeholder={titlePlaceholder}
                   onChange={(e) => onTitleChange(img.id, e.target.value)}
                   onBlur={(e) => onTitleBlur(img.id, e.target.value)}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:bg-slate-50"

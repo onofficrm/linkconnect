@@ -13,7 +13,7 @@ export type AdvertiserOnboardingPhaseId = (typeof ADVERTISER_ONBOARDING_PHASES)[
 /** 홍보 가이드 위저드 스텝 */
 export const PROMO_GUIDE_WIZARD_STEPS = [
   { id: 1, label: '홍보 콘텐츠', description: '포인트 · 추천키워드 · 금지어' },
-  { id: 2, label: '소재 업로드', description: '배너 · 이미지 (나중에 가능)' },
+  { id: 2, label: '소재 업로드', description: '블로그 · 카페 · 웹 사이즈 안내' },
   { id: 3, label: '운영 규칙 · 제출', description: '유의사항 · DB 기준 · 승인 방식' },
 ] as const;
 

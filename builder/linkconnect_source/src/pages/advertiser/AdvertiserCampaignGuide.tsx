@@ -501,7 +501,7 @@ export function AdvertiserCampaignGuide() {
           {step === 2 ? (
             <SectionCard
               title="사용 가능한 이미지와 배너"
-              hint="파트너가 홍보에 바로 사용할 수 있는 이미지, 배너, 로고를 등록해 주세요. 지금은 건너뛰고 나중에 등록해도 됩니다."
+              hint="네이버 블로그·카페, 웹사이트, 구글 광고용 권장 사이즈를 확인한 뒤 이미지를 등록해 주세요. 지금은 건너뛰고 나중에 등록해도 됩니다."
               count={images.length}
               max={limits.images}
               error={fieldErrors.images}
