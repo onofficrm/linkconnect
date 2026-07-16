@@ -232,7 +232,9 @@ export function ImageUploader({
 
   const selectedPreset = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedSizeId) ?? null;
   const uploadTitle = selectedPreset
-    ? `${suggestTitleForPreset(selectedPreset)} (${formatPromoAssetSize(selectedPreset.width, selectedPreset.height)})`
+    ? selectedPreset.freeFormat
+      ? suggestTitleForPreset(selectedPreset)
+      : `${suggestTitleForPreset(selectedPreset)} (${formatPromoAssetSize(selectedPreset)})`
     : '';
 
   const handleSizeSelect = (preset: PromoAssetSizePreset) => {
@@ -272,8 +274,8 @@ export function ImageUploader({
       <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-4 py-3 text-sm text-cyan-900">
         <p className="font-bold">사이즈별 업로드</p>
         <p className="text-xs text-cyan-800/90 mt-1 leading-relaxed">
-          ① 아래에서 용도(블로그·카페·웹·구글)를 고르고 → ② 해당 규격으로 이미지를 업로드하세요.
-          제목은 선택한 사이즈명으로 자동 저장됩니다.
+          ① 권장 규격 또는 <strong>자유형식</strong>을 고르고 → ② 이미지를 업로드하세요.
+          제목은 선택한 용도로 자동 저장됩니다.
         </p>
       </div>
 
@@ -294,29 +296,47 @@ export function ImageUploader({
             ? 'border-slate-200 bg-slate-50 opacity-70'
             : dragOver
               ? 'border-cyan-400 bg-cyan-50'
-              : 'border-cyan-300 bg-gradient-to-b from-cyan-50/80 to-white'
+              : selectedPreset.freeFormat
+                ? 'border-slate-300 bg-gradient-to-b from-slate-50 to-white'
+                : 'border-cyan-300 bg-gradient-to-b from-cyan-50/80 to-white'
         } ${disabled ? 'opacity-60' : ''}`}
       >
         {selectedPreset ? (
           <>
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-700 mb-3">
+            <div
+              className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-3 ${
+                selectedPreset.freeFormat ? 'bg-slate-200 text-slate-700' : 'bg-cyan-100 text-cyan-700'
+              }`}
+            >
               <Upload size={22} />
             </div>
             <p className="text-base font-bold text-slate-900 mb-1">
               {selectedPreset.title} 업로드
             </p>
-            <p className="text-sm font-semibold text-cyan-700 tabular-nums mb-2">
-              {formatPromoAssetSize(selectedPreset.width, selectedPreset.height)}
+            <p
+              className={`text-sm font-semibold tabular-nums mb-2 ${
+                selectedPreset.freeFormat ? 'text-slate-600' : 'text-cyan-700'
+              }`}
+            >
+              {formatPromoAssetSize(selectedPreset)}
             </p>
             <p className="text-xs text-slate-500 mb-1 max-w-md mx-auto leading-relaxed">{selectedPreset.hint}</p>
             <p className="text-xs text-slate-400 mb-4">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
             <label
-              className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-cyan-600 text-white text-sm font-bold hover:bg-cyan-500 shadow-sm ${
+              className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-sm ${
+                selectedPreset.freeFormat
+                  ? 'bg-slate-900 text-white hover:bg-slate-800'
+                  : 'bg-cyan-600 text-white hover:bg-cyan-500'
+              } ${
                 disabled || uploading || images.length >= max ? 'pointer-events-none opacity-50' : 'cursor-pointer'
               }`}
             >
               <Upload size={16} />
-              {uploading ? '업로드 중...' : '이 사이즈로 파일 선택'}
+              {uploading
+                ? '업로드 중...'
+                : selectedPreset.freeFormat
+                  ? '자유형식으로 파일 선택'
+                  : '이 사이즈로 파일 선택'}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"

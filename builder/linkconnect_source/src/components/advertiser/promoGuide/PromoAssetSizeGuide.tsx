@@ -8,6 +8,8 @@ export type PromoAssetSizePreset = {
   platform: 'naver' | 'web' | 'google';
   group: 'popular' | 'naver' | 'web';
   hint: string;
+  /** 규격 제한 없이 업로드 */
+  freeFormat?: boolean;
 };
 
 /** 네이버·구글·웹사이트 중심 권장 사이즈 (SNS보다 웹/블로그/카페 우선) */
@@ -47,6 +49,16 @@ export const PROMO_ASSET_SIZE_PRESETS: PromoAssetSizePreset[] = [
     platform: 'web',
     group: 'popular',
     hint: '링크커넥트 CPA 목록·파트너 카드에 표시되는 권장 비율(16:10)입니다.',
+  },
+  {
+    id: 'free-format',
+    title: '자유형식',
+    width: 0,
+    height: 0,
+    platform: 'web',
+    group: 'popular',
+    freeFormat: true,
+    hint: '규격에 상관없이 로고, 상세컷, 기타 홍보 이미지를 올릴 수 있습니다.',
   },
   {
     id: 'naver-blog-body',
@@ -113,13 +125,53 @@ export const PROMO_ASSET_SIZE_PRESETS: PromoAssetSizePreset[] = [
   },
 ];
 
+export const FREE_FORMAT_PRESET =
+  PROMO_ASSET_SIZE_PRESETS.find((p) => p.freeFormat) ??
+  ({
+    id: 'free-format',
+    title: '자유형식',
+    width: 0,
+    height: 0,
+    platform: 'web' as const,
+    group: 'popular' as const,
+    freeFormat: true,
+    hint: '규격에 상관없이 이미지를 올릴 수 있습니다.',
+  } satisfies PromoAssetSizePreset);
+
 const GROUP_TABS = [
   { id: 'popular' as const, label: '인기' },
   { id: 'naver' as const, label: '네이버' },
   { id: 'web' as const, label: '웹·구글' },
 ];
 
-function SizePreview({ width, height, active }: { width: number; height: number; active?: boolean }) {
+function SizePreview({
+  width,
+  height,
+  active,
+  freeFormat,
+}: {
+  width: number;
+  height: number;
+  active?: boolean;
+  freeFormat?: boolean;
+}) {
+  if (freeFormat) {
+    return (
+      <div className="h-16 flex items-center justify-center">
+        <div
+          className={`w-14 h-10 rounded-md border border-dashed flex items-center justify-center text-[10px] font-bold tracking-tight ${
+            active
+              ? 'bg-cyan-100 border-cyan-400 text-cyan-700'
+              : 'bg-white border-slate-300 text-slate-400'
+          }`}
+          aria-hidden
+        >
+          FREE
+        </div>
+      </div>
+    );
+  }
+
   const maxW = 88;
   const maxH = 56;
   const scale = Math.min(maxW / width, maxH / height);
@@ -141,12 +193,19 @@ function SizePreview({ width, height, active }: { width: number; height: number;
   );
 }
 
-export function formatPromoAssetSize(width: number, height: number) {
-  return `${width.toLocaleString()} × ${height.toLocaleString()} px`;
+export function formatPromoAssetSize(preset: PromoAssetSizePreset): string;
+export function formatPromoAssetSize(width: number, height: number): string;
+export function formatPromoAssetSize(a: PromoAssetSizePreset | number, b?: number) {
+  if (typeof a === 'object') {
+    if (a.freeFormat) return '자유 규격';
+    return `${a.width.toLocaleString()} × ${a.height.toLocaleString()} px`;
+  }
+  if (!a || !b) return '자유 규격';
+  return `${a.toLocaleString()} × ${b.toLocaleString()} px`;
 }
 
 export function suggestTitleForPreset(preset: PromoAssetSizePreset) {
-  return preset.title;
+  return preset.freeFormat ? '자유형식 이미지' : preset.title;
 }
 
 type PromoAssetSizeGuideProps = {
@@ -157,10 +216,17 @@ type PromoAssetSizeGuideProps = {
 export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetSizeGuideProps) {
   const [tab, setTab] = useState<'popular' | 'naver' | 'web'>('popular');
 
-  const items = useMemo(
-    () => PROMO_ASSET_SIZE_PRESETS.filter((p) => (tab === 'popular' ? p.group === 'popular' : p.group === tab)),
-    [tab],
-  );
+  const items = useMemo(() => {
+    const base =
+      tab === 'popular'
+        ? PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === 'popular')
+        : PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === tab && !p.freeFormat);
+    // 네이버/웹 탭에도 자유형식을 항상 마지막에 노출
+    if (tab !== 'popular') {
+      return [...base, FREE_FORMAT_PRESET];
+    }
+    return base;
+  }, [tab]);
 
   const selected = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedId) ?? null;
 
@@ -169,7 +235,7 @@ export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetS
       <div>
         <h3 className="text-sm font-bold text-slate-900">1. 업로드할 사이즈 선택</h3>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-          네이버 블로그·카페, 웹사이트, 구글 디스플레이 규격입니다. 카드를 고른 뒤 아래에서 그 사이즈로 업로드하세요.
+          권장 규격을 고르거나, 규격이 없으면 <strong className="text-slate-700">자유형식</strong>으로 업로드하세요.
         </p>
       </div>
 
@@ -202,15 +268,22 @@ export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetS
               className={`text-left rounded-xl border p-3 transition-all ${
                 active
                   ? 'border-cyan-400 bg-white ring-2 ring-cyan-200 shadow-sm'
-                  : 'border-slate-200/80 bg-white hover:border-cyan-300 hover:shadow-sm'
+                  : preset.freeFormat
+                    ? 'border-dashed border-slate-300 bg-white hover:border-cyan-300 hover:shadow-sm'
+                    : 'border-slate-200/80 bg-white hover:border-cyan-300 hover:shadow-sm'
               } ${!onSelect ? 'cursor-default' : ''}`}
             >
               <div className={`rounded-lg mb-2 ${active ? 'bg-cyan-50' : 'bg-slate-100'}`}>
-                <SizePreview width={preset.width} height={preset.height} active={active} />
+                <SizePreview
+                  width={preset.width || 120}
+                  height={preset.height || 80}
+                  active={active}
+                  freeFormat={preset.freeFormat}
+                />
               </div>
               <div className="text-xs font-bold text-slate-900 leading-snug">{preset.title}</div>
               <div className="text-[11px] text-slate-500 mt-1 tabular-nums">
-                {formatPromoAssetSize(preset.width, preset.height)}
+                {formatPromoAssetSize(preset)}
               </div>
             </button>
           );
@@ -220,11 +293,14 @@ export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetS
       {selected ? (
         <div className="rounded-xl border border-cyan-100 bg-cyan-50/70 px-3.5 py-3 text-xs text-cyan-900 space-y-1">
           <p className="font-bold">
-            {selected.title} · {formatPromoAssetSize(selected.width, selected.height)}
+            {selected.title}
+            {selected.freeFormat ? ' · 자유 규격' : ` · ${formatPromoAssetSize(selected)}`}
           </p>
           <p className="text-cyan-800/90 leading-relaxed">{selected.hint}</p>
           <p className="text-cyan-700/80">
-            JPG · PNG · WEBP 권장. 가능하면 위 픽셀에 맞춰 제작한 뒤 업로드해 주세요.
+            {selected.freeFormat
+              ? 'JPG · PNG · WEBP 권장. 비율·픽셀 제한 없이 업로드할 수 있습니다.'
+              : 'JPG · PNG · WEBP 권장. 가능하면 위 픽셀에 맞춰 제작한 뒤 업로드해 주세요.'}
           </p>
         </div>
       ) : (
