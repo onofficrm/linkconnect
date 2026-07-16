@@ -40,7 +40,7 @@ export function PartnerDashboard() {
         message={<>오늘 클릭 <strong>{summary?.todayClicks ?? 0}회</strong>, 접수 DB <strong>{summary?.todayReceived ?? 0}건</strong>, 예상수입 <strong>{(summary?.todayEstRevenue ?? 0).toLocaleString()}원</strong></>}
         subMessage="성과가 좋은 상품을 먼저 홍보하면 수익 상승 속도가 빨라집니다."
         actions={[
-          { label: '광고상품 찾기', to: '/partner/search' },
+          { label: '실시간 수익', to: '/partner/live-earnings' },
           { label: '유입 분석', to: '/partner/analytics', variant: 'secondary' },
         ]}
       />
@@ -127,7 +127,7 @@ export function PartnerDashboard() {
                     <TableRow row={row} rank={index + 1} />
                   </Fragment>
                 )) : (
-                  <DataTableEmpty colSpan={6} title="접수된 디비가 없습니다" description="홍보 링크를 통해 유입이 시작되면 최근 접수 내역이 표시됩니다." actionLabel="광고상품 찾기" actionTo="/partner/search" />
+                  <DataTableEmpty colSpan={6} title="접수된 디비가 없습니다" description="홍보 링크를 통해 유입이 시작되면 최근 접수 내역이 표시됩니다." actionLabel="내 홍보 링크" actionTo="/partner/links" />
                 )}
               </tbody>
             </table>

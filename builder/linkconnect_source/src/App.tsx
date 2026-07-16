@@ -29,6 +29,7 @@ import { PartnerCpsLinks } from './pages/partner/cps/PartnerCpsLinks';
 import { PartnerCpsClicks } from './pages/partner/cps/PartnerCpsClicks';
 import { PartnerCpsOrders } from './pages/partner/cps/PartnerCpsOrders';
 import { PartnerCpsEarnings } from './pages/partner/cps/PartnerCpsEarnings';
+import { PartnerLiveEarnings } from './pages/partner/PartnerLiveEarnings';
 
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
@@ -109,6 +110,7 @@ export default function App() {
         {/* 파트너센터 — 가드 + 전용 레이아웃 */}
         <Route element={<PartnerRouteGuard />}>
           <Route path="partner" element={<PartnerDashboard />} />
+          <Route path="partner/live-earnings" element={<PartnerLiveEarnings />} />
           <Route path="partner/search" element={<PartnerSearch />} />
           <Route path="partner/cps" element={<PartnerCps />} />
           <Route path="partner/cps/links" element={<PartnerCpsLinks />} />
