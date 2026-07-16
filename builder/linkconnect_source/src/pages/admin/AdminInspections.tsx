@@ -4,7 +4,7 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import {
   ShieldAlert, Clock, CheckCircle2, XCircle, AlertTriangle, Percent,
   Search, Calendar, ChevronDown, Download, X, User, MessageSquare,
-  Building2, Users, Check, X as XIcon, Bot,
+  Building2, Users, Check, X as XIcon, Bot, FileText, AlertCircle,
 } from 'lucide-react';
 import {
   AdminInspection,
@@ -93,7 +93,7 @@ export function AdminInspections() {
         <SummaryCard title="오늘 취소 요청" value={summary.todayCancel.toLocaleString()} suffix="건" icon={<ShieldAlert size={18} />} />
         <SummaryCard title="취소 승인" value={summary.confirmed.toLocaleString()} suffix="건" color="emerald" highlight icon={<CheckCircle2 size={18} />} />
         <SummaryCard title="취소 반려" value={summary.restored.toLocaleString()} suffix="건" color="red" highlight icon={<XCircle size={18} />} />
-        <SummaryCard title="이의신청" value={summary.appeals.toLocaleString()} suffix="건" color="orange" highlight icon={<AlertTriangle size={18} />} />
+        <SummaryCard title="이의신청" value={summary.appeals.toLocaleString()} suffix="건" color="amber" highlight icon={<AlertTriangle size={18} />} />
         <SummaryCard title="평균 취소율" value={String(summary.cancelRate)} suffix="%" dark icon={<Percent size={18} />} />
       </div>
 
