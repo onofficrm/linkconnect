@@ -216,7 +216,7 @@ if (!function_exists('lc_merchant_seed_defaults')) {
     /**
      * @return array{ok:bool,merchant:array|null}
      */
-    function lc_merchant_seed_defaults($mb_id, $company = '', $balance = 2350000)
+    function lc_merchant_seed_defaults($mb_id, $company = '', $balance = 0)
     {
         $create = lc_merchant_create($mb_id, $company, LC_MERCHANT_STATUS_ACTIVE, $balance);
         if ($create['ok'] && is_array($create['merchant'])) {

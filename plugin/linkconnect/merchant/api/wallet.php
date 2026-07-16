@@ -12,13 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $mt_id = is_array($merchant) ? (int) $merchant['mt_id'] : 0;
 
     lc_api_success(array(
-        'balance'          => $mt_id > 0 ? lc_wallet_get_balance($mt_id) : 2350000,
-        'balanceFormatted' => number_format($mt_id > 0 ? lc_wallet_get_balance($mt_id) : 2350000),
+        'balance'          => $mt_id > 0 ? lc_wallet_get_balance($mt_id) : 0,
+        'balanceFormatted' => number_format($mt_id > 0 ? lc_wallet_get_balance($mt_id) : 0),
         'summary'          => $mt_id > 0 ? lc_wallet_merchant_summary($mt_id) : array(
-            'balance'          => 2350000,
-            'monthlyCharge'    => 5000000,
-            'monthlySpend'     => 2650000,
-            'availableBalance' => 1900000,
+            'balance'          => 0,
+            'monthlyCharge'    => 0,
+            'monthlySpend'     => 0,
+            'availableBalance' => 0,
         ),
         'items'            => lc_wallet_list_for_api($mt_id),
         'dbReady'          => lc_db_installed(),

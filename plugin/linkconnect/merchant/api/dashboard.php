@@ -17,19 +17,19 @@ if ($mt_id > 0) {
     $data = lc_merchant_dashboard_for_api($mt_id);
 } else {
     $data = array(
-        'balance'          => 2350000,
-        'balanceFormatted' => '2,350,000',
+        'balance'          => 0,
+        'balanceFormatted' => '0',
         'summary'          => array(
-            'pending'       => 9,
-            'approved'      => 21,
-            'rejected'      => 4,
-            'needsAction'   => 9,
-            'todayReceived' => 17,
-            'todaySpend'    => 300000,
+            'pending'       => 0,
+            'approved'      => 0,
+            'rejected'      => 0,
+            'needsAction'   => 0,
+            'todayReceived' => 0,
+            'todaySpend'    => 0,
         ),
-        'chart7d'          => function_exists('lc_sample_merchant_chart_7d') ? lc_sample_merchant_chart_7d() : array(),
-        'recent'           => lc_conversion_list_for_api(0),
-        'pendingAction'    => 9,
+        'chart7d'          => array(),
+        'recent'           => array(),
+        'pendingAction'    => 0,
     );
 }
 

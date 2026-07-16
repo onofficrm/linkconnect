@@ -31,9 +31,11 @@ export function AdvertiserLayout({
   const showContractMenu = shouldShowMerchantContractMenu(auth);
   const contractMenuPath = getMerchantContractPath(auth);
   const contractMenuBadge = auth.merchantContractRequires ? '!' : undefined;
-  const displayCompany = companyName ?? auth.merchantCompany ?? '(주)리드앤솔루션';
-  const displayBalance = balance ?? (auth.merchantBalance !== null ? auth.merchantBalance.toLocaleString() : '2,350,000');
-  const dbBadge = pendingBadge ?? (auth.dbReady ? undefined : 9);
+  const displayCompany = companyName ?? auth.merchantCompany ?? '광고주';
+  const displayBalance = balance ?? (auth.merchantBalance !== null && auth.merchantBalance !== undefined
+    ? auth.merchantBalance.toLocaleString()
+    : '0');
+  const dbBadge = pendingBadge;
 
   return (
     <div className="min-h-screen bg-slate-50/80 flex flex-col">

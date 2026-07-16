@@ -37,11 +37,11 @@ const fallbackChartData = [
 export function AdvertiserDashboard() {
   const auth = getLcAuth();
   const showContractCard = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
-  const [balance, setBalance] = useState('2,350,000');
-  const [summary, setSummary] = useState({ pending: 9, todayReceived: 17, todaySpend: 300000 });
-  const [chartData, setChartData] = useState(fallbackChartData);
+  const [balance, setBalance] = useState('0');
+  const [summary, setSummary] = useState({ pending: 0, todayReceived: 0, todaySpend: 0 });
+  const [chartData, setChartData] = useState<typeof fallbackChartData>([]);
   const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
-  const [pendingAction, setPendingAction] = useState(9);
+  const [pendingAction, setPendingAction] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
@@ -50,12 +50,16 @@ export function AdvertiserDashboard() {
       .then((data) => {
         setBalance(data.balanceFormatted);
         setSummary(data.summary);
-        setChartData(data.chart7d.length ? data.chart7d : fallbackChartData);
+        setChartData(Array.isArray(data.chart7d) ? data.chart7d : []);
         setRecent(data.recent);
         setPendingAction(data.pendingAction);
       })
       .catch(() => {
-        // 샘플 UI fallback
+        setBalance('0');
+        setSummary({ pending: 0, todayReceived: 0, todaySpend: 0 });
+        setChartData([]);
+        setRecent([]);
+        setPendingAction(0);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -126,6 +130,11 @@ export function AdvertiserDashboard() {
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-6">최근 7일 디비 처리 현황</h2>
             <div className="h-72">
+              {chartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                  아직 표시할 디비 처리 데이터가 없습니다.
+                </div>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -152,6 +161,7 @@ export function AdvertiserDashboard() {
                   <Area type="monotone" dataKey="cancel" name="취소 DB" stroke="#ef4444" strokeWidth={2} fill="url(#colorCancel)" />
                 </AreaChart>
               </ResponsiveContainer>
+              )}
             </div>
           </div>
 
