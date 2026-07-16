@@ -529,6 +529,11 @@ export type MerchantDashboardResponse = {
     todayReceived: number;
     todaySpend: number;
   };
+  wallet: {
+    monthlyCharge: number;
+    monthlySpend: number;
+    availableBalance: number;
+  };
   chart7d: Array<{ date: string; db: number; approval: number; cancel: number }>;
   recent: MerchantConversion[];
   pendingAction: number;

@@ -813,10 +813,23 @@ if (!function_exists('lc_merchant_dashboard_for_api')) {
         $chart = lc_conversion_merchant_chart_7d($mt_id);
         $recent = array_slice(lc_conversion_list_for_api($mt_id), 0, 5);
 
+        $wallet = function_exists('lc_wallet_merchant_summary')
+            ? lc_wallet_merchant_summary($mt_id)
+            : array(
+                'monthlyCharge'    => 0,
+                'monthlySpend'     => 0,
+                'availableBalance' => is_array($merchant) ? (int) $merchant['mt_balance'] : 0,
+            );
+
         return array(
             'balance'       => is_array($merchant) ? (int) $merchant['mt_balance'] : 0,
             'balanceFormatted' => is_array($merchant) ? number_format((int) $merchant['mt_balance']) : '0',
             'summary'       => $summary,
+            'wallet'        => array(
+                'monthlyCharge'    => (int) ($wallet['monthlyCharge'] ?? 0),
+                'monthlySpend'     => (int) ($wallet['monthlySpend'] ?? 0),
+                'availableBalance' => (int) ($wallet['availableBalance'] ?? 0),
+            ),
             'chart7d'       => $chart,
             'recent'        => $recent,
             'pendingAction' => (int) ($summary['needsAction'] ?? 0),

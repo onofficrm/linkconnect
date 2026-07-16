@@ -27,6 +27,11 @@ if ($mt_id > 0) {
             'todayReceived' => 0,
             'todaySpend'    => 0,
         ),
+        'wallet'           => array(
+            'monthlyCharge'    => 0,
+            'monthlySpend'     => 0,
+            'availableBalance' => 0,
+        ),
         'chart7d'          => array(),
         'recent'           => array(),
         'pendingAction'    => 0,

@@ -39,6 +39,7 @@ export function AdvertiserDashboard() {
   const showContractCard = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
   const [balance, setBalance] = useState('0');
   const [summary, setSummary] = useState({ pending: 0, todayReceived: 0, todaySpend: 0 });
+  const [wallet, setWallet] = useState({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
   const [chartData, setChartData] = useState<typeof fallbackChartData>([]);
   const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
   const [pendingAction, setPendingAction] = useState(0);
@@ -50,6 +51,7 @@ export function AdvertiserDashboard() {
       .then((data) => {
         setBalance(data.balanceFormatted);
         setSummary(data.summary);
+        setWallet(data.wallet ?? { monthlyCharge: 0, monthlySpend: 0, availableBalance: data.balance ?? 0 });
         setChartData(Array.isArray(data.chart7d) ? data.chart7d : []);
         setRecent(data.recent);
         setPendingAction(data.pendingAction);
@@ -57,12 +59,15 @@ export function AdvertiserDashboard() {
       .catch(() => {
         setBalance('0');
         setSummary({ pending: 0, todayReceived: 0, todaySpend: 0 });
+        setWallet({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
         setChartData([]);
         setRecent([]);
         setPendingAction(0);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const monthlyNet = wallet.monthlyCharge - wallet.monthlySpend;
 
   useEffect(() => {
     if (showContractCard || !auth.merchantContractSigned) {
@@ -176,14 +181,20 @@ export function AdvertiserDashboard() {
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between items-center py-3 border-b border-white/10">
                   <span className="text-slate-400">이번 달 충전액</span>
-                  <span className="font-semibold text-white">5,000,000 원</span>
+                  <span className="font-semibold text-white">+{wallet.monthlyCharge.toLocaleString()} 원</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-white/10">
                   <span className="text-slate-400">이번 달 사용액</span>
-                  <span className="font-semibold text-rose-400">-2,650,000 원</span>
+                  <span className="font-semibold text-rose-400">-{wallet.monthlySpend.toLocaleString()} 원</span>
+                </div>
+                <div className="flex justify-between items-center py-3 border-b border-white/10">
+                  <span className="text-slate-400">이번 달 순증감</span>
+                  <span className={`font-semibold ${monthlyNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {monthlyNet >= 0 ? '+' : ''}{monthlyNet.toLocaleString()} 원
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-4">
-                  <span className="text-lg font-medium text-slate-300">남은 잔액</span>
+                  <span className="text-lg font-medium text-slate-300">현재 잔액</span>
                   <span className="text-3xl font-bold text-cyan-400">{balance} <span className="text-lg font-normal text-slate-400">원</span></span>
                 </div>
               </div>

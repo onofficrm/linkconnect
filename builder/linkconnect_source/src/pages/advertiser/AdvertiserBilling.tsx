@@ -95,6 +95,8 @@ export function AdvertiserBilling() {
     return status;
   };
 
+  const monthlyNet = summary.monthlyCharge - summary.monthlySpend;
+
   return (
     <AdvertiserLayout activeMenu="billing" title="광고비 충전/내역">
       <div className="flex flex-col mb-8 -mt-2">
@@ -113,7 +115,7 @@ export function AdvertiserBilling() {
         <SummaryCard title="현재 광고비 잔액" value={balance.toLocaleString()} suffix="원" highlight />
         <SummaryCard title="이번 달 충전액" value={summary.monthlyCharge.toLocaleString()} suffix="원" />
         <SummaryCard title="이번 달 사용액" value={summary.monthlySpend.toLocaleString()} suffix="원" />
-        <SummaryCard title="사용 가능 잔액" value={summary.availableBalance.toLocaleString()} suffix="원" dark />
+        <SummaryCard title="이번 달 순증감" value={(summary.monthlyCharge - summary.monthlySpend).toLocaleString()} suffix="원" dark />
         <SummaryCard title="거래 건수" value={history.length.toLocaleString()} suffix="건" />
       </div>
 
@@ -217,19 +219,19 @@ export function AdvertiserBilling() {
             </div>
             <div>
               <div className="text-slate-400 text-sm mb-1">이번 달 사용액</div>
-              <div className="text-xl font-medium text-white">-{summary.monthlySpend.toLocaleString()}원</div>
+              <div className="text-xl font-medium text-rose-400">-{summary.monthlySpend.toLocaleString()}원</div>
             </div>
             <div>
-              <div className="text-slate-400 text-sm mb-1 flex items-center gap-1">
-                현재 잔액
+              <div className="text-slate-400 text-sm mb-1">이번 달 순증감 (충전 − 사용)</div>
+              <div className={`text-xl font-medium ${monthlyNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {monthlyNet >= 0 ? '+' : ''}{monthlyNet.toLocaleString()}원
               </div>
-              <div className="text-xl font-medium text-cyan-400">{balance.toLocaleString()}원</div>
             </div>
           </div>
 
           <div className="pt-6 mt-6 border-t border-slate-800 relative z-10">
-            <div className="text-slate-400 text-sm mb-2">남은 잔액 (사용 가능)</div>
-            <div className="text-3xl font-bold text-white tracking-tight">{summary.availableBalance.toLocaleString()}<span className="text-xl font-medium ml-1">원</span></div>
+            <div className="text-slate-400 text-sm mb-2">현재 잔액 (사용 가능)</div>
+            <div className="text-3xl font-bold text-white tracking-tight">{balance.toLocaleString()}<span className="text-xl font-medium ml-1">원</span></div>
           </div>
 
           <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="w-full mt-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-white/10 relative z-10">
