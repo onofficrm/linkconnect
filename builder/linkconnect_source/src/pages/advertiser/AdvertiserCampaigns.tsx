@@ -59,7 +59,7 @@ export function AdvertiserCampaigns() {
           className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-cyan-200 bg-cyan-50 text-cyan-800 text-sm font-bold hover:bg-cyan-100 shrink-0"
         >
           <BookOpen size={15} />
-          온보딩 · 가이드 작성
+          광고 등록하기
         </Link>
       </div>
 
