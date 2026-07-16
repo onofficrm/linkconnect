@@ -15,6 +15,8 @@ type MemberAuthMenuProps = {
   loginReturnUrl?: string;
   logoutReturnPath?: string;
   onNavigate?: () => void;
+  /** 사이드바에서 계약 메뉴 활성 표시용 */
+  activeMenu?: string;
 };
 
 export function MemberAuthMenu({
@@ -22,6 +24,7 @@ export function MemberAuthMenu({
   loginReturnUrl,
   logoutReturnPath,
   onNavigate,
+  activeMenu,
 }: MemberAuthMenuProps) {
   const loggedIn = isLcLoggedIn();
   const auth = getLcAuth();
@@ -31,7 +34,8 @@ export function MemberAuthMenu({
     logoutReturnPath === '/advertiser' &&
     shouldShowMerchantContractMenu(auth);
   const contractMenuPath = getMerchantContractPath(auth);
-  const contractMenuLabel = auth.merchantContractRequires ? 'CPA 계약 체결' : '계약정보';
+  const contractMenuLabel = auth.merchantContractRequires ? '계약서 작성' : '계약정보';
+  const contractActive = activeMenu === 'contract';
   const loginUrl = g5LoginUrl(loginReturnUrl ?? currentSpaReturnUrl());
   const logoutUrl = g5LogoutUrl(logoutReturnPath ?? currentSpaReturnPath());
   const editUrl = g5MemberEditUrl();
@@ -137,10 +141,20 @@ export function MemberAuthMenu({
             {showContractInfo ? (
               <Link
                 to={contractMenuPath}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                onClick={handleClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
+                  contractActive
+                    ? 'bg-cyan-500/15 text-cyan-300'
+                    : auth.merchantContractRequires
+                      ? 'bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 border border-cyan-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
               >
                 <FileText size={20} />
-                <span>{contractMenuLabel}</span>
+                <span className="flex-1">{contractMenuLabel}</span>
+                {auth.merchantContractRequires ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500 text-white">필수</span>
+                ) : null}
               </Link>
             ) : null}
           </>

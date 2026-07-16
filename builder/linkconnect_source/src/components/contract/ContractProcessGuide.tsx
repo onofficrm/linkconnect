@@ -34,7 +34,7 @@ const adminSteps = [
     step: '1',
     icon: <FileSignature size={16} />,
     title: '광고주가 전자 계약 체결',
-    desc: '광고주센터 → CPA 계약 체결 메뉴에서 3단계 작성·서명을 완료합니다.',
+    desc: '광고주센터 사이드바 하단 「계약서 작성」(회원정보 수정 아래)에서 3단계 작성·서명을 완료합니다.',
   },
   {
     step: '2',
@@ -102,7 +102,7 @@ export function ContractProcessGuide({ audience, className = '' }: ContractProce
       </ol>
       <p className="mt-4 text-xs text-slate-500 flex items-start gap-1.5">
         <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-        광고주 체결 경로: 로그인 → 광고주센터 → <Link to="/advertiser/contract" className="text-cyan-700 font-bold hover:underline">CPA 계약 체결</Link>
+        광고주 체결 경로: 로그인 → 광고주센터 → 사이드바 하단 <Link to="/advertiser/contract" className="text-cyan-700 font-bold hover:underline">계약서 작성</Link>
         <ArrowRight size={12} className="inline shrink-0 mt-0.5" />
         3단계 작성·서명
       </p>

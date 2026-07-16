@@ -2,10 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, FileSignature, Megaphone } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, Megaphone } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
-import { getLcAuth, shouldShowMerchantContractNotice, shouldShowMerchantContractMenu, getMerchantContractPath } from '../lib/auth';
+import { getLcAuth, shouldShowMerchantContractNotice } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { AdvertiserContractNotice } from '../components/advertiser/AdvertiserContractNotice';
 import { NotificationCenter } from '../components/NotificationCenter';
@@ -28,9 +28,6 @@ export function AdvertiserLayout({
 }) {
   const auth = getLcAuth();
   const showContractGraceBanner = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
-  const showContractMenu = shouldShowMerchantContractMenu(auth);
-  const contractMenuPath = getMerchantContractPath(auth);
-  const contractMenuBadge = auth.merchantContractRequires ? '!' : undefined;
   const displayCompany = companyName ?? auth.merchantCompany ?? '광고주';
   const displayBalance = balance ?? (auth.merchantBalance !== null && auth.merchantBalance !== undefined
     ? auth.merchantBalance.toLocaleString()
@@ -48,16 +45,6 @@ export function AdvertiserLayout({
           <div className="hidden md:block text-[11px] font-bold text-slate-500 uppercase tracking-[0.14em] mb-4 px-1">Advertiser</div>
           <nav className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
             <CenterNavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" accent="cyan" />
-            {showContractMenu ? (
-              <CenterNavItem
-                icon={<FileSignature size={20} />}
-                label={auth.merchantContractRequires ? 'CPA 계약 체결' : 'CPA 계약서'}
-                active={activeMenu === 'contract'}
-                badge={contractMenuBadge}
-                to={contractMenuPath}
-                accent="cyan"
-              />
-            ) : null}
             <CenterNavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" accent="cyan" />
             <CenterNavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" accent="cyan" />
             <CenterNavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" accent="cyan" />
@@ -67,7 +54,11 @@ export function AdvertiserLayout({
             <CenterNavItem icon={<MessageSquare size={20} />} label="문의하기" active={activeMenu === 'support'} to="/advertiser/support" accent="cyan" />
           </nav>
           <div className="mt-4 pt-4 border-t border-slate-800/80">
-            <MemberAuthMenu variant="sidebar" logoutReturnPath="/advertiser" />
+            <MemberAuthMenu
+              variant="sidebar"
+              logoutReturnPath="/advertiser"
+              activeMenu={activeMenu}
+            />
           </div>
         </div>
       </aside>
