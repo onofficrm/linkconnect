@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { openLandingPage } from '../../lib/utils';
+import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -203,16 +204,20 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
-      {item.thumbnailUrl ? (
-        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100">
+      <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100`}>
+        {item.thumbnailUrl ? (
           <img
             src={item.thumbnailUrl}
             alt={item.title}
             className="w-full h-full object-cover"
             loading="lazy"
           />
-        </div>
-      ) : null}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm font-medium bg-gradient-to-br from-slate-50 to-slate-100">
+            No Image
+          </div>
+        )}
+      </div>
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">
           <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md border border-slate-200">

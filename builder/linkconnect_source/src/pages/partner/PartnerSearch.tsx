@@ -13,6 +13,7 @@ import {
   PartnerLink,
 } from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
+import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
@@ -819,7 +820,7 @@ function CampaignCard({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       {campaign.thumbnailUrl ? (
-        <div className="aspect-[16/10] overflow-hidden relative bg-slate-100 flex items-center justify-center">
+        <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100 flex items-center justify-center`}>
           <img
             src={campaign.thumbnailUrl}
             alt={campaign.title}

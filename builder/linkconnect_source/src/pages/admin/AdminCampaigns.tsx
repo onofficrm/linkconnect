@@ -21,6 +21,7 @@ import {
 import { isLcSuperAdmin } from '../../lib/auth';
 import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
 import { AdminCampaignPromoGuidePanel } from '../../components/admin/AdminCampaignPromoGuidePanel';
+import { CPA_THUMBNAIL_ASPECT_CLASS, CPA_THUMBNAIL_SPEC, cpaThumbnailHint } from '../../lib/cpaThumbnail';
 
 const categoryOptions = ['금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -574,17 +575,20 @@ export function AdminCampaigns() {
                   <div className="grid grid-cols-2 gap-4">
                     
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">썸네일 이미지</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">썸네일 이미지 (가로형)</label>
                       <div className="flex items-start gap-4">
                         <div
-                          className={`w-24 h-24 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group ${isEditMode && editForm.id ? 'cursor-pointer' : ''}`}
+                          className={`w-44 ${CPA_THUMBNAIL_ASPECT_CLASS} rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group ${isEditMode && editForm.id ? 'cursor-pointer' : ''}`}
                           onClick={handleThumbnailClick}
                         >
                           <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
                           {editForm.thumbnailUrl ? (
                             <img src={editForm.thumbnailUrl} alt="썸네일" className="w-full h-full object-cover" />
                           ) : (
-                            <Image className="w-8 h-8 text-slate-300" />
+                            <div className="text-center px-2">
+                              <Image className="w-7 h-7 text-slate-300 mx-auto mb-1" />
+                              <span className="text-[10px] text-slate-400 font-medium">{CPA_THUMBNAIL_SPEC.ratioLabel}</span>
+                            </div>
                           )}
                           {isEditMode && editForm.id && (
                             <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -592,18 +596,24 @@ export function AdminCampaigns() {
                             </div>
                           )}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           {isEditMode ? (
                             <div className="flex flex-col gap-2 h-full justify-center">
                               <div
-                                className={`border-2 border-dashed border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-cyan-300 transition-colors flex-1 ${editForm.id ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                className={`border-2 border-dashed border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center text-center hover:bg-slate-50 hover:border-cyan-300 transition-colors flex-1 ${editForm.id ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                 onClick={handleThumbnailClick}
                               >
                                 <Upload className="w-5 h-5 text-cyan-500 mb-1" />
-                                <span className="text-xs font-medium text-slate-600">
-                                  {editForm.id ? 'JPG · PNG · WEBP (최대 2MB)' : '저장 후 업로드 가능'}
+                                <span className="text-xs font-medium text-slate-700">
+                                  {editForm.id ? cpaThumbnailHint(true) : '저장 후 업로드 가능'}
+                                </span>
+                                <span className="text-[11px] text-slate-400 mt-1">
+                                  {CPA_THUMBNAIL_SPEC.formats} · 최대 {CPA_THUMBNAIL_SPEC.maxMb}MB
                                 </span>
                               </div>
+                              <p className="text-[11px] text-slate-500 leading-relaxed">
+                                {cpaThumbnailHint()}
+                              </p>
                               <div className="flex gap-2">
                                 <button
                                   type="button"
@@ -626,8 +636,9 @@ export function AdminCampaigns() {
                               </div>
                             </div>
                           ) : (
-                            <div className="h-24 flex items-center text-sm text-slate-500 bg-slate-50 rounded-xl px-4 border border-slate-100">
-                              {editForm.thumbnailUrl ? '등록된 썸네일 이미지' : '등록된 썸네일 이미지가 없습니다.'}
+                            <div className="min-h-[5.5rem] flex flex-col justify-center text-sm text-slate-500 bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 gap-1">
+                              <span>{editForm.thumbnailUrl ? '등록된 썸네일 이미지' : '등록된 썸네일 이미지가 없습니다.'}</span>
+                              <span className="text-[11px] text-slate-400">{cpaThumbnailHint(true)}</span>
                             </div>
                           )}
                         </div>
