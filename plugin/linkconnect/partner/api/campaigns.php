@@ -17,7 +17,7 @@ if ($type === '') {
 $cpa_categories = array('전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타');
 $cps_categories = function_exists('lc_campaign_cps_linkprice_categories')
     ? lc_campaign_cps_linkprice_categories()
-    : array('전체', '쇼핑몰', '뷰티', '건강', '생활', '기타');
+    : array('전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타');
 
 $items = array();
 $categories = $cpa_categories;

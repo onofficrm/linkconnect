@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { CpsPublicList } from '../../components/cps/CpsPublicList';
 
-const fallbackCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
+const fallbackCategories = ['전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타'];
 
 export function CpsList() {
   const [activeCategory, setActiveCategory] = useState('전체');

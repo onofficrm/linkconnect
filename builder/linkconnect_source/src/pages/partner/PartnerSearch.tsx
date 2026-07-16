@@ -20,7 +20,7 @@ import { CpsChannelGuide, parseChannelItems } from '../../components/cps/CpsChan
 import { formatCpsCommissionRate } from '../../components/cps/CpsShared';
 
 const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
-const fallbackCpsCategories = ['전체', '쇼핑몰', '뷰티', '건강', '생활', '기타'];
+const fallbackCpsCategories = ['전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타'];
 
 type ProductType = 'all' | 'cpa' | 'cps';
 type DetailTab = 'intro' | 'guide' | 'assets';

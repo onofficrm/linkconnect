@@ -399,7 +399,7 @@ if (!function_exists('lc_campaign_cps_linkprice_categories')) {
      */
     function lc_campaign_cps_linkprice_categories()
     {
-        $defaults = array('전체', '쇼핑몰', '뷰티', '건강', '생활', '기타');
+        $defaults = array('전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타');
         if (!lc_db_table_exists(lc_table('lp_merchants'))) {
             return $defaults;
         }
@@ -412,17 +412,34 @@ if (!function_exists('lc_campaign_cps_linkprice_categories')) {
               AND click_url <> ''
             ORDER BY category_name ASC ", false);
 
-        $categories = array('전체');
+        $found = array();
         if ($rows) {
             while ($row = sql_fetch_array($rows)) {
                 $cat = trim((string) ($row['category_name'] ?? ''));
-                if ($cat !== '' && !in_array($cat, $categories, true)) {
-                    $categories[] = $cat;
+                if ($cat !== '' && !in_array($cat, $found, true)) {
+                    $found[] = $cat;
                 }
             }
         }
 
-        return count($categories) > 1 ? $categories : $defaults;
+        if (count($found) === 0) {
+            return $defaults;
+        }
+
+        $priority = array('여행/티켓', '종합쇼핑몰', '건강', '패션');
+        $categories = array('전체');
+        foreach ($priority as $cat) {
+            if (in_array($cat, $found, true)) {
+                $categories[] = $cat;
+            }
+        }
+        foreach ($found as $cat) {
+            if (!in_array($cat, $categories, true)) {
+                $categories[] = $cat;
+            }
+        }
+
+        return $categories;
     }
 }
 
