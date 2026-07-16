@@ -22,7 +22,7 @@ export function PartnerDbStatus() {
   }, [q]);
 
   return (
-    <PartnerLayout activeMenu="db-status" title="디비 현황">
+    <PartnerLayout activeMenu="db-status" title="CPA 실적">
       <div className="flex flex-col mb-8 -mt-2">
         <p className="text-slate-500">
           접수된 디비의 상태와 수익 반영 여부를 확인할 수 있습니다.

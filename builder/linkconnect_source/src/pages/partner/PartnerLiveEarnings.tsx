@@ -120,7 +120,7 @@ export function PartnerLiveEarnings() {
             <h2 className="font-bold text-slate-900 flex items-center gap-2">
               <Target size={18} className="text-cyan-600" /> CPA 수익
             </h2>
-            <Link to="/partner/db-status" className="text-xs font-bold text-emerald-600 hover:underline">디비 현황</Link>
+            <Link to="/partner/db-status" className="text-xs font-bold text-emerald-600 hover:underline">CPA 실적</Link>
           </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between py-2 border-b border-slate-100">

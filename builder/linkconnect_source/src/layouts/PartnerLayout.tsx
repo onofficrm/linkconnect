@@ -40,7 +40,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
     { id: 'cps-orders', icon: <Target size={20} />, label: "CPS 실적", path: "/partner/cps/orders" },
     { id: 'links', icon: <LinkIcon size={20} />, label: "내 홍보 링크", path: "/partner/links" },
     { id: 'analytics', icon: <PieChart size={20} />, label: "유입 분석", path: "/partner/analytics" },
-    { id: 'db-status', icon: <Target size={20} />, label: "디비 현황", path: "/partner/db-status" },
+    { id: 'db-status', icon: <Target size={20} />, label: "CPA 실적", path: "/partner/db-status" },
     { id: 'call', icon: <PhoneCall size={20} />, label: "콜디비", path: "/partner/call" },
     { id: 'db-cancel', icon: <XCircle size={20} />, label: "취소/무효 디비", path: "/partner/db-cancel" },
     { id: 'report', icon: <BarChart3 size={20} />, label: "수익 리포트", path: "/partner/report" },
