@@ -236,7 +236,7 @@ export function AdvertiserCampaignGuide() {
     }
   };
 
-  const handleUpload = async (files: FileList | File[]) => {
+  const handleUpload = async (files: FileList | File[], imageTitle = '') => {
     if (readOnly || uploading || saving) return;
     const list = Array.from(files);
     if (images.length + list.length > limits.images) {
@@ -261,7 +261,8 @@ export function AdvertiserCampaignGuide() {
 
       for (const file of list) {
         if (images.length >= limits.images) break;
-        const res = await uploadMerchantPromoGuideImage(cpId, token, file);
+        const title = imageTitle || '';
+        const res = await uploadMerchantPromoGuideImage(cpId, token, file, title);
         if (res.csrfToken) {
           token = res.csrfToken;
           setCsrfToken(token);
@@ -270,7 +271,7 @@ export function AdvertiserCampaignGuide() {
           setImages((prev) => [...prev, res.asset]);
         }
       }
-      setSuccess('이미지가 업로드되었습니다.');
+      setSuccess(imageTitle ? `${imageTitle} 이미지가 업로드되었습니다.` : '이미지가 업로드되었습니다.');
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
     } finally {
@@ -500,8 +501,9 @@ export function AdvertiserCampaignGuide() {
 
           {step === 2 ? (
             <SectionCard
-              title="사용 가능한 이미지와 배너"
-              hint="네이버 블로그·카페, 웹사이트, 구글 광고용 권장 사이즈를 확인한 뒤 이미지를 등록해 주세요. 지금은 건너뛰고 나중에 등록해도 됩니다."
+              title="사이즈별 이미지 · 배너 등록"
+              description="네이버 블로그·카페, 웹사이트, 구글 광고 규격을 선택한 뒤 해당 사이즈로 업로드하세요."
+              hint="사이즈를 고르면 아래 업로드 영역이 그 규격용으로 바뀌고, 이미지 제목도 자동으로 맞춰집니다. 지금은 건너뛰고 나중에 등록해도 됩니다."
               count={images.length}
               max={limits.images}
               error={fieldErrors.images}

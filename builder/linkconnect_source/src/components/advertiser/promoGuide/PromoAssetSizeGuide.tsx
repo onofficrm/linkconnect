@@ -167,9 +167,9 @@ export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetS
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 md:p-5 space-y-4">
       <div>
-        <h3 className="text-sm font-bold text-slate-900">권장 이미지 사이즈</h3>
+        <h3 className="text-sm font-bold text-slate-900">1. 업로드할 사이즈 선택</h3>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-          네이버 블로그·카페, 웹사이트, 구글 광고에 맞춘 규격입니다. 업로드 전 사이즈를 고르면 제목 작성에 참고할 수 있습니다.
+          네이버 블로그·카페, 웹사이트, 구글 디스플레이 규격입니다. 카드를 고른 뒤 아래에서 그 사이즈로 업로드하세요.
         </p>
       </div>
 

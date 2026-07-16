@@ -1,4 +1,4 @@
-import { GripVertical, Plus, Trash2, X } from 'lucide-react';
+import { GripVertical, Plus, Trash2, Upload, X } from 'lucide-react';
 import { KeyboardEvent, useState } from 'react';
 import {
   formatPromoAssetSize,
@@ -201,6 +201,8 @@ export type PromoGuideImageItem = {
   originalFilename: string;
 };
 
+const DEFAULT_SIZE_ID = PROMO_ASSET_SIZE_PRESETS.find((p) => p.group === 'popular')?.id ?? PROMO_ASSET_SIZE_PRESETS[0]?.id ?? null;
+
 export function ImageUploader({
   images,
   max,
@@ -218,7 +220,7 @@ export function ImageUploader({
   maxBytes: number;
   disabled?: boolean;
   uploading?: boolean;
-  onUpload: (files: FileList | File[]) => void;
+  onUpload: (files: FileList | File[], imageTitle?: string) => void;
   onDelete: (id: number) => void;
   onSort: (ids: number[]) => void;
   onTitleChange: (id: number, title: string) => void;
@@ -226,18 +228,28 @@ export function ImageUploader({
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(DEFAULT_SIZE_ID);
+
+  const selectedPreset = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedSizeId) ?? null;
+  const uploadTitle = selectedPreset
+    ? `${suggestTitleForPreset(selectedPreset)} (${formatPromoAssetSize(selectedPreset.width, selectedPreset.height)})`
+    : '';
 
   const handleSizeSelect = (preset: PromoAssetSizePreset) => {
     setSelectedSizeId(preset.id);
   };
 
+  const submitFiles = (files: FileList | File[]) => {
+    if (disabled || uploading) return;
+    if (!selectedPreset) return;
+    onUpload(files, uploadTitle);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    if (disabled || uploading) return;
     if (e.dataTransfer.files?.length) {
-      onUpload(e.dataTransfer.files);
+      submitFiles(e.dataTransfer.files);
     }
   };
 
@@ -255,13 +267,16 @@ export function ImageUploader({
     ? `${(maxBytes / (1024 * 1024)).toFixed(1)}MB`
     : `${Math.round(maxBytes / 1024)}KB`;
 
-  const selectedPreset = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedSizeId) ?? null;
-  const titlePlaceholder = selectedPreset
-    ? `예: ${suggestTitleForPreset(selectedPreset)}`
-    : '이미지 제목 (예: 네이버 블로그 상단 배너)';
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-4 py-3 text-sm text-cyan-900">
+        <p className="font-bold">사이즈별 업로드</p>
+        <p className="text-xs text-cyan-800/90 mt-1 leading-relaxed">
+          ① 아래에서 용도(블로그·카페·웹·구글)를 고르고 → ② 해당 규격으로 이미지를 업로드하세요.
+          제목은 선택한 사이즈명으로 자동 저장됩니다.
+        </p>
+      </div>
+
       <PromoAssetSizeGuide
         selectedId={selectedSizeId}
         onSelect={disabled ? undefined : handleSizeSelect}
@@ -270,81 +285,101 @@ export function ImageUploader({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          if (!disabled) setDragOver(true);
+          if (!disabled && selectedPreset) setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-          dragOver ? 'border-cyan-400 bg-cyan-50' : 'border-slate-200 bg-slate-50'
+          !selectedPreset
+            ? 'border-slate-200 bg-slate-50 opacity-70'
+            : dragOver
+              ? 'border-cyan-400 bg-cyan-50'
+              : 'border-cyan-300 bg-gradient-to-b from-cyan-50/80 to-white'
         } ${disabled ? 'opacity-60' : ''}`}
       >
-        <p className="text-sm text-slate-600 mb-2">이미지를 드래그하거나 파일을 선택하세요.</p>
-        <p className="text-xs text-slate-400 mb-1">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
         {selectedPreset ? (
-          <p className="text-xs text-cyan-700 font-medium mb-4">
-            선택 규격: {selectedPreset.title} ({formatPromoAssetSize(selectedPreset.width, selectedPreset.height)})
-          </p>
+          <>
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-700 mb-3">
+              <Upload size={22} />
+            </div>
+            <p className="text-base font-bold text-slate-900 mb-1">
+              {selectedPreset.title} 업로드
+            </p>
+            <p className="text-sm font-semibold text-cyan-700 tabular-nums mb-2">
+              {formatPromoAssetSize(selectedPreset.width, selectedPreset.height)}
+            </p>
+            <p className="text-xs text-slate-500 mb-1 max-w-md mx-auto leading-relaxed">{selectedPreset.hint}</p>
+            <p className="text-xs text-slate-400 mb-4">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
+            <label
+              className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-cyan-600 text-white text-sm font-bold hover:bg-cyan-500 shadow-sm ${
+                disabled || uploading || images.length >= max ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+              }`}
+            >
+              <Upload size={16} />
+              {uploading ? '업로드 중...' : '이 사이즈로 파일 선택'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                multiple
+                className="hidden"
+                disabled={disabled || uploading || images.length >= max || !selectedPreset}
+                onChange={(e) => {
+                  if (e.target.files?.length) submitFiles(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </label>
+          </>
         ) : (
-          <p className="text-xs text-slate-400 mb-4">위 사이즈 안내에서 용도를 고른 뒤 업로드하면 관리가 쉽습니다.</p>
+          <p className="text-sm text-slate-500 py-4">먼저 위에서 업로드할 사이즈를 선택해 주세요.</p>
         )}
-        <label className={`inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-100 ${disabled || uploading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}>
-          파일 선택
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-            multiple
-            className="hidden"
-            disabled={disabled || uploading || images.length >= max}
-            onChange={(e) => {
-              if (e.target.files?.length) onUpload(e.target.files);
-              e.target.value = '';
-            }}
-          />
-        </label>
       </div>
 
       {images.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {images.map((img, index) => (
-            <div
-              key={img.id}
-              draggable={!disabled}
-              onDragStart={() => onImageDragStart(index)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onImageDrop(index)}
-              className="rounded-xl border border-slate-200 overflow-hidden bg-white"
-            >
-              <div className="relative aspect-video bg-slate-100">
-                <img src={img.downloadUrl} alt={img.imageTitle || img.originalFilename} className="w-full h-full object-contain" />
-                {!disabled ? (
-                  <div className="absolute top-2 left-2 p-1.5 rounded-lg bg-white/90 text-slate-500 cursor-grab">
-                    <GripVertical size={16} />
-                  </div>
-                ) : null}
-                {!disabled ? (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(img.id)}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 text-red-500 hover:bg-red-50"
-                    aria-label="삭제"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                ) : null}
+        <div>
+          <h3 className="text-sm font-bold text-slate-900 mb-3">등록된 이미지 ({images.length})</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {images.map((img, index) => (
+              <div
+                key={img.id}
+                draggable={!disabled}
+                onDragStart={() => onImageDragStart(index)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => onImageDrop(index)}
+                className="rounded-xl border border-slate-200 overflow-hidden bg-white"
+              >
+                <div className="relative aspect-video bg-slate-100">
+                  <img src={img.downloadUrl} alt={img.imageTitle || img.originalFilename} className="w-full h-full object-contain" />
+                  {!disabled ? (
+                    <div className="absolute top-2 left-2 p-1.5 rounded-lg bg-white/90 text-slate-500 cursor-grab">
+                      <GripVertical size={16} />
+                    </div>
+                  ) : null}
+                  {!disabled ? (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(img.id)}
+                      className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 text-red-500 hover:bg-red-50"
+                      aria-label="삭제"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  ) : null}
+                </div>
+                <div className="p-3">
+                  <input
+                    type="text"
+                    value={img.imageTitle}
+                    disabled={disabled}
+                    placeholder="예: 네이버 블로그 상단 배너 (758 × 140 px)"
+                    onChange={(e) => onTitleChange(img.id, e.target.value)}
+                    onBlur={(e) => onTitleBlur(img.id, e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:bg-slate-50"
+                  />
+                </div>
               </div>
-              <div className="p-3">
-                <input
-                  type="text"
-                  value={img.imageTitle}
-                  disabled={disabled}
-                  placeholder={titlePlaceholder}
-                  onChange={(e) => onTitleChange(img.id, e.target.value)}
-                  onBlur={(e) => onTitleBlur(img.id, e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:bg-slate-50"
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
