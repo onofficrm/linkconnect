@@ -201,7 +201,11 @@ export type PromoGuideImageItem = {
   originalFilename: string;
 };
 
-const DEFAULT_SIZE_ID = PROMO_ASSET_SIZE_PRESETS.find((p) => p.group === 'popular')?.id ?? PROMO_ASSET_SIZE_PRESETS[0]?.id ?? null;
+const DEFAULT_SIZE_ID =
+  PROMO_ASSET_SIZE_PRESETS.find((p) => p.freeFormat)?.id ??
+  PROMO_ASSET_SIZE_PRESETS.find((p) => p.group === 'popular')?.id ??
+  PROMO_ASSET_SIZE_PRESETS[0]?.id ??
+  null;
 
 export function ImageUploader({
   images,
@@ -274,8 +278,7 @@ export function ImageUploader({
       <div className="rounded-xl border border-cyan-100 bg-cyan-50/60 px-4 py-3 text-sm text-cyan-900">
         <p className="font-bold">사이즈별 업로드</p>
         <p className="text-xs text-cyan-800/90 mt-1 leading-relaxed">
-          ① 권장 규격 또는 <strong>자유형식</strong>을 고르고 → ② 이미지를 업로드하세요.
-          제목은 선택한 용도로 자동 저장됩니다.
+          기본은 <strong>자유형식</strong>입니다. 권장 사이즈가 있으면 아래에서 고른 뒤 업로드하세요.
         </p>
       </div>
 

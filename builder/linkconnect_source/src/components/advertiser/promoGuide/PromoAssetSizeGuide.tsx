@@ -216,30 +216,65 @@ type PromoAssetSizeGuideProps = {
 export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetSizeGuideProps) {
   const [tab, setTab] = useState<'popular' | 'naver' | 'web'>('popular');
 
-  const items = useMemo(() => {
-    const base =
+  const items = useMemo(
+    () =>
       tab === 'popular'
-        ? PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === 'popular')
-        : PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === tab && !p.freeFormat);
-    // 네이버/웹 탭에도 자유형식을 항상 마지막에 노출
-    if (tab !== 'popular') {
-      return [...base, FREE_FORMAT_PRESET];
-    }
-    return base;
-  }, [tab]);
+        ? PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === 'popular' && !p.freeFormat)
+        : PROMO_ASSET_SIZE_PRESETS.filter((p) => p.group === tab && !p.freeFormat),
+    [tab],
+  );
 
   const selected = PROMO_ASSET_SIZE_PRESETS.find((p) => p.id === selectedId) ?? null;
+  const freeActive = selectedId === FREE_FORMAT_PRESET.id;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 md:p-5 space-y-4">
       <div>
         <h3 className="text-sm font-bold text-slate-900">1. 업로드할 사이즈 선택</h3>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-          권장 규격을 고르거나, 규격이 없으면 <strong className="text-slate-700">자유형식</strong>으로 업로드하세요.
+          규격이 정해지지 않았다면 바로 <strong className="text-slate-700">자유형식</strong>을 고르세요.
+          블로그·카페·웹 권장 사이즈도 아래에서 선택할 수 있습니다.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <button
+        type="button"
+        onClick={() => onSelect?.(FREE_FORMAT_PRESET)}
+        disabled={!onSelect}
+        className={`w-full text-left rounded-xl border-2 border-dashed p-4 transition-all ${
+          freeActive
+            ? 'border-slate-900 bg-white ring-2 ring-slate-300 shadow-sm'
+            : 'border-slate-300 bg-white hover:border-slate-500 hover:shadow-sm'
+        } ${!onSelect ? 'cursor-default' : ''}`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`shrink-0 w-14 h-10 rounded-md border border-dashed flex items-center justify-center text-[10px] font-bold ${
+              freeActive
+                ? 'bg-slate-900 border-slate-900 text-white'
+                : 'bg-slate-50 border-slate-300 text-slate-400'
+            }`}
+            aria-hidden
+          >
+            FREE
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">자유형식</span>
+              <span className="text-[11px] font-semibold text-slate-500">자유 규격 · 픽셀 제한 없음</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              로고, 상세컷, 기타 홍보 이미지를 원하는 크기로 올립니다.
+            </p>
+          </div>
+          {freeActive ? (
+            <span className="shrink-0 text-[11px] font-bold text-slate-900">선택됨</span>
+          ) : null}
+        </div>
+      </button>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] font-semibold text-slate-400 mr-1">권장 사이즈</span>
         {GROUP_TABS.map((g) => (
           <button
             key={g.id}
@@ -268,9 +303,7 @@ export function PromoAssetSizeGuide({ selectedId = null, onSelect }: PromoAssetS
               className={`text-left rounded-xl border p-3 transition-all ${
                 active
                   ? 'border-cyan-400 bg-white ring-2 ring-cyan-200 shadow-sm'
-                  : preset.freeFormat
-                    ? 'border-dashed border-slate-300 bg-white hover:border-cyan-300 hover:shadow-sm'
-                    : 'border-slate-200/80 bg-white hover:border-cyan-300 hover:shadow-sm'
+                  : 'border-slate-200/80 bg-white hover:border-cyan-300 hover:shadow-sm'
               } ${!onSelect ? 'cursor-default' : ''}`}
             >
               <div className={`rounded-lg mb-2 ${active ? 'bg-cyan-50' : 'bg-slate-100'}`}>

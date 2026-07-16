@@ -502,8 +502,8 @@ export function AdvertiserCampaignGuide() {
           {step === 2 ? (
             <SectionCard
               title="사이즈별 이미지 · 배너 등록"
-              description="네이버 블로그·카페, 웹사이트, 구글 광고 규격을 선택한 뒤 해당 사이즈로 업로드하세요."
-              hint="사이즈를 고르면 아래 업로드 영역이 그 규격용으로 바뀌고, 이미지 제목도 자동으로 맞춰집니다. 지금은 건너뛰고 나중에 등록해도 됩니다."
+              description="자유형식(규격 무관) 또는 네이버·웹·구글 권장 사이즈를 고른 뒤 이미지를 업로드하세요."
+              hint="기본은 자유형식입니다. 권장 사이즈를 고르면 제목이 자동으로 맞춰집니다. 지금은 건너뛰고 나중에 등록해도 됩니다."
               count={images.length}
               max={limits.images}
               error={fieldErrors.images}
