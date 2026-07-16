@@ -101,9 +101,6 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
             <Link to={detailPath} className="hover:text-cyan-700 transition-colors">
               {item.title}
             </Link>
-            {merchantCode ? (
-              <span className="font-normal text-slate-400 text-sm ml-1.5">({merchantCode})</span>
-            ) : null}
           </h3>
           {item.description ? (
             <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed" title={item.description}>

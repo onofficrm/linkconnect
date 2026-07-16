@@ -76,7 +76,6 @@ function CpsPartnerMerchantRow({
             <Link to={detailPath} className="hover:text-emerald-700 transition-colors">
               {m.merchantName}
             </Link>
-            <span className="font-normal text-slate-400 ml-1">({m.merchantCode})</span>
           </div>
           <div className="text-xs text-slate-500 mt-0.5">{m.categoryName || '쇼핑몰'}</div>
           {m.notice ? (
