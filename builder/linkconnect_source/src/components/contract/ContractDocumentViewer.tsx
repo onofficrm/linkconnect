@@ -57,7 +57,7 @@ function DocumentPaper({
 
 export function ContractDocumentViewer({
   html,
-  title = 'CPA 광고주 이용 계약서',
+  title = 'CPA 광고 제휴 계약서',
   contractCode,
   signedAt,
   signatureUrl,

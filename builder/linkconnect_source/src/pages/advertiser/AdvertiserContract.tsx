@@ -430,7 +430,7 @@ export function AdvertiserContract() {
 
           <ContractDocumentViewer
             html={state?.contractHtml ?? ''}
-            title="CPA 광고주 이용 계약서"
+            title="CPA 광고 제휴 계약서"
             documentPreviewUrl={state?.documentPreviewUrl}
             documentPdfUrl={state?.documentPdfUrl}
             maxHeight="70vh"

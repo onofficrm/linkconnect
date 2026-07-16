@@ -28,7 +28,7 @@ if ($html === '' && function_exists('lc_merchant_contract_render_html')) {
 }
 
 $styles = function_exists('lc_merchant_contract_document_styles') ? lc_merchant_contract_document_styles() : '';
-$title = 'CPA 광고주 이용 계약서';
+$title = 'CPA 광고 제휴 계약서';
 
 header('Content-Type: text/html; charset=utf-8');
 header('X-Robots-Tag: noindex, nofollow, noarchive');

@@ -139,7 +139,7 @@ export function AdvertiserContractView() {
         <div className="bg-white border border-slate-200 rounded-2xl p-5 md:p-6 shadow-sm">
           <ContractDocumentViewer
             html={contract.contractHtml}
-            title="CPA 광고주 이용 계약서"
+            title="CPA 광고 제휴 계약서"
             contractCode={contract.contractCode}
             signedAt={contract.signedAt}
             signatureUrl={contract.signatureUrl}

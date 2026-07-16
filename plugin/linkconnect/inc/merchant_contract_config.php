@@ -11,7 +11,7 @@ if (!defined('_GNUBOARD_')) {
  */
 
 if (!defined('LC_MERCHANT_CONTRACT_CURRENT_VERSION')) {
-    define('LC_MERCHANT_CONTRACT_CURRENT_VERSION', 'CPA-CONTRACT-2026-01');
+    define('LC_MERCHANT_CONTRACT_CURRENT_VERSION', 'CPA-CONTRACT-2026-07');
 }
 
 if (!defined('LC_MERCHANT_CONTRACT_STATUS_PENDING')) {
@@ -52,10 +52,10 @@ if (!function_exists('lc_merchant_contract_config')) {
         $config = array(
             'current_version' => LC_MERCHANT_CONTRACT_CURRENT_VERSION,
             'party_b'         => array(
-                'company_name'        => '주식회사 비마이피스',
+                'company_name'        => '비마이피스',
                 'representative_name' => '박민우',
-                'business_number'     => '835-51-00825',
-                'company_address'     => '경기도 용인시 포은대로59번길 37, 시그니처광교 10층',
+                'business_number'     => '831-51-00825',
+                'company_address'     => '경기도 용인시 수지구 포은대로 59번길 37, 1009호',
                 'company_phone'       => '010-9765-4073',
             ),
             'statuses' => array(

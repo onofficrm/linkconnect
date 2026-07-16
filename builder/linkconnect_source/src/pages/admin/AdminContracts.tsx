@@ -211,7 +211,7 @@ export function AdminContracts() {
               <input
                 value={versionFilter}
                 onChange={(e) => setVersionFilter(e.target.value)}
-                placeholder={`버전 (예: ${currentVersion || 'CPA-CONTRACT-2026-01'})`}
+                placeholder={`버전 (예: ${currentVersion || 'CPA-CONTRACT-2026-07'})`}
                 className="px-3 py-2 border border-slate-200 rounded-xl text-sm"
               />
               <input value={mtIdFilter} onChange={(e) => setMtIdFilter(e.target.value)} placeholder="광고주 ID" className="px-3 py-2 border border-slate-200 rounded-xl text-sm" />
@@ -296,7 +296,7 @@ export function AdminContracts() {
                 {detailTab === 'document' ? (
                   <ContractDocumentViewer
                     html={detail.contract.contractHtml}
-                    title="CPA 광고주 이용 계약서"
+                    title="CPA 광고 제휴 계약서"
                     contractCode={detail.contract.contractCode}
                     signedAt={detail.contract.signedAt}
                     signatureUrl={detail.signatureUrl}

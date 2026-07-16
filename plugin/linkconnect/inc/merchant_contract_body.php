@@ -28,21 +28,26 @@ if (!function_exists('lc_merchant_contract_render_html')) {
         $b_addr = $esc($party_b['company_address'] ?? '');
         $b_phone = $esc($party_b['company_phone'] ?? '');
 
+        $a_display = $a_name !== '' ? $a_name : '[ 광고주 회사명 ]';
+
         return <<<HTML
 <div class="lc-contract-document">
   <header class="lc-contract-header">
     <p class="lc-contract-version">계약서 버전: {$esc($version)}</p>
-    <h1>CPA 광고주 이용 계약서</h1>
-    <p class="lc-contract-lead">본 계약은 링크커넥트 CPA 광고 플랫폼 이용에 관한 광고주(갑)와 운영사(을) 간의 권리·의무를 정합니다.</p>
+    <h1>CPA 광고 제휴 계약서</h1>
+    <p class="lc-contract-lead">
+      {$a_display}(이하 &quot;갑&quot;이라 한다)와 CPA 광고 플랫폼 &apos;링크커넥트&apos;를 운영하는 {$b_name}(이하 &quot;을&quot;이라 한다)는
+      온라인 CPA(Cost Per Action) 마케팅 업무 제휴와 관련하여 상호 신의성실의 원칙에 따라 다음과 같이 계약을 체결한다.
+    </p>
   </header>
 
   <section class="lc-contract-parties">
     <div class="lc-contract-party">
       <h2>갑 (광고주)</h2>
       <dl>
-        <dt>회사명</dt><dd>{$a_name}</dd>
+        <dt>상호명</dt><dd>{$a_name}</dd>
         <dt>대표자</dt><dd>{$a_rep}</dd>
-        <dt>사업자등록번호</dt><dd>{$a_biz}</dd>
+        <dt>사업자번호</dt><dd>{$a_biz}</dd>
         <dt>주소</dt><dd>{$a_addr}</dd>
         <dt>연락처</dt><dd>{$a_phone}</dd>
       </dl>
@@ -50,9 +55,9 @@ if (!function_exists('lc_merchant_contract_render_html')) {
     <div class="lc-contract-party">
       <h2>을 (운영사)</h2>
       <dl>
-        <dt>회사명</dt><dd>{$b_name}</dd>
+        <dt>상호명</dt><dd>{$b_name}</dd>
         <dt>대표자</dt><dd>{$b_rep}</dd>
-        <dt>사업자등록번호</dt><dd>{$b_biz}</dd>
+        <dt>사업자번호</dt><dd>{$b_biz}</dd>
         <dt>주소</dt><dd>{$b_addr}</dd>
         <dt>연락처</dt><dd>{$b_phone}</dd>
       </dl>
@@ -60,97 +65,103 @@ if (!function_exists('lc_merchant_contract_render_html')) {
   </section>
 
   <section class="lc-contract-article">
-    <h2>제1조 (목적)</h2>
-    <p>본 계약은 갑이 을이 운영하는 링크커넥트 CPA 광고 플랫폼(이하 "플랫폼")을 통해 광고 캠페인을 등록·운영하고, 을이 제공하는 매체 연동·성과 집계·정산 지원 서비스를 이용함에 있어 양 당사자의 권리와 의무를 규정함을 목적으로 합니다.</p>
+    <h2>제 1 조 [ 목적 ]</h2>
+    <p>본 계약은 &quot;갑&quot;이 자사의 제품 및 서비스에 대한 마케팅을 &quot;을&quot;에게 위탁하고, &quot;을&quot;이 이를 수행하여 발생한 합당한 성과(DB)에 대하여 &quot;갑&quot;이 광고 대금을 지급함에 있어 필요한 제반 사항과 양 당사자의 권리 및 의무를 명확히 규정함을 목적으로 한다.</p>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제2조 (정의)</h2>
+    <h2>제 2 조 [ 용어의 정의 ]</h2>
     <ol>
-      <li>"CPA"란 Cost Per Action의 약자로, 갑이 정한 전환(상담 신청, 예약, 구매 등)이 발생한 경우에 광고비가 정산되는 방식을 말합니다.</li>
-      <li>"전환"이란 플랫폼을 통해 추적 가능한 방식으로 발생한 갑이 사전에 승인한 성과 지표를 말합니다.</li>
-      <li>"광고비"란 갑이 플랫폼에 충전하거나 정산되는 금액으로, 캠페인 단가 및 승인된 전환 건수에 따라 차감되는 금액을 말합니다.</li>
-      <li>"파트너"란 을의 플랫폼을 통해 갑의 광고를 홍보하는 제3자 매체 운영자를 말합니다.</li>
+      <li><strong>CPA (Cost Per Action)</strong>: &quot;을&quot;이 진행하는 광고를 통해 소비자가 &quot;갑&quot;이 지정한 특정 행동(상담 신청, 회원가입, 구매 등)을 완료했을 때 광고비가 과금되는 방식을 의미한다.</li>
+      <li><strong>DB (Database)</strong>: 광고를 통해 수집된 잠재 고객의 정보(이름, 연락처 등)를 의미한다.</li>
+      <li><strong>유효 DB</strong>: 수집된 DB 중 제5조의 &apos;취소 및 거절 기준&apos;에 해당하지 않으며, &quot;갑&quot;의 실제 영업 및 마케팅에 활용 가능한 정상적인 고객 정보를 의미한다.</li>
+      <li><strong>어뷰징 (Abusing)</strong>: 매크로 프로그램, 인센티브 제공(보상형 트래픽), 허위 사실 유포, 명의 도용 등 비정상적이거나 불법적인 방법으로 DB를 발생시키는 일체의 행위를 의미한다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제3조 (계약의 체결 및 효력)</h2>
+    <h2>제 3 조 [ 당사자의 의무 ]</h2>
+    <p><strong>&quot;갑&quot;의 의무:</strong></p>
     <ol>
-      <li>본 계약은 갑이 플랫폼에서 제공하는 전자 계약 절차를 완료하고 을이 이를 수락함으로써 성립합니다.</li>
-      <li>전자적 방식으로 체결된 본 계약은 서면 계약과 동일한 효력을 가집니다.</li>
-      <li>계약 체결 후 계약서 내용은 갑과 을의 합의 또는 관련 법령에 따른 경우를 제외하고 변경할 수 없습니다.</li>
+      <li>&quot;갑&quot;은 &quot;을&quot;이 원활하게 마케팅을 진행할 수 있도록 정확한 상품 정보 및 마케팅 가이드라인을 제공해야 한다.</li>
+      <li>&quot;갑&quot;은 수집된 DB에 대해 신속하게 확인 및 상담을 진행하여 &quot;을&quot;의 광고 성과가 정당하게 평가받을 수 있도록 협조한다.</li>
+    </ol>
+    <p><strong>&quot;을&quot;의 의무:</strong></p>
+    <ol>
+      <li>&quot;을&quot;은 &quot;갑&quot;의 브랜드 가치가 훼손되지 않도록 합법적이고 윤리적인 테두리 내에서 마케팅을 수행한다.</li>
+      <li>&quot;을&quot;은 하위 마케터나 제휴 매체사가 어뷰징 행위나 과대/허위 광고를 하지 않도록 철저히 관리·감독할 책임이 있다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제4조 (서비스 내용)</h2>
+    <h2>제 4 조 [ 광고비 및 정산 방식 ]</h2>
     <ol>
-      <li>을은 갑에게 CPA 캠페인 등록, 랜딩 연동, 전환 추적, 성과 리포트, 광고비 충전·차감, 고객센터 지원 등 플랫폼 기능을 제공합니다.</li>
-      <li>서비스의 세부 범위·이용 방법은 플랫폼 내 공지, 운영 정책 및 별도 안내에 따릅니다.</li>
-      <li>을은 서비스 품질 향상을 위해 기능을 추가·변경·중단할 수 있으며, 중대한 변경 시 사전 고지합니다.</li>
+      <li><strong>단가</strong>: 유효 DB 1건당 광고비는 캠페인별로 플랫폼에 설정·합의한 단가(VAT 별도)로 산정한다.</li>
+      <li><strong>선충전 원칙</strong>: 광고비는 &quot;갑&quot;이 &quot;을&quot;의 플랫폼(또는 지정 계좌)에 선충전하는 것을 원칙으로 하며, 유효 DB 발생 시 충전금에서 실시간(또는 주기적)으로 차감된다.</li>
+      <li><strong>기본 선충전액</strong>: 계정당 최소 [ 500,000 원 ](VAT 별도)</li>
+      <li>충전된 광고비가 모두 소진되기 전, &quot;갑&quot;은 광고가 중단되지 않도록 사전에 재충전하여야 한다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제5조 (갑의 의무)</h2>
+    <h2>제 5 조 [ DB 검수 및 승인 기준 ]</h2>
     <ol>
-      <li>갑은 사업자 정보, 캠페인 내용, 랜딩 페이지, 개인정보 처리 등 관련 법령을 준수해야 합니다.</li>
-      <li>갑은 허위·과장 광고, 불법 상품·서비스 홍보, 제3자 권리 침해를 해서는 안 됩니다.</li>
-      <li>갑은 접수된 리드(디비)에 대해 정해진 기간 내 검수·처리하며, 부당한 일괄 거절·지연으로 파트너 및 을에 손해를 주어서는 안 됩니다.</li>
-      <li>갑은 계약 체결 권한이 있는 자가 전자 서명 및 동의 절차를 수행함을 보증합니다.</li>
+      <li>&quot;갑&quot;은 DB가 접수된 시점으로부터 [ 7일 ] 이내에 정상(승인) 또는 불량(거절) 여부를 판별하여 시스템에 반영해야 한다.</li>
+      <li>기한 내에 처리되지 않은 DB는 [ 8일 차 ]에 자동으로 &apos;승인&apos; 처리되며, 이후에는 어떠한 사유로도 취소 및 환불이 불가하다.</li>
+      <li><strong>무효 DB (취소 기준)</strong>: 다음 각 호에 해당하는 경우에만 &quot;갑&quot;은 DB를 거절할 수 있으며, &quot;을&quot;이 증빙을 요청할 경우 &quot;갑&quot;은 이를 소명해야 한다.
+        <ul>
+          <li>결번, 수신 정지, 없는 번호 등 연락이 원천적으로 불가능한 경우</li>
+          <li>중복 접수자 (가장 먼저 접수된 1건만 유효로 인정)</li>
+          <li>만 19세 미만의 미성년자 (타겟이 성인인 경우)</li>
+          <li>장난 기입, 명의 도용, 허위 정보 기재</li>
+          <li>상품/서비스에 대한 전혀 인지가 없는 단순 오클릭 및 무관심자</li>
+        </ul>
+      </li>
+      <li><strong>최소 승인율 보장</strong>: 정상적인 마케팅 환경 유지를 위해 &quot;갑&quot;은 유입된 전체 DB 중 최소 [ 50% ] 이상을 승인해야 한다. (단, 물리적 결번 및 중복 DB는 모수에서 제외한다.)</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제6조 (을의 의무)</h2>
+    <h2>제 6 조 [ 금지 행위 및 패널티 ]</h2>
     <ol>
-      <li>을은 선량한 관리자의 주의로 플랫폼을 운영하고, 갑의 광고 집행 및 성과 확인이 가능하도록 기술적·관리적 조치를 취합니다.</li>
-      <li>을은 갑의 영업 비밀 및 개인정보를 관련 법령과 개인정보 처리방침에 따라 보호합니다.</li>
-      <li>을은 갑의 정당한 문의·장애 신고에 성실히 응대합니다.</li>
+      <li>&quot;을&quot; 및 소속 마케터는 다음의 행위를 할 수 없으며, 적발 시 &quot;갑&quot;은 즉시 계약 해지 및 해당 DB에 대한 정산 거부를 요구할 수 있다.
+        <ul>
+          <li>금전, 포인트 등 대가를 제공하고 DB를 유도하는 행위(인센티브 트래픽)</li>
+          <li>허위 사실 및 과장 광고로 고객을 기망하는 행위</li>
+        </ul>
+      </li>
+      <li>&quot;갑&quot;이 고의로 정상 DB를 거절하거나 승인율을 악의적으로 낮추는 경우, &quot;을&quot;은 즉시 광고 송출을 중단하고 시정을 요구할 수 있으며, 이로 인한 손해 배상을 청구할 수 있다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제7조 (광고비 및 정산)</h2>
+    <h2>제 7 조 [ 개인정보의 보호 및 보안 ]</h2>
     <ol>
-      <li>갑은 캠페인 운영 전 플랫폼에 광고비를 충전하거나 을이 정한 결제 수단을 이용합니다.</li>
-      <li>승인된 전환 건수에 따라 캠페인에 설정된 단가가 차감되며, 잔액 부족 시 캠페인 노출이 제한될 수 있습니다.</li>
-      <li>정산 기준, 승인·거절 규칙, 환불 정책은 플랫폼 정책 및 캠페인별 설정에 따릅니다.</li>
+      <li>양 당사자는 업무상 취득한 고객의 개인정보를 처리함에 있어, 개인정보 보호법 및 정보통신망 이용촉진 및 정보보호 등에 관한 법률 등 대한민국의 관련 법령을 엄격히 준수하여야 한다.</li>
+      <li>&quot;을&quot;은 수집된 DB를 &quot;갑&quot;에게 전달하는 목적 외에 타사에 판매, 양도, 공유하거나 다른 용도로 절대 사용할 수 없다.</li>
+      <li>&quot;갑&quot;은 제공받은 DB를 사전에 고객이 동의한 목적(예: 해당 상품 상담)으로만 사용하여야 하며, 이를 위반하여 발생하는 모든 법적 책임은 &quot;갑&quot;에게 있다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제8조 (개인정보 보호)</h2>
-    <p>양 당사자는 본 계약 이행 과정에서 취득하는 개인정보를 개인정보 보호법 등 관련 법령 및 각자의 개인정보 처리방침에 따라 처리합니다. 갑은 전환 과정에서 수집되는 이용자 개인정보의 수집·이용·보관·파기에 대한 책임을 부담합니다.</p>
+    <h2>제 8 조 [ 비밀 유지 ]</h2>
+    <p>양 당사자는 본 계약과 관련하여 지득한 상대방의 기술 정보, 마케팅 전략, 단가, 계약 조건 등의 영업비밀을 계약 기간은 물론 계약 종료 후에도 제3자에게 누설하거나 본 계약 외의 목적으로 사용할 수 없다.</p>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제9조 (계약 기간 및 해지)</h2>
+    <h2>제 9 조 [ 계약 기간 및 해지 ]</h2>
     <ol>
-      <li>본 계약은 체결일로부터 1년간 유효하며, 기간 만료 30일 전까지 당사자 일방의 서면 또는 전자 통지가 없으면 동일 조건으로 1년씩 자동 연장됩니다.</li>
-      <li>당사자는 30일 전 사전 통지로 본 계약을 해지할 수 있습니다.</li>
-      <li>갑이 본 계약 또는 운영 정책을 중대하게 위반한 경우 을은 사전 통지 후 계약을 해지하거나 서비스 이용을 제한할 수 있습니다.</li>
+      <li>본 계약의 유효 기간은 계약 체결일로부터 [ 1년 ]으로 한다.</li>
+      <li>계약 만료 30일 전까지 서면(이메일 포함)에 의한 계약 종료 또는 변경의 의사표시가 없는 한, 본 계약은 동일한 조건으로 6개월씩 자동 연장된다.</li>
+      <li>중도 해지를 원할 경우 해지 희망일 [ 15일 ] 전에 상대방에게 통보해야 한다. 만약 &quot;갑&quot;이 15일 전 통보 없이 일방적으로 광고를 중단할 경우, 그 시점에 대기 중인 모든 DB는 승인율 70%를 일괄 적용하여 정산한다.</li>
+      <li>캠페인의 최소 유지 기간은 [ 3개월 ]로 권장하며, 상호 합의하에 조기 종료할 수 있다. 잔여 선충전금은 광고 종료일로부터 영업일 기준 5일 이내에 환불 처리한다.</li>
     </ol>
   </section>
 
   <section class="lc-contract-article">
-    <h2>제10조 (손해배상 및 면책)</h2>
-    <ol>
-      <li>당사자가 본 계약을 위반하여 상대방에게 손해를 입힌 경우 그 손해를 배상합니다.</li>
-      <li>을은 천재지변, 통신 장애, 제3자 서비스 장애 등 불가항력으로 인한 손해에 대하여 책임을 지지 않습니다.</li>
-      <li>을의 손해배상 책임은 해당 사건 발생 직전 3개월간 갑이 을에게 지급한 수수료 또는 광고비 운영 대행 금액의 범위 내로 제한될 수 있습니다. 다만 고의 또는 중대한 과실이 있는 경우는 제외합니다.</li>
-    </ol>
-  </section>
-
-  <section class="lc-contract-article">
-    <h2>제11조 (분쟁 해결)</h2>
-    <p>본 계약과 관련한 분쟁은 양 당사자가 협의하여 해결하며, 협의가 이루어지지 않을 경우 을의 본사 소재지를 관할하는 법원을 제1심 관할 법원으로 합니다.</p>
-  </section>
-
-  <section class="lc-contract-article">
-    <h2>부칙</h2>
-    <p>본 계약은 전자적 방식으로 체결되며, 갑은 본 계약서 전문을 확인하고 각 조항의 내용을 충분히 이해하였음을 확인합니다.</p>
+    <h2>제 10 조 [ 분쟁 해결 및 관할 법원 ]</h2>
+    <p>본 계약의 해석 및 이행과 관련하여 분쟁이 발생한 경우 상호 합의에 의해 원만히 해결하는 것을 원칙으로 한다. 합의가 이루어지지 않을 경우, 대한민국 법률의 적용을 받으며, &quot;갑&quot;의 본점 소재지를 관할하는 지방법원을 관할 법원으로 한다.</p>
+    <p>본 계약의 성립을 증명하기 위하여 계약서 2부를 작성하고, 양 당사자가 기명날인 또는 서명한 후 각각 1부씩 보관한다. (전자적 방식으로 체결된 경우에도 서면 계약과 동일한 효력을 갖는다.)</p>
   </section>
 </div>
 HTML;
@@ -165,7 +176,7 @@ if (!function_exists('lc_merchant_contract_document_styles')) {
 .lc-contract-header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e2e8f0; }
 .lc-contract-version { font-size: 12px; color: #64748b; margin-bottom: 0.5rem; }
 .lc-contract-header h1 { font-size: 1.75rem; font-weight: 800; margin: 0 0 0.75rem; }
-.lc-contract-lead { color: #475569; margin: 0; }
+.lc-contract-lead { color: #475569; margin: 0; text-align: left; line-height: 1.75; }
 .lc-contract-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
 @media (max-width: 640px) { .lc-contract-parties { grid-template-columns: 1fr; } }
 .lc-contract-party { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; }
@@ -175,8 +186,9 @@ if (!function_exists('lc_merchant_contract_document_styles')) {
 .lc-contract-party dd { margin: 0 0 0.5rem; font-weight: 500; }
 .lc-contract-article { margin-bottom: 1.5rem; }
 .lc-contract-article h2 { font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem; color: #1e293b; }
-.lc-contract-article p, .lc-contract-article ol { margin: 0; color: #334155; }
+.lc-contract-article p, .lc-contract-article ol, .lc-contract-article ul { margin: 0 0 0.75rem; color: #334155; }
 .lc-contract-article ol { padding-left: 1.25rem; }
+.lc-contract-article ul { padding-left: 1.25rem; list-style: disc; margin-top: 0.5rem; }
 .lc-contract-article li { margin-bottom: 0.35rem; }
 CSS;
     }
