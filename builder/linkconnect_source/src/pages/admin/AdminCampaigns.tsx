@@ -710,6 +710,18 @@ export function AdminCampaigns() {
                         placeholder="https://"
                       />
                     </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">목록 설명</label>
+                      <textarea
+                        value={editForm.description}
+                        onChange={(e) => updateEditForm({ description: e.target.value })}
+                        disabled={!isEditMode}
+                        rows={3}
+                        className={`w-full px-3 py-2 border rounded-xl text-sm resize-y min-h-[72px] ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                        placeholder="파트너·공개 목록에 표시될 한 줄 설명을 입력하세요"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">CPA/CPS 상품 목록·상세 카드에 노출됩니다.</p>
+                    </div>
                   </div>
                 </section>
 

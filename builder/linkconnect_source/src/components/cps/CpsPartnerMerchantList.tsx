@@ -79,6 +79,11 @@ function CpsPartnerMerchantRow({
             <span className="font-normal text-slate-400 ml-1">({m.merchantCode})</span>
           </div>
           <div className="text-xs text-slate-500 mt-0.5">{m.categoryName || '쇼핑몰'}</div>
+          {m.notice ? (
+            <div className="text-[11px] text-slate-500 mt-1 line-clamp-2" title={m.notice}>
+              {m.notice}
+            </div>
+          ) : null}
           {m.denyAd ? (
             <div className="text-[11px] text-amber-700 mt-1 line-clamp-1" title={m.denyAd}>
               제한: {m.denyAd}

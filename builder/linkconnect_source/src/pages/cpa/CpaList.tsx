@@ -10,6 +10,7 @@ type CampaignCardItem = {
   id: number;
   title: string;
   category: string;
+  description: string;
   price: string;
   approvalRate: string;
   avgTime: string;
@@ -27,6 +28,7 @@ function toCardItem(campaign: PublicCampaign): CampaignCardItem {
     id: campaign.id,
     title: campaign.title,
     category: campaign.category,
+    description: campaign.description || '',
     price: campaign.priceFormatted,
     approvalRate: campaign.approvalRate,
     avgTime: campaign.avgTime,
@@ -235,7 +237,9 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
         </div>
 
         <h3 className="text-xl font-bold text-slate-900 mb-1">{item.title}</h3>
-        <div className="text-sm text-slate-500 mb-6">유형: CPA (DB접수)</div>
+        <div className="text-sm text-slate-500 mb-6 line-clamp-2 min-h-[2.5rem]">
+          {item.description || '유형: CPA (DB접수)'}
+        </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100/50">

@@ -72,7 +72,11 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
             <Link to={detailPath} className="font-bold text-slate-900 truncate text-[15px] hover:text-cyan-700 block">
               {item.title}
             </Link>
-            {merchantCode ? <p className="text-[11px] text-slate-400 truncate mt-0.5">{merchantCode}</p> : null}
+            {item.description ? (
+              <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{item.description}</p>
+            ) : merchantCode ? (
+              <p className="text-[11px] text-slate-400 truncate mt-0.5">{merchantCode}</p>
+            ) : null}
           </div>
 
           <div className="md:hidden ml-auto text-right shrink-0">
@@ -101,6 +105,11 @@ function CpsPublicListRow({ item, compact }: { item: PublicCampaign; compact?: b
               <span className="font-normal text-slate-400 text-sm ml-1.5">({merchantCode})</span>
             ) : null}
           </h3>
+          {item.description ? (
+            <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed" title={item.description}>
+              {item.description}
+            </p>
+          ) : null}
         </div>
 
         {/* Commission */}

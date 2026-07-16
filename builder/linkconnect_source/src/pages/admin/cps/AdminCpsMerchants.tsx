@@ -23,6 +23,8 @@ export function AdminCpsMerchants() {
   const [msg, setMsg] = useState('');
   const [detail, setDetail] = useState<LpMerchant | null>(null);
   const [rate, setRate] = useState('');
+  const [partnerNotice, setPartnerNotice] = useState('');
+  const [campaignAlias, setCampaignAlias] = useState('');
 
   const notify = (m: string) => {
     setMsg(m);
@@ -119,12 +121,24 @@ export function AdminCpsMerchants() {
     }
   };
 
-  const saveRate = async () => {
+  const openDetail = (m: LpMerchant) => {
+    setDetail(m);
+    setRate(String(m.partnerRate));
+    setPartnerNotice(m.partnerNotice || '');
+    setCampaignAlias(m.campaignAlias || '');
+  };
+
+  const saveDetail = async () => {
     if (!detail) return;
     setBusy(true);
     try {
-      await updateAdminLpMerchant({ lpmId: detail.lpmId, partnerRate: Number(rate) });
-      notify('지급률이 저장되었습니다.');
+      await updateAdminLpMerchant({
+        lpmId: detail.lpmId,
+        partnerRate: Number(rate),
+        partnerNotice: partnerNotice.trim(),
+        campaignAlias: campaignAlias.trim(),
+      });
+      notify('광고주 설정이 저장되었습니다.');
       setDetail(null);
       load();
     } catch (e) {
@@ -223,6 +237,7 @@ export function AdminCpsMerchants() {
                 </th>
                 <th className="text-left px-4 py-3">광고주</th>
                 <th className="text-left px-3 py-3">코드</th>
+                <th className="text-left px-3 py-3">목록 설명</th>
                 <th className="text-left px-3 py-3">카테고리</th>
                 <th className="text-left px-3 py-3">제휴</th>
                 <th className="text-right px-3 py-3">지급률</th>
@@ -234,7 +249,7 @@ export function AdminCpsMerchants() {
             </thead>
             <tbody>
               {filteredItems.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-12 text-slate-400">광고주가 없습니다.</td></tr>
+                <tr><td colSpan={11} className="text-center py-12 text-slate-400">광고주가 없습니다.</td></tr>
               ) : filteredItems.map((m) => (
                 <tr key={m.lpmId} className="border-t border-slate-100 hover:bg-slate-50/80">
                   <td className="px-3 py-3">
@@ -255,6 +270,11 @@ export function AdminCpsMerchants() {
                     </div>
                   </td>
                   <td className="px-3 py-3 font-mono text-xs">{m.merchantCode}</td>
+                  <td className="px-3 py-3 text-slate-500 text-xs max-w-[200px]">
+                    <span className="line-clamp-2" title={m.partnerNotice || m.notice || ''}>
+                      {m.partnerNotice || m.notice || <span className="text-slate-300">미지정</span>}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-slate-600">{m.categoryName || '—'}</td>
                   <td className="px-3 py-3">{m.subscript || '—'}</td>
                   <td className="px-3 py-3 text-right font-bold">{m.partnerRate}%</td>
@@ -273,7 +293,7 @@ export function AdminCpsMerchants() {
                   <td className="px-3 py-3 text-center text-xs">{m.partnerVisible ? 'Y' : 'N'}</td>
                   <td className="px-3 py-3 text-right">{m.clicks ?? 0}</td>
                   <td className="px-3 py-3">
-                    <button type="button" className="text-xs font-bold text-cyan-700" onClick={() => { setDetail(m); setRate(String(m.partnerRate)); }}>상세</button>
+                    <button type="button" className="text-xs font-bold text-cyan-700" onClick={() => openDetail(m)}>상세</button>
                   </td>
                 </tr>
               ))}
@@ -284,16 +304,44 @@ export function AdminCpsMerchants() {
 
       {detail ? (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-bold text-lg">{detail.merchantName}</h3>
-            <p className="text-sm text-slate-500">{detail.merchantCode} · LP {detail.commissionMobile || detail.commissionPc || '—'}</p>
-            <p className="text-xs text-slate-500">노출 커미션: {truncate(detail.partnerDisplayCommission || '', 40)}</p>
-            <label className="block text-sm">파트너 지급률 (%)
-              <input value={rate} onChange={(e) => setRate(e.target.value)} className="mt-1 w-full border rounded-xl px-3 py-2" />
+          <div className="bg-white rounded-2xl w-full max-w-lg p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <h3 className="font-bold text-lg">{detail.merchantName}</h3>
+              <p className="text-sm text-slate-500 mt-0.5">{detail.merchantCode} · LP {detail.commissionMobile || detail.commissionPc || '—'}</p>
+              <p className="text-xs text-slate-500 mt-1">노출 커미션: {truncate(detail.partnerDisplayCommission || '', 40)}</p>
+            </div>
+            <label className="block text-sm font-medium text-slate-700">표시 이름 (선택)
+              <input
+                value={campaignAlias}
+                onChange={(e) => setCampaignAlias(e.target.value)}
+                className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm"
+                placeholder={detail.merchantName}
+              />
             </label>
-            <div className="flex gap-2 justify-end">
+            <label className="block text-sm font-medium text-slate-700">파트너 지급률 (%)
+              <input value={rate} onChange={(e) => setRate(e.target.value)} className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">목록 설명
+              <textarea
+                value={partnerNotice}
+                onChange={(e) => setPartnerNotice(e.target.value)}
+                rows={4}
+                className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm resize-y min-h-[96px]"
+                placeholder="공개·파트너 CPS 목록에 표시할 설명을 입력하세요"
+              />
+            </label>
+            <p className="text-[11px] text-slate-400 -mt-2">
+              비우면 링크프라이스 공지(동기화)가 사용됩니다. 입력 값은 동기화에 덮어쓰이지 않습니다.
+            </p>
+            {detail.notice ? (
+              <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                <p className="text-[11px] font-bold text-slate-500 mb-1">LP 원본 공지</p>
+                <p className="text-xs text-slate-600 whitespace-pre-wrap break-words line-clamp-4">{detail.notice}</p>
+              </div>
+            ) : null}
+            <div className="flex gap-2 justify-end pt-1">
               <button type="button" className="px-4 py-2 rounded-xl border text-sm" onClick={() => setDetail(null)}>닫기</button>
-              <button type="button" disabled={busy} className="px-4 py-2 rounded-xl bg-cyan-600 text-white text-sm font-bold" onClick={saveRate}>저장</button>
+              <button type="button" disabled={busy} className="px-4 py-2 rounded-xl bg-cyan-600 text-white text-sm font-bold disabled:opacity-50" onClick={saveDetail}>저장</button>
             </div>
           </div>
         </div>

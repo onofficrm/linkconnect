@@ -695,6 +695,11 @@ function CampaignListTable({
                             <span className="ml-1.5 text-rose-500 font-semibold">{campaign.status}</span>
                           )}
                         </div>
+                        {campaign.description ? (
+                          <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1" title={campaign.description}>
+                            {campaign.description}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </td>
