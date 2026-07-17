@@ -31,6 +31,31 @@ if (!function_exists('lc_inquiry_generate_code')) {
     }
 }
 
+if (!function_exists('lc_inquiry_ensure_schema')) {
+    function lc_inquiry_ensure_schema()
+    {
+        if (!lc_db_installed()) {
+            return;
+        }
+
+        $table = lc_table('inquiries');
+        if (!lc_db_table_exists($table)) {
+            return;
+        }
+
+        $cols = array(
+            'iq_contact_name'  => "varchar(100) NOT NULL DEFAULT '' AFTER `iq_cv_code`",
+            'iq_contact_email' => "varchar(120) NOT NULL DEFAULT '' AFTER `iq_contact_name`",
+            'iq_contact_phone' => "varchar(40) NOT NULL DEFAULT '' AFTER `iq_contact_email`",
+        );
+        foreach ($cols as $col => $definition) {
+            if (!lc_db_column_exists($table, $col)) {
+                lc_sql_query(" ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$definition} ", false);
+            }
+        }
+    }
+}
+
 if (!function_exists('lc_inquiry_get_by_id')) {
     function lc_inquiry_get_by_id($iq_id)
     {
@@ -45,6 +70,190 @@ if (!function_exists('lc_inquiry_get_by_id')) {
     }
 }
 
+if (!function_exists('lc_inquiry_get_by_code')) {
+    function lc_inquiry_get_by_code($code)
+    {
+        if (!lc_db_installed()) {
+            return null;
+        }
+
+        $code = trim((string) $code);
+        if ($code === '') {
+            return null;
+        }
+
+        $table = lc_table('inquiries');
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE iq_code = '" . lc_sql_escape($code) . "' LIMIT 1 ");
+    }
+}
+
+if (!function_exists('lc_inquiry_mailer_ready')) {
+    function lc_inquiry_mailer_ready()
+    {
+        if (!function_exists('mailer') && defined('G5_LIB_PATH') && is_file(G5_LIB_PATH . '/mailer.lib.php')) {
+            include_once G5_LIB_PATH . '/mailer.lib.php';
+        }
+
+        return function_exists('mailer');
+    }
+}
+
+if (!function_exists('lc_inquiry_center_label')) {
+    function lc_inquiry_center_label($center)
+    {
+        $center = (string) $center;
+        if ($center === 'partner') {
+            return '파트너';
+        }
+        if ($center === 'merchant') {
+            return '광고주';
+        }
+        if ($center === 'public') {
+            return '공개';
+        }
+        return $center;
+    }
+}
+
+if (!function_exists('lc_inquiry_send_admin_email')) {
+    function lc_inquiry_send_admin_email(array $inquiry)
+    {
+        if (!lc_inquiry_mailer_ready()) {
+            return false;
+        }
+
+        global $config;
+
+        $from_name = function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect';
+        $from_email = !empty($config['cf_admin_email']) ? (string) $config['cf_admin_email'] : (function_exists('lc_contact_email') ? lc_contact_email() : '');
+        $admin_email = function_exists('lc_contact_email') ? lc_contact_email() : (string) ($config['cf_admin_email'] ?? '');
+
+        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+            $from_email = $admin_email;
+        }
+        if ($admin_email === '' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $code = (string) ($inquiry['iq_code'] ?? '');
+        $subject_text = (string) ($inquiry['iq_subject'] ?? '');
+        $center_label = lc_inquiry_center_label($inquiry['iq_center'] ?? '');
+        $category = (string) ($inquiry['iq_category'] ?? '');
+        $author = (string) ($inquiry['iq_contact_name'] ?? '');
+        $email = (string) ($inquiry['iq_contact_email'] ?? '');
+        $phone = (string) ($inquiry['iq_contact_phone'] ?? '');
+        $body_text = (string) ($inquiry['iq_body'] ?? '');
+        $admin_url = (defined('G5_URL') ? G5_URL : '') . '/admin/support';
+
+        $esc = function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        };
+
+        $subject = '[' . $from_name . '] 신규 문의 접수: ' . $subject_text;
+        $html = '<p><strong>새 문의가 접수되었습니다.</strong></p>';
+        $html .= '<table style="border-collapse:collapse;width:100%;max-width:560px;font-size:14px;">';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">문의번호</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($code) . '</td></tr>';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">구분</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($center_label) . '</td></tr>';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">유형</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($category) . '</td></tr>';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">제목</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($subject_text) . '</td></tr>';
+        if ($author !== '') {
+            $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">이름</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($author) . '</td></tr>';
+        }
+        if ($email !== '') {
+            $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">이메일</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($email) . '</td></tr>';
+        }
+        if ($phone !== '') {
+            $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">연락처</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($phone) . '</td></tr>';
+        }
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;vertical-align:top;">내용</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . nl2br($esc($body_text)) . '</td></tr>';
+        $html .= '</table>';
+        $html .= '<p style="margin-top:16px;"><a href="' . $esc($admin_url) . '">관리자에서 문의 확인</a></p>';
+
+        try {
+            return (bool) @mailer($from_name, $from_email, $admin_email, $subject, $html, 1);
+        } catch (Throwable $e) {
+            error_log('[LinkConnect Inquiry] admin mail failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+if (!function_exists('lc_inquiry_send_reply_email')) {
+    function lc_inquiry_send_reply_email(array $inquiry)
+    {
+        if (!lc_inquiry_mailer_ready()) {
+            return false;
+        }
+
+        $to = strtolower(trim((string) ($inquiry['iq_contact_email'] ?? '')));
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        global $config;
+
+        $from_name = function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect';
+        $from_email = !empty($config['cf_admin_email']) ? (string) $config['cf_admin_email'] : (function_exists('lc_contact_email') ? lc_contact_email() : '');
+        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $esc = function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        };
+
+        $code = (string) ($inquiry['iq_code'] ?? '');
+        $subject_text = (string) ($inquiry['iq_subject'] ?? '');
+        $reply = (string) ($inquiry['iq_reply'] ?? '');
+        $name = (string) ($inquiry['iq_contact_name'] ?? '');
+        $lookup_url = (defined('G5_URL') ? G5_URL : '') . '/inquiry';
+
+        $subject = '[' . $from_name . '] 문의 답변이 등록되었습니다';
+        $html = '<p>' . ($name !== '' ? $esc($name) . '님, ' : '') . '문의하신 내용에 대한 답변이 등록되었습니다.</p>';
+        $html .= '<table style="border-collapse:collapse;width:100%;max-width:560px;font-size:14px;">';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">문의번호</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($code) . '</td></tr>';
+        $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">제목</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($subject_text) . '</td></tr>';
+        $html .= '</table>';
+        $html .= '<div style="margin-top:16px;padding:14px 16px;background:#f0fdff;border:1px solid #cffafe;border-radius:10px;">';
+        $html .= '<div style="font-weight:bold;color:#0e7490;margin-bottom:8px;">관리자 답변</div>';
+        $html .= '<div style="color:#334155;">' . nl2br($esc($reply)) . '</div>';
+        $html .= '</div>';
+        $html .= '<p style="margin-top:16px;"><a href="' . $esc($lookup_url) . '">문의 내역 확인하기</a> (문의번호와 이메일로 조회)</p>';
+
+        try {
+            return (bool) @mailer($from_name, $from_email, $to, $subject, $html, 1);
+        } catch (Throwable $e) {
+            error_log('[LinkConnect Inquiry] reply mail failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+if (!function_exists('lc_inquiry_notify_admin_new')) {
+    function lc_inquiry_notify_admin_new(array $inquiry)
+    {
+        if (function_exists('lc_notification_create')) {
+            $code = (string) ($inquiry['iq_code'] ?? '');
+            $subject = (string) ($inquiry['iq_subject'] ?? '');
+            $center_label = lc_inquiry_center_label($inquiry['iq_center'] ?? '');
+            $iq_id = (int) ($inquiry['iq_id'] ?? 0);
+
+            lc_notification_create(array(
+                'center'  => 'admin',
+                'userId'  => 0,
+                'type'    => 'inquiry',
+                'title'   => '신규 문의 접수',
+                'body'    => $center_label . ' · ' . ($code !== '' ? $code . ' · ' : '') . $subject,
+                'link'    => '/admin/support',
+                'refType' => 'inquiry',
+                'refId'   => $iq_id,
+            ));
+        }
+
+        lc_inquiry_send_admin_email($inquiry);
+    }
+}
+
 if (!function_exists('lc_inquiry_create')) {
     /**
      * @return array{ok:bool,message:string,inquiry:array|null}
@@ -54,6 +263,8 @@ if (!function_exists('lc_inquiry_create')) {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'inquiry' => null);
         }
+
+        lc_inquiry_ensure_schema();
 
         $subject = trim((string) ($payload['subject'] ?? ''));
         $body = trim((string) ($payload['body'] ?? ''));
@@ -66,6 +277,18 @@ if (!function_exists('lc_inquiry_create')) {
         $pt_id = (int) ($payload['pt_id'] ?? 0);
         $mt_id = (int) ($payload['mt_id'] ?? 0);
         $mb_id = trim((string) ($payload['mb_id'] ?? ''));
+        $contact_name = trim((string) ($payload['contactName'] ?? ''));
+        $contact_email = trim((string) ($payload['contactEmail'] ?? ''));
+        $contact_phone = trim((string) ($payload['contactPhone'] ?? ''));
+
+        if ($center === 'public') {
+            if ($contact_name === '' || $contact_email === '') {
+                return array('ok' => false, 'message' => '이름과 이메일은 필수입니다.', 'inquiry' => null);
+            }
+            if (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+                return array('ok' => false, 'message' => '올바른 이메일 주소를 입력해주세요.', 'inquiry' => null);
+            }
+        }
 
         $table = lc_table('inquiries');
         $code = lc_inquiry_generate_code();
@@ -81,6 +304,9 @@ if (!function_exists('lc_inquiry_create')) {
             iq_body = '" . lc_sql_escape($body) . "',
             iq_campaign = '" . lc_sql_escape($payload['campaign'] ?? '') . "',
             iq_cv_code = '" . lc_sql_escape($payload['cvCode'] ?? '') . "',
+            iq_contact_name = '" . lc_sql_escape($contact_name) . "',
+            iq_contact_email = '" . lc_sql_escape($contact_email) . "',
+            iq_contact_phone = '" . lc_sql_escape($contact_phone) . "',
             iq_status = '" . lc_sql_escape(LC_INQUIRY_WAITING) . "',
             iq_created_at = NOW() ", false);
 
@@ -89,11 +315,44 @@ if (!function_exists('lc_inquiry_create')) {
             return array('ok' => false, 'message' => '문의 등록에 실패했습니다.', 'inquiry' => null);
         }
 
+        $inquiry = lc_inquiry_get_by_id($iq_id);
+        if (is_array($inquiry)) {
+            lc_inquiry_notify_admin_new($inquiry);
+        }
+
         return array(
             'ok'      => true,
             'message' => '문의가 등록되었습니다.',
-            'inquiry' => lc_inquiry_get_by_id($iq_id),
+            'inquiry' => $inquiry,
         );
+    }
+}
+
+if (!function_exists('lc_inquiry_public_lookup')) {
+    /**
+     * @return array{ok:bool,message:string,inquiry:array|null}
+     */
+    function lc_inquiry_public_lookup($code, $email)
+    {
+        lc_inquiry_ensure_schema();
+
+        $code = trim((string) $code);
+        $email = strtolower(trim((string) $email));
+        if ($code === '' || $email === '') {
+            return array('ok' => false, 'message' => '문의번호와 이메일을 입력해주세요.', 'inquiry' => null);
+        }
+
+        $row = lc_inquiry_get_by_code($code);
+        if (!$row || (string) ($row['iq_center'] ?? '') !== 'public') {
+            return array('ok' => false, 'message' => '문의를 찾을 수 없습니다.', 'inquiry' => null);
+        }
+
+        $stored = strtolower(trim((string) ($row['iq_contact_email'] ?? '')));
+        if ($stored === '' || $stored !== $email) {
+            return array('ok' => false, 'message' => '문의를 찾을 수 없습니다.', 'inquiry' => null);
+        }
+
+        return array('ok' => true, 'message' => '', 'inquiry' => $row);
     }
 }
 
@@ -114,6 +373,9 @@ if (!function_exists('lc_inquiry_list')) {
         }
         if (!empty($filters['mt_id'])) {
             $where .= " AND iq.mt_id = '" . (int) $filters['mt_id'] . "' ";
+        }
+        if (!empty($filters['mb_id'])) {
+            $where .= " AND iq.mb_id = '" . lc_sql_escape((string) $filters['mb_id']) . "' ";
         }
         if (!empty($filters['center'])) {
             $where .= " AND iq.iq_center = '" . lc_sql_escape($filters['center']) . "' ";
@@ -164,6 +426,9 @@ if (!function_exists('lc_inquiry_summary')) {
         if (!empty($filters['mt_id'])) {
             $where .= " AND mt_id = '" . (int) $filters['mt_id'] . "' ";
         }
+        if (!empty($filters['mb_id'])) {
+            $where .= " AND mb_id = '" . lc_sql_escape((string) $filters['mb_id']) . "' ";
+        }
         if (!empty($filters['center'])) {
             $where .= " AND iq_center = '" . lc_sql_escape($filters['center']) . "' ";
         }
@@ -191,27 +456,42 @@ if (!function_exists('lc_inquiry_to_api')) {
     function lc_inquiry_to_api(array $row, $detail = false)
     {
         $center = (string) ($row['iq_center'] ?? '');
+        $contact_name = (string) ($row['iq_contact_name'] ?? '');
         $author = '';
         if ($center === 'partner') {
             $author = trim((string) ($row['pt_name'] ?? '') . ' (' . (string) ($row['pt_code'] ?? '') . ')');
         } elseif ($center === 'merchant') {
             $author = (string) ($row['mt_company'] ?? $row['mt_code'] ?? '');
+        } elseif ($center === 'public') {
+            $author = $contact_name !== '' ? $contact_name : (string) ($row['mb_id'] ?? '비회원');
+        }
+
+        $center_label = '공개';
+        if ($center === 'partner') {
+            $center_label = '파트너';
+        } elseif ($center === 'merchant') {
+            $center_label = '광고주';
+        } elseif ($center !== 'public' && $center !== '') {
+            $center_label = $center;
         }
 
         $item = array(
-            'id'        => (string) ($row['iq_code'] ?? ''),
-            'iqId'      => (int) ($row['iq_id'] ?? 0),
-            'date'      => date('Y.m.d H:i', strtotime($row['iq_created_at'] ?? 'now')),
-            'center'    => $center === 'partner' ? '파트너' : ($center === 'merchant' ? '광고주' : $center),
-            'centerCode'=> $center,
-            'author'    => $author,
-            'category'  => (string) ($row['iq_category'] ?? ''),
-            'title'     => (string) ($row['iq_subject'] ?? ''),
-            'campaign'  => (string) ($row['iq_campaign'] ?? ''),
-            'cvCode'    => (string) ($row['iq_cv_code'] ?? ''),
-            'status'    => lc_inquiry_status_label($row['iq_status'] ?? ''),
-            'statusCode'=> (string) ($row['iq_status'] ?? ''),
-            'replyDate' => !empty($row['iq_replied_at']) ? date('Y.m.d H:i', strtotime($row['iq_replied_at'])) : '-',
+            'id'           => (string) ($row['iq_code'] ?? ''),
+            'iqId'         => (int) ($row['iq_id'] ?? 0),
+            'date'         => date('Y.m.d H:i', strtotime($row['iq_created_at'] ?? 'now')),
+            'center'       => $center_label,
+            'centerCode'   => $center,
+            'author'       => $author,
+            'contactName'  => $contact_name,
+            'contactEmail' => (string) ($row['iq_contact_email'] ?? ''),
+            'contactPhone' => (string) ($row['iq_contact_phone'] ?? ''),
+            'category'     => (string) ($row['iq_category'] ?? ''),
+            'title'        => (string) ($row['iq_subject'] ?? ''),
+            'campaign'     => (string) ($row['iq_campaign'] ?? ''),
+            'cvCode'       => (string) ($row['iq_cv_code'] ?? ''),
+            'status'       => lc_inquiry_status_label($row['iq_status'] ?? ''),
+            'statusCode'   => (string) ($row['iq_status'] ?? ''),
+            'replyDate'    => !empty($row['iq_replied_at']) ? date('Y.m.d H:i', strtotime($row['iq_replied_at'])) : '-',
         );
 
         if ($detail) {
@@ -279,10 +559,18 @@ if (!function_exists('lc_inquiry_admin_reply')) {
 
         lc_sql_query(" UPDATE `{$table}` SET " . implode(', ', $sets) . " WHERE iq_id = '" . (int) $iq_id . "' LIMIT 1 ", false);
 
+        $updated = lc_inquiry_get_by_id($iq_id);
+
+        $reply_saved = trim((string) ($updated['iq_reply'] ?? ''));
+        $reply_added = $reply_saved !== '' && $reply_saved !== trim((string) ($inquiry['iq_reply'] ?? ''));
+        if ($reply_added && is_array($updated) && (string) ($updated['iq_center'] ?? '') === 'public') {
+            lc_inquiry_send_reply_email($updated);
+        }
+
         return array(
             'ok'      => true,
             'message' => '문의가 처리되었습니다.',
-            'inquiry' => lc_inquiry_get_by_id($iq_id),
+            'inquiry' => $updated,
         );
     }
 }

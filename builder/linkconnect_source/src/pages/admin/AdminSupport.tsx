@@ -26,7 +26,7 @@ export function AdminSupport() {
     setError('');
     try {
       const data = await fetchAdminInquiries({
-        center: centerFilter === 'partner' ? 'partner' : centerFilter === 'merchant' ? 'merchant' : '',
+        center: centerFilter === 'partner' || centerFilter === 'merchant' || centerFilter === 'public' ? centerFilter : '',
         q,
       });
       setSummary(data.summary);
@@ -82,7 +82,7 @@ export function AdminSupport() {
   };
 
   return (
-    <AdminLayout activeMenu="support" title="문의 관리" description="파트너와 광고주의 문의를 확인하고 답변을 관리하세요.">
+    <AdminLayout activeMenu="support" title="문의 관리" description="공개·파트너·광고주 문의를 확인하고 답변을 관리하세요.">
       {(error || message) && (
         <div className={`mb-6 rounded-xl border px-4 py-3 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
           {error || message}
@@ -103,10 +103,11 @@ export function AdminSupport() {
             <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-slate-100">
               <div className="flex-1 min-w-[200px] relative">
                 <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="제목, 작성자 검색" className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="제목, 작성자, 문의번호 검색" className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-cyan-500" />
               </div>
               <select value={centerFilter} onChange={(e) => setCenterFilter(e.target.value)} className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                 <option value="">전체 구분</option>
+                <option value="public">공개</option>
                 <option value="partner">파트너</option>
                 <option value="merchant">광고주</option>
               </select>
@@ -156,8 +157,19 @@ export function AdminSupport() {
               <div className="p-5 space-y-6 max-h-[calc(100vh-120px)] overflow-y-auto">
                 <section>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                    <div className="text-xs text-cyan-700 bg-cyan-100 inline-block px-2 py-0.5 rounded mb-2">{detail.category}</div>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <div className="text-xs text-cyan-700 bg-cyan-100 inline-block px-2 py-0.5 rounded">{detail.category}</div>
+                      <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">{detail.center}</div>
+                      <div className="text-xs font-mono text-slate-500">{detail.id}</div>
+                    </div>
                     <h4 className="font-bold text-slate-900 mb-2">{detail.title}</h4>
+                    {(detail.contactName || detail.contactEmail || detail.contactPhone) && (
+                      <div className="mb-3 text-xs text-slate-600 space-y-0.5">
+                        {detail.contactName ? <div>이름: {detail.contactName}</div> : null}
+                        {detail.contactEmail ? <div>이메일: {detail.contactEmail}</div> : null}
+                        {detail.contactPhone ? <div>연락처: {detail.contactPhone}</div> : null}
+                      </div>
+                    )}
                     <p className="text-sm text-slate-700 whitespace-pre-line">{detail.content || '-'}</p>
                   </div>
                 </section>

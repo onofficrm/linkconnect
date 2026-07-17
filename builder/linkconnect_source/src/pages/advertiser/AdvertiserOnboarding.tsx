@@ -122,7 +122,7 @@ export function AdvertiserOnboarding() {
           title="2. 광고상품 확인"
           body={
             !contractDone
-              ? '계약 체결 후 광고상품을 확인할 수 있습니다.'
+              ? '계약서 작성 후 관리자 승인이 완료되면 광고상품을 등록할 수 있습니다.'
               : loading
                 ? '광고상품을 불러오는 중...'
                 : campaignDone

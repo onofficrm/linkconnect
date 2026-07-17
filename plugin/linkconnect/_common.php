@@ -128,6 +128,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/page.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/notice_board.php')) {
     require_once LC_PLUGIN_PATH . '/inc/notice_board.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/community_board.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/community_board.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/gemini.php')) {
     require_once LC_PLUGIN_PATH . '/inc/gemini.php';
 }

@@ -6,6 +6,7 @@ import {
   campaignNavItems,
   centerNavItems,
   companySubItems,
+  communityNavItem,
   isCompanyNavActive,
   type NavLinkItem,
 } from '../lib/publicNav';
@@ -167,6 +168,10 @@ export function Header() {
                 className={navLinkClass(isActive(location.pathname, item.to) || Boolean(item.scrollTarget && location.pathname === '/'))}
               />
             ))}
+            <PublicNavLink
+              item={communityNavItem}
+              className={navLinkClass(isActive(location.pathname, communityNavItem.to))}
+            />
             {centerNavItems.map((item) => (
               <Link
                 key={item.to}
@@ -225,6 +230,13 @@ export function Header() {
               className="block px-3 py-2.5 pl-5 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg"
             />
           ))}
+
+          <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">커뮤니티</p>
+          <PublicNavLink
+            item={communityNavItem}
+            onNavigate={closeMobile}
+            className="block px-3 py-2.5 pl-5 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg"
+          />
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">센터</p>
           {centerNavItems.map((item) => (

@@ -946,6 +946,34 @@ if (!function_exists('lc_campaign_merchant_summary')) {
     }
 }
 
+if (!function_exists('lc_campaign_require_approved_contract')) {
+    /**
+     * 광고 등록/활성화는 계약 승인 완료 광고주만 가능
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_campaign_require_approved_contract($mt_id)
+    {
+        $mt_id = (int) $mt_id;
+        if ($mt_id <= 0) {
+            return array('ok' => false, 'message' => '광고주를 선택해주세요.');
+        }
+
+        if (!function_exists('lc_merchant_contract_is_fully_signed')) {
+            return array('ok' => true, 'message' => '');
+        }
+
+        if (!lc_merchant_contract_is_fully_signed($mt_id)) {
+            return array(
+                'ok'      => false,
+                'message' => '계약서 관리자 승인이 완료된 광고주만 광고를 등록하거나 활성화할 수 있습니다.',
+            );
+        }
+
+        return array('ok' => true, 'message' => '');
+    }
+}
+
 if (!function_exists('lc_campaign_save')) {
     /**
      * @param array<string,mixed> $payload
@@ -971,6 +999,21 @@ if (!function_exists('lc_campaign_save')) {
 
         if ($cp_id <= 0 && $mt_id <= 0) {
             return array('ok' => false, 'message' => '광고주를 선택해주세요.');
+        }
+
+        $target_status = isset($payload['statusCode']) ? (string) $payload['statusCode'] : '';
+        $check_mt_id = $mt_id;
+        if ($check_mt_id <= 0 && $cp_id > 0) {
+            $existing_for_check = lc_campaign_get_by_id($cp_id);
+            $check_mt_id = is_array($existing_for_check) ? (int) ($existing_for_check['mt_id'] ?? 0) : 0;
+        }
+        // 신규 등록 · 활성 저장 · 광고주 재배정 시 승인된 계약 필수
+        $needs_approved = $cp_id <= 0 || $target_status === LC_STATUS_ACTIVE || ($cp_id > 0 && $mt_id > 0);
+        if ($needs_approved && function_exists('lc_campaign_require_approved_contract')) {
+            $contract_check = lc_campaign_require_approved_contract($check_mt_id);
+            if (empty($contract_check['ok'])) {
+                return array('ok' => false, 'message' => $contract_check['message']);
+            }
         }
 
         if ($partner_price <= 0) {
@@ -1104,6 +1147,13 @@ if (!function_exists('lc_campaign_update_status')) {
         $existing = lc_campaign_get_by_id($cp_id);
         if (!$existing) {
             return array('ok' => false, 'message' => '캠페인을 찾을 수 없습니다.');
+        }
+
+        if ($status === LC_STATUS_ACTIVE && function_exists('lc_campaign_require_approved_contract')) {
+            $contract_check = lc_campaign_require_approved_contract((int) ($existing['mt_id'] ?? 0));
+            if (empty($contract_check['ok'])) {
+                return array('ok' => false, 'message' => $contract_check['message']);
+            }
         }
 
         $table = lc_table('campaigns');

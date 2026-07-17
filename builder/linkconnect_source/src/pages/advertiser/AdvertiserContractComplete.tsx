@@ -54,7 +54,7 @@ export function AdvertiserContractComplete() {
     );
   }
 
-  if (!loading && state && !state.isSigned) {
+  if (!loading && state && !state.isSigned && !state.isApprovalPending) {
     return <Navigate to="/advertiser/contract" replace />;
   }
 
@@ -72,12 +72,19 @@ export function AdvertiserContractComplete() {
   }
 
   return (
-    <AdvertiserContractLayout title="CPA 광고 제휴 계약이 완료되었습니다." subtitle="계약이 정상적으로 저장되었습니다.">
+    <AdvertiserContractLayout
+      title={state?.isSigned ? 'CPA 광고 제휴 계약이 승인되었습니다.' : '계약서 승인 요청이 완료되었습니다.'}
+      subtitle={state?.isSigned ? '이제 광고를 바로 등록할 수 있습니다.' : '관리자가 계약서를 검토한 후 승인 결과를 알려드립니다.'}
+    >
       <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex items-start gap-3">
           <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={28} />
           <div>
-            <p className="text-slate-700">아래 계약 정보를 확인해 주세요. 체결된 계약서는 수정할 수 없습니다.</p>
+            <p className="text-slate-700">
+              {state?.isSigned
+                ? '관리자 승인이 완료되었습니다. 아래 계약 정보를 확인해 주세요.'
+                : '승인 대기 중에는 계약서를 수정할 수 없습니다. 반려되면 수정 후 다시 요청할 수 있습니다.'}
+            </p>
           </div>
         </div>
 
@@ -95,7 +102,7 @@ export function AdvertiserContractComplete() {
             <dd className="font-semibold text-slate-900 mt-1 font-mono">{contract?.contractCode ?? '-'}</dd>
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-            <dt className="text-slate-500">계약 체결일시</dt>
+            <dt className="text-slate-500">승인 요청일시</dt>
             <dd className="font-semibold text-slate-900 mt-1">{contract?.signedAt ?? '-'}</dd>
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
@@ -104,35 +111,47 @@ export function AdvertiserContractComplete() {
           </div>
           <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
             <dt className="text-slate-500">계약 상태</dt>
-            <dd className="font-semibold text-emerald-700 mt-1">체결 완료</dd>
+            <dd className={`font-semibold mt-1 ${state?.isSigned ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {state?.statusLabel ?? '관리자 승인 대기'}
+            </dd>
           </div>
         </dl>
 
-        <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-          다음 단계: 광고상품별 <strong>홍보 가이드</strong>(추천키워드 · 이미지 · 운영 규칙)를 스텝별로 작성하면 파트너 모집을 시작할 수 있습니다.
+        <div className={`rounded-xl border px-4 py-3 text-sm ${
+          state?.isSigned
+            ? 'border-cyan-200 bg-cyan-50 text-cyan-900'
+            : 'border-amber-200 bg-amber-50 text-amber-900'
+        }`}>
+          {state?.isSigned
+            ? <>다음 단계: <strong>광고 등록하기</strong>에서 광고상품을 등록할 수 있습니다.</>
+            : <>관리자 승인 후 <strong>광고 등록</strong> 기능이 자동으로 열립니다.</>}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            to="/advertiser/onboarding"
+            to={state?.isSigned ? '/advertiser/onboarding' : '/advertiser'}
             className="inline-flex justify-center items-center px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
           >
-            온보딩 이어서하기
+            {state?.isSigned ? '광고 등록하기' : '대시보드로'}
           </Link>
-          <Link
-            to="/advertiser/contract/view"
-            className="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"
-          >
-            <FileText size={18} />
-            계약서 확인
-          </Link>
-          <a
-            href={state?.signedPdfDownloadUrl ?? contract?.pdfDownloadUrl ?? '#'}
-            className="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"
-          >
-            <FileDown size={18} />
-            계약서 PDF 다운로드
-          </a>
+          {state?.isSigned ? (
+            <Link
+              to="/advertiser/contract/view"
+              className="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"
+            >
+              <FileText size={18} />
+              계약서 확인
+            </Link>
+          ) : null}
+          {state?.isSigned ? (
+            <a
+              href={state?.signedPdfDownloadUrl ?? contract?.pdfDownloadUrl ?? '#'}
+              className="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"
+            >
+              <FileDown size={18} />
+              계약서 PDF 다운로드
+            </a>
+          ) : null}
           <Link
             to="/advertiser"
             className="inline-flex justify-center items-center px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold"

@@ -34,7 +34,14 @@ export function MemberAuthMenu({
     logoutReturnPath === '/advertiser' &&
     shouldShowMerchantContractMenu(auth);
   const contractMenuPath = getMerchantContractPath(auth);
-  const contractMenuLabel = auth.merchantContractRequires ? '계약서 작성' : '계약정보';
+  const contractMenuLabel =
+    auth.merchantContractStatus === 'review_pending'
+      ? '계약 승인 대기'
+      : auth.merchantContractStatus === 'rejected'
+        ? '계약서 재작성'
+        : auth.merchantContractRequires
+          ? '계약서 작성'
+          : '계약정보';
   const contractActive = activeMenu === 'contract';
   const loginUrl = g5LoginUrl(loginReturnUrl ?? currentSpaReturnUrl());
   const logoutUrl = g5LogoutUrl(logoutReturnPath ?? currentSpaReturnPath());
@@ -152,7 +159,9 @@ export function MemberAuthMenu({
               >
                 <FileText size={20} />
                 <span className="flex-1">{contractMenuLabel}</span>
-                {auth.merchantContractRequires ? (
+                {auth.merchantContractStatus === 'review_pending' ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500 text-white">대기</span>
+                ) : auth.merchantContractRequires ? (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500 text-white">필수</span>
                 ) : null}
               </Link>

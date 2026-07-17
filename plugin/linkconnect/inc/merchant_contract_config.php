@@ -23,6 +23,12 @@ if (!defined('LC_MERCHANT_CONTRACT_STATUS_IN_PROGRESS')) {
 if (!defined('LC_MERCHANT_CONTRACT_STATUS_SIGNED')) {
     define('LC_MERCHANT_CONTRACT_STATUS_SIGNED', 'signed');
 }
+if (!defined('LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING')) {
+    define('LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING', 'review_pending');
+}
+if (!defined('LC_MERCHANT_CONTRACT_STATUS_REJECTED')) {
+    define('LC_MERCHANT_CONTRACT_STATUS_REJECTED', 'rejected');
+}
 if (!defined('LC_MERCHANT_CONTRACT_STATUS_CANCELLED')) {
     define('LC_MERCHANT_CONTRACT_STATUS_CANCELLED', 'cancelled');
 }
@@ -61,7 +67,9 @@ if (!function_exists('lc_merchant_contract_config')) {
             'statuses' => array(
                 LC_MERCHANT_CONTRACT_STATUS_PENDING     => '계약 미체결',
                 LC_MERCHANT_CONTRACT_STATUS_IN_PROGRESS => '계약 작성 중',
-                LC_MERCHANT_CONTRACT_STATUS_SIGNED      => '계약 체결 완료',
+                LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING => '관리자 승인 대기',
+                LC_MERCHANT_CONTRACT_STATUS_REJECTED    => '승인 반려',
+                LC_MERCHANT_CONTRACT_STATUS_SIGNED      => '관리자 승인 완료',
                 LC_MERCHANT_CONTRACT_STATUS_CANCELLED   => '관리자에 의해 계약 취소',
                 LC_MERCHANT_CONTRACT_STATUS_EXPIRED     => '계약 만료',
                 LC_MERCHANT_CONTRACT_STATUS_RENEWAL     => '새 계약서 버전으로 재계약 필요',

@@ -19,6 +19,8 @@ type DetailTab = 'document' | 'admin';
 const emptySummary: AdminContractSummary = {
   total: 0,
   signed: 0,
+  reviewPending: 0,
+  rejected: 0,
   pending: 0,
   inProgress: 0,
   cancelled: 0,
@@ -31,7 +33,9 @@ const STATUS_OPTIONS = [
   ['unsigned', '미체결'],
   ['pending', '대기'],
   ['in_progress', '작성 중'],
-  ['signed', '체결 완료'],
+  ['review_pending', '승인 대기'],
+  ['rejected', '승인 반려'],
+  ['signed', '승인 완료'],
   ['cancelled', '취소'],
   ['expired', '만료'],
   ['renewal', '재계약 필요'],
@@ -112,12 +116,18 @@ export function AdminContracts() {
     }
   }, [selectedId, loadDetail]);
 
-  const handleStatusAction = async (action: 'cancel' | 'expire' | 'requireRenewal') => {
-    if (!selectedId || !statusReason.trim()) {
+  const handleStatusAction = async (action: 'approve' | 'reject' | 'cancel' | 'expire' | 'requireRenewal') => {
+    if (!selectedId || (action !== 'approve' && !statusReason.trim())) {
       setError('상태 변경 사유를 입력해 주세요.');
       return;
     }
-    if (!window.confirm('계약 상태를 변경하시겠습니까? 체결 내용은 수정되지 않습니다.')) {
+    const confirmMessage =
+      action === 'approve'
+        ? '계약서를 승인하시겠습니까? 승인 즉시 광고주가 광고를 등록할 수 있습니다.'
+        : action === 'reject'
+          ? '계약서를 반려하시겠습니까? 광고주는 수정 후 다시 요청할 수 있습니다.'
+          : '계약 상태를 변경하시겠습니까? 체결 내용은 수정되지 않습니다.';
+    if (!window.confirm(confirmMessage)) {
       return;
     }
     setSaving(true);
@@ -157,12 +167,12 @@ export function AdminContracts() {
   };
 
   return (
-    <AdminLayout activeMenu="contracts" title="광고주 계약 관리" description="광고주 CPA 계약서 체결 현황을 조회하고 상태를 관리합니다.">
+    <AdminLayout activeMenu="contracts" title="광고주 계약 관리" description="광고주 계약서 승인 요청을 검토하고 승인 또는 반려합니다.">
       <ContractProcessGuide audience="admin" className="mb-6" />
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm text-slate-600">
-          체결은 광고주가 직접 진행합니다. 관리자는 이 화면에서 <b>조회·상태 변경</b>만 합니다.
+          광고주가 작성·서명한 계약서를 검토하여 <b>승인 또는 반려</b>해 주세요. 승인 즉시 광고 등록이 가능합니다.
         </p>
         <button
           type="button"
@@ -178,9 +188,11 @@ export function AdminContracts() {
       {seedMessage ? (
         <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{seedMessage}</div>
       ) : null}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 mb-8">
         <SummaryCard title="전체" value={summary.total.toLocaleString()} suffix="건" icon={<FileText size={18} />} />
-        <SummaryCard title="체결" value={summary.signed.toLocaleString()} suffix="건" color="emerald" icon={<CheckCircle2 size={18} />} />
+        <SummaryCard title="승인 대기" value={summary.reviewPending.toLocaleString()} suffix="건" color="yellow" icon={<Clock size={18} />} />
+        <SummaryCard title="승인 완료" value={summary.signed.toLocaleString()} suffix="건" color="emerald" icon={<CheckCircle2 size={18} />} />
+        <SummaryCard title="반려" value={summary.rejected.toLocaleString()} suffix="건" color="red" icon={<AlertTriangle size={18} />} />
         <SummaryCard title="미체결" value={summary.pending.toLocaleString()} suffix="건" color="yellow" icon={<Clock size={18} />} />
         <SummaryCard title="작성 중" value={summary.inProgress.toLocaleString()} suffix="건" icon={<Clock size={18} />} />
         <SummaryCard title="취소" value={summary.cancelled.toLocaleString()} suffix="건" color="red" icon={<AlertTriangle size={18} />} />
@@ -225,9 +237,9 @@ export function AdminContracts() {
               <p className="p-6 text-sm text-slate-500">불러오는 중...</p>
             ) : items.length === 0 ? (
               <div className="p-6 text-sm text-slate-600 space-y-3">
-                <p className="font-semibold text-slate-800">아직 체결된 계약이 없습니다.</p>
+                <p className="font-semibold text-slate-800">아직 등록된 계약 요청이 없습니다.</p>
                 <p className="leading-relaxed">
-                  광고주가 <b>광고주센터 → CPA 계약 체결</b>에서 3단계(정보 입력 → 계약서 동의 → 서명)를 완료하면 이 목록에 표시됩니다.
+                  광고주가 <b>광고주센터 → 계약서 작성</b>에서 작성·서명 후 승인 요청하면 이 목록에 표시됩니다.
                 </p>
                 <p className="text-xs text-slate-500">
                   데모 테스트: 위 「데모광고주 샘플 계약 생성」 버튼으로 lc_advertiser 계정에 샘플 계약을 바로 넣을 수 있습니다.
@@ -301,7 +313,7 @@ export function AdminContracts() {
                     signedAt={detail.contract.signedAt}
                     signatureUrl={detail.signatureUrl}
                     documentPreviewUrl={detail.documentPreviewUrl}
-                    documentPdfUrl={detail.contract.isFullySigned ? detail.documentPdfUrl : undefined}
+                    documentPdfUrl={['review_pending', 'rejected', 'signed'].includes(detail.contract.status) ? detail.documentPdfUrl : undefined}
                     maxHeight="75vh"
                   />
                 ) : (
@@ -344,8 +356,8 @@ export function AdminContracts() {
 
                 <section className="grid sm:grid-cols-2 gap-3 text-sm">
                   <Info label="계약 담당자" value={`${detail.contract.signerName} (${detail.contract.signerPosition})`} />
-                  <Info label="체결일시" value={detail.contract.signedAt} />
-                  <Info label="체결 IP" value={detail.contract.signedIp} />
+                  <Info label="승인 요청일시" value={detail.contract.signedAt} />
+                  <Info label="요청 IP" value={detail.contract.signedIp} />
                   <Info label="PDF 해시" value={detail.contract.pdfHashMasked} />
                   <Info label="User-Agent" value={detail.contract.userAgent} />
                   <Info label="등록일" value={detail.contract.createdAt} />
@@ -373,7 +385,17 @@ export function AdminContracts() {
                 ) : null}
 
                 <section>
-                  <h3 className="font-bold text-slate-900 mb-2">상태 변경 (사유 필수)</h3>
+                  <h3 className="font-bold text-slate-900 mb-2">계약 승인 관리</h3>
+                  {detail.contract.status === 'review_pending' ? (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      <button type="button" disabled={saving} onClick={() => handleStatusAction('approve')} className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-bold disabled:opacity-50">
+                        계약 승인
+                      </button>
+                      <button type="button" disabled={saving || !statusReason.trim()} onClick={() => handleStatusAction('reject')} className="px-5 py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold disabled:opacity-50">
+                        계약 반려
+                      </button>
+                    </div>
+                  ) : null}
                   <textarea
                     value={statusReason}
                     onChange={(e) => setStatusReason(e.target.value)}

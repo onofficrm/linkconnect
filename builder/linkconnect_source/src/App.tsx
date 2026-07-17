@@ -76,6 +76,8 @@ import { AdminCpsSettlements } from './pages/admin/cps/AdminCpsSettlements';
 import { NoticeList } from './pages/notice/NoticeList';
 import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
+import { CommunityDetailPage, CommunityForm, CommunityList } from './pages/community/CommunityBoard';
+import { InquiryBoard } from './pages/inquiry/InquiryBoard';
 import { TermsOfService } from './pages/legal/TermsOfService';
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
@@ -102,6 +104,11 @@ export default function App() {
           <Route path="notice/write" element={<NoticeForm />} />
           <Route path="notice/:id/edit" element={<NoticeForm />} />
           <Route path="notice/:id" element={<NoticeDetailPage />} />
+          <Route path="community" element={<CommunityList />} />
+          <Route path="community/write" element={<CommunityForm />} />
+          <Route path="community/:id/edit" element={<CommunityForm />} />
+          <Route path="community/:id" element={<CommunityDetailPage />} />
+          <Route path="inquiry" element={<InquiryBoard />} />
           <Route path="terms" element={<TermsOfService />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>

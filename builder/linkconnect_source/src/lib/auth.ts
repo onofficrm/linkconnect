@@ -33,6 +33,7 @@ export type LcAuth = {
   merchantContractRequires?: boolean;
   merchantContractHasSignedHistory?: boolean;
   merchantContractViewable?: boolean;
+  merchantContractStatus?: string;
 };
 
 declare global {
@@ -76,6 +77,7 @@ const defaultAuth: LcAuth = {
   merchantContractRequires: false,
   merchantContractHasSignedHistory: false,
   merchantContractViewable: false,
+  merchantContractStatus: '',
 };
 
 export function getLcAuth(): LcAuth {
@@ -160,6 +162,9 @@ export function shouldShowMerchantContractNotice(auth: LcAuth = getLcAuth()): bo
 
 /** 광고주 CPA 계약 화면 경로 (미체결 → 작성, 체결·이력 → 열람) */
 export function getMerchantContractPath(auth: LcAuth = getLcAuth()): string {
+  if (auth.merchantContractStatus === 'review_pending') {
+    return '/advertiser/contract/complete';
+  }
   if (shouldEnforceMerchantContract(auth) && auth.merchantContractViewable) {
     return '/advertiser/contract/view';
   }

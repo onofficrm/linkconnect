@@ -77,6 +77,7 @@ if (!function_exists('lc_auth_state')) {
             'merchantContractRequires'     => !empty($contract_access['requiresContract']),
             'merchantContractHasSignedHistory' => !empty($contract_access['hasSignedHistory']),
             'merchantContractViewable'     => !empty($contract_access['viewable']),
+            'merchantContractStatus'       => (string) ($contract_access['contractStatus'] ?? ''),
         );
     }
 }

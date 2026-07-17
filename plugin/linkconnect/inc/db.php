@@ -399,6 +399,9 @@ if (!function_exists('lc_db_run_schema')) {
                 `iq_body` text,
                 `iq_campaign` varchar(200) NOT NULL DEFAULT '',
                 `iq_cv_code` varchar(30) NOT NULL DEFAULT '',
+                `iq_contact_name` varchar(100) NOT NULL DEFAULT '',
+                `iq_contact_email` varchar(120) NOT NULL DEFAULT '',
+                `iq_contact_phone` varchar(40) NOT NULL DEFAULT '',
                 `iq_reply` text,
                 `iq_admin_memo` varchar(500) NOT NULL DEFAULT '',
                 `iq_status` varchar(20) NOT NULL DEFAULT 'waiting',
@@ -591,12 +594,15 @@ if (!function_exists('lc_db_run_migrations')) {
         }
 
         foreach (array(
-            'iq_center'     => "varchar(20) NOT NULL DEFAULT '' AFTER `mb_id`",
-            'iq_campaign'   => "varchar(200) NOT NULL DEFAULT '' AFTER `iq_body`",
-            'iq_cv_code'    => "varchar(30) NOT NULL DEFAULT '' AFTER `iq_campaign`",
-            'iq_reply'      => "text AFTER `iq_cv_code`",
-            'iq_admin_memo' => "varchar(500) NOT NULL DEFAULT '' AFTER `iq_reply`",
-            'iq_replied_at' => "datetime DEFAULT NULL AFTER `iq_status`",
+            'iq_center'        => "varchar(20) NOT NULL DEFAULT '' AFTER `mb_id`",
+            'iq_campaign'      => "varchar(200) NOT NULL DEFAULT '' AFTER `iq_body`",
+            'iq_cv_code'       => "varchar(30) NOT NULL DEFAULT '' AFTER `iq_campaign`",
+            'iq_contact_name'  => "varchar(100) NOT NULL DEFAULT '' AFTER `iq_cv_code`",
+            'iq_contact_email' => "varchar(120) NOT NULL DEFAULT '' AFTER `iq_contact_name`",
+            'iq_contact_phone' => "varchar(40) NOT NULL DEFAULT '' AFTER `iq_contact_email`",
+            'iq_reply'         => "text AFTER `iq_contact_phone`",
+            'iq_admin_memo'    => "varchar(500) NOT NULL DEFAULT '' AFTER `iq_reply`",
+            'iq_replied_at'    => "datetime DEFAULT NULL AFTER `iq_status`",
         ) as $col => $definition) {
             if (lc_db_table_exists($inquiries) && !lc_db_column_exists($inquiries, $col)) {
                 $alters[] = "ALTER TABLE `{$inquiries}` ADD COLUMN `{$col}` {$definition}";

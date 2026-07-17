@@ -1330,6 +1330,7 @@ async function publicApiGet<T>(endpoint: string, query?: Record<string, string>)
 
   const response = await fetch(url.toString(), {
     method: 'GET',
+    credentials: 'include',
     headers: { Accept: 'application/json' },
   });
 
@@ -1625,6 +1626,9 @@ export type InquiryItem = {
   center: string;
   centerCode: string;
   author: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   category: string;
   title: string;
   campaign: string;
@@ -1675,6 +1679,34 @@ export function fetchAdminInquiryDetail(iqId: number) {
 
 export function updateAdminInquiry(payload: { iqId: number; action: 'reply' | 'status' | 'close'; reply?: string; status?: string; adminMemo?: string }) {
   return adminApiPost<{ message: string; item: InquiryItem; summary: InquirySummary }>('inquiries.php', payload);
+}
+
+export function createPublicInquiry(payload: {
+  category: string;
+  subject: string;
+  body: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  website?: string;
+}) {
+  return publicApiPost<{ message: string; item: InquiryItem }>('inquiry.php', payload);
+}
+
+export function lookupPublicInquiry(code: string, email: string) {
+  return publicApiGet<{ item: InquiryItem }>('inquiry.php', {
+    action: 'lookup',
+    code,
+    email,
+  });
+}
+
+export function fetchMyPublicInquiries() {
+  return publicApiGet<{ summary: InquirySummary; items: InquiryItem[] }>('inquiry.php', { action: 'mine' });
+}
+
+export function fetchMyPublicInquiryDetail(iqId: number) {
+  return publicApiGet<{ item: InquiryItem }>('inquiry.php', { id: String(iqId) });
 }
 
 export type AdminSettingsData = {
@@ -2292,6 +2324,34 @@ export function saveNotice(payload: { subject: string; content: string; isNotice
 
 export function deleteNotice(id: number) {
   return publicApiPost<{ message: string }>('notice.php', { action: 'delete', id });
+}
+
+export type CommunityListItem = Omit<NoticeListItem, 'isNotice'>;
+export type CommunityDetail = Omit<NoticeDetail, 'isNotice' | 'isHtml'>;
+export type CommunityListResponse = Omit<NoticeListResponse, 'items'> & {
+  items: CommunityListItem[];
+};
+
+export function fetchCommunityList(filters?: { page?: number; q?: string; perPage?: number }) {
+  return publicApiGet<CommunityListResponse>('community.php', {
+    page: String(filters?.page ?? 1),
+    q: filters?.q ?? '',
+    perPage: String(filters?.perPage ?? 15),
+  });
+}
+
+export function fetchCommunityDetail(id: number) {
+  return publicApiGet<{ item: CommunityDetail; permissions: NoticePermissions; boardReady: boolean }>('community.php', {
+    id: String(id),
+  });
+}
+
+export function saveCommunityPost(payload: { subject: string; content: string; id?: number; action?: string }) {
+  return publicApiPost<{ message: string; item: CommunityDetail }>('community.php', payload);
+}
+
+export function deleteCommunityPost(id: number) {
+  return publicApiPost<{ message: string }>('community.php', { action: 'delete', id });
 }
 
 export type AiStatus = {
@@ -3196,6 +3256,9 @@ export type MerchantContractState = {
   status: string;
   statusLabel: string;
   isSigned: boolean;
+  isApprovalPending: boolean;
+  isRejected: boolean;
+  rejectionReason?: string;
   canWrite: boolean;
   requiresContract: boolean;
   partyB: MerchantContractParty;
@@ -3317,6 +3380,8 @@ export type AdminContractListItem = {
 export type AdminContractSummary = {
   total: number;
   signed: number;
+  reviewPending: number;
+  rejected: number;
   pending: number;
   inProgress: number;
   cancelled: number;
@@ -3394,7 +3459,7 @@ export function fetchAdminContractDetail(mcId: number) {
 
 export function updateAdminContractStatus(payload: {
   mcId: number;
-  action: 'cancel' | 'expire' | 'requireRenewal';
+  action: 'approve' | 'reject' | 'cancel' | 'expire' | 'requireRenewal';
   reason: string;
 }) {
   return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', payload);

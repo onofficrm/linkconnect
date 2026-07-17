@@ -155,6 +155,7 @@ if (!function_exists('lc_merchant_contract_access_state')) {
                 'graceActive'       => false,
                 'requiresContract'  => true,
                 'version'           => lc_merchant_contract_current_version(),
+                'contractStatus'    => '',
             );
         }
 
@@ -162,18 +163,12 @@ if (!function_exists('lc_merchant_contract_access_state')) {
             return $request_cache[$mt_id];
         }
 
-        $session_key = 'lc_mc_access_' . $mt_id;
         $version = lc_merchant_contract_current_version();
-        if (isset($_SESSION[$session_key]) && is_array($_SESSION[$session_key])) {
-            $cached = $_SESSION[$session_key];
-            if (isset($cached['version']) && $cached['version'] === $version) {
-                $request_cache[$mt_id] = $cached;
-
-                return $cached;
-            }
-        }
 
         $signed = lc_merchant_contract_is_fully_signed($mt_id);
+        $contract_status = function_exists('lc_merchant_contract_status')
+            ? lc_merchant_contract_status($mt_id)
+            : '';
         $grace = !$signed && lc_merchant_contract_grace_active();
         $blocked = !$signed && !$grace;
 
@@ -183,9 +178,9 @@ if (!function_exists('lc_merchant_contract_access_state')) {
             'graceActive'      => $grace,
             'requiresContract' => !$signed,
             'version'          => $version,
+            'contractStatus'   => $contract_status,
         );
 
-        $_SESSION[$session_key] = $state;
         $request_cache[$mt_id] = $state;
 
         return $state;
@@ -218,6 +213,7 @@ if (!function_exists('lc_merchant_contract_access_state_for_auth')) {
                 'requiresContract' => false,
                 'hasSignedHistory' => false,
                 'viewable'         => false,
+                'contractStatus'   => '',
             );
         }
 

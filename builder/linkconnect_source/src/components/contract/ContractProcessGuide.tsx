@@ -19,13 +19,13 @@ const advertiserSteps = [
   },
   {
     step: '3',
-    title: '담당자 서명·체결',
-    desc: '전자 서명 후 즉시 체결됩니다. (관리자 별도 승인 없음)',
+    title: '담당자 서명·승인 요청',
+    desc: '전자 서명 후 관리자에게 계약 승인을 요청합니다.',
   },
   {
     step: '4',
-    title: '광고주센터 이용',
-    desc: '체결 후 캠페인·디비·광고비 충전 등 모든 기능을 이용할 수 있습니다.',
+    title: '관리자 승인·광고 등록',
+    desc: '관리자 승인 즉시 광고를 등록할 수 있습니다.',
   },
 ];
 
@@ -33,20 +33,20 @@ const adminSteps = [
   {
     step: '1',
     icon: <FileSignature size={16} />,
-    title: '광고주가 전자 계약 체결',
-    desc: '광고주센터 사이드바 하단 「계약서 작성」(회원정보 수정 아래)에서 3단계 작성·서명을 완료합니다.',
+    title: '광고주가 승인 요청',
+    desc: '사이드바의 「계약서 작성」에서 작성·동의·서명 후 승인 요청합니다.',
   },
   {
     step: '2',
     icon: <Search size={16} />,
-    title: '관리자가 조회',
-    desc: '이 화면(/admin/contracts)에서 체결 내역·계약서·서명을 확인합니다.',
+    title: '관리자가 계약 검토',
+    desc: '이 화면에서 계약 내용과 서명을 확인하고 승인 또는 반려합니다.',
   },
   {
     step: '3',
     icon: <Settings2 size={16} />,
-    title: '상태 관리 (선택)',
-    desc: '취소·만료·재계약 필요 처리. 계약 승인 단계는 없습니다.',
+    title: '승인 후 광고 등록',
+    desc: '승인 즉시 광고주의 광고 등록 기능이 열립니다.',
   },
 ];
 
@@ -56,7 +56,7 @@ export function ContractProcessGuide({ audience, className = '' }: ContractProce
       <div className={`rounded-2xl border border-cyan-100 bg-cyan-50/60 p-5 ${className}`}>
         <h3 className="font-bold text-slate-900 mb-1">CPA 계약 체결 절차</h3>
         <p className="text-sm text-slate-600 mb-4">
-          관리자 승인 없이 광고주가 직접 전자 계약을 완료합니다. 체결 전에는 광고주센터 주요 메뉴 이용이 제한될 수 있습니다.
+          광고주가 계약서를 작성·서명해 승인 요청하면 관리자가 검토합니다. 승인 후 광고를 등록할 수 있습니다.
         </p>
         <ol className="grid sm:grid-cols-2 gap-3">
           {advertiserSteps.map((item) => (
@@ -81,7 +81,7 @@ export function ContractProcessGuide({ audience, className = '' }: ContractProce
         <div>
           <h3 className="font-bold text-slate-900 mb-1">광고주 계약 프로세스</h3>
           <p className="text-sm text-slate-600 leading-relaxed">
-            계약은 <b>광고주가 직접 전자 체결</b>합니다. 관리자는 체결 결과를 조회하고 필요 시 상태만 변경합니다.
+            광고주가 전자 서명 후 <b>승인 요청</b>하면 관리자가 계약서를 검토하여 승인 또는 반려합니다.
           </p>
         </div>
         <div className="text-xs text-slate-500 bg-white border border-slate-200 rounded-xl px-3 py-2 shrink-0">
@@ -104,7 +104,7 @@ export function ContractProcessGuide({ audience, className = '' }: ContractProce
         <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
         광고주 체결 경로: 로그인 → 광고주센터 → 사이드바 하단 <Link to="/advertiser/contract" className="text-cyan-700 font-bold hover:underline">계약서 작성</Link>
         <ArrowRight size={12} className="inline shrink-0 mt-0.5" />
-        3단계 작성·서명
+        작성·서명·승인 요청
       </p>
     </div>
   );

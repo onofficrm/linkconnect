@@ -118,7 +118,7 @@ export function AdvertiserContract() {
     setLoadError('');
     try {
       const data = await fetchMerchantContract();
-      if (data.isSigned) {
+      if (data.isSigned || data.isApprovalPending) {
         setState(data);
         setLoading(false);
         return;
@@ -328,6 +328,9 @@ export function AdvertiserContract() {
   if (!loading && state?.isSigned) {
     return <Navigate to="/advertiser/contract/view" replace />;
   }
+  if (!loading && state?.isApprovalPending) {
+    return <Navigate to="/advertiser/contract/complete" replace />;
+  }
 
   if (loading) {
     return (
@@ -362,9 +365,15 @@ export function AdvertiserContract() {
   return (
     <AdvertiserContractLayout
       title="CPA 계약서 작성"
-      subtitle={`계약서 버전 ${state?.contractVersion ?? ''} · 3단계 작성 후 즉시 체결 (관리자 승인 없음)`}
+      subtitle={`계약서 버전 ${state?.contractVersion ?? ''} · 작성·서명 후 관리자 승인을 요청합니다.`}
     >
       <ContractProcessGuide audience="advertiser" className="mb-6" />
+      {state?.isRejected ? (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 space-y-1">
+          <p className="font-semibold">계약 승인 요청이 반려되었습니다. 내용을 수정한 뒤 다시 승인 요청해 주세요.</p>
+          {state.rejectionReason ? <p>반려 사유: {state.rejectionReason}</p> : null}
+        </div>
+      ) : null}
       <ContractStepIndicator currentStep={step} />
 
       {step === 1 ? (
@@ -496,7 +505,7 @@ export function AdvertiserContract() {
             }}
             className="w-full md:w-auto px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:opacity-60 text-white font-bold"
           >
-            {submitting ? '처리 중...' : '계약 내용을 확인하고 체결합니다'}
+            {submitting ? '처리 중...' : '계약 내용을 확인하고 승인 요청합니다'}
           </button>
         </section>
       ) : null}
@@ -528,9 +537,9 @@ export function AdvertiserContract() {
       {showConfirm ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-3">계약 체결 전 확인</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-3">계약 승인 요청 전 확인</h3>
             <p className="text-sm text-slate-600 leading-relaxed mb-6">
-              계약 체결 후 해당 계약서는 수정할 수 없습니다.
+              승인 요청 후에는 관리자가 검토를 완료할 때까지 수정할 수 없습니다.
               <br />
               입력한 광고주 정보와 계약 내용을 다시 확인해 주세요.
             </p>
@@ -549,7 +558,7 @@ export function AdvertiserContract() {
                 onClick={() => void handleSignSubmit()}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-cyan-600 text-white font-semibold disabled:opacity-60"
               >
-                {submitting ? '확인 중...' : '계약 체결하기'}
+                {submitting ? '요청 중...' : '승인 요청하기'}
               </button>
             </div>
           </div>

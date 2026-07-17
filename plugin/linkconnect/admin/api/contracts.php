@@ -85,6 +85,8 @@ if ($method === 'POST') {
     }
 
     $status_map = array(
+        'approve'       => LC_MERCHANT_CONTRACT_STATUS_SIGNED,
+        'reject'        => LC_MERCHANT_CONTRACT_STATUS_REJECTED,
         'cancel'        => LC_MERCHANT_CONTRACT_STATUS_CANCELLED,
         'expire'        => LC_MERCHANT_CONTRACT_STATUS_EXPIRED,
         'requireRenewal'=> LC_MERCHANT_CONTRACT_STATUS_RENEWAL,

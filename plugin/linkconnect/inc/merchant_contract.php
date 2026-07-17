@@ -390,6 +390,7 @@ if (!function_exists('lc_merchant_contract_can_write')) {
         $status = lc_merchant_contract_status($mt_id);
         $blocked = array(
             LC_MERCHANT_CONTRACT_STATUS_SIGNED,
+            LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING,
             LC_MERCHANT_CONTRACT_STATUS_CANCELLED,
             LC_MERCHANT_CONTRACT_STATUS_EXPIRED,
         );
@@ -846,6 +847,35 @@ if (!function_exists('lc_merchant_contract_validate_submit')) {
     }
 }
 
+if (!function_exists('lc_merchant_contract_latest_status_reason')) {
+    /**
+     * 특정 상태로 변경된 최근 사유 조회
+     */
+    function lc_merchant_contract_latest_status_reason($mc_id, $new_status)
+    {
+        $mc_id = (int) $mc_id;
+        $new_status = (string) $new_status;
+        if ($mc_id <= 0 || $new_status === '') {
+            return '';
+        }
+
+        $table = function_exists('lc_merchant_contract_status_log_table')
+            ? lc_merchant_contract_status_log_table()
+            : '';
+        if ($table === '' || !lc_db_table_exists($table)) {
+            return '';
+        }
+
+        $row = lc_sql_fetch(" SELECT mcsl_reason FROM `{$table}`
+            WHERE mc_id = '{$mc_id}'
+              AND mcsl_new_status = '" . lc_sql_escape($new_status) . "'
+            ORDER BY mcsl_created_at DESC, mcsl_id DESC
+            LIMIT 1 ");
+
+        return is_array($row) ? trim((string) ($row['mcsl_reason'] ?? '')) : '';
+    }
+}
+
 if (!function_exists('lc_merchant_contract_view_to_api')) {
     /**
      * @return array<string,mixed>
@@ -857,6 +887,17 @@ if (!function_exists('lc_merchant_contract_view_to_api')) {
         $status = lc_merchant_contract_status($mt_id);
         $defaults = lc_merchant_contract_get_form_defaults($mt_id);
         $party_b = lc_merchant_contract_party_b();
+        $rejection_reason = '';
+        if (
+            $status === LC_MERCHANT_CONTRACT_STATUS_REJECTED
+            && is_array($contract)
+            && function_exists('lc_merchant_contract_latest_status_reason')
+        ) {
+            $rejection_reason = lc_merchant_contract_latest_status_reason(
+                (int) ($contract['mc_id'] ?? 0),
+                LC_MERCHANT_CONTRACT_STATUS_REJECTED
+            );
+        }
 
         $party_a = array(
             'companyName'        => (string) ($defaults['companyName'] ?? ''),
@@ -885,6 +926,9 @@ if (!function_exists('lc_merchant_contract_view_to_api')) {
             'status'          => $status,
             'statusLabel'     => lc_merchant_contract_status_label($status),
             'isSigned'        => lc_merchant_contract_is_signed($mt_id),
+            'isApprovalPending' => $status === LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING,
+            'isRejected'      => $status === LC_MERCHANT_CONTRACT_STATUS_REJECTED,
+            'rejectionReason' => $rejection_reason,
             'canWrite'        => lc_merchant_contract_can_write($mt_id),
             'requiresContract'=> lc_merchant_contract_requires($mt_id),
             'partyB'          => array(
@@ -1094,6 +1138,17 @@ if (!function_exists('lc_merchant_contract_sign')) {
             );
         }
 
+        $current = lc_merchant_contract_get($mt_id, $version);
+        if (is_array($current) && ($current['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING) {
+            return array(
+                'ok'            => true,
+                'message'       => '이미 관리자 승인을 요청한 계약서입니다.',
+                'alreadySigned' => false,
+                'contract'      => $current,
+                'state'         => lc_merchant_contract_view_to_api($mt_id),
+            );
+        }
+
         $form = array(
             'companyName'        => lc_merchant_contract_sanitize_text($payload['companyName'] ?? '', 200),
             'representativeName' => lc_merchant_contract_sanitize_text($payload['representativeName'] ?? '', 100),
@@ -1193,6 +1248,17 @@ if (!function_exists('lc_merchant_contract_sign')) {
                     'state'         => lc_merchant_contract_view_to_api($mt_id),
                 );
             }
+            if (($row['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING) {
+                lc_sql_commit();
+
+                return array(
+                    'ok'            => true,
+                    'message'       => '이미 관리자 승인을 요청한 계약서입니다.',
+                    'alreadySigned' => false,
+                    'contract'      => $row,
+                    'state'         => lc_merchant_contract_view_to_api($mt_id),
+                );
+            }
 
             $mc_id = (int) $row['mc_id'];
             $contract_code = (string) ($row['mc_contract_code'] ?? '');
@@ -1237,7 +1303,7 @@ if (!function_exists('lc_merchant_contract_sign')) {
             $cleanup_files[] = (string) $pdf['absolute'];
 
             $table = lc_merchant_contract_table();
-            $status = lc_sql_escape(LC_MERCHANT_CONTRACT_STATUS_SIGNED);
+            $status = lc_sql_escape(LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING);
             $update = lc_sql_query(" UPDATE `{$table}` SET
                 mc_status = '{$status}',
                 mc_contract_code = '" . lc_sql_escape($contract_code) . "',
@@ -1260,7 +1326,8 @@ if (!function_exists('lc_merchant_contract_sign')) {
                 mc_contract_snapshot = '" . lc_sql_escape($contract_html) . "',
                 mc_agreement_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($agreement_snapshot)) . "',
                 mc_updated_at = NOW()
-                WHERE mc_id = '{$mc_id}' AND mc_mt_id = '{$mt_id}' AND mc_status <> '{$status}' ", false);
+                WHERE mc_id = '{$mc_id}' AND mc_mt_id = '{$mt_id}'
+                  AND mc_status NOT IN ('" . lc_sql_escape(LC_MERCHANT_CONTRACT_STATUS_SIGNED) . "','{$status}') ", false);
 
             if ($update === false) {
                 throw new RuntimeException('계약 상태 저장에 실패했습니다.');
@@ -1268,7 +1335,11 @@ if (!function_exists('lc_merchant_contract_sign')) {
 
             if (function_exists('lc_sql_affected_rows') && lc_sql_affected_rows() === 0) {
                 $recheck = lc_merchant_contract_get($mt_id, $version);
-                if (is_array($recheck) && ($recheck['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_SIGNED) {
+                if (is_array($recheck) && in_array(
+                    (string) ($recheck['mc_status'] ?? ''),
+                    array(LC_MERCHANT_CONTRACT_STATUS_SIGNED, LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING),
+                    true
+                )) {
                     lc_sql_commit();
                     if (function_exists('lc_merchant_contract_access_cache_clear')) {
                         lc_merchant_contract_access_cache_clear($mt_id);
@@ -1276,8 +1347,10 @@ if (!function_exists('lc_merchant_contract_sign')) {
 
                     return array(
                         'ok'            => true,
-                        'message'       => '이미 체결된 계약서입니다.',
-                        'alreadySigned' => true,
+                        'message'       => ($recheck['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_SIGNED
+                            ? '이미 승인된 계약서입니다.'
+                            : '이미 관리자 승인을 요청한 계약서입니다.',
+                        'alreadySigned' => ($recheck['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_SIGNED,
                         'contract'      => $recheck,
                         'state'         => lc_merchant_contract_view_to_api($mt_id),
                     );
@@ -1297,7 +1370,7 @@ if (!function_exists('lc_merchant_contract_sign')) {
                 'pdf_path'         => $pdf_relative,
                 'pdf_hash'         => $pdf_hash,
                 'result'           => 'success',
-                'message'          => 'contract_signed',
+                'message'          => 'contract_approval_requested',
             ));
 
             if (!lc_sql_commit()) {
@@ -1309,13 +1382,21 @@ if (!function_exists('lc_merchant_contract_sign')) {
                 lc_merchant_contract_access_cache_clear($mt_id);
             }
             $fresh = lc_merchant_contract_get($mt_id, $version);
-            if (function_exists('lc_merchant_contract_send_signed_emails')) {
-                lc_merchant_contract_send_signed_emails($mt_id, is_array($fresh) ? $fresh : array());
+            if (function_exists('lc_notification_create')) {
+                lc_notification_create(array(
+                    'center'  => 'admin',
+                    'userId'  => 0,
+                    'type'    => 'contract',
+                    'title'   => '광고주 계약 승인 요청',
+                    'body'    => $form['companyName'] . ' · 계약서 검토가 필요합니다.',
+                    'link'    => '/admin/contracts',
+                    'refType' => 'merchant_contract',
+                    'refId'   => $mc_id,
+                ));
             }
-
             return array(
                 'ok'       => true,
-                'message'  => '계약이 체결되었습니다.',
+                'message'  => '계약서 승인 요청이 완료되었습니다.',
                 'contract' => is_array($fresh) ? $fresh : null,
                 'state'    => lc_merchant_contract_view_to_api($mt_id),
             );
