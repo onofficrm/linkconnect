@@ -364,6 +364,10 @@ if (!function_exists('lc_settlement_admin_update')) {
                 st_approved_amount = '{$approved_amount}',
                 st_processed_at = NOW()
                 WHERE st_id = '{$st_id}' ", false);
+            $paid_row = lc_settlement_get_by_id($st_id);
+            if (is_array($paid_row) && function_exists('lc_email_notify_on_settlement_paid')) {
+                lc_email_notify_on_settlement_paid($paid_row);
+            }
         } elseif ($action === 'hold') {
             $memo = isset($payload['memo']) ? trim((string) $payload['memo']) : '보류 처리';
             lc_sql_query(" UPDATE `{$table}` SET

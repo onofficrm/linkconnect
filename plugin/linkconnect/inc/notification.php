@@ -165,17 +165,31 @@ if (!function_exists('lc_notification_emit_conversion')) {
         $mt_id = (int) ($conversion['mt_id'] ?? 0);
         $cv_id = (int) ($conversion['cv_id'] ?? 0);
 
-        if ($event === 'received' && $mt_id > 0) {
-            lc_notification_create(array(
-                'center'  => 'merchant',
-                'userId'  => $mt_id,
-                'type'    => 'conversion',
-                'title'   => '신규 DB 접수',
-                'body'    => $cp_name . ' · ' . $cv_code,
-                'link'    => '/advertiser/db',
-                'refType' => 'conversion',
-                'refId'   => $cv_id,
-            ));
+        if ($event === 'received') {
+            if ($mt_id > 0) {
+                lc_notification_create(array(
+                    'center'  => 'merchant',
+                    'userId'  => $mt_id,
+                    'type'    => 'conversion',
+                    'title'   => '신규 DB 접수',
+                    'body'    => $cp_name . ' · ' . $cv_code,
+                    'link'    => '/advertiser/db',
+                    'refType' => 'conversion',
+                    'refId'   => $cv_id,
+                ));
+            }
+            if ($pt_id > 0) {
+                lc_notification_create(array(
+                    'center'  => 'partner',
+                    'userId'  => $pt_id,
+                    'type'    => 'conversion',
+                    'title'   => '신규 DB 발생',
+                    'body'    => $cp_name . ' · ' . $cv_code,
+                    'link'    => '/partner/db-status',
+                    'refType' => 'conversion',
+                    'refId'   => $cv_id,
+                ));
+            }
             lc_notification_create(array(
                 'center'  => 'admin',
                 'userId'  => 0,
@@ -214,6 +228,10 @@ if (!function_exists('lc_notification_emit_conversion')) {
                 'refId'   => $cv_id,
             ));
         }
+
+        if (function_exists('lc_email_notify_on_conversion')) {
+            lc_email_notify_on_conversion($conversion, $event);
+        }
     }
 }
 
@@ -248,6 +266,10 @@ if (!function_exists('lc_notification_emit_low_balance')) {
             'refType' => 'merchant',
             'refId'   => $mt_id,
         ));
+
+        if (function_exists('lc_email_notify_on_low_balance')) {
+            lc_email_notify_on_low_balance($mt_id, $balance, $threshold);
+        }
     }
 }
 

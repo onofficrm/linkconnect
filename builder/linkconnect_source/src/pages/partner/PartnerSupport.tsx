@@ -3,6 +3,7 @@ import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { MessageCircle, Clock, CheckCircle2, Bell, ChevronRight, HelpCircle } from 'lucide-react';
 import { createPartnerInquiry, fetchPartnerInquiries, InquiryItem, InquirySummary } from '../../lib/api';
+import { NotificationPrefsPanel } from '../../components/NotificationPrefsPanel';
 
 const faqs = [
   { id: 1, question: '승인율은 어디서 확인하나요?' },
@@ -168,6 +169,10 @@ export function PartnerSupport() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <NotificationPrefsPanel center="partner" />
       </div>
     </PartnerLayout>
   );

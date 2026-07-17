@@ -1709,6 +1709,40 @@ export function fetchMyPublicInquiryDetail(iqId: number) {
   return publicApiGet<{ item: InquiryItem }>('inquiry.php', { id: String(iqId) });
 }
 
+export type NotifyPrefMeta = {
+  label: string;
+  help: string;
+  type: 'mode' | 'toggle';
+};
+
+export type PartnerNotifyPrefs = {
+  dbReceived: 'off' | 'realtime' | 'digest';
+  dbApproved: boolean;
+  dbRejected: boolean;
+  settlementPaid: boolean;
+};
+
+export type MerchantNotifyPrefs = {
+  dbReceived: 'off' | 'realtime' | 'digest';
+  lowBalance: boolean;
+};
+
+export function fetchPartnerNotifyPrefs() {
+  return partnerApiGet<{ prefs: PartnerNotifyPrefs; meta: Record<string, NotifyPrefMeta>; dbReady: boolean }>('notification_prefs.php');
+}
+
+export function savePartnerNotifyPrefs(prefs: Partial<PartnerNotifyPrefs>) {
+  return partnerApiPost<{ message: string; prefs: PartnerNotifyPrefs; meta: Record<string, NotifyPrefMeta> }>('notification_prefs.php', { prefs });
+}
+
+export function fetchMerchantNotifyPrefs() {
+  return merchantApiGet<{ prefs: MerchantNotifyPrefs; meta: Record<string, NotifyPrefMeta>; dbReady: boolean }>('notification_prefs.php');
+}
+
+export function saveMerchantNotifyPrefs(prefs: Partial<MerchantNotifyPrefs>) {
+  return merchantApiPost<{ message: string; prefs: MerchantNotifyPrefs; meta: Record<string, NotifyPrefMeta> }>('notification_prefs.php', { prefs });
+}
+
 export type AdminSettingsData = {
   general: Record<string, string>;
   cpa: Record<string, string | number | boolean>;

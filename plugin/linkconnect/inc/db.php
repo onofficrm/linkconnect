@@ -248,6 +248,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `pt_bank_account` varchar(50) NOT NULL DEFAULT '',
                 `pt_bank_holder` varchar(50) NOT NULL DEFAULT '',
                 `pt_balance` int NOT NULL DEFAULT 0,
+                `pt_notify_prefs` text,
                 `pt_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `pt_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`pt_id`),
@@ -263,6 +264,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `mt_company` varchar(200) NOT NULL DEFAULT '',
                 `mt_status` varchar(20) NOT NULL DEFAULT 'pending',
                 `mt_balance` int NOT NULL DEFAULT 0,
+                `mt_notify_prefs` text,
                 `mt_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `mt_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`mt_id`),
@@ -615,6 +617,15 @@ if (!function_exists('lc_db_run_migrations')) {
 
         if (lc_db_table_exists($settlements) && !lc_db_column_exists($settlements, 'st_memo')) {
             $alters[] = "ALTER TABLE `{$settlements}` ADD COLUMN `st_memo` varchar(500) NOT NULL DEFAULT '' AFTER `st_bank_holder`";
+        }
+
+        $partners = lc_table('partners');
+        $merchants = lc_table('merchants');
+        if (lc_db_table_exists($partners) && !lc_db_column_exists($partners, 'pt_notify_prefs')) {
+            $alters[] = "ALTER TABLE `{$partners}` ADD COLUMN `pt_notify_prefs` text AFTER `pt_balance`";
+        }
+        if (lc_db_table_exists($merchants) && !lc_db_column_exists($merchants, 'mt_notify_prefs')) {
+            $alters[] = "ALTER TABLE `{$merchants}` ADD COLUMN `mt_notify_prefs` text AFTER `mt_balance`";
         }
 
         foreach (array(

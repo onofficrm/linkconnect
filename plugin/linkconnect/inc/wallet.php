@@ -539,6 +539,7 @@ if (!function_exists('lc_wallet_check_low_balance')) {
 
         lc_notification_emit_low_balance($mt_id, $balance, $threshold);
 
+        // SMS/Kakao 등 보조 채널 로깅 (이메일은 lc_email_notify_on_low_balance에서 발송)
         if (function_exists('lc_wallet_send_recharge_notices')) {
             lc_wallet_send_recharge_notices($mt_id, $balance, $threshold);
         }
@@ -581,9 +582,7 @@ if (!function_exists('lc_wallet_send_recharge_notices')) {
         };
 
         if (function_exists('lc_admin_log_write')) {
-            if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('notifyLowBalanceEmail', true)) {
-                lc_admin_log_write('notify_email', 'merchant', $mt_id, $render($email_tpl));
-            }
+            // 이메일은 lc_email_notify_on_low_balance에서 실제 발송
             if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('notifyLowBalanceSms', false)) {
                 lc_admin_log_write('notify_sms', 'merchant', $mt_id, $render($sms_tpl));
             }

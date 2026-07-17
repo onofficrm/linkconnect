@@ -3,6 +3,7 @@ import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { HelpCircle, MessageSquare, ChevronDown, Send } from 'lucide-react';
 import { createMerchantInquiry, fetchMerchantInquiries, InquiryItem, InquirySummary } from '../../lib/api';
+import { NotificationPrefsPanel } from '../../components/NotificationPrefsPanel';
 
 const faqs = [
   { q: '광고비는 언제 차감되나요?', a: '디비 접수 시 가차감되며, 승인 시 확정 차감됩니다. 취소/무효 시 환급됩니다.' },
@@ -185,6 +186,9 @@ export function AdvertiserSupport() {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="mt-8">
+        <NotificationPrefsPanel center="merchant" />
       </div>
     </AdvertiserLayout>
   );
