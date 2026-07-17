@@ -28,13 +28,11 @@ if (!function_exists('lc_email_test_token_ok')) {
                 $expected = (string) g5site_cfg('linkconnect_install_token', '');
             }
         }
-        if ($expected !== '' && hash_equals($expected, $given)) {
-            return true;
+        if ($expected === '') {
+            return false;
         }
 
-        // 일회성 검증 키 (메일 테스트용). 확인 후 제거하세요.
-        $fallback = 'lc-mailtest-20260717-j8040';
-        return hash_equals($fallback, $given);
+        return hash_equals($expected, $given);
     }
 }
 
