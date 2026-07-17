@@ -104,7 +104,7 @@ jobs:
           cp s/index.php "$ROOT/s/"
           cp api/external/linkprice/postback.php "$ROOT/api/external/linkprice/"
           cp plugin/linkconnect/_common.php "$ROOT/plugin/linkconnect/"
-          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql "$ROOT/plugin/linkconnect/install/"
+          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql plugin/linkconnect/install/test_email_notify.php "$ROOT/plugin/linkconnect/install/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
