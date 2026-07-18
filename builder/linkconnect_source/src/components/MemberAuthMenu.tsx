@@ -217,20 +217,20 @@ export function MemberAuthMenu({
   if (loggedIn) {
     return (
       <>
-        <span className="hidden lg:inline text-sm font-medium text-slate-400 max-w-[140px] truncate">
+        <span className="hidden xl:inline text-sm font-medium text-slate-400 max-w-[100px] truncate">
           {displayName}
         </span>
         <a
           href={editUrl}
           onClick={handleClick}
-          className="text-base font-medium text-slate-300 hover:text-white transition-colors px-3 py-2"
+          className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-2 py-1.5"
         >
           정보수정
         </a>
         <a
           href={logoutUrl}
           onClick={handleClick}
-          className="text-base font-medium text-slate-300 hover:text-white transition-colors px-4 py-2"
+          className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-2 py-1.5"
         >
           로그아웃
         </a>
@@ -243,14 +243,14 @@ export function MemberAuthMenu({
       <a
         href={loginUrl}
         onClick={handleClick}
-        className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-white/5"
+        className="text-sm font-medium text-slate-300 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
       >
         로그인
       </a>
       <a
         href={registerUrl}
         onClick={handleClick}
-        className="text-sm font-medium text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors px-4 py-2 rounded-lg"
+        className="text-sm font-medium text-white bg-white/10 hover:bg-white/15 border border-white/15 transition-colors px-3 py-1.5 rounded-lg"
       >
         회원가입
       </a>

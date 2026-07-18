@@ -15,12 +15,12 @@ import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 
 function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
   if (accent === 'emerald') {
-    return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-emerald-400' : 'text-slate-300 hover:text-emerald-400'}`;
+    return `whitespace-nowrap text-sm font-medium transition-colors ${active ? 'text-emerald-400' : 'text-slate-300 hover:text-emerald-400'}`;
   }
   if (accent === 'cyan') {
-    return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-cyan-400' : 'text-slate-300 hover:text-cyan-400'}`;
+    return `whitespace-nowrap text-sm font-medium transition-colors ${active ? 'text-cyan-400' : 'text-slate-300 hover:text-cyan-400'}`;
   }
-  return `whitespace-nowrap text-sm xl:text-base font-medium transition-colors ${active ? 'text-white' : 'text-slate-300 hover:text-white'}`;
+  return `whitespace-nowrap text-sm font-medium transition-colors ${active ? 'text-white' : 'text-slate-300 hover:text-white'}`;
 }
 
 function isActive(pathname: string, to: string) {
@@ -135,9 +135,9 @@ function AdminCenterBadge({ onNavigate, className = '' }: { onNavigate?: () => v
     <Link
       to={adminNavItem.to}
       onClick={onNavigate}
-      className={`inline-flex items-center gap-1.5 shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white px-3.5 py-2 rounded-lg text-xs xl:text-sm font-bold transition-colors shadow-sm border border-cyan-400/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm border border-cyan-400/30 ${className}`}
     >
-      <ShieldCheck className="w-4 h-4" />
+      <ShieldCheck className="w-3.5 h-3.5" />
       관리자센터
     </Link>
   );
@@ -154,15 +154,17 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-20 w-full gap-4 lg:gap-6 xl:gap-8">
-          <Link to="/" className="flex items-center gap-2 shrink-0 min-w-0">
-            <LinkIcon className="w-7 h-7 text-cyan-400 shrink-0" />
-            <span className="text-xl xl:text-2xl font-bold text-white tracking-tight whitespace-nowrap">링크커넥트</span>
+        <div className="flex items-center justify-between h-20 w-full gap-3 lg:gap-4">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <LinkIcon className="w-6 h-6 text-cyan-400 shrink-0" />
+            <span className="text-lg lg:text-xl font-bold text-white tracking-tight whitespace-nowrap">링크커넥트</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8 flex-1 min-w-0 overflow-visible" aria-label="주요 메뉴">
+          <nav
+            className="hidden md:flex items-center justify-center flex-1 gap-3 lg:gap-4 xl:gap-5 min-w-0"
+            aria-label="주요 메뉴"
+          >
             <CompanyNavDropdown />
-            <div className="flex items-center gap-4 lg:gap-6 xl:gap-8 min-w-0 overflow-x-auto">
             {campaignNavItems.map((item) => (
               <PublicNavLink
                 key={item.label}
@@ -183,10 +185,9 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            </div>
           </nav>
 
-          <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 ml-auto pl-4 lg:pl-6 border-l border-white/10">
+          <div className="hidden md:flex items-center gap-1.5 lg:gap-2 shrink-0 pl-3 lg:pl-4 border-l border-white/10">
             <MemberAuthMenu variant="header-dark" onNavigate={closeMobile} />
             <AdminCenterBadge />
           </div>
