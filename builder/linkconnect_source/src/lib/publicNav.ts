@@ -10,6 +10,7 @@ export interface NavLinkItem {
 export const companySubItems: NavLinkItem[] = [
   { to: '/about', label: '회사소개' },
   { to: '/affiliate', label: '제휴마케팅이란?' },
+  { to: '/', label: '콜디비란?', scrollTarget: 'call-db' },
   { to: '/notice', label: '공지사항' },
 ];
 
@@ -20,7 +21,6 @@ export const companyNavItems = companySubItems;
 export const campaignNavItems: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
-  { to: '/', label: '콜디비', scrollTarget: 'call-db' },
   { to: '/events', label: '이벤트/프로모션' },
 ];
 
@@ -34,7 +34,7 @@ export const communityNavItem: NavLinkItem = {
 export const footerCampaignNavItems: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
-  { to: '/', label: '콜디비', scrollTarget: 'call-db' },
+  { to: '/', label: '콜디비란?', scrollTarget: 'call-db' },
 ];
 
 /** 푸터 — 서비스 */
@@ -59,5 +59,8 @@ export const adminNavItem: NavLinkItem = {
 };
 
 export function isCompanyNavActive(pathname: string): boolean {
-  return companySubItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  return companySubItems.some((item) => {
+    if (item.scrollTarget) return false;
+    return pathname === item.to || pathname.startsWith(`${item.to}/`);
+  });
 }

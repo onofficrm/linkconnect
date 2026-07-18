@@ -105,21 +105,23 @@ function CompanyNavDropdown({ onNavigate }: { onNavigate?: () => void }) {
         <div className="absolute top-full left-0 pt-1 w-52 z-[100]">
           <div className="py-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl">
             {companySubItems.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => {
+              <PublicNavLink
+                key={item.label}
+                item={item}
+                onNavigate={() => {
                   setOpen(false);
                   onNavigate?.();
                 }}
                 className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isActive(location.pathname, item.to)
-                    ? 'text-emerald-400 bg-white/5'
-                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  item.scrollTarget
+                    ? location.pathname === '/' && location.hash === `#${item.scrollTarget}`
+                      ? 'text-emerald-400 bg-white/5'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    : isActive(location.pathname, item.to)
+                      ? 'text-emerald-400 bg-white/5'
+                      : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
-              >
-                {item.label}
-              </Link>
+              />
             ))}
           </div>
         </div>
@@ -207,18 +209,20 @@ export function Header() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-6">
           <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">회사소개</p>
           {companySubItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={closeMobile}
+            <PublicNavLink
+              key={item.label}
+              item={item}
+              onNavigate={closeMobile}
               className={`block px-3 py-2.5 pl-5 text-base font-medium rounded-lg ${
-                isActive(location.pathname, item.to)
-                  ? 'text-emerald-400 bg-white/5'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+                item.scrollTarget
+                  ? location.pathname === '/' && location.hash === `#${item.scrollTarget}`
+                    ? 'text-emerald-400 bg-white/5'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  : isActive(location.pathname, item.to)
+                    ? 'text-emerald-400 bg-white/5'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
-            >
-              {item.label}
-            </Link>
+            />
           ))}
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">캠페인</p>
