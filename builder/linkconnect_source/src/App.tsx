@@ -14,6 +14,7 @@ import { CpsList } from './pages/cps/CpsList';
 import { CpsMerchantDetail } from './pages/cps/CpsMerchantDetail';
 import { CenterSelect } from './pages/CenterSelect';
 import { CpaList } from './pages/cpa/CpaList';
+import { CpaCampaignDetail } from './pages/cpa/CpaCampaignDetail';
 import { PartnerDashboard } from './pages/partner/Dashboard';
 import { PartnerSearch } from './pages/partner/PartnerSearch';
 import { PartnerLinks } from './pages/partner/PartnerLinks';
@@ -96,6 +97,7 @@ export default function App() {
           <Route path="affiliate" element={<Affiliate />} />
           <Route path="select-center" element={<CenterSelect />} />
           <Route path="cpa-list" element={<CpaList />} />
+          <Route path="cpa/:code" element={<CpaCampaignDetail />} />
           <Route path="cps" element={<CpsList />} />
           <Route path="cps/:code" element={<CpsMerchantDetail />} />
           <Route path="events" element={<Events />} />

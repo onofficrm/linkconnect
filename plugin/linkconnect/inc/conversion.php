@@ -144,7 +144,7 @@ if (!function_exists('lc_conversion_list_for_merchant')) {
             $where .= " AND cv.cv_status = '" . lc_sql_escape(LC_STATUS_PENDING) . "' ";
         }
 
-        $sql = " SELECT cv.*, c.cp_name, c.cp_landing_url, p.pt_code, lk.lk_code,
+        $sql = " SELECT cv.*, c.cp_name, c.cp_landing_url, c.cp_tracking_base_url, p.pt_code, lk.lk_code,
             (SELECT cl.cl_referer FROM `" . lc_table('clicks') . "` cl
                 WHERE cl.lk_id = cv.lk_id AND cl.lk_id > 0
                 ORDER BY cl.cl_id DESC LIMIT 1) AS cl_referer
@@ -177,7 +177,7 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
         $lk_code = trim((string) ($row['lk_code'] ?? ''));
         $landing_url = trim((string) ($row['cp_landing_url'] ?? ''));
         if ($landing_url === '' && $lk_code !== '' && function_exists('lc_landing_public_url')) {
-            $landing_url = lc_landing_public_url($lk_code);
+            $landing_url = lc_landing_public_url($lk_code, (string) ($row['cp_tracking_base_url'] ?? ''));
         }
 
         return array(

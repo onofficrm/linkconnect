@@ -288,6 +288,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `cp_forbidden_channels` varchar(500) NOT NULL DEFAULT '',
                 `cp_description` text,
                 `cp_landing_url` varchar(500) NOT NULL DEFAULT '',
+                `cp_tracking_base_url` varchar(500) NOT NULL DEFAULT '',
                 `cp_status` varchar(20) NOT NULL DEFAULT 'draft',
                 `cp_badge` varchar(20) NOT NULL DEFAULT '',
                 `cp_recommended` tinyint(1) NOT NULL DEFAULT 0,
@@ -575,6 +576,11 @@ if (!function_exists('lc_db_run_migrations')) {
 
         if (lc_db_table_exists($campaigns) && !lc_db_column_exists($campaigns, 'cp_thumbnail')) {
             $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `cp_thumbnail` varchar(500) NOT NULL DEFAULT '' AFTER `cp_landing_url`";
+        }
+
+        if (lc_db_table_exists($campaigns) && !lc_db_column_exists($campaigns, 'cp_tracking_base_url')) {
+            $after = lc_db_column_exists($campaigns, 'cp_thumbnail') ? 'cp_thumbnail' : 'cp_landing_url';
+            $alters[] = "ALTER TABLE `{$campaigns}` ADD COLUMN `cp_tracking_base_url` varchar(500) NOT NULL DEFAULT '' AFTER `{$after}`";
         }
 
         if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, 'cv_partner_price')) {

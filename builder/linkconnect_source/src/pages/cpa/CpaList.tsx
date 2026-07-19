@@ -9,6 +9,7 @@ const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '�
 
 type CampaignCardItem = {
   id: number;
+  code: string;
   title: string;
   category: string;
   description: string;
@@ -27,6 +28,7 @@ type CampaignCardItem = {
 function toCardItem(campaign: PublicCampaign): CampaignCardItem {
   return {
     id: campaign.id,
+    code: campaign.code || String(campaign.id),
     title: campaign.title,
     category: campaign.category,
     description: campaign.description || '',
@@ -280,15 +282,13 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
             랜딩페이지 보기
           </button>
         )}
-        <div className="flex gap-3">
-          <Link to="/cpa-list" className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium rounded-xl transition-colors text-sm text-center">
-            상세보기
-          </Link>
-          <Link to="/partner/search" className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2">
-            <LinkIcon className="w-4 h-4" />
-            홍보하기
-          </Link>
-        </div>
+        <Link
+          to={`/cpa/${encodeURIComponent(item.code || String(item.id))}`}
+          className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl transition-colors text-sm flex justify-center items-center gap-2"
+        >
+          <LinkIcon className="w-4 h-4" />
+          참여하기
+        </Link>
       </div>
     </div>
   );

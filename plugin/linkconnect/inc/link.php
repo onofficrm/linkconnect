@@ -4,8 +4,16 @@ if (!defined('_GNUBOARD_')) {
 }
 
 if (!function_exists('lc_link_tracking_base_url')) {
-    function lc_link_tracking_base_url()
+    /**
+     * @param string|null $campaign_tracking_base_url 광고상품별 독립 도메인 (비우면 전역 설정 → G5_URL)
+     */
+    function lc_link_tracking_base_url($campaign_tracking_base_url = null)
     {
+        $campaign_base = trim((string) $campaign_tracking_base_url);
+        if ($campaign_base !== '') {
+            return rtrim($campaign_base, '/');
+        }
+
         if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('cpaTrackingDomainEnabled')) {
             $base = trim((string) lc_settings_get('cpaTrackingBaseUrl', ''));
             if ($base !== '') {
@@ -18,20 +26,20 @@ if (!function_exists('lc_link_tracking_base_url')) {
 }
 
 if (!function_exists('lc_link_public_url')) {
-    function lc_link_public_url($lk_code)
+    function lc_link_public_url($lk_code, $campaign_tracking_base_url = null)
     {
         $lk_code = trim((string) $lk_code);
 
-        return lc_link_tracking_base_url() . '/r/' . rawurlencode($lk_code);
+        return lc_link_tracking_base_url($campaign_tracking_base_url) . '/r/' . rawurlencode($lk_code);
     }
 }
 
 if (!function_exists('lc_landing_public_url')) {
-    function lc_landing_public_url($lk_code)
+    function lc_landing_public_url($lk_code, $campaign_tracking_base_url = null)
     {
         $lk_code = trim((string) $lk_code);
 
-        return lc_link_tracking_base_url() . '/c/' . rawurlencode($lk_code);
+        return lc_link_tracking_base_url($campaign_tracking_base_url) . '/c/' . rawurlencode($lk_code);
     }
 }
 
@@ -56,11 +64,13 @@ if (!function_exists('lc_link_landing_seo_meta')) {
     /**
      * @return array{title:string,description:string,keywords:string,robots:string,ogImage:string,canonical:string}
      */
-    function lc_link_landing_seo_meta($campaign_name, $lk_code)
+    function lc_link_landing_seo_meta($campaign_name, $lk_code, $campaign_tracking_base_url = null)
     {
         $campaign_name = trim((string) $campaign_name);
         $lk_code = trim((string) $lk_code);
-        $canonical = $lk_code !== '' ? lc_landing_public_url($lk_code) : lc_link_tracking_base_url();
+        $canonical = $lk_code !== ''
+            ? lc_landing_public_url($lk_code, $campaign_tracking_base_url)
+            : lc_link_tracking_base_url($campaign_tracking_base_url);
 
         $title_tpl = function_exists('lc_settings_get')
             ? (string) lc_settings_get('cpaLandingSeoTitle', '{campaign} 상담 신청 | {site}')
@@ -149,7 +159,7 @@ if (!function_exists('lc_link_get_with_campaign')) {
         $cp_table = lc_table('campaigns');
         $lk_code_esc = lc_sql_escape($lk_code);
 
-        return lc_sql_fetch(" SELECT lk.*, c.cp_name, c.cp_price, c.cp_status AS cp_status, c.cp_landing_url, c.mt_id
+        return lc_sql_fetch(" SELECT lk.*, c.cp_name, c.cp_price, c.cp_status AS cp_status, c.cp_landing_url, c.cp_tracking_base_url, c.mt_id
             FROM `{$lk_table}` lk
             INNER JOIN `{$cp_table}` c ON c.cp_id = lk.cp_id
             WHERE lk.lk_code = '{$lk_code_esc}' LIMIT 1 ");
@@ -169,7 +179,7 @@ if (!function_exists('lc_link_list_for_partner')) {
         $cl_table = lc_table('clicks');
         $cv_table = lc_table('conversions');
 
-        $sql = " SELECT lk.*, c.cp_name, c.cp_price,
+        $sql = " SELECT lk.*, c.cp_name, c.cp_price, c.cp_tracking_base_url,
             (SELECT COUNT(*) FROM `{$cl_table}` cl WHERE cl.lk_id = lk.lk_id) AS click_cnt,
             (SELECT COUNT(*) FROM `{$cv_table}` cv WHERE cv.lk_id = lk.lk_id) AS received_cnt,
             (SELECT COUNT(*) FROM `{$cv_table}` cv WHERE cv.lk_id = lk.lk_id AND cv.cv_status = '" . lc_sql_escape(LC_STATUS_APPROVED) . "') AS approved_cnt,
@@ -209,6 +219,8 @@ if (!function_exists('lc_link_status_label')) {
 if (!function_exists('lc_link_to_api')) {
     function lc_link_to_api(array $row)
     {
+        $tracking_base = isset($row['cp_tracking_base_url']) ? (string) $row['cp_tracking_base_url'] : '';
+
         return array(
             'id'          => (int) $row['lk_id'],
             'code'        => (string) $row['lk_code'],
@@ -216,8 +228,8 @@ if (!function_exists('lc_link_to_api')) {
             'campaignId'  => (int) $row['cp_id'],
             'channel'     => (string) $row['lk_channel'],
             'subId'       => (string) $row['lk_sub_id'],
-            'url'         => lc_link_public_url($row['lk_code']),
-            'landingUrl'  => lc_landing_public_url($row['lk_code']),
+            'url'         => lc_link_public_url($row['lk_code'], $tracking_base),
+            'landingUrl'  => lc_landing_public_url($row['lk_code'], $tracking_base),
             'clicks'      => (int) ($row['click_cnt'] ?? 0),
             'received'    => (int) ($row['received_cnt'] ?? 0),
             'approved'    => (int) ($row['approved_cnt'] ?? 0),
@@ -261,7 +273,15 @@ if (!function_exists('lc_cpa_partner_create_shortlink')) {
             return $empty;
         }
 
-        $promo_url = lc_link_public_url((string) ($link['lk_code'] ?? ''));
+        $lk_code = (string) ($link['lk_code'] ?? '');
+        $tracking_base = '';
+        if ($lk_code !== '') {
+            $with = lc_link_get_with_campaign($lk_code);
+            if (is_array($with)) {
+                $tracking_base = (string) ($with['cp_tracking_base_url'] ?? '');
+            }
+        }
+        $promo_url = lc_link_public_url($lk_code, $tracking_base);
         if ($promo_url === '' || !function_exists('lc_shortlink_store_for_partner')) {
             $empty['message'] = '숏링크를 만들 수 없습니다.';
 
@@ -404,7 +424,11 @@ if (!function_exists('lc_link_create')) {
         return array(
             'ok'      => true,
             'message' => '홍보 링크가 생성되었습니다.',
-            'link'    => $link ? lc_link_to_api(array_merge($link, array('cp_name' => $campaign['cp_name'], 'cp_price' => $campaign['cp_price']))) : null,
+            'link'    => $link ? lc_link_to_api(array_merge($link, array(
+                'cp_name'              => $campaign['cp_name'],
+                'cp_price'             => $campaign['cp_price'],
+                'cp_tracking_base_url' => (string) ($campaign['cp_tracking_base_url'] ?? ''),
+            ))) : null,
         );
     }
 }
@@ -453,7 +477,7 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
             return $landing;
         }
 
-        return lc_landing_public_url($lk_code);
+        return lc_landing_public_url($lk_code, isset($link['cp_tracking_base_url']) ? (string) $link['cp_tracking_base_url'] : '');
     }
 }
 

@@ -117,21 +117,21 @@ export function CPAList() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {(item.landingUrl || '').trim() && (
                     <button
                       type="button"
                       onClick={() => openLandingPage(item.landingUrl)}
-                      className="col-span-2 w-full py-2.5 bg-white hover:bg-cyan-50 text-cyan-700 text-sm font-medium rounded-lg transition-colors border border-cyan-200 flex justify-center items-center gap-1.5"
+                      className="w-full py-2.5 bg-white hover:bg-cyan-50 text-cyan-700 text-sm font-medium rounded-lg transition-colors border border-cyan-200 flex justify-center items-center gap-1.5"
                     >
                       <ExternalLink className="w-4 h-4" />
                       랜딩페이지 보기
                     </button>
                   )}
-                  <Link to="/cpa-list" className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200 text-center">
-                    상세보기
-                  </Link>
-                  <Link to="/partner/search" className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-md shadow-emerald-500/20 text-center">
+                  <Link
+                    to={`/cpa/${encodeURIComponent(item.code || String(item.id))}`}
+                    className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-lg transition-colors shadow-md shadow-emerald-500/20 text-center"
+                  >
                     참여하기
                   </Link>
                 </div>

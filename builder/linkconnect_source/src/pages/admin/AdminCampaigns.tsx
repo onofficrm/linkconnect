@@ -69,6 +69,7 @@ type EditForm = {
   partnerPrice: number;
   statusCode: string;
   landingUrl: string;
+  trackingBaseUrl: string;
   allowedChannels: string;
   forbiddenChannels: string;
   description: string;
@@ -90,6 +91,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
       partnerPrice: 0,
       statusCode: 'draft',
       landingUrl: '',
+      trackingBaseUrl: '',
       allowedChannels: '',
       forbiddenChannels: '',
       description: '',
@@ -110,6 +112,7 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
     partnerPrice: campaign.partnerPrice,
     statusCode: campaign.statusCode,
     landingUrl: campaign.landingUrl,
+    trackingBaseUrl: campaign.trackingBaseUrl ?? '',
     allowedChannels: campaign.allowedChannels,
     forbiddenChannels: campaign.forbiddenChannels,
     description: campaign.description,
@@ -290,6 +293,7 @@ export function AdminCampaigns() {
         partnerPrice: editForm.partnerPrice,
         statusCode: editForm.statusCode,
         landingUrl: editForm.landingUrl,
+        trackingBaseUrl: editForm.trackingBaseUrl,
         allowedChannels: editForm.allowedChannels,
         forbiddenChannels: editForm.forbiddenChannels,
         description: editForm.description,
@@ -758,6 +762,25 @@ export function AdminCampaigns() {
                         className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                         placeholder="https://"
                       />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">홍보 링크 독립 도메인</label>
+                      <input
+                        type="url"
+                        value={editForm.trackingBaseUrl}
+                        onChange={(e) => updateEditForm({ trackingBaseUrl: e.target.value })}
+                        disabled={!isEditMode}
+                        className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                        placeholder="https://air911.co.kr"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        이 상품의 파트너 홍보 링크(/r/)·상담 랜딩(/c/)에 사용합니다. 비우면 환경설정의 기본 독립 도메인(또는 메인 사이트)을 사용합니다. 경로 없이 도메인만 입력하세요.
+                      </p>
+                      {editForm.trackingBaseUrl.trim() !== '' && (
+                        <p className="text-[11px] text-slate-500 mt-1 font-mono break-all">
+                          미리보기: {editForm.trackingBaseUrl.replace(/\/$/, '')}/r/…
+                        </p>
+                      )}
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">목록 설명</label>

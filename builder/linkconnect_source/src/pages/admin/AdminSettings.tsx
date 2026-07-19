@@ -370,8 +370,10 @@ export function AdminSettings() {
           </div>
           <div className="p-6 space-y-6">
             <p className="text-sm text-slate-500">
-              CPA 홍보 링크(<code className="bg-slate-100 px-1 rounded">/r/</code>)와 상담 랜딩(
+              광고상품에 독립 도메인을 넣지 않았을 때 쓰는 기본값입니다. CPA 홍보 링크(
+              <code className="bg-slate-100 px-1 rounded">/r/</code>)와 상담 랜딩(
               <code className="bg-slate-100 px-1 rounded">/c/</code>)에만 적용됩니다. CPS 링크프라이스 링크는 변경되지 않습니다.
+              광고상품별 설정이 있으면 그 값이 우선합니다.
             </p>
             <Toggle
               label="독립 도메인 사용"

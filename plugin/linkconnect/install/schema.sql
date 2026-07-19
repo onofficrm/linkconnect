@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}lc_campaigns` (
   `cp_forbidden_channels` varchar(500) NOT NULL DEFAULT '',
   `cp_description` text,
   `cp_landing_url` varchar(500) NOT NULL DEFAULT '',
+  `cp_tracking_base_url` varchar(500) NOT NULL DEFAULT '',
   `cp_status` varchar(20) NOT NULL DEFAULT 'draft',
   `cp_badge` varchar(20) NOT NULL DEFAULT '',
   `cp_recommended` tinyint(1) NOT NULL DEFAULT 0,

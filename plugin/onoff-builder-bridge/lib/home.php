@@ -49,6 +49,7 @@ if (!function_exists('onoff_builder_spa_route_prefixes')) {
             'notice',
             'select-center',
             'cpa-list',
+            'cpa',
             'cps',
             'events',
             'partner',

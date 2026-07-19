@@ -223,6 +223,7 @@ export type PartnerLink = {
   channel: string;
   subId: string;
   url: string;
+  landingUrl?: string;
   clicks: number;
   received: number;
   approved: number;
@@ -983,6 +984,7 @@ export type AdminCampaign = {
   allowedChannels: string;
   forbiddenChannels: string;
   landingUrl: string;
+  trackingBaseUrl: string;
   badge: string;
   recommended: boolean;
   promoGuide?: AdminCampaignPromoGuideSummary;
@@ -1406,6 +1408,24 @@ export async function fetchPublicCpsMerchant(codeOrId: string) {
     }
   }
   throw new Error('광고주를 찾을 수 없습니다.');
+}
+
+export async function fetchPublicCpaCampaign(codeOrId: string) {
+  const key = codeOrId.trim();
+  if (!key) {
+    throw new Error('캠페인 코드가 없습니다.');
+  }
+  const byCode = await fetchPublicCampaigns({ type: 'cpa', code: key });
+  if (byCode.items[0]) {
+    return byCode.items[0];
+  }
+  if (/^\d+$/.test(key)) {
+    const byId = await fetchPublicCampaigns({ type: 'cpa', id: key });
+    if (byId.items[0]) {
+      return byId.items[0];
+    }
+  }
+  throw new Error('캠페인을 찾을 수 없습니다.');
 }
 
 export type PartnerSettlementSummary = {

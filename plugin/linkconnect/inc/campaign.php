@@ -105,6 +105,14 @@ if (!function_exists('lc_campaign_list_active')) {
             $where .= " AND cp_type = '" . lc_sql_escape($type) . "' ";
         }
 
+        if (!empty($filters['id'])) {
+            $where .= " AND cp_id = '" . (int) $filters['id'] . "' ";
+        }
+
+        if (!empty($filters['code'])) {
+            $where .= " AND cp_code = '" . lc_sql_escape(trim((string) $filters['code'])) . "' ";
+        }
+
         $rows = array();
         $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY cp_recommended DESC, cp_sort ASC, cp_id DESC ", false);
 
@@ -802,6 +810,7 @@ if (!function_exists('lc_campaign_to_admin_api')) {
             'allowedChannels' => (string) $row['cp_allowed_channels'],
             'forbiddenChannels' => (string) $row['cp_forbidden_channels'],
             'landingUrl'      => (string) $row['cp_landing_url'],
+            'trackingBaseUrl' => (string) ($row['cp_tracking_base_url'] ?? ''),
             'badge'           => (string) $row['cp_badge'],
             'recommended'     => (bool) (int) ($row['cp_recommended'] ?? 0),
             'thumbnailUrl'    => function_exists('lc_campaign_thumbnail_admin_url')
@@ -1041,9 +1050,25 @@ if (!function_exists('lc_campaign_save')) {
             'cp_forbidden_channels' => isset($payload['forbiddenChannels']) ? trim((string) $payload['forbiddenChannels']) : '',
             'cp_description'        => isset($payload['description']) ? trim((string) $payload['description']) : '',
             'cp_landing_url'        => isset($payload['landingUrl']) ? trim((string) $payload['landingUrl']) : '',
+            'cp_tracking_base_url'  => '',
             'cp_badge'              => isset($payload['badge']) ? trim((string) $payload['badge']) : '',
             'cp_recommended'        => !empty($payload['recommended']) ? 1 : 0,
         );
+
+        if (array_key_exists('trackingBaseUrl', $payload)) {
+            $tracking_raw = trim((string) $payload['trackingBaseUrl']);
+            if ($tracking_raw !== '' && function_exists('lc_settings_normalize_cpa_tracking_base_url')) {
+                $norm = lc_settings_normalize_cpa_tracking_base_url($tracking_raw);
+                if (empty($norm['ok'])) {
+                    return array('ok' => false, 'message' => $norm['message'] !== '' ? $norm['message'] : '독립 도메인 형식이 올바르지 않습니다.');
+                }
+                $fields['cp_tracking_base_url'] = $norm['url'];
+            } else {
+                $fields['cp_tracking_base_url'] = '';
+            }
+        } elseif ($cp_id > 0) {
+            unset($fields['cp_tracking_base_url']);
+        }
 
         if (isset($payload['statusCode']) && $payload['statusCode'] !== '') {
             $fields['cp_status'] = (string) $payload['statusCode'];
@@ -1090,6 +1115,7 @@ if (!function_exists('lc_campaign_save')) {
                 cp_forbidden_channels = '" . lc_sql_escape($fields['cp_forbidden_channels']) . "',
                 cp_description = '" . lc_sql_escape($fields['cp_description']) . "',
                 cp_landing_url = '" . lc_sql_escape($fields['cp_landing_url']) . "',
+                cp_tracking_base_url = '" . lc_sql_escape((string) ($fields['cp_tracking_base_url'] ?? '')) . "',
                 cp_status = '" . lc_sql_escape($status) . "',
                 cp_badge = '" . lc_sql_escape($fields['cp_badge']) . "',
                 cp_recommended = '" . (int) $fields['cp_recommended'] . "',

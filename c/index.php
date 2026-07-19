@@ -16,7 +16,8 @@ $done = isset($_GET['done']);
 $error = '';
 $success = '';
 
-$landing_url = $code !== '' ? lc_landing_public_url($code) : lc_link_tracking_base_url();
+$tracking_base = is_array($link) ? (string) ($link['cp_tracking_base_url'] ?? '') : '';
+$landing_url = $code !== '' ? lc_landing_public_url($code, $tracking_base) : lc_link_tracking_base_url();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_array($link)) {
     $result = lc_conversion_create_from_link($link, array(
@@ -39,7 +40,7 @@ if ($done) {
 }
 
 $campaign_name = is_array($link) ? (string) $link['cp_name'] : '';
-$seo = lc_link_landing_seo_meta($campaign_name, $code);
+$seo = lc_link_landing_seo_meta($campaign_name, $code, $tracking_base);
 $home_url = defined('G5_URL') ? rtrim((string) G5_URL, '/') : lc_link_tracking_base_url();
 ?>
 <!DOCTYPE html>
