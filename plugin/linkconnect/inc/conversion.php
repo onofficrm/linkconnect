@@ -176,6 +176,12 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
         $phone = $mask_phone ? lc_conversion_mask_phone($raw_phone) : lc_conversion_format_phone($raw_phone);
         $lk_code = trim((string) ($row['lk_code'] ?? ''));
         $landing_url = trim((string) ($row['cp_landing_url'] ?? ''));
+        if ($landing_url !== '' && function_exists('lc_link_apply_tracking_host')) {
+            $landing_url = lc_link_apply_tracking_host(
+                $landing_url,
+                (string) ($row['cp_tracking_base_url'] ?? '')
+            );
+        }
         if ($landing_url === '' && $lk_code !== '' && function_exists('lc_landing_public_url')) {
             $landing_url = lc_landing_public_url($lk_code, (string) ($row['cp_tracking_base_url'] ?? ''));
         }

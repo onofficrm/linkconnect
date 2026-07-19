@@ -25,6 +25,75 @@ if (!function_exists('lc_link_tracking_base_url')) {
     }
 }
 
+if (!function_exists('lc_link_main_site_hosts')) {
+    /**
+     * @return array<int,string>
+     */
+    function lc_link_main_site_hosts()
+    {
+        $hosts = array();
+        if (defined('G5_URL') && G5_URL !== '') {
+            $parts = parse_url((string) G5_URL);
+            if (is_array($parts) && !empty($parts['host'])) {
+                $hosts[] = strtolower((string) $parts['host']);
+            }
+        }
+        // 운영 메인 도메인 별칭
+        $hosts[] = 'linkconnect.co.kr';
+        $hosts[] = 'www.linkconnect.co.kr';
+
+        return array_values(array_unique(array_filter($hosts)));
+    }
+}
+
+if (!function_exists('lc_link_apply_tracking_host')) {
+    /**
+     * 메인 사이트(링크커넥트) 랜딩 URL을 독립 도메인 호스트로 바꿉니다.
+     * 외부 광고주 도메인은 그대로 둡니다.
+     */
+    function lc_link_apply_tracking_host($url, $tracking_base_url = null)
+    {
+        $url = trim((string) $url);
+        $base = lc_link_tracking_base_url($tracking_base_url);
+        if ($url === '' || $base === '') {
+            return $url;
+        }
+
+        $base_parts = parse_url($base);
+        if (!is_array($base_parts) || empty($base_parts['host'])) {
+            return $url;
+        }
+
+        $base_host = strtolower((string) $base_parts['host']);
+        $base_scheme = strtolower((string) ($base_parts['scheme'] ?? 'https'));
+        $base_port = isset($base_parts['port']) ? ':' . (int) $base_parts['port'] : '';
+
+        if (strpos($url, '://') === false) {
+            return $base . '/' . ltrim($url, '/');
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['host'])) {
+            return $url;
+        }
+
+        $url_host = strtolower((string) $parts['host']);
+        if ($url_host === $base_host) {
+            return $url;
+        }
+
+        if (!in_array($url_host, lc_link_main_site_hosts(), true)) {
+            return $url;
+        }
+
+        $path = isset($parts['path']) && $parts['path'] !== '' ? (string) $parts['path'] : '/';
+        $query = isset($parts['query']) ? '?' . $parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#' . $parts['fragment'] : '';
+
+        return $base_scheme . '://' . $base_host . $base_port . $path . $query . $fragment;
+    }
+}
+
 if (!function_exists('lc_link_public_url')) {
     function lc_link_public_url($lk_code, $campaign_tracking_base_url = null)
     {
@@ -466,7 +535,10 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
     {
         $landing = trim((string) ($link['cp_landing_url'] ?? ''));
         $lk_code = trim((string) ($link['lk_code'] ?? ''));
+        $tracking_base = isset($link['cp_tracking_base_url']) ? (string) $link['cp_tracking_base_url'] : '';
+
         if ($landing !== '') {
+            $landing = lc_link_apply_tracking_host($landing, $tracking_base);
             if ($lk_code !== '' && stripos($landing, 'lkcode=') === false && stripos($landing, 'code=') === false) {
                 $landing .= (strpos($landing, '?') !== false ? '&' : '?') . 'lkCode=' . rawurlencode($lk_code);
             }
@@ -477,7 +549,7 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
             return $landing;
         }
 
-        return lc_landing_public_url($lk_code, isset($link['cp_tracking_base_url']) ? (string) $link['cp_tracking_base_url'] : '');
+        return lc_landing_public_url($lk_code, $tracking_base);
     }
 }
 

@@ -69,7 +69,12 @@ if (!function_exists('lc_campaign_to_api')) {
             'statusCode'        => (string) $row['cp_status'],
             'badge'             => (string) $row['cp_badge'],
             'recommended'       => (bool) (int) ($row['cp_recommended'] ?? 0),
-            'landingUrl'        => (string) $row['cp_landing_url'],
+            'landingUrl'        => function_exists('lc_link_apply_tracking_host')
+                ? lc_link_apply_tracking_host(
+                    (string) $row['cp_landing_url'],
+                    isset($row['cp_tracking_base_url']) ? (string) $row['cp_tracking_base_url'] : ''
+                )
+                : (string) $row['cp_landing_url'],
             'thumbnailUrl'      => function_exists('lc_campaign_thumbnail_public_url')
                 ? lc_campaign_thumbnail_public_url((int) $row['cp_id'])
                 : '',

@@ -775,6 +775,7 @@ export function AdminCampaigns() {
                       />
                       <p className="text-[11px] text-slate-400 mt-1">
                         이 상품의 파트너 홍보 링크(/r/)·상담 랜딩(/c/)에 사용합니다. 비우면 환경설정의 기본 독립 도메인(또는 메인 사이트)을 사용합니다. 경로 없이 도메인만 입력하세요.
+                        랜딩 URL이 linkconnect 도메인이어도, 여기에 값을 넣으면 공개·클릭 이동 주소는 독립 도메인으로 바뀝니다.
                       </p>
                       {editForm.trackingBaseUrl.trim() !== '' && (
                         <p className="text-[11px] text-slate-500 mt-1 font-mono break-all">
