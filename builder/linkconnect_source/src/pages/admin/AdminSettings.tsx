@@ -364,9 +364,69 @@ export function AdminSettings() {
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-indigo-900 to-slate-900 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-300" />
+            <h3 className="font-bold text-white">ChatGPT API</h3>
+          </div>
+          <div className="p-6 space-y-5">
+            <p className="text-sm text-slate-500 leading-relaxed">
+              캠페인 썸네일·홍보 이미지 생성에 사용합니다. OpenAI 플랫폼에서 발급한 API 키를 등록하세요.
+            </p>
+            <Toggle
+              label="ChatGPT 이미지 생성 사용"
+              checked={boolVal(raw, 'openaiImageEnabled')}
+              onChange={(v) => setRaw((prev) => setBool(prev, 'openaiImageEnabled', v))}
+            />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">ChatGPT (OpenAI) API 키</label>
+              {boolVal(raw, 'openaiApiKeySet') ? (
+                <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.openaiApiKeyMasked || '********'}</p>
+              ) : (
+                <p className="text-xs text-amber-600 mb-2">아직 등록되지 않았습니다. 키를 입력한 뒤 「API 키 저장」을 눌러 주세요.</p>
+              )}
+              <input
+                type="password"
+                value={openaiKeyInput}
+                onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                placeholder="sk-... 또는 sk-proj-..."
+                autoComplete="off"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-indigo-500 outline-none"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveOpenAiKey}
+                  disabled={openaiKeyStatus !== 'idle' || !openaiKeyInput.trim()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
+                >
+                  {openaiKeyStatus === 'idle' && 'ChatGPT API 키 저장'}
+                  {openaiKeyStatus === 'saving' && '저장 중...'}
+                  {openaiKeyStatus === 'saved' && '저장 완료'}
+                </button>
+                <p className="text-[11px] text-slate-400">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+              <Field label="이미지 모델" value={raw.openaiImageModel} onChange={(v) => update('openaiImageModel', v)} placeholder="gpt-image-2" />
+              <SelectField
+                label="이미지 품질"
+                value={raw.openaiImageQuality || 'medium'}
+                onChange={(v) => update('openaiImageQuality', v)}
+                options={[
+                  ['low', 'low (빠름)'],
+                  ['medium', 'medium'],
+                  ['high', 'high (고품질)'],
+                  ['auto', 'auto'],
+                ]}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-cyan-400" />
-            <h3 className="font-bold text-white">AI 설정</h3>
+            <h3 className="font-bold text-white">AI · Gemini 설정</h3>
           </div>
           <div className="p-6 space-y-6">
             <div className="space-y-4">
@@ -398,60 +458,6 @@ export function AdminSettings() {
                     {geminiKeyStatus === 'saving' && '저장 중...'}
                     {geminiKeyStatus === 'saved' && '저장 완료'}
                   </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h4 className="text-sm font-bold text-slate-900">ChatGPT 이미지 (GPT Image · 한글 텍스트)</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                배너·썸네일 생성은 OpenAI GPT Image API를 사용합니다. (Sora는 영상용이라 이미지 소재에는 GPT Image를 연결합니다.)
-              </p>
-              <Toggle
-                label="OpenAI 이미지 생성 사용"
-                checked={boolVal(raw, 'openaiImageEnabled')}
-                onChange={(v) => setRaw((prev) => setBool(prev, 'openaiImageEnabled', v))}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field label="이미지 모델" value={raw.openaiImageModel} onChange={(v) => update('openaiImageModel', v)} placeholder="gpt-image-2" />
-                <SelectField
-                  label="이미지 품질"
-                  value={raw.openaiImageQuality || 'medium'}
-                  onChange={(v) => update('openaiImageQuality', v)}
-                  options={[
-                    ['low', 'low (빠름)'],
-                    ['medium', 'medium'],
-                    ['high', 'high (고품질)'],
-                    ['auto', 'auto'],
-                  ]}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">OpenAI API 키</label>
-                {boolVal(raw, 'openaiApiKeySet') ? (
-                  <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.openaiApiKeyMasked || '********'}</p>
-                ) : (
-                  <p className="text-xs text-amber-600 mb-2">이미지 생성을 쓰려면 OpenAI API 키를 등록하세요.</p>
-                )}
-                <input
-                  type="password"
-                  value={openaiKeyInput}
-                  onChange={(e) => setOpenaiKeyInput(e.target.value)}
-                  placeholder="sk-... (변경 시에만)"
-                  className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
-                />
-                <div className="mt-3 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveOpenAiKey}
-                    disabled={openaiKeyStatus !== 'idle' || !openaiKeyInput.trim()}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
-                  >
-                    {openaiKeyStatus === 'idle' && 'API 키 저장'}
-                    {openaiKeyStatus === 'saving' && '저장 중...'}
-                    {openaiKeyStatus === 'saved' && '저장 완료'}
-                  </button>
-                  <p className="text-[11px] text-slate-400">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다.</p>
                 </div>
               </div>
             </div>
@@ -508,11 +514,29 @@ export function AdminSettings() {
   );
 }
 
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none" />
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
+      />
     </div>
   );
 }
