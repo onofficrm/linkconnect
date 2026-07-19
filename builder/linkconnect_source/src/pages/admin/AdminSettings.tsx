@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { Settings, Save, RotateCcw, Check, Sparkles, Link2 } from 'lucide-react';
-import { fetchAdminSettings, resetAdminSettings, saveAdminGeminiApiKey, saveAdminSettings } from '../../lib/api';
+import { fetchAdminSettings, resetAdminSettings, saveAdminGeminiApiKey, saveAdminOpenAiApiKey, saveAdminSettings } from '../../lib/api';
 import type { AdminSettingsResponse } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -23,6 +23,11 @@ const defaultRaw: RawSettings = {
   geminiImageModel: 'gemini-2.5-flash-image',
   geminiApiKeySet: '0',
   geminiApiKeyMasked: '',
+  openaiImageEnabled: '1',
+  openaiImageModel: 'gpt-image-2',
+  openaiImageQuality: 'medium',
+  openaiApiKeySet: '0',
+  openaiApiKeyMasked: '',
   aiChatDailyLimit: '30',
   aiPromoDailyLimit: '20',
   aiSummaryDailyLimit: '10',
@@ -59,8 +64,17 @@ function mapAdminSettingsRaw(data: AdminSettingsResponse['raw'] | Record<string,
   if (ai?.geminiApiKeyMasked) {
     raw.geminiApiKeyMasked = ai.geminiApiKeyMasked;
   }
+  if (ai?.openaiApiKeySet) {
+    raw.openaiApiKeySet = '1';
+  }
+  if (ai?.openaiApiKeyMasked) {
+    raw.openaiApiKeyMasked = ai.openaiApiKeyMasked;
+  }
   if (raw.geminiApiKeySet === 'true' || raw.geminiApiKeySet === true) {
     raw.geminiApiKeySet = '1';
+  }
+  if (raw.openaiApiKeySet === 'true' || raw.openaiApiKeySet === true) {
+    raw.openaiApiKeySet = '1';
   }
   return raw;
 }
@@ -73,6 +87,8 @@ export function AdminSettings() {
   const [raw, setRaw] = useState<RawSettings>(defaultRaw);
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
   const [geminiKeyStatus, setGeminiKeyStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [openaiKeyInput, setOpenaiKeyInput] = useState('');
+  const [openaiKeyStatus, setOpenaiKeyStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,6 +103,7 @@ export function AdminSettings() {
   const applySettingsResponse = (data: AdminSettingsResponse) => {
     setRaw(mapAdminSettingsRaw(data.raw, data.settings));
     setGeminiKeyInput('');
+    setOpenaiKeyInput('');
   };
 
   const handleSaveGeminiKey = async () => {
@@ -99,7 +116,6 @@ export function AdminSettings() {
       setError('마스킹된 키(****)는 저장할 수 없습니다. Google AI Studio에서 발급받은 전체 키를 입력하세요.');
       return;
     }
-
     setGeminiKeyStatus('saving');
     setError('');
     try {
@@ -108,8 +124,31 @@ export function AdminSettings() {
       setGeminiKeyStatus('saved');
       setTimeout(() => setGeminiKeyStatus('idle'), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'API 키 저장에 실패했습니다.');
+      setError(err instanceof Error ? err.message : 'Gemini API 키 저장에 실패했습니다.');
       setGeminiKeyStatus('idle');
+    }
+  };
+
+  const handleSaveOpenAiKey = async () => {
+    const key = openaiKeyInput.trim();
+    if (!key) {
+      setError('OpenAI API 키를 입력한 뒤 저장하세요.');
+      return;
+    }
+    if (key.includes('*')) {
+      setError('마스킹된 키(****)는 저장할 수 없습니다. platform.openai.com에서 발급받은 전체 키를 입력하세요.');
+      return;
+    }
+    setOpenaiKeyStatus('saving');
+    setError('');
+    try {
+      const data = await saveAdminOpenAiApiKey(key);
+      applySettingsResponse(data);
+      setOpenaiKeyStatus('saved');
+      setTimeout(() => setOpenaiKeyStatus('idle'), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OpenAI API 키 저장에 실패했습니다.');
+      setOpenaiKeyStatus('idle');
     }
   };
 
@@ -182,9 +221,16 @@ export function AdminSettings() {
           geminiEnabled: boolVal(raw, 'geminiEnabled'),
           geminiModel: raw.geminiModel || 'gemini-2.5-flash',
           geminiApiKey: geminiKeyInput.trim(),
+          openaiImageEnabled: boolVal(raw, 'openaiImageEnabled'),
+          openaiImageModel: raw.openaiImageModel || 'gpt-image-2',
+          openaiImageQuality: raw.openaiImageQuality || 'medium',
+          openaiApiKey: openaiKeyInput.trim(),
           aiChatDailyLimit: Number(raw.aiChatDailyLimit || 30),
           aiPromoDailyLimit: Number(raw.aiPromoDailyLimit || 20),
           aiSummaryDailyLimit: Number(raw.aiSummaryDailyLimit || 10),
+          aiImageDailyLimit: Number(raw.aiImageDailyLimit || 15),
+          aiImagePromptThumbnail: raw.aiImagePromptThumbnail || '',
+          aiImagePromptPromo: raw.aiImagePromptPromo || '',
         },
       });
       applySettingsResponse(data);
@@ -320,44 +366,97 @@ export function AdminSettings() {
         <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 to-slate-800 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-cyan-400" />
-            <h3 className="font-bold text-white">AI · Gemini 설정</h3>
+            <h3 className="font-bold text-white">AI 설정</h3>
           </div>
           <div className="p-6 space-y-6">
-            <Toggle label="AI 기능 사용" checked={boolVal(raw, 'geminiEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'geminiEnabled', v))} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold text-slate-900">Gemini (챗봇 · 홍보문구 · 요약)</h4>
+              <Toggle label="AI 텍스트 기능 사용" checked={boolVal(raw, 'geminiEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'geminiEnabled', v))} />
               <Field label="Gemini 텍스트 모델" value={raw.geminiModel} onChange={(v) => update('geminiModel', v)} />
-              <Field label="Gemini 이미지 모델" value={raw.geminiImageModel} onChange={(v) => update('geminiImageModel', v)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Google Gemini API 키</label>
-              {boolVal(raw, 'geminiApiKeySet') ? (
-                <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.geminiApiKeyMasked || '********'}</p>
-              ) : (
-                <p className="text-xs text-amber-600 mb-2">API 키가 설정되지 않았습니다. AI 기능을 사용하려면 키를 입력하세요.</p>
-              )}
-              <input
-                type="password"
-                value={geminiKeyInput}
-                onChange={(e) => setGeminiKeyInput(e.target.value)}
-                placeholder="새 API 키 입력 (변경 시에만)"
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
-              />
-              <div className="mt-3 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleSaveGeminiKey}
-                  disabled={geminiKeyStatus !== 'idle' || !geminiKeyInput.trim()}
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
-                >
-                  {geminiKeyStatus === 'idle' && 'API 키 저장'}
-                  {geminiKeyStatus === 'saving' && '저장 중...'}
-                  {geminiKeyStatus === 'saved' && '저장 완료'}
-                </button>
-                <p className="text-[11px] text-slate-400">키만 따로 저장할 수 있습니다. 아래 「설정 저장」은 다른 항목용입니다.</p>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Google Gemini API 키</label>
+                {boolVal(raw, 'geminiApiKeySet') ? (
+                  <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.geminiApiKeyMasked || '********'}</p>
+                ) : (
+                  <p className="text-xs text-amber-600 mb-2">API 키가 설정되지 않았습니다. AI 텍스트 기능을 사용하려면 키를 입력하세요.</p>
+                )}
+                <input
+                  type="password"
+                  value={geminiKeyInput}
+                  onChange={(e) => setGeminiKeyInput(e.target.value)}
+                  placeholder="새 API 키 입력 (변경 시에만)"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
+                />
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveGeminiKey}
+                    disabled={geminiKeyStatus !== 'idle' || !geminiKeyInput.trim()}
+                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
+                  >
+                    {geminiKeyStatus === 'idle' && 'API 키 저장'}
+                    {geminiKeyStatus === 'saving' && '저장 중...'}
+                    {geminiKeyStatus === 'saved' && '저장 완료'}
+                  </button>
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다. Google AI Studio에서 발급받을 수 있습니다.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <h4 className="text-sm font-bold text-slate-900">ChatGPT 이미지 (GPT Image · 한글 텍스트)</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                배너·썸네일 생성은 OpenAI GPT Image API를 사용합니다. (Sora는 영상용이라 이미지 소재에는 GPT Image를 연결합니다.)
+              </p>
+              <Toggle
+                label="OpenAI 이미지 생성 사용"
+                checked={boolVal(raw, 'openaiImageEnabled')}
+                onChange={(v) => setRaw((prev) => setBool(prev, 'openaiImageEnabled', v))}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="이미지 모델" value={raw.openaiImageModel} onChange={(v) => update('openaiImageModel', v)} placeholder="gpt-image-2" />
+                <SelectField
+                  label="이미지 품질"
+                  value={raw.openaiImageQuality || 'medium'}
+                  onChange={(v) => update('openaiImageQuality', v)}
+                  options={[
+                    ['low', 'low (빠름)'],
+                    ['medium', 'medium'],
+                    ['high', 'high (고품질)'],
+                    ['auto', 'auto'],
+                  ]}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">OpenAI API 키</label>
+                {boolVal(raw, 'openaiApiKeySet') ? (
+                  <p className="text-xs text-emerald-600 mb-2">등록됨: {raw.openaiApiKeyMasked || '********'}</p>
+                ) : (
+                  <p className="text-xs text-amber-600 mb-2">이미지 생성을 쓰려면 OpenAI API 키를 등록하세요.</p>
+                )}
+                <input
+                  type="password"
+                  value={openaiKeyInput}
+                  onChange={(e) => setOpenaiKeyInput(e.target.value)}
+                  placeholder="sk-... (변경 시에만)"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:border-cyan-500 outline-none"
+                />
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveOpenAiKey}
+                    disabled={openaiKeyStatus !== 'idle' || !openaiKeyInput.trim()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold disabled:opacity-50"
+                  >
+                    {openaiKeyStatus === 'idle' && 'API 키 저장'}
+                    {openaiKeyStatus === 'saving' && '저장 중...'}
+                    {openaiKeyStatus === 'saved' && '저장 완료'}
+                  </button>
+                  <p className="text-[11px] text-slate-400">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-2 border-t border-slate-100">
               <Field label="챗봇 일일 한도" value={raw.aiChatDailyLimit} onChange={(v) => update('aiChatDailyLimit', v)} type="number" />
               <Field label="홍보문구 일일 한도" value={raw.aiPromoDailyLimit} onChange={(v) => update('aiPromoDailyLimit', v)} type="number" />
               <Field label="리포트요약 일일 한도" value={raw.aiSummaryDailyLimit} onChange={(v) => update('aiSummaryDailyLimit', v)} type="number" />

@@ -43,6 +43,10 @@ if (!function_exists('lc_settings_defaults')) {
             'geminiEnabled'         => '1',
             'geminiModel'           => 'gemini-2.5-flash',
             'geminiImageModel'      => 'gemini-2.5-flash-image',
+            'openaiApiKey'          => '',
+            'openaiImageEnabled'    => '1',
+            'openaiImageModel'      => 'gpt-image-2',
+            'openaiImageQuality'    => 'medium',
             'aiChatDailyLimit'      => 30,
             'aiPromoDailyLimit'     => 20,
             'aiSummaryDailyLimit'   => 10,
@@ -145,7 +149,7 @@ if (!function_exists('lc_settings_get_bool')) {
 if (!function_exists('lc_settings_secret_keys')) {
     function lc_settings_secret_keys()
     {
-        return array('geminiApiKey', 'callApiKey', 'callApiSecret', 'callWebhookToken', 'lpAuthKey', 'lpPostbackSecret');
+        return array('geminiApiKey', 'openaiApiKey', 'callApiKey', 'callApiSecret', 'callWebhookToken', 'lpAuthKey', 'lpPostbackSecret');
     }
 }
 
@@ -349,6 +353,7 @@ if (!function_exists('lc_settings_raw_for_admin')) {
         $raw = $settings;
         unset(
             $raw['geminiApiKey'],
+            $raw['openaiApiKey'],
             $raw['callApiKey'],
             $raw['callApiSecret'],
             $raw['callWebhookToken'],
@@ -359,6 +364,10 @@ if (!function_exists('lc_settings_raw_for_admin')) {
         $raw['geminiApiKeySet'] = trim((string) ($settings['geminiApiKey'] ?? '')) !== '' ? '1' : '0';
         $raw['geminiApiKeyMasked'] = function_exists('lc_gemini_mask_key')
             ? lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? ''))
+            : '';
+        $raw['openaiApiKeySet'] = trim((string) ($settings['openaiApiKey'] ?? '')) !== '' ? '1' : '0';
+        $raw['openaiApiKeyMasked'] = function_exists('lc_openai_mask_key')
+            ? lc_openai_mask_key((string) ($settings['openaiApiKey'] ?? ''))
             : '';
         $raw['callApiKeySet'] = trim((string) ($settings['callApiKey'] ?? '')) !== '' ? '1' : '0';
         $raw['callApiSecretSet'] = trim((string) ($settings['callApiSecret'] ?? '')) !== '' ? '1' : '0';
@@ -436,7 +445,16 @@ if (!function_exists('lc_settings_to_api')) {
                 'geminiModel'         => (string) ($settings['geminiModel'] ?? 'gemini-2.5-flash'),
                 'geminiImageModel'    => (string) ($settings['geminiImageModel'] ?? 'gemini-2.5-flash-image'),
                 'geminiApiKeySet'     => trim((string) ($settings['geminiApiKey'] ?? '')) !== '',
-                'geminiApiKeyMasked'  => lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? '')),
+                'geminiApiKeyMasked'  => function_exists('lc_gemini_mask_key')
+                    ? lc_gemini_mask_key((string) ($settings['geminiApiKey'] ?? ''))
+                    : '',
+                'openaiImageEnabled'  => lc_settings_get_bool('openaiImageEnabled', true),
+                'openaiImageModel'    => (string) ($settings['openaiImageModel'] ?? 'gpt-image-2'),
+                'openaiImageQuality'  => (string) ($settings['openaiImageQuality'] ?? 'medium'),
+                'openaiApiKeySet'     => trim((string) ($settings['openaiApiKey'] ?? '')) !== '',
+                'openaiApiKeyMasked'  => function_exists('lc_openai_mask_key')
+                    ? lc_openai_mask_key((string) ($settings['openaiApiKey'] ?? ''))
+                    : '',
                 'aiChatDailyLimit'    => (int) ($settings['aiChatDailyLimit'] ?? 30),
                 'aiPromoDailyLimit'   => (int) ($settings['aiPromoDailyLimit'] ?? 20),
                 'aiSummaryDailyLimit' => (int) ($settings['aiSummaryDailyLimit'] ?? 10),

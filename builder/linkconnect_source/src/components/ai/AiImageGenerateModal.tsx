@@ -169,7 +169,7 @@ export function AiImageGenerateModal({
               </button>
             </div>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              AI는 한글을 깨뜨리기 쉽습니다. 가능하면 텍스트 없이 배경만 만들고, 나중에 직접 문구를 넣는 방식을 권장합니다.
+              ChatGPT 이미지(GPT Image)는 한글을 비교적 잘 그립니다. 문구를 넣을 때는 짧고 명확하게 입력하세요.
             </p>
           </div>
 

@@ -110,7 +110,9 @@ if (!function_exists('lc_ai_status_for_api')) {
                 'summary' => lc_settings_get_int('aiSummaryDailyLimit', 10),
                 'image'   => lc_settings_get_int('aiImageDailyLimit', 15),
             ),
-            'imageModel'=> function_exists('lc_gemini_image_model') ? lc_gemini_image_model() : '',
+            'imageModel'=> function_exists('lc_openai_image_model') ? lc_openai_image_model() : '',
+            'imageProvider' => 'openai',
+            'imageAvailable' => function_exists('lc_openai_image_enabled') ? lc_openai_image_enabled() : false,
             'message'   => $enabled ? '' : '관리자 설정에서 Gemini API 키를 등록해주세요.',
         );
     }
@@ -255,15 +257,15 @@ if (!function_exists('lc_ai_generate_campaign_image')) {
      */
     function lc_ai_generate_campaign_image(array $context = array())
     {
-        if (!function_exists('lc_gemini_generate_image')) {
-            return array('ok' => false, 'message' => '이미지 생성 모듈을 사용할 수 없습니다.');
+        if (!function_exists('lc_openai_generate_image')) {
+            return array('ok' => false, 'message' => 'OpenAI 이미지 생성 모듈을 사용할 수 없습니다.');
         }
 
         $prompt = lc_ai_build_image_prompt($context);
         $width = isset($context['width']) ? (int) $context['width'] : 0;
         $height = isset($context['height']) ? (int) $context['height'] : 0;
 
-        return lc_gemini_generate_image($prompt, array(
+        return lc_openai_generate_image($prompt, array(
             'width'  => $width,
             'height' => $height,
         ));
@@ -273,7 +275,16 @@ if (!function_exists('lc_ai_generate_campaign_image')) {
 if (!function_exists('lc_ai_require_ready')) {
     function lc_ai_require_ready($action)
     {
-        if (!lc_gemini_enabled()) {
+        $action = (string) $action;
+        if ($action === 'image') {
+            if (!function_exists('lc_openai_image_enabled') || !lc_openai_image_enabled()) {
+                lc_api_error(
+                    '이미지 생성용 OpenAI(ChatGPT) API 키가 설정되지 않았습니다. 관리자 설정을 확인해 주세요.',
+                    'AI_IMAGE_NOT_CONFIGURED',
+                    503
+                );
+            }
+        } elseif (!lc_gemini_enabled()) {
             lc_api_error('AI 기능이 비활성화되었거나 API 키가 설정되지 않았습니다.', 'AI_NOT_CONFIGURED', 503);
         }
 

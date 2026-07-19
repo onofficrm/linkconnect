@@ -143,6 +143,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/image_process.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/gemini.php')) {
     require_once LC_PLUGIN_PATH . '/inc/gemini.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/openai.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/openai.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/ai.php')) {
     require_once LC_PLUGIN_PATH . '/inc/ai.php';
 }

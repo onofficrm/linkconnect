@@ -1756,9 +1756,18 @@ export type AdminSettingsData = {
     geminiApiKey?: string;
     geminiApiKeySet?: boolean;
     geminiApiKeyMasked?: string;
+    openaiImageEnabled?: boolean;
+    openaiImageModel?: string;
+    openaiImageQuality?: string;
+    openaiApiKey?: string;
+    openaiApiKeySet?: boolean;
+    openaiApiKeyMasked?: string;
     aiChatDailyLimit?: number;
     aiPromoDailyLimit?: number;
     aiSummaryDailyLimit?: number;
+    aiImageDailyLimit?: number;
+    aiImagePromptThumbnail?: string;
+    aiImagePromptPromo?: string;
   };
 };
 
@@ -1778,6 +1787,10 @@ export function saveAdminSettings(settings: AdminSettingsData | Record<string, u
 
 export function saveAdminGeminiApiKey(geminiApiKey: string) {
   return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'save_gemini_key', geminiApiKey });
+}
+
+export function saveAdminOpenAiApiKey(openaiApiKey: string) {
+  return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'save_openai_key', openaiApiKey });
 }
 
 export function resetAdminSettings() {

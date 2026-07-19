@@ -69,6 +69,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lc_api_success(lc_settings_api_success_payload('Gemini API 키가 저장되었습니다.'));
     }
 
+    if (isset($body['action']) && $body['action'] === 'save_openai_key') {
+        $openai_key = lc_settings_normalize_secret_value($body['openaiApiKey'] ?? '');
+        if ($openai_key === '') {
+            lc_api_error('유효한 OpenAI API 키를 입력하세요. 마스킹된 값(****)은 다시 입력할 수 없습니다.', 'OPENAI_KEY_INVALID', 400);
+        }
+
+        $result = lc_settings_save(array('openaiApiKey' => $openai_key));
+        if (!$result['ok']) {
+            lc_api_error($result['message'], 'SETTINGS_SAVE_FAILED', 400);
+        }
+
+        $saved_key = trim((string) lc_settings_get('openaiApiKey', ''));
+        if ($saved_key === '') {
+            lc_api_error('API 키 저장에 실패했습니다. DB 연결 및 settings 테이블 상태를 확인하세요.', 'OPENAI_KEY_NOT_PERSISTED', 500);
+        }
+
+        lc_api_success(lc_settings_api_success_payload('OpenAI API 키가 저장되었습니다.'));
+    }
+
     $flat = array();
     if (isset($values['general']) && is_array($values['general'])) {
         $flat = array_merge($flat, $values['general']);
@@ -102,14 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if (isset($values['ai']) && is_array($values['ai'])) {
         foreach ($values['ai'] as $key => $value) {
-            if ($key === 'geminiApiKey') {
+            if ($key === 'geminiApiKey' || $key === 'openaiApiKey') {
                 $key_val = lc_settings_normalize_secret_value($value);
                 if ($key_val !== '') {
-                    $flat['geminiApiKey'] = $key_val;
+                    $flat[$key] = $key_val;
                 }
                 continue;
             }
-            if ($key === 'geminiApiKeySet' || $key === 'geminiApiKeyMasked') {
+            if (
+                $key === 'geminiApiKeySet' || $key === 'geminiApiKeyMasked'
+                || $key === 'openaiApiKeySet' || $key === 'openaiApiKeyMasked'
+            ) {
                 continue;
             }
             $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
@@ -152,6 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $requested_gemini_key = isset($flat['geminiApiKey']) ? (string) $flat['geminiApiKey'] : '';
+    $requested_openai_key = isset($flat['openaiApiKey']) ? (string) $flat['openaiApiKey'] : '';
 
     $result = lc_settings_save($flat);
     if (!$result['ok']) {
@@ -162,6 +185,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $saved_key = trim((string) lc_settings_get('geminiApiKey', ''));
         if ($saved_key === '') {
             lc_api_error('Gemini API 키 저장에 실패했습니다. DB 연결 및 settings 테이블 상태를 확인하세요.', 'GEMINI_KEY_NOT_PERSISTED', 500);
+        }
+    }
+    if ($requested_openai_key !== '') {
+        $saved_key = trim((string) lc_settings_get('openaiApiKey', ''));
+        if ($saved_key === '') {
+            lc_api_error('OpenAI API 키 저장에 실패했습니다. DB 연결 및 settings 테이블 상태를 확인하세요.', 'OPENAI_KEY_NOT_PERSISTED', 500);
         }
     }
 
