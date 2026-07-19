@@ -2439,6 +2439,34 @@ export function generateMerchantCampaignPromo(payload: {
   });
 }
 
+export function generateAdminCampaignThumbnailAi(payload: { cpId: number; extra?: string }) {
+  return adminApiPost<{
+    message: string;
+    thumbnailUrl: string;
+    prompt?: string;
+    campaign: AdminCampaign | null;
+  }>('ai.php', { action: 'generate_thumbnail', ...payload });
+}
+
+export function generateMerchantPromoImageAi(payload: {
+  cpId: number;
+  width?: number;
+  height?: number;
+  imageTitle?: string;
+  extra?: string;
+}) {
+  return merchantApiPost<{
+    message: string;
+    asset: {
+      id: number;
+      downloadUrl: string;
+      originalFilename: string;
+      imageTitle?: string;
+    } | null;
+    prompt?: string;
+  }>('ai.php', { action: 'generate_promo_image', ...payload });
+}
+
 /* ─────────────────────────── 콜디비 (Call DB) ─────────────────────────── */
 
 export type CallNumber = {

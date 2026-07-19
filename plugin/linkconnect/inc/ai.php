@@ -59,6 +59,7 @@ if (!function_exists('lc_ai_rate_limit')) {
                 'chat'    => lc_settings_get_int('aiChatDailyLimit', 30),
                 'promo'   => lc_settings_get_int('aiPromoDailyLimit', 20),
                 'summary' => lc_settings_get_int('aiSummaryDailyLimit', 10),
+                'image'   => lc_settings_get_int('aiImageDailyLimit', 15),
             );
             $limit = isset($map[$action]) ? (int) $map[$action] : 20;
         }
@@ -107,9 +108,107 @@ if (!function_exists('lc_ai_status_for_api')) {
                 'chat'    => lc_settings_get_int('aiChatDailyLimit', 30),
                 'promo'   => lc_settings_get_int('aiPromoDailyLimit', 20),
                 'summary' => lc_settings_get_int('aiSummaryDailyLimit', 10),
+                'image'   => lc_settings_get_int('aiImageDailyLimit', 15),
             ),
+            'imageModel'=> function_exists('lc_gemini_image_model') ? lc_gemini_image_model() : '',
             'message'   => $enabled ? '' : '관리자 설정에서 Gemini API 키를 등록해주세요.',
         );
+    }
+}
+
+if (!function_exists('lc_ai_image_prompt_template_default')) {
+    function lc_ai_image_prompt_template_default($kind = 'thumbnail')
+    {
+        if ($kind === 'promo') {
+            return 'Create a clean Korean marketing promotional image for affiliate advertising. '
+                . 'Campaign: {title}. Category: {category}. '
+                . 'Target size about {width}x{height}px ({aspect}). '
+                . 'Professional, trustworthy, modern flat illustration style with soft teal and slate colors. '
+                . 'No logos, no watermarks, no readable fake Korean text, no phone numbers, no brand marks. '
+                . 'Suitable for web banners and blog headers. {extra}';
+        }
+
+        return 'Create a clean Korean CPA product list thumbnail. '
+            . 'Campaign name: {title}. Category: {category}. '
+            . 'Exact composition for {width}x{height}px ({aspect}) landscape. '
+            . 'Professional consulting mood, trustworthy, bright and modern. Soft teal accent, slate neutrals. '
+            . 'No logos, no watermarks, no readable fake Korean text overlays, no phone numbers. '
+            . 'Photorealistic or high-quality illustration of a calm consultation atmosphere. {extra}';
+    }
+}
+
+if (!function_exists('lc_ai_image_prompt_template')) {
+    function lc_ai_image_prompt_template($kind = 'thumbnail')
+    {
+        $kind = $kind === 'promo' ? 'promo' : 'thumbnail';
+        $key = $kind === 'promo' ? 'aiImagePromptPromo' : 'aiImagePromptThumbnail';
+        $tpl = trim((string) lc_settings_get($key, ''));
+        if ($tpl === '') {
+            $tpl = lc_ai_image_prompt_template_default($kind);
+        }
+
+        return $tpl;
+    }
+}
+
+if (!function_exists('lc_ai_build_image_prompt')) {
+    /**
+     * @param array{title?:string,category?:string,width?:int,height?:int,extra?:string,kind?:string} $context
+     */
+    function lc_ai_build_image_prompt(array $context = array())
+    {
+        $kind = isset($context['kind']) && $context['kind'] === 'promo' ? 'promo' : 'thumbnail';
+        $title = trim((string) ($context['title'] ?? ''));
+        $category = trim((string) ($context['category'] ?? ''));
+        $extra = trim((string) ($context['extra'] ?? ''));
+        $width = isset($context['width']) ? (int) $context['width'] : 0;
+        $height = isset($context['height']) ? (int) $context['height'] : 0;
+        $aspect = ($width > 0 && $height > 0 && function_exists('lc_image_aspect_ratio_label'))
+            ? lc_image_aspect_ratio_label($width, $height)
+            : '16:9';
+
+        if ($title === '') {
+            $title = '제휴 마케팅 상담';
+        }
+        if ($category === '') {
+            $category = '일반';
+        }
+        if ($extra === '') {
+            $extra = 'Keep the composition uncluttered with generous negative space for optional text overlays later.';
+        }
+
+        $tpl = lc_ai_image_prompt_template($kind);
+        $map = array(
+            '{title}'    => $title,
+            '{category}' => $category,
+            '{width}'    => (string) max(0, $width),
+            '{height}'   => (string) max(0, $height),
+            '{aspect}'   => $aspect,
+            '{extra}'    => $extra,
+        );
+
+        return trim(strtr($tpl, $map));
+    }
+}
+
+if (!function_exists('lc_ai_generate_campaign_image')) {
+    /**
+     * @return array{ok:bool,message?:string,binary?:string,mime?:string,ext?:string,prompt?:string}
+     */
+    function lc_ai_generate_campaign_image(array $context = array())
+    {
+        if (!function_exists('lc_gemini_generate_image')) {
+            return array('ok' => false, 'message' => '이미지 생성 모듈을 사용할 수 없습니다.');
+        }
+
+        $prompt = lc_ai_build_image_prompt($context);
+        $width = isset($context['width']) ? (int) $context['width'] : 0;
+        $height = isset($context['height']) ? (int) $context['height'] : 0;
+
+        return lc_gemini_generate_image($prompt, array(
+            'width'  => $width,
+            'height' => $height,
+        ));
     }
 }
 

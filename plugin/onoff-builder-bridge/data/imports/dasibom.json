@@ -1,0 +1,16 @@
+{
+  "id": "dasibom",
+  "name": "다시봄 개인회생·파산 CPA 랜딩",
+  "type": "vite-dist",
+  "enabled": true,
+  "needs_build": false,
+  "mode": "standalone",
+  "import_path": "/plugin/onoff-builder-bridge/imports/dasibom",
+  "entry_file": "index.html",
+  "entry": "index.html",
+  "seo_title": "다시봄 재정회복센터 | 개인회생·개인파산 상담",
+  "seo_description": "다시봄 재정회복센터 개인회생·개인파산 무료 상담. 현재 상황에 맞는 해결 방향을 안내합니다.",
+  "memo": "CPA 캠페인 cp_landing_url 예: /merchant/dasibom/?lkCode={code}",
+  "created_at": "2026-07-19 00:00:00",
+  "updated_at": "2026-07-19 00:00:00"
+}

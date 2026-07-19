@@ -1,5 +1,5 @@
-import { GripVertical, Plus, Trash2, Upload, X } from 'lucide-react';
-import { KeyboardEvent, useState } from 'react';
+import { GripVertical, Loader2, Plus, Trash2, Upload, Wand2, X } from 'lucide-react';
+import { type DragEvent, type KeyboardEvent, type ReactNode, useState } from 'react';
 import {
   formatPromoAssetSize,
   PromoAssetSizeGuide,
@@ -23,7 +23,7 @@ export function SectionCard({
   count?: number;
   max?: number;
   error?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
@@ -213,7 +213,9 @@ export function ImageUploader({
   maxBytes,
   disabled,
   uploading,
+  aiGenerating,
   onUpload,
+  onAiGenerate,
   onDelete,
   onSort,
   onTitleChange,
@@ -224,7 +226,9 @@ export function ImageUploader({
   maxBytes: number;
   disabled?: boolean;
   uploading?: boolean;
+  aiGenerating?: boolean;
   onUpload: (files: FileList | File[], imageTitle?: string) => void;
+  onAiGenerate?: (preset: PromoAssetSizePreset, imageTitle: string) => void;
   onDelete: (id: number) => void;
   onSort: (ids: number[]) => void;
   onTitleChange: (id: number, title: string) => void;
@@ -240,18 +244,19 @@ export function ImageUploader({
       ? suggestTitleForPreset(selectedPreset)
       : `${suggestTitleForPreset(selectedPreset)} (${formatPromoAssetSize(selectedPreset)})`
     : '';
+  const busy = Boolean(uploading || aiGenerating);
 
   const handleSizeSelect = (preset: PromoAssetSizePreset) => {
     setSelectedSizeId(preset.id);
   };
 
   const submitFiles = (files: FileList | File[]) => {
-    if (disabled || uploading) return;
+    if (disabled || busy) return;
     if (!selectedPreset) return;
     onUpload(files, uploadTitle);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files?.length) {
@@ -290,7 +295,7 @@ export function ImageUploader({
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          if (!disabled && selectedPreset) setDragOver(true);
+          if (!disabled && !busy && selectedPreset) setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
@@ -325,33 +330,46 @@ export function ImageUploader({
             </p>
             <p className="text-xs text-slate-500 mb-1 max-w-md mx-auto leading-relaxed">{selectedPreset.hint}</p>
             <p className="text-xs text-slate-400 mb-4">JPG, PNG, WEBP · 파일당 최대 {maxLabel} · 최대 {max}개</p>
-            <label
-              className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-sm ${
-                selectedPreset.freeFormat
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'bg-cyan-600 text-white hover:bg-cyan-500'
-              } ${
-                disabled || uploading || images.length >= max ? 'pointer-events-none opacity-50' : 'cursor-pointer'
-              }`}
-            >
-              <Upload size={16} />
-              {uploading
-                ? '업로드 중...'
-                : selectedPreset.freeFormat
-                  ? '자유형식으로 파일 선택'
-                  : '이 사이즈로 파일 선택'}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                multiple
-                className="hidden"
-                disabled={disabled || uploading || images.length >= max || !selectedPreset}
-                onChange={(e) => {
-                  if (e.target.files?.length) submitFiles(e.target.files);
-                  e.target.value = '';
-                }}
-              />
-            </label>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+              <label
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-sm ${
+                  selectedPreset.freeFormat
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-cyan-600 text-white hover:bg-cyan-500'
+                } ${
+                  disabled || busy || images.length >= max ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                }`}
+              >
+                <Upload size={16} />
+                {uploading
+                  ? '업로드 중...'
+                  : selectedPreset.freeFormat
+                    ? '자유형식으로 파일 선택'
+                    : '이 사이즈로 파일 선택'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  multiple
+                  className="hidden"
+                  disabled={disabled || busy || images.length >= max || !selectedPreset}
+                  onChange={(e) => {
+                    if (e.target.files?.length) submitFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              {onAiGenerate ? (
+                <button
+                  type="button"
+                  disabled={disabled || busy || images.length >= max}
+                  onClick={() => onAiGenerate(selectedPreset, uploadTitle)}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold shadow-sm bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 disabled:opacity-50"
+                >
+                  {aiGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                  {aiGenerating ? 'AI 생성 중...' : 'AI로 이 규격 만들기'}
+                </button>
+              ) : null}
+            </div>
           </>
         ) : (
           <p className="text-sm text-slate-500 py-4">먼저 위에서 업로드할 사이즈를 선택해 주세요.</p>

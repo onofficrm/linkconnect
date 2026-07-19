@@ -92,6 +92,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign_banktupt.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign_banktupt.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign_dasibom.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign_dasibom.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
     require_once LC_PLUGIN_PATH . '/inc/settlement.php';
 }
@@ -133,6 +136,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/notice_board.php')) {
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/community_board.php')) {
     require_once LC_PLUGIN_PATH . '/inc/community_board.php';
+}
+if (is_file(LC_PLUGIN_PATH . '/inc/image_process.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/image_process.php';
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/gemini.php')) {
     require_once LC_PLUGIN_PATH . '/inc/gemini.php';

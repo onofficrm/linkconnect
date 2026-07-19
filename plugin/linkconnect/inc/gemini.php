@@ -43,6 +43,30 @@ if (!function_exists('lc_gemini_model')) {
     }
 }
 
+if (!function_exists('lc_gemini_image_model')) {
+    function lc_gemini_image_model()
+    {
+        $model = trim((string) lc_settings_get('geminiImageModel', 'gemini-2.5-flash-image'));
+        if ($model === '') {
+            $model = 'gemini-2.5-flash-image';
+        }
+
+        $deprecated = array(
+            'gemini-2.0-flash-preview-image-generation' => 'gemini-2.5-flash-image',
+            'gemini-2.0-flash-exp-image-generation'     => 'gemini-2.5-flash-image',
+            'imagen-3.0-generate-002'                  => 'gemini-2.5-flash-image',
+            'imagen-4.0-generate-001'                  => 'gemini-2.5-flash-image',
+            'imagen-4.0-fast-generate-001'             => 'gemini-2.5-flash-image',
+            'imagen-4.0-ultra-generate-001'            => 'gemini-2.5-flash-image',
+        );
+        if (isset($deprecated[$model])) {
+            $model = $deprecated[$model];
+        }
+
+        return $model;
+    }
+}
+
 if (!function_exists('lc_gemini_generate')) {
     /**
      * @return array{ok:bool,message?:string,text?:string,raw?:array}
@@ -142,10 +166,15 @@ if (!function_exists('lc_gemini_chat')) {
 }
 
 if (!function_exists('lc_gemini_request')) {
-    function lc_gemini_request($model, array $payload, $api_key)
+    /**
+     * @return array{ok:bool,message?:string,text?:string,images?:array<int,array{mime:string,binary:string}>,raw?:array}
+     */
+    function lc_gemini_request($model, array $payload, $api_key, array $options = array())
     {
         $model = preg_replace('/[^a-zA-Z0-9._-]/', '', (string) $model);
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . urlencode($api_key);
+        $timeout = isset($options['timeout']) ? max(30, (int) $options['timeout']) : 60;
+        $allow_empty_text = !empty($options['allowEmptyText']);
 
         $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
         if ($json === false) {
@@ -162,7 +191,7 @@ if (!function_exists('lc_gemini_request')) {
                 CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
                 CURLOPT_POSTFIELDS     => $json,
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 60,
+                CURLOPT_TIMEOUT        => $timeout,
             ));
             $response = curl_exec($ch);
             $http_code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -179,7 +208,7 @@ if (!function_exists('lc_gemini_request')) {
                     'method'  => 'POST',
                     'header'  => "Content-Type: application/json\r\n",
                     'content' => $json,
-                    'timeout' => 60,
+                    'timeout' => $timeout,
                 ),
             ));
             $response = @file_get_contents($url, false, $ctx);
@@ -204,20 +233,133 @@ if (!function_exists('lc_gemini_request')) {
         }
 
         $text = '';
+        $images = array();
         if (isset($decoded['candidates'][0]['content']['parts']) && is_array($decoded['candidates'][0]['content']['parts'])) {
             foreach ($decoded['candidates'][0]['content']['parts'] as $part) {
                 if (isset($part['text'])) {
                     $text .= (string) $part['text'];
                 }
+                $inline = null;
+                if (isset($part['inlineData']) && is_array($part['inlineData'])) {
+                    $inline = $part['inlineData'];
+                } elseif (isset($part['inline_data']) && is_array($part['inline_data'])) {
+                    $inline = $part['inline_data'];
+                }
+                if (is_array($inline)) {
+                    $mime = isset($inline['mimeType']) ? (string) $inline['mimeType'] : (isset($inline['mime_type']) ? (string) $inline['mime_type'] : '');
+                    $data = isset($inline['data']) ? (string) $inline['data'] : '';
+                    if ($mime !== '' && $data !== '') {
+                        $binary = base64_decode($data, true);
+                        if ($binary !== false && $binary !== '') {
+                            $images[] = array(
+                                'mime'   => $mime,
+                                'binary' => $binary,
+                            );
+                        }
+                    }
+                }
             }
         }
 
         $text = trim($text);
-        if ($text === '') {
+        if ($text === '' && empty($images) && !$allow_empty_text) {
             return array('ok' => false, 'message' => 'Gemini가 빈 응답을 반환했습니다.', 'raw' => $decoded);
         }
 
-        return array('ok' => true, 'text' => $text, 'raw' => $decoded);
+        return array(
+            'ok'     => true,
+            'text'   => $text,
+            'images' => $images,
+            'raw'    => $decoded,
+        );
+    }
+}
+
+if (!function_exists('lc_gemini_generate_image')) {
+    /**
+     * Gemini 이미지 생성 모델로 이미지 바이너리 생성.
+     *
+     * @return array{ok:bool,message?:string,binary?:string,mime?:string,ext?:string,prompt?:string}
+     */
+    function lc_gemini_generate_image($prompt, array $options = array())
+    {
+        $api_key = lc_gemini_api_key();
+        if ($api_key === '') {
+            return array('ok' => false, 'message' => 'Gemini API 키가 설정되지 않았습니다.');
+        }
+
+        $prompt = trim((string) $prompt);
+        if ($prompt === '') {
+            return array('ok' => false, 'message' => '이미지 생성 프롬프트가 비어 있습니다.');
+        }
+
+        $model = isset($options['model']) ? (string) $options['model'] : lc_gemini_image_model();
+        $aspect = isset($options['aspectRatio']) ? (string) $options['aspectRatio'] : '16:9';
+        $width = isset($options['width']) ? (int) $options['width'] : 0;
+        $height = isset($options['height']) ? (int) $options['height'] : 0;
+        if ($width > 0 && $height > 0 && function_exists('lc_image_aspect_ratio_label')) {
+            $aspect = lc_image_aspect_ratio_label($width, $height);
+        }
+
+        $payload = array(
+            'contents' => array(
+                array(
+                    'role'  => 'user',
+                    'parts' => array(array('text' => $prompt)),
+                ),
+            ),
+            'generationConfig' => array(
+                'responseModalities' => array('TEXT', 'IMAGE'),
+                'imageConfig'        => array(
+                    'aspectRatio' => $aspect,
+                ),
+            ),
+        );
+
+        $result = lc_gemini_request($model, $payload, $api_key, array(
+            'timeout'        => 120,
+            'allowEmptyText' => true,
+        ));
+        if (empty($result['ok'])) {
+            return array(
+                'ok'      => false,
+                'message' => isset($result['message']) ? (string) $result['message'] : '이미지 생성에 실패했습니다.',
+            );
+        }
+
+        $images = isset($result['images']) && is_array($result['images']) ? $result['images'] : array();
+        if (empty($images[0]['binary'])) {
+            return array('ok' => false, 'message' => 'Gemini가 이미지를 반환하지 않았습니다. 이미지 모델(gemini-2.5-flash-image)과 API 권한을 확인해 주세요.');
+        }
+
+        $mime = isset($images[0]['mime']) ? (string) $images[0]['mime'] : 'image/png';
+        $binary = $images[0]['binary'];
+        $ext = function_exists('lc_image_mime_to_ext') ? lc_image_mime_to_ext($mime) : 'png';
+        if ($ext === '') {
+            $ext = 'png';
+            $mime = 'image/png';
+        }
+
+        if ($width > 0 && $height > 0 && function_exists('lc_image_resize_cover')) {
+            $resized = lc_image_resize_cover($binary, $width, $height, 'image/jpeg');
+            if (!empty($resized['ok'])) {
+                return array(
+                    'ok'     => true,
+                    'binary' => $resized['binary'],
+                    'mime'   => $resized['mime'],
+                    'ext'    => $resized['ext'],
+                    'prompt' => $prompt,
+                );
+            }
+        }
+
+        return array(
+            'ok'     => true,
+            'binary' => $binary,
+            'mime'   => $mime,
+            'ext'    => $ext,
+            'prompt' => $prompt,
+        );
     }
 }
 

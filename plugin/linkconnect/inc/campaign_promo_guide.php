@@ -1389,7 +1389,7 @@ if (!function_exists('lc_campaign_promo_guide_upload_asset')) {
      * @param array<string,mixed> $file $_FILES entry
      * @return array{ok:bool,message:string,asset?:array}
      */
-    function lc_campaign_promo_guide_upload_asset($mt_id, $cp_id, array $file, $image_title = '', $admin_override = false)
+    function lc_campaign_promo_guide_save_binary($mt_id, $cp_id, $binary, $mime = 'image/jpeg', $image_title = '', $original_name = 'ai-promo.jpg', $admin_override = false)
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
@@ -1423,33 +1423,24 @@ if (!function_exists('lc_campaign_promo_guide_upload_asset')) {
             return array('ok' => false, 'message' => '이미지는 최대 ' . $limits['images'] . '개까지 등록할 수 있습니다.');
         }
 
-        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            return array('ok' => false, 'message' => '업로드된 파일이 없습니다.');
-        }
-
-        if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
-            return array('ok' => false, 'message' => '파일 업로드에 실패했습니다.');
-        }
-
+        $binary = (string) $binary;
         $max_bytes = lc_campaign_promo_guide_max_image_bytes();
-        $size = isset($file['size']) ? (int) $file['size'] : 0;
+        $size = strlen($binary);
         if ($size <= 0 || $size > $max_bytes) {
             return array('ok' => false, 'message' => '파일 크기가 허용 범위를 초과했습니다.');
         }
 
-        $mime = lc_campaign_promo_guide_detect_upload_mime($file['tmp_name']);
-        $ext = lc_campaign_promo_guide_validate_upload_extension(isset($file['name']) ? $file['name'] : '', $mime);
-        if ($ext === '') {
-            return array('ok' => false, 'message' => '허용되지 않은 이미지 형식입니다. (JPG, PNG, WEBP만 가능)');
-        }
-
-        $binary = @file_get_contents($file['tmp_name']);
-        if ($binary === false || $binary === '') {
-            return array('ok' => false, 'message' => '이미지 파일을 읽을 수 없습니다.');
-        }
-
         if (@getimagesizefromstring($binary) === false) {
             return array('ok' => false, 'message' => '유효하지 않은 이미지 파일입니다.');
+        }
+
+        $mime = strtolower(trim((string) $mime));
+        $ext = function_exists('lc_image_mime_to_ext') ? lc_image_mime_to_ext($mime) : '';
+        if ($ext === '') {
+            $ext = lc_campaign_promo_guide_validate_upload_extension($original_name, $mime);
+        }
+        if ($ext === '') {
+            return array('ok' => false, 'message' => '허용되지 않은 이미지 형식입니다. (JPG, PNG, WEBP만 가능)');
         }
 
         $mt_id = (int) $mt_id;
@@ -1467,17 +1458,19 @@ if (!function_exists('lc_campaign_promo_guide_upload_asset')) {
         @chmod($full, 0644);
 
         $relative = 'linkconnect/campaign_promo_assets/' . $mt_id . '/' . $cp_id . '/' . $stored;
-        if (strpos(realpath($full), realpath(lc_campaign_promo_guide_storage_base_dir())) !== 0) {
+        $base_real = realpath(lc_campaign_promo_guide_storage_base_dir());
+        $full_real = realpath($full);
+        if ($base_real === false || $full_real === false || strpos($full_real, $base_real) !== 0) {
             @unlink($full);
             return array('ok' => false, 'message' => '이미지 저장 경로가 유효하지 않습니다.');
         }
 
         $sort = lc_campaign_promo_guide_count_active_assets($cpg_id);
         $table = lc_campaign_promo_guide_asset_table();
-        $original = lc_sql_escape(lc_campaign_promo_guide_sanitize_text(isset($file['name']) ? $file['name'] : '', 255));
+        $original = lc_sql_escape(lc_campaign_promo_guide_sanitize_text($original_name, 255));
         $stored_esc = lc_sql_escape($stored);
         $path_esc = lc_sql_escape($relative);
-        $mime_esc = lc_sql_escape($mime);
+        $mime_esc = lc_sql_escape($mime !== '' ? $mime : 'image/jpeg');
         $title_esc = lc_sql_escape(lc_campaign_promo_guide_sanitize_text($image_title, 200));
 
         $ok = lc_sql_query(" INSERT INTO `{$table}` SET
@@ -1506,6 +1499,33 @@ if (!function_exists('lc_campaign_promo_guide_upload_asset')) {
             'ok'      => true,
             'message' => '이미지가 업로드되었습니다.',
             'asset'   => is_array($asset) ? $asset : null,
+        );
+    }
+
+    function lc_campaign_promo_guide_upload_asset($mt_id, $cp_id, array $file, $image_title = '', $admin_override = false)
+    {
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return array('ok' => false, 'message' => '업로드된 파일이 없습니다.');
+        }
+
+        if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => '파일 업로드에 실패했습니다.');
+        }
+
+        $mime = lc_campaign_promo_guide_detect_upload_mime($file['tmp_name']);
+        $binary = @file_get_contents($file['tmp_name']);
+        if ($binary === false || $binary === '') {
+            return array('ok' => false, 'message' => '이미지 파일을 읽을 수 없습니다.');
+        }
+
+        return lc_campaign_promo_guide_save_binary(
+            $mt_id,
+            $cp_id,
+            $binary,
+            $mime !== '' ? $mime : 'image/jpeg',
+            $image_title,
+            isset($file['name']) ? (string) $file['name'] : 'upload.jpg',
+            $admin_override
         );
     }
 }

@@ -953,7 +953,7 @@ if (!function_exists('onoff_builder_render_import_page')) {
             }
         }
 
-        if ($id === 'banktupt') {
+        if ($id === 'banktupt' || $id === 'dasibom') {
             $lc_common = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect/_common.php' : '';
             if ($lc_common !== '' && is_file($lc_common)) {
                 include_once $lc_common;

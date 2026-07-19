@@ -20,11 +20,15 @@ const defaultRaw: RawSettings = {
   apiRetryCount: '3',
   geminiEnabled: '1',
   geminiModel: 'gemini-2.5-flash',
+  geminiImageModel: 'gemini-2.5-flash-image',
   geminiApiKeySet: '0',
   geminiApiKeyMasked: '',
   aiChatDailyLimit: '30',
   aiPromoDailyLimit: '20',
   aiSummaryDailyLimit: '10',
+  aiImageDailyLimit: '15',
+  aiImagePromptThumbnail: '',
+  aiImagePromptPromo: '',
   advertiserContractGraceUntil: '',
   notifyLowBalanceEmail: '1',
   notifyLowBalanceSms: '0',
@@ -320,7 +324,10 @@ export function AdminSettings() {
           </div>
           <div className="p-6 space-y-6">
             <Toggle label="AI 기능 사용" checked={boolVal(raw, 'geminiEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'geminiEnabled', v))} />
-            <Field label="Gemini 모델" value={raw.geminiModel} onChange={(v) => update('geminiModel', v)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Gemini 텍스트 모델" value={raw.geminiModel} onChange={(v) => update('geminiModel', v)} />
+              <Field label="Gemini 이미지 모델" value={raw.geminiImageModel} onChange={(v) => update('geminiImageModel', v)} />
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Google Gemini API 키</label>
               {boolVal(raw, 'geminiApiKeySet') ? (
@@ -350,10 +357,26 @@ export function AdminSettings() {
               </div>
               <p className="text-[11px] text-slate-400 mt-2">키는 서버에만 저장되며 화면에 다시 표시되지 않습니다. Google AI Studio에서 발급받을 수 있습니다.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Field label="챗봇 일일 한도" value={raw.aiChatDailyLimit} onChange={(v) => update('aiChatDailyLimit', v)} type="number" />
               <Field label="홍보문구 일일 한도" value={raw.aiPromoDailyLimit} onChange={(v) => update('aiPromoDailyLimit', v)} type="number" />
               <Field label="리포트요약 일일 한도" value={raw.aiSummaryDailyLimit} onChange={(v) => update('aiSummaryDailyLimit', v)} type="number" />
+              <Field label="이미지생성 일일 한도" value={raw.aiImageDailyLimit} onChange={(v) => update('aiImageDailyLimit', v)} type="number" />
+            </div>
+            <div className="space-y-4 pt-2 border-t border-slate-100">
+              <p className="text-sm text-slate-500">
+                이미지 프롬프트 템플릿 변수: {'{title}'}, {'{category}'}, {'{width}'}, {'{height}'}, {'{aspect}'}, {'{extra}'}. 비워두면 기본 템플릿을 사용합니다.
+              </p>
+              <TextAreaField
+                label="상품 썸네일 프롬프트 템플릿 (1200×750)"
+                value={raw.aiImagePromptThumbnail || ''}
+                onChange={(v) => update('aiImagePromptThumbnail', v)}
+              />
+              <TextAreaField
+                label="홍보 소재 프롬프트 템플릿"
+                value={raw.aiImagePromptPromo || ''}
+                onChange={(v) => update('aiImagePromptPromo', v)}
+              />
             </div>
           </div>
         </section>

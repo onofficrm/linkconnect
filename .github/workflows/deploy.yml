@@ -42,20 +42,30 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/banktupt/index.html
           echo "Banktupt bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/banktupt/index.html)"
 
+      - name: Build dasibom merchant landing
+        run: |
+          cd merchant/bankrupt_dasibom
+          npm ci
+          npm run deploy:imports
+          test -f ../../plugin/onoff-builder-bridge/imports/dasibom/index.html
+          echo "Dasibom bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/dasibom/index.html)"
+
       - name: Clean junk files before upload
         run: |
           find plugin/onoff-builder-bridge/imports/linkconnect -name '._*' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/linkconnect -name '.DS_Store' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/banktupt -name '._*' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/banktupt -name '.DS_Store' -delete 2>/dev/null || true
-          rm -rf builder/linkconnect_source/node_modules merchant/bunkrupt/node_modules
+          find plugin/onoff-builder-bridge/imports/dasibom -name '._*' -delete 2>/dev/null || true
+          find plugin/onoff-builder-bridge/imports/dasibom -name '.DS_Store' -delete 2>/dev/null || true
+          rm -rf builder/linkconnect_source/node_modules merchant/bunkrupt/node_modules merchant/bankrupt_dasibom/node_modules
 
       - name: Prepare deploy bundle (app code + SPA core)
         run: |
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,terms,privacy,inc,merchant/banktupt,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/api,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,terms,privacy,inc,merchant/banktupt,merchant/dasibom,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/onoff-builder-bridge/imports/dasibom,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/api,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -63,13 +73,14 @@ jobs:
           cp -R mobile/skin/member/onoff "$ROOT/mobile/skin/member/"
           cp favicon.png .htaccess "$ROOT/"
           cp merchant/banktupt/index.php "$ROOT/merchant/banktupt/"
+          cp merchant/dasibom/index.php "$ROOT/merchant/dasibom/"
           cp head.php tail.php "$ROOT/"
           cp -R about affiliate notice community inquiry terms privacy "$ROOT/"
           cp inc/linkconnect-spa-bootstrap.php "$ROOT/inc/"
           cp -R plugin/onoff-builder-bridge/lib plugin/onoff-builder-bridge/data "$ROOT/plugin/onoff-builder-bridge/"
           cp plugin/linkconnect/config.php "$ROOT/plugin/linkconnect/"
           mkdir -p "$ROOT/plugin/linkconnect/api" "$ROOT/plugin/linkconnect/install" "$ROOT/plugin/linkconnect/partner/api" "$ROOT/plugin/linkconnect/merchant/api" "$ROOT/plugin/linkconnect/admin/api" "$ROOT/plugin/linkconnect/cron"
-          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/partner_analytics.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/campaign_thumbnail.php plugin/linkconnect/inc/campaign_banktupt.php plugin/linkconnect/inc/campaign_promo_guide.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/merchant_contract_config.php plugin/linkconnect/inc/merchant_contract.php plugin/linkconnect/inc/merchant_contract_body.php plugin/linkconnect/inc/merchant_contract_pdf.php plugin/linkconnect/inc/merchant_contract_access.php plugin/linkconnect/inc/merchant_contract_read.php plugin/linkconnect/inc/merchant_contract_admin.php plugin/linkconnect/inc/merchant_marketing.php plugin/linkconnect/inc/call_recording_request.php plugin/linkconnect/inc/admin.php plugin/linkconnect/inc/demo_seed.php plugin/linkconnect/inc/gemini.php plugin/linkconnect/inc/ai.php plugin/linkconnect/inc/auth_bootstrap.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php plugin/linkconnect/inc/abuse.php plugin/linkconnect/inc/linkprice.php plugin/linkconnect/inc/notice_board.php plugin/linkconnect/inc/community_board.php plugin/linkconnect/inc/inquiry.php plugin/linkconnect/inc/notification.php plugin/linkconnect/inc/settlement.php plugin/linkconnect/inc/email_notify.php "$ROOT/plugin/linkconnect/inc/"
+          cp plugin/linkconnect/inc/db.php plugin/linkconnect/inc/settings.php plugin/linkconnect/inc/ui.php plugin/linkconnect/inc/landing.php plugin/linkconnect/inc/call.php plugin/linkconnect/inc/link.php plugin/linkconnect/inc/partner_analytics.php plugin/linkconnect/inc/campaign.php plugin/linkconnect/inc/campaign_thumbnail.php plugin/linkconnect/inc/campaign_banktupt.php plugin/linkconnect/inc/campaign_dasibom.php plugin/linkconnect/inc/campaign_promo_guide.php plugin/linkconnect/inc/image_process.php plugin/linkconnect/inc/partner.php plugin/linkconnect/inc/merchant.php plugin/linkconnect/inc/merchant_contract_config.php plugin/linkconnect/inc/merchant_contract.php plugin/linkconnect/inc/merchant_contract_body.php plugin/linkconnect/inc/merchant_contract_pdf.php plugin/linkconnect/inc/merchant_contract_access.php plugin/linkconnect/inc/merchant_contract_read.php plugin/linkconnect/inc/merchant_contract_admin.php plugin/linkconnect/inc/merchant_marketing.php plugin/linkconnect/inc/call_recording_request.php plugin/linkconnect/inc/admin.php plugin/linkconnect/inc/demo_seed.php plugin/linkconnect/inc/gemini.php plugin/linkconnect/inc/ai.php plugin/linkconnect/inc/auth_bootstrap.php plugin/linkconnect/inc/conversion.php plugin/linkconnect/inc/wallet.php plugin/linkconnect/inc/api.php plugin/linkconnect/inc/abuse.php plugin/linkconnect/inc/linkprice.php plugin/linkconnect/inc/notice_board.php plugin/linkconnect/inc/community_board.php plugin/linkconnect/inc/inquiry.php plugin/linkconnect/inc/notification.php plugin/linkconnect/inc/settlement.php plugin/linkconnect/inc/email_notify.php "$ROOT/plugin/linkconnect/inc/"
           cp plugin/linkconnect/api/receive.php plugin/linkconnect/api/landing_context.php plugin/linkconnect/api/call_receive.php plugin/linkconnect/api/call-recording-file.php plugin/linkconnect/api/campaigns.php plugin/linkconnect/api/lp_postback.php plugin/linkconnect/api/lp_health.php plugin/linkconnect/api/campaign-thumbnail.php plugin/linkconnect/api/notice.php plugin/linkconnect/api/community.php plugin/linkconnect/api/inquiry.php "$ROOT/plugin/linkconnect/api/"
           cp plugin/linkconnect/partner/api/apply.php plugin/linkconnect/partner/api/linkprice.php plugin/linkconnect/partner/api/_common.php "$ROOT/plugin/linkconnect/partner/api/"
           if [[ -d plugin/linkconnect/partner/api ]]; then
@@ -112,6 +123,10 @@ jobs:
           if [[ -d plugin/onoff-builder-bridge/imports/banktupt ]]; then
             cp plugin/onoff-builder-bridge/imports/banktupt/index.html "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
             cp -R plugin/onoff-builder-bridge/imports/banktupt/assets "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
+          fi
+          if [[ -d plugin/onoff-builder-bridge/imports/dasibom ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/index.html "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
+            cp -R plugin/onoff-builder-bridge/imports/dasibom/assets "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
           fi
           find "$ROOT" -name '._*' -delete 2>/dev/null || true
           echo "Bundle: $(find "$ROOT" -type f | wc -l) files, $(du -sh "$ROOT" | cut -f1)"

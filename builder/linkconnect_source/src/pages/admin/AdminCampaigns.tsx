@@ -17,6 +17,7 @@ import {
   updateAdminCampaignStatus,
   uploadAdminCampaignThumbnail,
   deleteAdminCampaignThumbnail,
+  generateAdminCampaignThumbnailAi,
 } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
@@ -172,8 +173,37 @@ export function AdminCampaigns() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
-  const handleAIGenerate = () => {
-    setError('AI 썸네일 생성은 준비 중입니다. 이미지 파일을 업로드해 주세요.');
+  const handleAIGenerate = async () => {
+    if (!editForm?.id || isGenerating || thumbnailUploading) return;
+    if (!isEditMode) {
+      setError('수정 모드에서 AI 썸네일을 생성할 수 있습니다.');
+      return;
+    }
+
+    const extra = window.prompt(
+      '추가 지시사항(선택)\n예: 밝은 상담실 분위기, 신뢰감 있는 톤',
+      '',
+    );
+    if (extra === null) return;
+
+    setIsGenerating(true);
+    setError('');
+    try {
+      const result = await generateAdminCampaignThumbnailAi({
+        cpId: editForm.id,
+        extra: extra.trim(),
+      });
+      const cacheBust = `${result.thumbnailUrl}${result.thumbnailUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      setEditForm((prev) => (prev ? { ...prev, thumbnailUrl: cacheBust } : prev));
+      if (result.campaign) {
+        setSelectedCampaign(result.campaign);
+      }
+      await loadCampaigns();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI 썸네일 생성에 실패했습니다.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleThumbnailClick = () => {

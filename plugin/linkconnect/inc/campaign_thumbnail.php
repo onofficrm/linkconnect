@@ -97,11 +97,11 @@ if (!function_exists('lc_campaign_thumbnail_remove_file')) {
     }
 }
 
-if (!function_exists('lc_campaign_thumbnail_upload')) {
+if (!function_exists('lc_campaign_thumbnail_save_binary')) {
     /**
      * @return array{ok:bool,message:string,thumbnailUrl?:string,relativePath?:string}
      */
-    function lc_campaign_thumbnail_upload($cp_id, array $file)
+    function lc_campaign_thumbnail_save_binary($cp_id, $binary, $mime = 'image/jpeg', $original_name = 'ai-thumbnail.jpg')
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
@@ -117,35 +117,26 @@ if (!function_exists('lc_campaign_thumbnail_upload')) {
             return array('ok' => false, 'message' => '광고상품을 찾을 수 없습니다.');
         }
 
-        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
-            return array('ok' => false, 'message' => '업로드된 파일이 없습니다.');
-        }
-
-        if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
-            return array('ok' => false, 'message' => '파일 업로드에 실패했습니다.');
-        }
-
+        $binary = (string) $binary;
         $max_bytes = function_exists('lc_campaign_promo_guide_max_image_bytes')
             ? lc_campaign_promo_guide_max_image_bytes()
             : 2097152;
-        $size = isset($file['size']) ? (int) $file['size'] : 0;
+        $size = strlen($binary);
         if ($size <= 0 || $size > $max_bytes) {
             return array('ok' => false, 'message' => '파일 크기가 허용 범위를 초과합니다. (최대 2MB)');
         }
 
-        $mime = function_exists('lc_campaign_promo_guide_detect_upload_mime')
-            ? lc_campaign_promo_guide_detect_upload_mime($file['tmp_name'])
-            : '';
-        $ext = function_exists('lc_campaign_promo_guide_validate_upload_extension')
-            ? lc_campaign_promo_guide_validate_upload_extension(isset($file['name']) ? $file['name'] : '', $mime)
-            : '';
-        if ($ext === '') {
-            return array('ok' => false, 'message' => '허용되지 않은 이미지 형식입니다. (JPG, PNG, WEBP만 가능)');
+        if (@getimagesizefromstring($binary) === false) {
+            return array('ok' => false, 'message' => '유효하지 않은 이미지 파일입니다.');
         }
 
-        $binary = @file_get_contents($file['tmp_name']);
-        if ($binary === false || $binary === '' || @getimagesizefromstring($binary) === false) {
-            return array('ok' => false, 'message' => '유효하지 않은 이미지 파일입니다.');
+        $mime = strtolower(trim((string) $mime));
+        $ext = function_exists('lc_image_mime_to_ext') ? lc_image_mime_to_ext($mime) : '';
+        if ($ext === '' && function_exists('lc_campaign_promo_guide_validate_upload_extension')) {
+            $ext = lc_campaign_promo_guide_validate_upload_extension($original_name, $mime);
+        }
+        if ($ext === '') {
+            return array('ok' => false, 'message' => '허용되지 않은 이미지 형식입니다. (JPG, PNG, WEBP만 가능)');
         }
 
         if (!lc_campaign_thumbnail_ensure_storage()) {
@@ -188,6 +179,37 @@ if (!function_exists('lc_campaign_thumbnail_upload')) {
             'message'      => '썸네일이 등록되었습니다.',
             'thumbnailUrl' => lc_campaign_thumbnail_admin_url($cp_id),
             'relativePath' => $relative,
+        );
+    }
+}
+
+if (!function_exists('lc_campaign_thumbnail_upload')) {
+    /**
+     * @return array{ok:bool,message:string,thumbnailUrl?:string,relativePath?:string}
+     */
+    function lc_campaign_thumbnail_upload($cp_id, array $file)
+    {
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            return array('ok' => false, 'message' => '업로드된 파일이 없습니다.');
+        }
+
+        if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
+            return array('ok' => false, 'message' => '파일 업로드에 실패했습니다.');
+        }
+
+        $mime = function_exists('lc_campaign_promo_guide_detect_upload_mime')
+            ? lc_campaign_promo_guide_detect_upload_mime($file['tmp_name'])
+            : '';
+        $binary = @file_get_contents($file['tmp_name']);
+        if ($binary === false || $binary === '') {
+            return array('ok' => false, 'message' => '유효하지 않은 이미지 파일입니다.');
+        }
+
+        return lc_campaign_thumbnail_save_binary(
+            $cp_id,
+            $binary,
+            $mime !== '' ? $mime : 'image/jpeg',
+            isset($file['name']) ? (string) $file['name'] : 'upload.jpg'
         );
     }
 }

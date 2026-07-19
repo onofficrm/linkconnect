@@ -44,9 +44,11 @@ import {
   updateMerchantPromoGuide,
   updateMerchantPromoGuideImageTitle,
   uploadMerchantPromoGuideImage,
+  generateMerchantPromoImageAi,
 } from '../../lib/api';
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import { AdvertiserCampaignAiPanel } from '../../components/advertiser/AdvertiserCampaignAiPanel';
+import type { PromoAssetSizePreset } from '../../components/advertiser/promoGuide/PromoAssetSizeGuide';
 
 const APPROVAL_OPTIONS: PromoGuideApprovalType[] = ['free', 'first_review', 'all_review'];
 
@@ -61,6 +63,7 @@ export function AdvertiserCampaignGuide() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -276,6 +279,66 @@ export function AdvertiserCampaignGuide() {
       setLoadError(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleAiGenerate = async (preset: PromoAssetSizePreset, imageTitle: string) => {
+    if (readOnly || uploading || aiGenerating || !cpId) return;
+    if (images.length >= limits.images) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        images: `이미지는 최대 ${limits.images}개까지 등록할 수 있습니다.`,
+      }));
+      return;
+    }
+
+    const extra = window.prompt(
+      '추가 지시사항(선택)\n예: 신뢰감 있는 톤, 밝은 배너 느낌',
+      '',
+    );
+    if (extra === null) return;
+
+    setAiGenerating(true);
+    setSuccess('');
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.images;
+      return next;
+    });
+
+    try {
+      let token = csrfToken || (await fetchMerchantPromoGuide(cpId)).csrfToken || '';
+      token = await ensureGuideExists(token);
+      setCsrfToken(token);
+
+      const res = await generateMerchantPromoImageAi({
+        cpId,
+        width: preset.freeFormat ? 0 : preset.width,
+        height: preset.freeFormat ? 0 : preset.height,
+        imageTitle,
+        extra: extra.trim(),
+      });
+      if (res.asset) {
+        const asset = res.asset;
+        setImages((prev) => [
+          ...prev,
+          {
+            id: asset.id,
+            assetId: asset.id,
+            downloadUrl: asset.downloadUrl,
+            originalFilename: asset.originalFilename,
+            imageTitle: asset.imageTitle || imageTitle,
+            mimeType: 'image/jpeg',
+            fileSize: 0,
+            sortOrder: prev.length,
+          },
+        ]);
+      }
+      setSuccess(res.message || 'AI 이미지가 생성되었습니다.');
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'AI 이미지 생성에 실패했습니다.');
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -519,7 +582,9 @@ export function AdvertiserCampaignGuide() {
                 maxBytes={maxImageBytes}
                 disabled={readOnly}
                 uploading={uploading}
+                aiGenerating={aiGenerating}
                 onUpload={handleUpload}
+                onAiGenerate={handleAiGenerate}
                 onDelete={handleDeleteImage}
                 onSort={handleSortImages}
                 onTitleChange={(id, title) => {

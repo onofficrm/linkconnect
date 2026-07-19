@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+#dasibom-merchant-page.merchant-dasibom-page:not(.has-partner-phone) .phone-only,
+#dasibom-merchant-page.merchant-dasibom-page:not(.has-partner-phone) .partner-phone-section {
+  display: none !important;
+}
+
+#dasibom-merchant-page.merchant-dasibom-page:not(.has-partner-phone) .bottom-phone-btn {
+  display: none !important;
+}
+
+#dasibom-merchant-page.merchant-dasibom-page:not(.has-partner-phone) .bottom-form-btn {
+  width: 100%;
+}
+
+#dasibom-merchant-page.merchant-dasibom-page.phone-context-ready:not(.has-partner-phone) a.partner-phone-link {
+  pointer-events: none;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "다시봄 재정회복센터",
+  "description": "현대적인 재정회복 상담 플랫폼",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
