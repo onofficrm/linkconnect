@@ -365,7 +365,7 @@ export function AdminSettings() {
             </div>
             <div className="space-y-4 pt-2 border-t border-slate-100">
               <p className="text-sm text-slate-500">
-                이미지 프롬프트 템플릿 변수: {'{title}'}, {'{category}'}, {'{width}'}, {'{height}'}, {'{aspect}'}, {'{extra}'}. 비워두면 기본 템플릿을 사용합니다.
+                이미지 프롬프트 템플릿 변수: {'{title}'}, {'{category}'}, {'{width}'}, {'{height}'}, {'{aspect}'}, {'{mood}'}, {'{text_instruction}'}, {'{extra}'}. 비워두면 기본 템플릿을 사용합니다.
               </p>
               <TextAreaField
                 label="상품 썸네일 프롬프트 템플릿 (1200×750)"

@@ -123,16 +123,19 @@ if (!function_exists('lc_ai_image_prompt_template_default')) {
             return 'Create a clean Korean marketing promotional image for affiliate advertising. '
                 . 'Campaign: {title}. Category: {category}. '
                 . 'Target size about {width}x{height}px ({aspect}). '
-                . 'Professional, trustworthy, modern flat illustration style with soft teal and slate colors. '
-                . 'No logos, no watermarks, no readable fake Korean text, no phone numbers, no brand marks. '
+                . 'Mood/atmosphere: {mood}. '
+                . 'Modern flat illustration style with soft teal and slate colors. '
+                . 'No logos, no watermarks, no phone numbers, no brand marks. '
+                . '{text_instruction} '
                 . 'Suitable for web banners and blog headers. {extra}';
         }
 
         return 'Create a clean Korean CPA product list thumbnail. '
             . 'Campaign name: {title}. Category: {category}. '
             . 'Exact composition for {width}x{height}px ({aspect}) landscape. '
-            . 'Professional consulting mood, trustworthy, bright and modern. Soft teal accent, slate neutrals. '
-            . 'No logos, no watermarks, no readable fake Korean text overlays, no phone numbers. '
+            . 'Mood/atmosphere: {mood}. Soft teal accent, slate neutrals. '
+            . 'No logos, no watermarks, no phone numbers. '
+            . '{text_instruction} '
             . 'Photorealistic or high-quality illustration of a calm consultation atmosphere. {extra}';
     }
 }
@@ -151,16 +154,65 @@ if (!function_exists('lc_ai_image_prompt_template')) {
     }
 }
 
+if (!function_exists('lc_ai_normalize_image_options')) {
+    /**
+     * @param array<string,mixed> $input
+     * @return array{mood:string,includeText:bool,overlayText:string,extra:string}
+     */
+    function lc_ai_normalize_image_options(array $input = array())
+    {
+        $mood = trim((string) ($input['mood'] ?? ''));
+        $include_text = !empty($input['includeText']) || !empty($input['include_text']);
+        $overlay = trim((string) ($input['overlayText'] ?? $input['overlay_text'] ?? $input['text'] ?? ''));
+        $extra = trim((string) ($input['extra'] ?? ''));
+
+        if ($mood === '') {
+            $mood = '신뢰감 있는';
+        }
+        if (!$include_text) {
+            $overlay = '';
+        }
+
+        return array(
+            'mood'        => $mood,
+            'includeText' => $include_text,
+            'overlayText' => $overlay,
+            'extra'       => $extra,
+        );
+    }
+}
+
+if (!function_exists('lc_ai_image_text_instruction')) {
+    function lc_ai_image_text_instruction($include_text, $overlay_text)
+    {
+        $include_text = (bool) $include_text;
+        $overlay_text = trim((string) $overlay_text);
+
+        if ($include_text && $overlay_text !== '') {
+            $escaped = str_replace(array("\r\n", "\r"), "\n", $overlay_text);
+            return 'TEXT REQUIREMENT (critical): Render ONLY the following Korean text exactly, '
+                . 'with correct Hangul spelling and clear legible typography. '
+                . 'Do not invent, misspell, rearrange, or add any other words, letters, or numbers. '
+                . 'Exact text to show (preserve line breaks): <<<' . $escaped . '>>>';
+        }
+
+        return 'TEXT REQUIREMENT (critical): Do NOT render any text, Hangul characters, Latin letters, '
+            . 'numbers, captions, slogans, watermarks, or logos inside the image. '
+            . 'Pure visual imagery only. Leave clean negative space so marketers can overlay text later.';
+    }
+}
+
 if (!function_exists('lc_ai_build_image_prompt')) {
     /**
-     * @param array{title?:string,category?:string,width?:int,height?:int,extra?:string,kind?:string} $context
+     * @param array{title?:string,category?:string,width?:int,height?:int,extra?:string,kind?:string,mood?:string,includeText?:bool,overlayText?:string} $context
      */
     function lc_ai_build_image_prompt(array $context = array())
     {
         $kind = isset($context['kind']) && $context['kind'] === 'promo' ? 'promo' : 'thumbnail';
         $title = trim((string) ($context['title'] ?? ''));
         $category = trim((string) ($context['category'] ?? ''));
-        $extra = trim((string) ($context['extra'] ?? ''));
+        $opts = lc_ai_normalize_image_options($context);
+        $extra = $opts['extra'];
         $width = isset($context['width']) ? (int) $context['width'] : 0;
         $height = isset($context['height']) ? (int) $context['height'] : 0;
         $aspect = ($width > 0 && $height > 0 && function_exists('lc_image_aspect_ratio_label'))
@@ -173,18 +225,24 @@ if (!function_exists('lc_ai_build_image_prompt')) {
         if ($category === '') {
             $category = '일반';
         }
+
+        $text_instruction = lc_ai_image_text_instruction($opts['includeText'], $opts['overlayText']);
         if ($extra === '') {
-            $extra = 'Keep the composition uncluttered with generous negative space for optional text overlays later.';
+            $extra = $opts['includeText']
+                ? 'Keep composition balanced so the requested text remains readable.'
+                : 'Keep the composition uncluttered with generous negative space for optional text overlays later.';
         }
 
         $tpl = lc_ai_image_prompt_template($kind);
         $map = array(
-            '{title}'    => $title,
-            '{category}' => $category,
-            '{width}'    => (string) max(0, $width),
-            '{height}'   => (string) max(0, $height),
-            '{aspect}'   => $aspect,
-            '{extra}'    => $extra,
+            '{title}'            => $title,
+            '{category}'         => $category,
+            '{width}'            => (string) max(0, $width),
+            '{height}'           => (string) max(0, $height),
+            '{aspect}'           => $aspect,
+            '{mood}'             => $opts['mood'],
+            '{text_instruction}' => $text_instruction,
+            '{extra}'            => $extra,
         );
 
         return trim(strtr($tpl, $map));

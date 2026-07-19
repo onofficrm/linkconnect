@@ -2439,7 +2439,16 @@ export function generateMerchantCampaignPromo(payload: {
   });
 }
 
-export function generateAdminCampaignThumbnailAi(payload: { cpId: number; extra?: string }) {
+export type AiImageGeneratePayload = {
+  mood?: string;
+  includeText?: boolean;
+  overlayText?: string;
+  extra?: string;
+};
+
+export function generateAdminCampaignThumbnailAi(
+  payload: { cpId: number } & AiImageGeneratePayload,
+) {
   return adminApiPost<{
     message: string;
     thumbnailUrl: string;
@@ -2448,13 +2457,14 @@ export function generateAdminCampaignThumbnailAi(payload: { cpId: number; extra?
   }>('ai.php', { action: 'generate_thumbnail', ...payload });
 }
 
-export function generateMerchantPromoImageAi(payload: {
-  cpId: number;
-  width?: number;
-  height?: number;
-  imageTitle?: string;
-  extra?: string;
-}) {
+export function generateMerchantPromoImageAi(
+  payload: {
+    cpId: number;
+    width?: number;
+    height?: number;
+    imageTitle?: string;
+  } & AiImageGeneratePayload,
+) {
   return merchantApiPost<{
     message: string;
     asset: {

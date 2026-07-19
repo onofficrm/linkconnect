@@ -22,6 +22,10 @@ import {
 import { isLcSuperAdmin } from '../../lib/auth';
 import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
 import { AdminCampaignPromoGuidePanel } from '../../components/admin/AdminCampaignPromoGuidePanel';
+import {
+  AiImageGenerateModal,
+  type AiImageGenerateOptions,
+} from '../../components/ai/AiImageGenerateModal';
 import { CPA_THUMBNAIL_ASPECT_CLASS, CPA_THUMBNAIL_SPEC, cpaThumbnailHint } from '../../lib/cpaThumbnail';
 
 const categoryOptions = ['금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
@@ -172,32 +176,36 @@ export function AdminCampaigns() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [aiImageModalOpen, setAiImageModalOpen] = useState(false);
 
-  const handleAIGenerate = async () => {
+  const openAiThumbnailModal = () => {
     if (!editForm?.id || isGenerating || thumbnailUploading) return;
     if (!isEditMode) {
       setError('수정 모드에서 AI 썸네일을 생성할 수 있습니다.');
       return;
     }
+    setAiImageModalOpen(true);
+  };
 
-    const extra = window.prompt(
-      '추가 지시사항(선택)\n예: 밝은 상담실 분위기, 신뢰감 있는 톤',
-      '',
-    );
-    if (extra === null) return;
+  const handleAIGenerate = async (options: AiImageGenerateOptions) => {
+    if (!editForm?.id || isGenerating || thumbnailUploading) return;
 
     setIsGenerating(true);
     setError('');
     try {
       const result = await generateAdminCampaignThumbnailAi({
         cpId: editForm.id,
-        extra: extra.trim(),
+        mood: options.mood,
+        includeText: options.includeText,
+        overlayText: options.overlayText,
+        extra: options.extra,
       });
       const cacheBust = `${result.thumbnailUrl}${result.thumbnailUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
       setEditForm((prev) => (prev ? { ...prev, thumbnailUrl: cacheBust } : prev));
       if (result.campaign) {
         setSelectedCampaign(result.campaign);
       }
+      setAiImageModalOpen(false);
       await loadCampaigns();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'AI 썸네일 생성에 실패했습니다.');
@@ -647,7 +655,7 @@ export function AdminCampaigns() {
                               <div className="flex gap-2">
                                 <button
                                   type="button"
-                                  onClick={handleAIGenerate}
+                                  onClick={openAiThumbnailModal}
                                   disabled={isGenerating || thumbnailUploading}
                                   className="flex-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-colors shadow-sm disabled:opacity-50 py-2"
                                 >
@@ -1008,6 +1016,18 @@ export function AdminCampaigns() {
           onUpdated={loadCampaigns}
         />
       ) : null}
+
+      <AiImageGenerateModal
+        open={aiImageModalOpen}
+        title="AI 썸네일 생성"
+        subtitle={`${CPA_THUMBNAIL_SPEC.width} × ${CPA_THUMBNAIL_SPEC.height} px · ${editForm?.name || '광고상품'}`}
+        busy={isGenerating}
+        defaultOverlayText={editForm?.name || ''}
+        onClose={() => {
+          if (!isGenerating) setAiImageModalOpen(false);
+        }}
+        onConfirm={handleAIGenerate}
+      />
     </AdminLayout>
   );
 }

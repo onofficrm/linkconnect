@@ -48,7 +48,15 @@ import {
 } from '../../lib/api';
 import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import { AdvertiserCampaignAiPanel } from '../../components/advertiser/AdvertiserCampaignAiPanel';
-import type { PromoAssetSizePreset } from '../../components/advertiser/promoGuide/PromoAssetSizeGuide';
+import {
+  AiImageGenerateModal,
+  type AiImageGenerateOptions,
+} from '../../components/ai/AiImageGenerateModal';
+import {
+  formatPromoAssetSize,
+  type PromoAssetSizePreset,
+  suggestTitleForPreset,
+} from '../../components/advertiser/promoGuide/PromoAssetSizeGuide';
 
 const APPROVAL_OPTIONS: PromoGuideApprovalType[] = ['free', 'first_review', 'all_review'];
 
@@ -74,6 +82,10 @@ export function AdvertiserCampaignGuide() {
   const [exists, setExists] = useState(false);
   const [campaignName, setCampaignName] = useState('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [aiImageTarget, setAiImageTarget] = useState<{
+    preset: PromoAssetSizePreset;
+    imageTitle: string;
+  } | null>(null);
 
   const limits: PromoGuideLimits = useMemo(() => {
     const raw = guideMeta?.limits;
@@ -282,7 +294,7 @@ export function AdvertiserCampaignGuide() {
     }
   };
 
-  const handleAiGenerate = async (preset: PromoAssetSizePreset, imageTitle: string) => {
+  const openAiGenerateModal = (preset: PromoAssetSizePreset, imageTitle: string) => {
     if (readOnly || uploading || aiGenerating || !cpId) return;
     if (images.length >= limits.images) {
       setFieldErrors((prev) => ({
@@ -291,12 +303,12 @@ export function AdvertiserCampaignGuide() {
       }));
       return;
     }
+    setAiImageTarget({ preset, imageTitle });
+  };
 
-    const extra = window.prompt(
-      '추가 지시사항(선택)\n예: 신뢰감 있는 톤, 밝은 배너 느낌',
-      '',
-    );
-    if (extra === null) return;
+  const handleAiGenerate = async (options: AiImageGenerateOptions) => {
+    if (!aiImageTarget || readOnly || uploading || aiGenerating || !cpId) return;
+    const { preset, imageTitle } = aiImageTarget;
 
     setAiGenerating(true);
     setSuccess('');
@@ -316,7 +328,10 @@ export function AdvertiserCampaignGuide() {
         width: preset.freeFormat ? 0 : preset.width,
         height: preset.freeFormat ? 0 : preset.height,
         imageTitle,
-        extra: extra.trim(),
+        mood: options.mood,
+        includeText: options.includeText,
+        overlayText: options.overlayText,
+        extra: options.extra,
       });
       if (res.asset) {
         const asset = res.asset;
@@ -335,6 +350,7 @@ export function AdvertiserCampaignGuide() {
         ]);
       }
       setSuccess(res.message || 'AI 이미지가 생성되었습니다.');
+      setAiImageTarget(null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : 'AI 이미지 생성에 실패했습니다.');
     } finally {
@@ -584,7 +600,7 @@ export function AdvertiserCampaignGuide() {
                 uploading={uploading}
                 aiGenerating={aiGenerating}
                 onUpload={handleUpload}
-                onAiGenerate={handleAiGenerate}
+                onAiGenerate={openAiGenerateModal}
                 onDelete={handleDeleteImage}
                 onSort={handleSortImages}
                 onTitleChange={(id, title) => {
@@ -769,6 +785,25 @@ export function AdvertiserCampaignGuide() {
           </div>
         </div>
       ) : null}
+
+      <AiImageGenerateModal
+        open={Boolean(aiImageTarget)}
+        title="AI 홍보 이미지 생성"
+        subtitle={
+          aiImageTarget
+            ? `${aiImageTarget.preset.title} · ${formatPromoAssetSize(aiImageTarget.preset)}`
+            : undefined
+        }
+        busy={aiGenerating}
+        defaultOverlayText={
+          campaignName ||
+          (aiImageTarget ? suggestTitleForPreset(aiImageTarget.preset) : '')
+        }
+        onClose={() => {
+          if (!aiGenerating) setAiImageTarget(null);
+        }}
+        onConfirm={handleAiGenerate}
+      />
     </AdvertiserLayout>
   );
 }

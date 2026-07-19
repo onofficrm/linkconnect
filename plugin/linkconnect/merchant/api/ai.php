@@ -80,7 +80,17 @@ if ($action === 'generate_promo_image') {
     $width = isset($body['width']) ? (int) $body['width'] : 0;
     $height = isset($body['height']) ? (int) $body['height'] : 0;
     $image_title = trim((string) ($body['imageTitle'] ?? ''));
-    $extra = trim((string) ($body['extra'] ?? ''));
+    $opts = function_exists('lc_ai_normalize_image_options')
+        ? lc_ai_normalize_image_options($body)
+        : array(
+            'mood'        => trim((string) ($body['mood'] ?? '')),
+            'includeText' => !empty($body['includeText']),
+            'overlayText' => trim((string) ($body['overlayText'] ?? '')),
+            'extra'       => trim((string) ($body['extra'] ?? '')),
+        );
+    if (!empty($opts['includeText']) && $opts['overlayText'] === '') {
+        lc_api_error('텍스트를 넣을 경우 문구를 입력해 주세요.', 'INVALID_TEXT', 400);
+    }
 
     if ($cp_id <= 0) {
         lc_api_error('cpId가 필요합니다.', 'INVALID_ID', 400);
@@ -93,12 +103,15 @@ if ($action === 'generate_promo_image') {
     }
 
     $generated = lc_ai_generate_campaign_image(array(
-        'kind'     => 'promo',
-        'title'    => (string) ($campaign['cp_name'] ?? ''),
-        'category' => (string) ($campaign['cp_category'] ?? ''),
-        'width'    => $width,
-        'height'   => $height,
-        'extra'    => $extra,
+        'kind'        => 'promo',
+        'title'       => (string) ($campaign['cp_name'] ?? ''),
+        'category'    => (string) ($campaign['cp_category'] ?? ''),
+        'width'       => $width,
+        'height'      => $height,
+        'mood'        => $opts['mood'],
+        'includeText' => !empty($opts['includeText']),
+        'overlayText' => $opts['overlayText'],
+        'extra'       => $opts['extra'],
     ));
     if (empty($generated['ok'])) {
         lc_api_error(isset($generated['message']) ? (string) $generated['message'] : 'AI 이미지 생성 실패', 'AI_IMAGE_FAILED', 400);
