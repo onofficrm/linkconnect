@@ -712,6 +712,7 @@ export type AdminDashboardResponse = {
     pendingInspections?: number;
     pendingCallRequests?: number;
     pendingRecordingRequests?: number;
+    pendingContracts?: number;
   };
   chart7d: Array<{ date: string; received: number; approved: number; rejected: number; revenue: number }>;
   recent: AdminConversion[];

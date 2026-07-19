@@ -5,7 +5,7 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { InsightBanner, RankBadge, ProgressBar, tableRowClass } from '../../components/center-ui';
 import { 
   Building2, Database, ShieldAlert, CreditCard, 
-  ServerCrash, RefreshCw, AlertCircle, PhoneCall, Headphones
+  ServerCrash, RefreshCw, AlertCircle, PhoneCall, Headphones, FileText
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ComposedChart, Line, CartesianGrid } from 'recharts';
 import { fetchAdminDashboard, fetchAdminAiSummary } from '../../lib/api';
@@ -76,6 +76,7 @@ export function AdminDashboard() {
     pendingMerchants: 1,
     pendingCallRequests: 0,
     pendingRecordingRequests: 0,
+    pendingContracts: 0,
   });
   const [chartData, setChartData] = useState(fallbackChartData);
   const [recentItems, setRecentItems] = useState(recentDb);
@@ -176,9 +177,14 @@ export function AdminDashboard() {
       <InsightBanner
         accent="slate"
         message={<>오늘 접수 <strong>{summary.todayReceived}건</strong> · 승인 <strong>{summary.todayApproved}건</strong> · 승인율 <strong>{summary.todayRate}%</strong></>}
-        subMessage={`처리 대기 DB ${summary.pendingDb}건, 충전 대기 ${summary.pendingCharge}건, 광고비 부족 광고주 ${lowBalanceMerchants}곳`}
+        subMessage={`처리 대기 DB ${summary.pendingDb}건, 계약 승인 대기 ${summary.pendingContracts ?? 0}건, 충전 대기 ${summary.pendingCharge}건, 광고비 부족 광고주 ${lowBalanceMerchants}곳`}
         actions={[
           { label: '승인 대기 DB', to: '/admin/conversions' },
+          {
+            label: `계약 승인 대기${(summary.pendingContracts ?? 0) > 0 ? ` ${summary.pendingContracts}` : ''}`,
+            to: '/admin/contracts?status=review_pending',
+            variant: (summary.pendingContracts ?? 0) > 0 ? undefined : 'secondary',
+          },
           { label: '충전 승인', to: '/admin/billing', variant: 'secondary' },
         ]}
       />
@@ -192,6 +198,14 @@ export function AdminDashboard() {
         
         <SummaryCard title="오늘 매출" value={summary.todayRevenue.toLocaleString()} suffix="원" color="cyan" highlight caption="확정 기준" />
         <SummaryCard title="승인 대기 DB" value={String(summary.pendingDb)} suffix="건" subtitle="즉시 검토 필요" />
+        <SummaryCard
+          title="계약 승인 대기"
+          value={String(summary.pendingContracts ?? 0)}
+          suffix="건"
+          color="yellow"
+          highlight={(summary.pendingContracts ?? 0) > 0}
+          subtitle="광고주 서명 완료"
+        />
         <SummaryCard title="충전 대기" value={String(summary.pendingCharge)} suffix="건" color="blue" highlight />
         <SummaryCard title="승인 대기 파트너" value={String(summary.pendingPartners)} suffix="명" dark />
       </div>
@@ -236,6 +250,25 @@ export function AdminDashboard() {
             <h2 className="text-lg font-bold text-slate-900">오늘 처리 필요 알림</h2>
           </div>
           <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
+            {(summary.pendingContracts ?? 0) > 0 && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <FileText size={18} />
+                  </div>
+                  <span className="text-indigo-900 font-medium text-sm">
+                    광고주 계약 승인 대기 <strong className="text-indigo-700 ml-1">{summary.pendingContracts}건</strong>
+                  </span>
+                </div>
+                <Link
+                  to="/admin/contracts?status=review_pending"
+                  className="text-xs font-bold text-indigo-700 hover:text-indigo-800 bg-white px-3 py-1.5 rounded-lg border border-indigo-200 transition-colors shadow-sm"
+                >
+                  바로가기
+                </Link>
+              </div>
+            )}
+
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-orange-50 border border-orange-100 group">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">

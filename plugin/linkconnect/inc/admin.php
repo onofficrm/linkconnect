@@ -335,6 +335,19 @@ if (!function_exists('lc_admin_dashboard_data')) {
             $pending_recording_requests = (int) ($pending_rec_row['cnt'] ?? 0);
         }
 
+        $pending_contracts = 0;
+        $mc_table = function_exists('lc_merchant_contract_table') ? lc_merchant_contract_table() : lc_table('merchant_contracts');
+        if ($mc_table && lc_db_table_exists($mc_table)) {
+            $review_status = defined('LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING')
+                ? LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING
+                : 'review_pending';
+            $pending_contract_row = lc_sql_fetch(
+                " SELECT COUNT(*) AS cnt FROM `{$mc_table}` WHERE mc_status = '" . lc_sql_escape($review_status) . "' ",
+                false
+            );
+            $pending_contracts = (int) ($pending_contract_row['cnt'] ?? 0);
+        }
+
         return array(
             'summary' => array(
                 'todayReceived'  => $received,
@@ -350,6 +363,7 @@ if (!function_exists('lc_admin_dashboard_data')) {
                 'pendingInspections' => (int) ($inspection_summary['pending'] ?? 0),
                 'pendingCallRequests' => $pending_call_requests,
                 'pendingRecordingRequests' => $pending_recording_requests,
+                'pendingContracts' => $pending_contracts,
             ),
             'chart7d' => $chart,
             'recent'  => array_map('lc_admin_conversion_to_api', lc_admin_list_conversions(array(), 8)),

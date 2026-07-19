@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard } from '../../components/admin/AdminShared';
 import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
@@ -42,13 +43,16 @@ const STATUS_OPTIONS = [
 ] as const;
 
 export function AdminContracts() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<AdminContractListItem[]>([]);
   const [summary, setSummary] = useState<AdminContractSummary>(emptySummary);
   const [currentVersion, setCurrentVersion] = useState('');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<AdminContractDetail | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const initialStatus = searchParams.get('status') || '';
+  const validStatus = STATUS_OPTIONS.some(([value]) => value === initialStatus) ? initialStatus : '';
+  const [statusFilter, setStatusFilter] = useState(validStatus);
   const [versionFilter, setVersionFilter] = useState('');
   const [signedFrom, setSignedFrom] = useState('');
   const [signedTo, setSignedTo] = useState('');
@@ -106,6 +110,24 @@ export function AdminContracts() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('status') || '';
+    const next = STATUS_OPTIONS.some(([value]) => value === fromUrl) ? fromUrl : '';
+    setStatusFilter((prev) => (prev === next ? prev : next));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const current = searchParams.get('status') || '';
+    if (statusFilter === current) return;
+    const next = new URLSearchParams(searchParams);
+    if (statusFilter) {
+      next.set('status', statusFilter);
+    } else {
+      next.delete('status');
+    }
+    setSearchParams(next, { replace: true });
+  }, [statusFilter, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (selectedId) {
