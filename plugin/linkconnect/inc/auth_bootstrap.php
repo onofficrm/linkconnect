@@ -70,6 +70,7 @@ if (!function_exists('lc_auth_state')) {
             'memberNick'        => $logged_in && is_array($member) && isset($member['mb_nick']) ? (string) $member['mb_nick'] : null,
             'memberEmail'       => $logged_in && is_array($member) && isset($member['mb_email']) ? (string) $member['mb_email'] : null,
             'bbsUrl'            => defined('G5_BBS_URL') ? (string) G5_BBS_URL : '/bbs',
+            'siteUrl'           => defined('G5_URL') ? rtrim((string) G5_URL, '/') : '',
             'merchantContractApplies'    => !empty($contract_access['applies']),
             'merchantContractSigned'       => !empty($contract_access['signed']),
             'merchantContractBlocked'      => !empty($contract_access['blocked']),

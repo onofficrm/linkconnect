@@ -46,6 +46,174 @@ if (!function_exists('lc_link_main_site_hosts')) {
     }
 }
 
+if (!function_exists('lc_link_request_host')) {
+    function lc_link_request_host()
+    {
+        $host = isset($_SERVER['HTTP_HOST']) ? strtolower((string) $_SERVER['HTTP_HOST']) : '';
+
+        return preg_replace('/:\d+$/', '', $host);
+    }
+}
+
+if (!function_exists('lc_link_is_main_request_host')) {
+    function lc_link_is_main_request_host()
+    {
+        $host = lc_link_request_host();
+
+        return $host !== '' && in_array($host, lc_link_main_site_hosts(), true);
+    }
+}
+
+if (!function_exists('lc_link_host_from_base_url')) {
+    function lc_link_host_from_base_url($base_url)
+    {
+        $base_url = trim((string) $base_url);
+        if ($base_url === '') {
+            return '';
+        }
+        $parts = parse_url($base_url);
+
+        return (is_array($parts) && !empty($parts['host'])) ? strtolower((string) $parts['host']) : '';
+    }
+}
+
+if (!function_exists('lc_link_configured_tracking_hosts')) {
+    /**
+     * 전역·광고상품별 독립 도메인 호스트 목록
+     *
+     * @return array<int,string>
+     */
+    function lc_link_configured_tracking_hosts()
+    {
+        static $hosts = null;
+        if (is_array($hosts)) {
+            return $hosts;
+        }
+
+        $hosts = array();
+        if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('cpaTrackingDomainEnabled')) {
+            $h = lc_link_host_from_base_url((string) lc_settings_get('cpaTrackingBaseUrl', ''));
+            if ($h !== '') {
+                $hosts[] = $h;
+            }
+        }
+
+        if (function_exists('lc_db_installed') && lc_db_installed()) {
+            $table = lc_table('campaigns');
+            if (function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'cp_tracking_base_url')) {
+                $result = lc_sql_query(
+                    " SELECT DISTINCT cp_tracking_base_url FROM `{$table}`
+                      WHERE cp_tracking_base_url <> '' ",
+                    false
+                );
+                if ($result) {
+                    while ($row = sql_fetch_array($result)) {
+                        $h = lc_link_host_from_base_url((string) ($row['cp_tracking_base_url'] ?? ''));
+                        if ($h !== '') {
+                            $hosts[] = $h;
+                        }
+                    }
+                }
+            }
+        }
+
+        $hosts = array_values(array_unique(array_filter($hosts)));
+
+        return $hosts;
+    }
+}
+
+if (!function_exists('lc_link_allowed_redirect_hosts')) {
+    /**
+     * /s/ 숏링크 타겟 등으로 허용할 호스트
+     *
+     * @return array<int,string>
+     */
+    function lc_link_allowed_redirect_hosts()
+    {
+        return array_values(array_unique(array_filter(array_merge(
+            lc_link_main_site_hosts(),
+            lc_link_configured_tracking_hosts()
+        ))));
+    }
+}
+
+if (!function_exists('lc_link_is_tracking_request_host')) {
+    function lc_link_is_tracking_request_host()
+    {
+        $host = lc_link_request_host();
+        if ($host === '' || lc_link_is_main_request_host()) {
+            return false;
+        }
+
+        return in_array($host, lc_link_configured_tracking_hosts(), true);
+    }
+}
+
+if (!function_exists('lc_link_tracking_host_path_allowed')) {
+    function lc_link_tracking_host_path_allowed($path)
+    {
+        $path = '/' . ltrim((string) $path, '/');
+        if ($path === '/') {
+            return false;
+        }
+
+        $allow_prefixes = array(
+            '/r/',
+            '/c/',
+            '/s/',
+            '/merchant/',
+            '/plugin/',
+            '/data/',
+            '/css/',
+            '/js/',
+            '/img/',
+            '/skin/',
+            '/theme/',
+        );
+        foreach ($allow_prefixes as $prefix) {
+            if (strpos($path, $prefix) === 0) {
+                return true;
+            }
+        }
+
+        $allow_exact = array('/favicon.ico', '/robots.txt', '/favicon.png');
+        if (in_array($path, $allow_exact, true)) {
+            return true;
+        }
+
+        return (bool) preg_match('#^/(r|c|s)/[A-Za-z0-9_-]+/?$#', $path);
+    }
+}
+
+if (!function_exists('lc_link_enforce_tracking_host_gate')) {
+    /**
+     * 독립 도메인에서는 추적·랜딩·플러그인 경로만 허용하고 나머지는 메인 사이트로 보냅니다.
+     */
+    function lc_link_enforce_tracking_host_gate()
+    {
+        if (PHP_SAPI === 'cli' || !lc_link_is_tracking_request_host()) {
+            return;
+        }
+
+        $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            $path = '/';
+        }
+
+        if (lc_link_tracking_host_path_allowed($path)) {
+            return;
+        }
+
+        $dest = defined('G5_URL') ? rtrim((string) G5_URL, '/') . '/' : '/';
+        if (!headers_sent()) {
+            header('Location: ' . $dest, true, 302);
+        }
+        exit;
+    }
+}
+
 if (!function_exists('lc_link_apply_tracking_host')) {
     /**
      * 메인 사이트(링크커넥트) 랜딩 URL을 독립 도메인 호스트로 바꿉니다.
@@ -67,6 +235,11 @@ if (!function_exists('lc_link_apply_tracking_host')) {
         $base_host = strtolower((string) $base_parts['host']);
         $base_scheme = strtolower((string) ($base_parts['scheme'] ?? 'https'));
         $base_port = isset($base_parts['port']) ? ':' . (int) $base_parts['port'] : '';
+
+        // protocol-relative
+        if (strpos($url, '//') === 0 && strpos($url, '://') === false) {
+            $url = $base_scheme . ':' . $url;
+        }
 
         if (strpos($url, '://') === false) {
             return $base . '/' . ltrim($url, '/');
@@ -357,9 +530,12 @@ if (!function_exists('lc_cpa_partner_create_shortlink')) {
             return $empty;
         }
 
+        $public_base = lc_link_tracking_base_url($tracking_base);
+
         return lc_shortlink_store_for_partner($pt_id, $promo_url, array(
             'merchant_code' => 'cpa:' . (string) ($link['lk_code'] ?? ''),
             'product_url'   => 'lk:' . $lk_id,
+            'public_base'   => $public_base,
         ));
     }
 }
@@ -542,8 +718,13 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
             if ($lk_code !== '' && stripos($landing, 'lkcode=') === false && stripos($landing, 'code=') === false) {
                 $landing .= (strpos($landing, '?') !== false ? '&' : '?') . 'lkCode=' . rawurlencode($lk_code);
             }
-            if (strpos($landing, '://') === false && defined('G5_URL') && G5_URL !== '') {
-                return rtrim(G5_URL, '/') . '/' . ltrim($landing, '/');
+            if (strpos($landing, '://') === false) {
+                $prefix = lc_link_tracking_base_url($tracking_base);
+                if ($prefix === '' && defined('G5_URL')) {
+                    $prefix = rtrim((string) G5_URL, '/');
+                }
+
+                return $prefix !== '' ? ($prefix . '/' . ltrim($landing, '/')) : $landing;
             }
 
             return $landing;

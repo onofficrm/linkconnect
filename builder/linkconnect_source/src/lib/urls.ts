@@ -40,6 +40,22 @@ function siteBasePath(): string {
   }
 }
 
+/** 로그인 복귀용 메인 사이트 origin (독립 도메인에서 열어도 G5_URL 우선) */
+function spaOrigin(): string {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  const site = (getLcAuth().siteUrl || '').replace(/\/$/, '');
+  if (site) {
+    try {
+      return new URL(site).origin;
+    } catch {
+      return site;
+    }
+  }
+  return window.location.origin;
+}
+
 /** BrowserRouter SPA 절대 URL (예: https://site.com/partner) */
 export function spaReturnUrl(path = '/') {
   if (typeof window === 'undefined') {
@@ -48,7 +64,7 @@ export function spaReturnUrl(path = '/') {
 
   const normalized = path.startsWith('/') ? path : `/${path}`;
   const base = siteBasePath();
-  return `${window.location.origin}${base}${normalized === '/' ? '/' : normalized}`;
+  return `${spaOrigin()}${base}${normalized === '/' ? '/' : normalized}`;
 }
 
 /** 현재 SPA 경로의 절대 URL (GNUBoard 로그인 복귀용) */
@@ -69,7 +85,7 @@ export function currentSpaReturnUrl(fallback = '/') {
     return spaReturnUrl(fallback);
   }
 
-  return `${window.location.origin}${base}${path}${search}${hash}`;
+  return `${spaOrigin()}${base}${path}${search}${hash}`;
 }
 
 /** 현재 SPA 상대 경로 (GNUBoard 로그아웃 복귀용 — 도메인 불가) */

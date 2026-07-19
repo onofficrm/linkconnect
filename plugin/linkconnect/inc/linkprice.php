@@ -2818,14 +2818,21 @@ if (!function_exists('lc_lp_partner_build_deeplink')) {
 }
 
 if (!function_exists('lc_lp_shortlink_public_url')) {
-    function lc_lp_shortlink_public_url($short_code)
+    function lc_lp_shortlink_public_url($short_code, $public_base = null)
     {
         $short_code = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $short_code);
         if ($short_code === '') {
             return '';
         }
 
-        return (defined('G5_URL') ? rtrim(G5_URL, '/') : '') . '/s/' . rawurlencode($short_code);
+        $base = trim((string) $public_base);
+        if ($base === '') {
+            $base = defined('G5_URL') ? rtrim((string) G5_URL, '/') : '';
+        } else {
+            $base = rtrim($base, '/');
+        }
+
+        return $base . '/s/' . rawurlencode($short_code);
     }
 }
 
@@ -2888,6 +2895,7 @@ if (!function_exists('lc_shortlink_store_for_partner')) {
         $pt_id = (int) $pt_id;
         $target_url = trim((string) $target_url);
         $empty = array('ok' => false, 'message' => '', 'shortUrl' => '', 'promoUrl' => '', 'shortCode' => '');
+        $public_base = isset($meta['public_base']) ? trim((string) $meta['public_base']) : '';
 
         if ($pt_id <= 0 || $target_url === '' || !preg_match('#^https?://#i', $target_url)) {
             $empty['message'] = '숏링크로 변환할 대상 URL이 올바르지 않습니다.';
@@ -2914,7 +2922,7 @@ if (!function_exists('lc_shortlink_store_for_partner')) {
             return array(
                 'ok'        => true,
                 'message'   => '숏링크가 준비되었습니다.',
-                'shortUrl'  => lc_lp_shortlink_public_url($code),
+                'shortUrl'  => lc_lp_shortlink_public_url($code, $public_base),
                 'promoUrl'  => $target_url,
                 'shortCode' => $code,
             );
@@ -2962,7 +2970,7 @@ if (!function_exists('lc_shortlink_store_for_partner')) {
                 return array(
                     'ok'        => true,
                     'message'   => '숏링크가 준비되었습니다.',
-                    'shortUrl'  => lc_lp_shortlink_public_url($code),
+                    'shortUrl'  => lc_lp_shortlink_public_url($code, $public_base),
                     'promoUrl'  => $target_url,
                     'shortCode' => $code,
                 );
@@ -2975,7 +2983,7 @@ if (!function_exists('lc_shortlink_store_for_partner')) {
         return array(
             'ok'        => true,
             'message'   => '숏링크가 생성되었습니다.',
-            'shortUrl'  => lc_lp_shortlink_public_url($code),
+            'shortUrl'  => lc_lp_shortlink_public_url($code, $public_base),
             'promoUrl'  => $target_url,
             'shortCode' => $code,
         );

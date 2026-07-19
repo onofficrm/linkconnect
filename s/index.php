@@ -31,19 +31,26 @@ if ($target === '' || !preg_match('#^https?://#i', $target)) {
 $host = strtolower((string) parse_url($target, PHP_URL_HOST));
 $path = (string) parse_url($target, PHP_URL_PATH);
 
-$allowed_hosts = array();
-if (defined('G5_URL')) {
-    $h = parse_url(G5_URL, PHP_URL_HOST);
-    if ($h) {
-        $allowed_hosts[] = strtolower((string) $h);
+$allowed_hosts = function_exists('lc_link_allowed_redirect_hosts')
+    ? lc_link_allowed_redirect_hosts()
+    : array();
+
+// CPA /r/{code} 타겟이면 해당 캠페인 독립 도메인도 허용
+if (preg_match('#^/r/([A-Za-z0-9_-]+)$#', $path, $m) && function_exists('lc_link_get_with_campaign')) {
+    $link = lc_link_get_with_campaign($m[1]);
+    if (is_array($link)) {
+        $tb = function_exists('lc_link_tracking_base_url')
+            ? lc_link_tracking_base_url((string) ($link['cp_tracking_base_url'] ?? ''))
+            : '';
+        $th = function_exists('lc_link_host_from_base_url')
+            ? lc_link_host_from_base_url($tb)
+            : '';
+        if ($th !== '') {
+            $allowed_hosts[] = $th;
+        }
     }
 }
-if (function_exists('lc_link_tracking_base_url')) {
-    $h = parse_url(lc_link_tracking_base_url(), PHP_URL_HOST);
-    if ($h) {
-        $allowed_hosts[] = strtolower((string) $h);
-    }
-}
+
 $allowed_hosts = array_values(array_unique(array_filter($allowed_hosts)));
 
 if ($host === '' || !in_array($host, $allowed_hosts, true)) {

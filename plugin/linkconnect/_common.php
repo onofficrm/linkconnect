@@ -188,3 +188,7 @@ if (is_file(LC_PLUGIN_PATH . '/inc/linkprice.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/landing.php')) {
     require_once LC_PLUGIN_PATH . '/inc/landing.php';
 }
+
+if (function_exists('lc_link_enforce_tracking_host_gate')) {
+    lc_link_enforce_tracking_host_gate();
+}

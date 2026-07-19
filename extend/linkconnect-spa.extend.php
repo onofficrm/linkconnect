@@ -94,3 +94,66 @@ if (!function_exists('linkconnect_legal_content_redirect')) {
 }
 
 linkconnect_legal_content_redirect();
+
+if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
+    /**
+     * 독립 도메인(비-G5 호스트)에서 파트너/관리 SPA·홈이 열리면 메인 사이트로 보냅니다.
+     * /r /c /s /merchant /plugin 은 그대로 둡니다.
+     */
+    function linkconnect_tracking_domain_spa_gate()
+    {
+        if (!linkconnect_spa_rewrite_enabled() || !defined('G5_URL') || G5_URL === '') {
+            return;
+        }
+
+        $host = isset($_SERVER['HTTP_HOST']) ? strtolower((string) $_SERVER['HTTP_HOST']) : '';
+        $host = preg_replace('/:\d+$/', '', $host);
+        if ($host === '') {
+            return;
+        }
+
+        $main_hosts = array('linkconnect.co.kr', 'www.linkconnect.co.kr');
+        $g5_host = parse_url((string) G5_URL, PHP_URL_HOST);
+        if (is_string($g5_host) && $g5_host !== '') {
+            $main_hosts[] = strtolower($g5_host);
+        }
+        if (in_array($host, array_values(array_unique($main_hosts)), true)) {
+            return;
+        }
+
+        $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+        $path = parse_url($uri, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            $path = '/';
+        }
+
+        $allow = array('/r/', '/c/', '/s/', '/merchant/', '/plugin/', '/go/', '/data/', '/api/');
+        foreach ($allow as $prefix) {
+            if (strpos($path, $prefix) === 0) {
+                return;
+            }
+        }
+        if (preg_match('#^/(r|c|s)/[A-Za-z0-9_-]+/?$#', $path)) {
+            return;
+        }
+        if (in_array($path, array('/favicon.ico', '/robots.txt'), true)) {
+            return;
+        }
+
+        $dest = rtrim((string) G5_URL, '/');
+        if ($path !== '/' && $path !== '/index.php') {
+            $dest .= $path;
+            $query = parse_url($uri, PHP_URL_QUERY);
+            if (is_string($query) && $query !== '') {
+                $dest .= '?' . $query;
+            }
+        }
+
+        if (!headers_sent()) {
+            header('Location: ' . $dest, true, 302);
+        }
+        exit;
+    }
+}
+
+linkconnect_tracking_domain_spa_gate();

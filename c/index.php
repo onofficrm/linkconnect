@@ -41,7 +41,15 @@ if ($done) {
 
 $campaign_name = is_array($link) ? (string) $link['cp_name'] : '';
 $seo = lc_link_landing_seo_meta($campaign_name, $code, $tracking_base);
-$home_url = defined('G5_URL') ? rtrim((string) G5_URL, '/') : lc_link_tracking_base_url();
+$home_url = lc_link_tracking_base_url($tracking_base);
+if ($home_url === '' && defined('G5_URL')) {
+    $home_url = rtrim((string) G5_URL, '/');
+}
+// 독립 도메인에서 CSS도 같은 호스트로 (메인 도메인 노출 최소화)
+$asset_css = lc_asset_url('css/linkconnect.css');
+if (function_exists('lc_link_is_tracking_request_host') && lc_link_is_tracking_request_host() && function_exists('lc_link_apply_tracking_host')) {
+    $asset_css = lc_link_apply_tracking_host($asset_css, $tracking_base !== '' ? $tracking_base : $home_url);
+}
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -71,7 +79,7 @@ $home_url = defined('G5_URL') ? rtrim((string) G5_URL, '/') : lc_link_tracking_b
   <?php if ($seo['description'] !== '') { ?>
   <meta name="twitter:description" content="<?php echo lc_h($seo['description']); ?>">
   <?php } ?>
-  <link rel="stylesheet" href="<?php echo lc_h(lc_asset_url('css/linkconnect.css')); ?>">
+  <link rel="stylesheet" href="<?php echo lc_h($asset_css); ?>">
 </head>
 <body class="lc-app lc-app--public">
 <main class="lc-main" style="max-width:560px;margin:2rem auto;padding:1rem;">

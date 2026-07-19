@@ -25,6 +25,7 @@ export type LcAuth = {
   memberNick: string | null;
   memberEmail: string | null;
   bbsUrl: string;
+  siteUrl?: string;
   dbReady: boolean;
   merchantContractApplies?: boolean;
   merchantContractSigned?: boolean;
@@ -69,6 +70,7 @@ const defaultAuth: LcAuth = {
   memberNick: null,
   memberEmail: null,
   bbsUrl: '/bbs',
+  siteUrl: '',
   dbReady: false,
   merchantContractApplies: false,
   merchantContractSigned: true,
