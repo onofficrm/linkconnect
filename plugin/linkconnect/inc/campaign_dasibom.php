@@ -62,6 +62,7 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
 
         $def = lc_dasibom_campaign_definition();
         $landing = lc_dasibom_landing_url();
+        $tracking_base = 'https://air911.co.kr';
         $table = lc_table('campaigns');
 
         $mt_id = isset($options['mt_id']) ? (int) $options['mt_id'] : 0;
@@ -92,6 +93,7 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
                 cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
                 cp_description = '" . lc_sql_escape((string) $def['description']) . "',
                 cp_landing_url = '" . lc_sql_escape($landing) . "',
+                cp_tracking_base_url = '" . lc_sql_escape($tracking_base) . "',
                 cp_status = '" . lc_sql_escape((string) $def['status']) . "',
                 cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
                 cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
@@ -130,6 +132,7 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
             'forbiddenChannels'  => (string) $def['forbidden_channels'],
             'description'        => (string) $def['description'],
             'landingUrl'         => $landing,
+            'trackingBaseUrl'    => $tracking_base,
             'badge'              => (string) $def['badge'],
             'recommended'        => !empty($def['recommended']),
             'statusCode'         => (string) $def['status'],
@@ -145,7 +148,8 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
         $cp_id = (int) $saved['campaign']['id'];
         lc_sql_query(" UPDATE `{$table}` SET
             cp_code = '{$code_esc}',
-            cp_landing_url = '" . lc_sql_escape($landing) . "'
+            cp_landing_url = '" . lc_sql_escape($landing) . "',
+            cp_tracking_base_url = '" . lc_sql_escape($tracking_base) . "'
             WHERE cp_id = '{$cp_id}' ", false);
 
         return array(
