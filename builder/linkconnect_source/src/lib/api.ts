@@ -1660,6 +1660,8 @@ export type InquiryItem = {
   content?: string;
   reply?: string;
   adminMemo?: string;
+  hasAttachment?: boolean;
+  attachmentName?: string;
 };
 
 export type InquirySummary = {
@@ -1712,6 +1714,54 @@ export function createPublicInquiry(payload: {
   website?: string;
 }) {
   return publicApiPost<{ message: string; item: InquiryItem }>('inquiry.php', payload);
+}
+
+export async function createAdvertiserApplyInquiry(payload: {
+  companyName: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  homepage: string;
+  industry: string;
+  adMethod: string;
+  message: string;
+  attachment: File;
+  website?: string;
+}) {
+  const form = new FormData();
+  form.append('formType', 'advertiser_apply');
+  form.append('companyName', payload.companyName);
+  form.append('contactName', payload.contactName);
+  form.append('contactPhone', payload.contactPhone);
+  form.append('contactEmail', payload.contactEmail);
+  form.append('homepage', payload.homepage);
+  form.append('industry', payload.industry);
+  form.append('adMethod', payload.adMethod);
+  form.append('message', payload.message);
+  form.append('attachment', payload.attachment);
+  if (payload.website) form.append('website', payload.website);
+
+  const response = await fetch(`${PUBLIC_API_BASE}/inquiry.php`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+    body: form,
+  });
+
+  const body = await parseJson<ApiSuccessBody<{ message: string; item: InquiryItem }> | ApiErrorBody>(response);
+  if (!body.ok) {
+    const errBody = body as ApiErrorBody;
+    throw new PartnerApiError(errBody.error, errBody.code, response.status);
+  }
+
+  return (body as ApiSuccessBody<{ message: string; item: InquiryItem }>).data;
+}
+
+export function adminInquiryAttachmentUrl(iqId: number) {
+  const url = new URL(`${ADMIN_API_BASE}/inquiries.php`, window.location.origin);
+  url.searchParams.set('id', String(iqId));
+  url.searchParams.set('action', 'download_attachment');
+  return url.toString();
 }
 
 export function lookupPublicInquiry(code: string, email: string) {

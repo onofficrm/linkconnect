@@ -44,15 +44,270 @@ if (!function_exists('lc_inquiry_ensure_schema')) {
         }
 
         $cols = array(
-            'iq_contact_name'  => "varchar(100) NOT NULL DEFAULT '' AFTER `iq_cv_code`",
-            'iq_contact_email' => "varchar(120) NOT NULL DEFAULT '' AFTER `iq_contact_name`",
-            'iq_contact_phone' => "varchar(40) NOT NULL DEFAULT '' AFTER `iq_contact_email`",
+            'iq_contact_name'      => "varchar(100) NOT NULL DEFAULT '' AFTER `iq_cv_code`",
+            'iq_contact_email'     => "varchar(120) NOT NULL DEFAULT '' AFTER `iq_contact_name`",
+            'iq_contact_phone'     => "varchar(40) NOT NULL DEFAULT '' AFTER `iq_contact_email`",
+            'iq_attachment_path'   => "varchar(500) NOT NULL DEFAULT '' AFTER `iq_contact_phone`",
+            'iq_attachment_name'   => "varchar(255) NOT NULL DEFAULT '' AFTER `iq_attachment_path`",
+            'iq_attachment_mime'   => "varchar(120) NOT NULL DEFAULT '' AFTER `iq_attachment_name`",
         );
         foreach ($cols as $col => $definition) {
             if (!lc_db_column_exists($table, $col)) {
                 lc_sql_query(" ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$definition} ", false);
             }
         }
+    }
+}
+
+if (!function_exists('lc_inquiry_attachment_dir')) {
+    function lc_inquiry_attachment_dir()
+    {
+        if (defined('G5_DATA_PATH') && (string) G5_DATA_PATH !== '') {
+            return rtrim((string) G5_DATA_PATH, '/') . '/linkconnect/inquiry_attachments';
+        }
+
+        return dirname(__DIR__) . '/data/inquiry_attachments';
+    }
+}
+
+if (!function_exists('lc_inquiry_attachment_ensure_dir')) {
+    function lc_inquiry_attachment_ensure_dir()
+    {
+        $dir = lc_inquiry_attachment_dir();
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $ht = $dir . '/.htaccess';
+        if (!is_file($ht)) {
+            @file_put_contents($ht, "Require all denied\nDeny from all\n");
+        }
+
+        return is_dir($dir) && is_writable($dir);
+    }
+}
+
+if (!function_exists('lc_inquiry_format_advertiser_apply_body')) {
+    /**
+     * @param array<string,string> $fields
+     */
+    function lc_inquiry_format_advertiser_apply_body(array $fields)
+    {
+        $lines = array(
+            '<링크커넥트 광고주 입점 신청>',
+            '업체명: ' . trim((string) ($fields['companyName'] ?? '')),
+            '담당자명: ' . trim((string) ($fields['contactName'] ?? '')),
+            '연락처: ' . trim((string) ($fields['contactPhone'] ?? '')),
+            '이메일: ' . trim((string) ($fields['contactEmail'] ?? '')),
+            '홈페이지 또는 랜딩페이지: ' . trim((string) ($fields['homepage'] ?? '')),
+            '광고 업종: ' . trim((string) ($fields['industry'] ?? '')),
+            '희망 광고 방식 (CPA / CPS): ' . trim((string) ($fields['adMethod'] ?? '')),
+            '',
+            '간단한 소개 및 문의 내용:',
+            trim((string) ($fields['message'] ?? '')),
+        );
+
+        return implode("\n", $lines);
+    }
+}
+
+if (!function_exists('lc_inquiry_store_attachment')) {
+    /**
+     * @param array{name?:string,type?:string,tmp_name?:string,error?:int,size?:int} $file
+     * @return array{ok:bool,message:string,path:string,name:string,mime:string}
+     */
+    function lc_inquiry_store_attachment(array $file, $iq_id)
+    {
+        $empty = array('ok' => false, 'message' => '', 'path' => '', 'name' => '', 'mime' => '');
+        $iq_id = (int) $iq_id;
+        if ($iq_id <= 0) {
+            $empty['message'] = '문의 ID가 올바르지 않습니다.';
+
+            return $empty;
+        }
+        if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+            $empty['message'] = '첨부파일을 업로드하지 못했습니다.';
+
+            return $empty;
+        }
+        if (!empty($file['error']) && (int) $file['error'] !== UPLOAD_ERR_OK) {
+            $empty['message'] = '첨부파일 업로드 오류가 발생했습니다.';
+
+            return $empty;
+        }
+
+        $max_bytes = 10 * 1024 * 1024;
+        $size = isset($file['size']) ? (int) $file['size'] : 0;
+        if ($size <= 0 || $size > $max_bytes) {
+            $empty['message'] = '첨부파일은 10MB 이하만 가능합니다.';
+
+            return $empty;
+        }
+
+        $original = isset($file['name']) ? (string) $file['name'] : 'attachment';
+        $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
+        $allowed_ext = array('pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp');
+        if (!in_array($ext, $allowed_ext, true)) {
+            $empty['message'] = '사업자등록증은 PDF 또는 이미지(jpg, png 등)만 첨부할 수 있습니다.';
+
+            return $empty;
+        }
+
+        $finfo_mime = '';
+        if (function_exists('finfo_open')) {
+            $fi = finfo_open(FILEINFO_MIME_TYPE);
+            if ($fi) {
+                $finfo_mime = (string) finfo_file($fi, $file['tmp_name']);
+                finfo_close($fi);
+            }
+        }
+        $allowed_mime = array(
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+        );
+        if ($finfo_mime !== '' && !in_array($finfo_mime, $allowed_mime, true)) {
+            $empty['message'] = '허용되지 않는 첨부파일 형식입니다.';
+
+            return $empty;
+        }
+
+        if (!lc_inquiry_attachment_ensure_dir()) {
+            $empty['message'] = '첨부파일 저장 폴더를 준비하지 못했습니다.';
+
+            return $empty;
+        }
+
+        $subdir = lc_inquiry_attachment_dir() . '/' . $iq_id;
+        if (!is_dir($subdir) && !@mkdir($subdir, 0755, true)) {
+            $empty['message'] = '첨부파일 저장 폴더를 만들지 못했습니다.';
+
+            return $empty;
+        }
+
+        $safe_base = preg_replace('/[^a-zA-Z0-9._-]+/', '_', pathinfo($original, PATHINFO_FILENAME));
+        if ($safe_base === '' || $safe_base === null) {
+            $safe_base = 'biz_reg';
+        }
+        $stored_name = $safe_base . '_' . date('YmdHis') . '.' . $ext;
+        $full = $subdir . '/' . $stored_name;
+        if (!@move_uploaded_file($file['tmp_name'], $full)) {
+            $empty['message'] = '첨부파일을 저장하지 못했습니다.';
+
+            return $empty;
+        }
+
+        $relative = 'linkconnect/inquiry_attachments/' . $iq_id . '/' . $stored_name;
+
+        return array(
+            'ok'      => true,
+            'message' => '',
+            'path'    => $relative,
+            'name'    => $original,
+            'mime'    => $finfo_mime !== '' ? $finfo_mime : (string) ($file['type'] ?? ''),
+        );
+    }
+}
+
+if (!function_exists('lc_inquiry_create_advertiser_apply')) {
+    /**
+     * 광고주 입점 신청 (공개 문의 + 사업자등록증 첨부)
+     *
+     * @param array<string,mixed> $payload
+     * @param array{name?:string,type?:string,tmp_name?:string,error?:int,size?:int}|null $file
+     * @return array{ok:bool,message:string,inquiry:array|null}
+     */
+    function lc_inquiry_create_advertiser_apply(array $payload, $file = null)
+    {
+        $company = trim((string) ($payload['companyName'] ?? ''));
+        $contact_name = trim((string) ($payload['contactName'] ?? ''));
+        $contact_phone = trim((string) ($payload['contactPhone'] ?? ''));
+        $contact_email = trim((string) ($payload['contactEmail'] ?? ''));
+        $homepage = trim((string) ($payload['homepage'] ?? ''));
+        $industry = trim((string) ($payload['industry'] ?? ''));
+        $ad_method = trim((string) ($payload['adMethod'] ?? ''));
+        $message = trim((string) ($payload['message'] ?? ''));
+
+        if ($company === '' || $contact_name === '' || $contact_phone === '' || $contact_email === '') {
+            return array('ok' => false, 'message' => '업체명, 담당자명, 연락처, 이메일은 필수입니다.', 'inquiry' => null);
+        }
+        if ($homepage === '' || $industry === '' || $ad_method === '' || $message === '') {
+            return array('ok' => false, 'message' => '홈페이지, 광고 업종, 희망 광고 방식, 소개/문의 내용은 필수입니다.', 'inquiry' => null);
+        }
+        if (!in_array($ad_method, array('CPA', 'CPS', 'CPA/CPS'), true)) {
+            return array('ok' => false, 'message' => '희망 광고 방식을 선택해주세요. (CPA / CPS)', 'inquiry' => null);
+        }
+        if (!is_array($file) || empty($file['tmp_name'])) {
+            return array('ok' => false, 'message' => '사업자등록증 첨부는 필수입니다.', 'inquiry' => null);
+        }
+
+        $body = lc_inquiry_format_advertiser_apply_body(array(
+            'companyName'  => $company,
+            'contactName'  => $contact_name,
+            'contactPhone' => $contact_phone,
+            'contactEmail' => $contact_email,
+            'homepage'     => $homepage,
+            'industry'     => $industry,
+            'adMethod'     => $ad_method,
+            'message'      => $message,
+        ));
+
+        $result = lc_inquiry_create(array(
+            'center'       => 'public',
+            'mb_id'        => (string) ($payload['mb_id'] ?? ''),
+            'category'     => '광고주 가입',
+            'subject'      => '[입점신청] ' . $company,
+            'body'         => $body,
+            'contactName'  => $contact_name,
+            'contactEmail' => $contact_email,
+            'contactPhone' => $contact_phone,
+            'campaign'     => $ad_method,
+        ));
+
+        if (empty($result['ok']) || !is_array($result['inquiry'])) {
+            return $result;
+        }
+
+        $iq_id = (int) ($result['inquiry']['iq_id'] ?? 0);
+        $stored = lc_inquiry_store_attachment($file, $iq_id);
+        if (empty($stored['ok'])) {
+            // 문의는 남기고 첨부 실패만 안내 — 재첨부 유도보다 일관성 위해 실패 처리
+            $table = lc_table('inquiries');
+            lc_sql_query(" DELETE FROM `{$table}` WHERE iq_id = '{$iq_id}' LIMIT 1 ", false);
+
+            return array('ok' => false, 'message' => $stored['message'], 'inquiry' => null);
+        }
+
+        $table = lc_table('inquiries');
+        lc_sql_query(" UPDATE `{$table}` SET
+            iq_attachment_path = '" . lc_sql_escape($stored['path']) . "',
+            iq_attachment_name = '" . lc_sql_escape($stored['name']) . "',
+            iq_attachment_mime = '" . lc_sql_escape($stored['mime']) . "'
+            WHERE iq_id = '{$iq_id}' ", false);
+
+        $inquiry = lc_inquiry_get_by_id($iq_id);
+
+        return array(
+            'ok'      => true,
+            'message' => '광고주 입점 신청이 접수되었습니다. 검토 후 안내드리겠습니다.',
+            'inquiry' => $inquiry,
+        );
+    }
+}
+
+if (!function_exists('lc_inquiry_attachment_full_path')) {
+    function lc_inquiry_attachment_full_path($relative)
+    {
+        $relative = trim((string) $relative);
+        if ($relative === '' || strpos($relative, '..') !== false) {
+            return '';
+        }
+        if (defined('G5_DATA_PATH') && (string) G5_DATA_PATH !== '') {
+            return rtrim((string) G5_DATA_PATH, '/') . '/' . ltrim($relative, '/');
+        }
+
+        return dirname(__DIR__) . '/data/' . ltrim(preg_replace('#^linkconnect/#', '', $relative), '/');
     }
 }
 
@@ -498,6 +753,15 @@ if (!function_exists('lc_inquiry_to_api')) {
             $item['content'] = (string) ($row['iq_body'] ?? '');
             $item['reply'] = (string) ($row['iq_reply'] ?? '');
             $item['adminMemo'] = (string) ($row['iq_admin_memo'] ?? '');
+            $att_path = trim((string) ($row['iq_attachment_path'] ?? ''));
+            $att_name = trim((string) ($row['iq_attachment_name'] ?? ''));
+            if ($att_path !== '') {
+                $item['attachmentName'] = $att_name !== '' ? $att_name : '첨부파일';
+                $item['hasAttachment'] = true;
+            } else {
+                $item['attachmentName'] = '';
+                $item['hasAttachment'] = false;
+            }
         }
 
         return $item;

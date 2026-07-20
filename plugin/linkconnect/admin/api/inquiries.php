@@ -8,6 +8,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $center = isset($_GET['center']) ? trim((string) $_GET['center']) : '';
     $status = isset($_GET['status']) ? trim((string) $_GET['status']) : '';
     $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+    $action = isset($_GET['action']) ? trim((string) $_GET['action']) : '';
+
+    if ($iq_id > 0 && $action === 'download_attachment') {
+        lc_inquiry_ensure_schema();
+        $row = lc_inquiry_get_by_id($iq_id);
+        if (!$row) {
+            lc_api_error('문의를 찾을 수 없습니다.', 'NOT_FOUND', 404);
+        }
+        $rel = trim((string) ($row['iq_attachment_path'] ?? ''));
+        $name = trim((string) ($row['iq_attachment_name'] ?? 'attachment'));
+        $mime = trim((string) ($row['iq_attachment_mime'] ?? 'application/octet-stream'));
+        $full = function_exists('lc_inquiry_attachment_full_path') ? lc_inquiry_attachment_full_path($rel) : '';
+        if ($rel === '' || $full === '' || !is_file($full)) {
+            lc_api_error('첨부파일이 없습니다.', 'NOT_FOUND', 404);
+        }
+        if ($mime === '') {
+            $mime = 'application/octet-stream';
+        }
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . (string) filesize($full));
+        header('Content-Disposition: attachment; filename="' . str_replace(array('"', "\r", "\n"), '', $name) . '"');
+        header('X-Content-Type-Options: nosniff');
+        readfile($full);
+        exit;
+    }
 
     if ($iq_id > 0) {
         $row = lc_inquiry_get_by_id($iq_id);

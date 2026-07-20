@@ -79,6 +79,7 @@ import { NoticeDetailPage } from './pages/notice/NoticeDetail';
 import { NoticeForm } from './pages/notice/NoticeForm';
 import { CommunityDetailPage, CommunityForm, CommunityList } from './pages/community/CommunityBoard';
 import { InquiryBoard } from './pages/inquiry/InquiryBoard';
+import { AdvertiserApply } from './pages/advertiser/AdvertiserApply';
 import { TermsOfService } from './pages/legal/TermsOfService';
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { PartnerRouteGuard } from './components/PartnerRouteGuard';
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="community/:id/edit" element={<CommunityForm />} />
           <Route path="community/:id" element={<CommunityDetailPage />} />
           <Route path="inquiry" element={<InquiryBoard />} />
+          <Route path="advertiser-apply" element={<AdvertiserApply />} />
           <Route path="terms" element={<TermsOfService />} />
           <Route path="privacy" element={<PrivacyPolicy />} />
         </Route>

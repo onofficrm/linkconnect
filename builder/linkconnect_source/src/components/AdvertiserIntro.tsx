@@ -1,4 +1,5 @@
 import { ArrowUpRight, CreditCard, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function AdvertiserIntro() {
   return (
@@ -72,6 +73,14 @@ export function AdvertiserIntro() {
                 </li>
               ))}
             </ul>
+
+            <Link
+              to="/advertiser-apply"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition-colors"
+            >
+              광고주 입점 신청하기
+              <ArrowUpRight className="w-5 h-5" />
+            </Link>
           </div>
 
         </div>

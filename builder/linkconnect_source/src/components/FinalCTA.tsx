@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { handleSectionLink } from '../lib/navigation';
 
 const ctaBackgroundImage = `${import.meta.env.BASE_URL}about/about_partners_activity.png`;
 
@@ -40,8 +39,7 @@ export function FinalCTA() {
             파트너로 시작하기
           </Link>
           <Link
-            to="/"
-            onClick={() => handleSectionLink('lc-inquiry')}
+            to="/advertiser-apply"
             className="w-full sm:w-auto px-8 py-4 bg-white/12 hover:bg-white/22 text-white font-medium rounded-xl border border-white/45 transition-colors shadow-sm backdrop-blur-sm"
           >
             광고주로 문의하기

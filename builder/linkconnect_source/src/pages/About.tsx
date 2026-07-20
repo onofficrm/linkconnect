@@ -373,7 +373,7 @@ export function About() {
               <ArrowUpRight className="w-5 h-5" />
             </Link>
             <Link
-              to="/advertiser"
+              to="/advertiser-apply"
               className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors"
             >
               광고주 입점 문의

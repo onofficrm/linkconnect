@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { MessageSquare, Clock, CheckCircle2, HelpCircle, Search, CheckCheck, X, CornerDownRight } from 'lucide-react';
-import { fetchAdminInquiries, fetchAdminInquiryDetail, InquiryItem, InquirySummary, updateAdminInquiry } from '../../lib/api';
+import { MessageSquare, Clock, CheckCircle2, HelpCircle, Search, CheckCheck, X, CornerDownRight, Paperclip } from 'lucide-react';
+import { fetchAdminInquiries, fetchAdminInquiryDetail, InquiryItem, InquirySummary, updateAdminInquiry, adminInquiryAttachmentUrl } from '../../lib/api';
 
 const emptySummary: InquirySummary = { total: 0, waiting: 0, processing: 0, closed: 0, today: 0 };
 
@@ -171,6 +171,17 @@ export function AdminSupport() {
                       </div>
                     )}
                     <p className="text-sm text-slate-700 whitespace-pre-line">{detail.content || '-'}</p>
+                    {detail.hasAttachment ? (
+                      <a
+                        href={adminInquiryAttachmentUrl(detail.iqId)}
+                        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-cyan-700 hover:text-cyan-800"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <Paperclip size={14} />
+                        {detail.attachmentName || '첨부파일 다운로드'}
+                      </a>
+                    ) : null}
                   </div>
                 </section>
                 <section>

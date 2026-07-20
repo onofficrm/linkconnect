@@ -56,8 +56,7 @@ export function Hero() {
                 콜디비 알아보기
               </Link>
               <Link
-                to="/"
-                onClick={(e) => sectionLinkClick(e, 'lc-inquiry', location.pathname)}
+                to="/advertiser-apply"
                 className="px-8 py-4 bg-transparent hover:bg-cyan-500/10 text-cyan-400 font-medium rounded-xl transition-colors"
               >
                 광고주 입점 문의

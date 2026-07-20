@@ -605,7 +605,7 @@ if (!function_exists('lc_logout_url')) {
 if (!function_exists('lc_inquiry_url')) {
     function lc_inquiry_url()
     {
-        return lc_public_home_url() . '#lc-inquiry';
+        return (defined('G5_URL') ? rtrim((string) G5_URL, '/') : '') . '/advertiser-apply';
     }
 }
 

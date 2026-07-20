@@ -63,9 +63,13 @@ if ($method === 'POST') {
     lc_api_require_method('POST');
     lc_inquiry_ensure_schema();
 
-    $body = lc_api_read_json_body();
+    $is_multipart = !empty($_FILES) || (isset($_SERVER['CONTENT_TYPE']) && stripos((string) $_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false);
+    $body = $is_multipart ? $_POST : lc_api_read_json_body();
+    if (!is_array($body)) {
+        $body = array();
+    }
 
-    // honeypot
+    // honeypot (일반 문의·입점 공통)
     if (!empty($body['website']) || !empty($body['companyUrl'])) {
         lc_api_success(array(
             'message' => '문의가 등록되었습니다.',
@@ -79,6 +83,37 @@ if ($method === 'POST') {
 
     $member = isset($GLOBALS['member']) && is_array($GLOBALS['member']) ? $GLOBALS['member'] : null;
     $mb_id = is_array($member) ? trim((string) ($member['mb_id'] ?? '')) : '';
+
+    $form_type = isset($body['formType']) ? trim((string) $body['formType']) : '';
+    if ($form_type === 'advertiser_apply' || (!empty($body['companyName']) && $is_multipart)) {
+        $file = null;
+        if (!empty($_FILES['attachment']) && is_array($_FILES['attachment'])) {
+            $file = $_FILES['attachment'];
+        } elseif (!empty($_FILES['bizLicense']) && is_array($_FILES['bizLicense'])) {
+            $file = $_FILES['bizLicense'];
+        }
+
+        $result = lc_inquiry_create_advertiser_apply(array(
+            'mb_id'        => $mb_id,
+            'companyName'  => $body['companyName'] ?? '',
+            'contactName'  => $body['contactName'] ?? '',
+            'contactPhone' => $body['contactPhone'] ?? '',
+            'contactEmail' => $body['contactEmail'] ?? '',
+            'homepage'     => $body['homepage'] ?? '',
+            'industry'     => $body['industry'] ?? '',
+            'adMethod'     => $body['adMethod'] ?? '',
+            'message'      => $body['message'] ?? '',
+        ), $file);
+
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'INQUIRY_FAILED', 400);
+        }
+
+        lc_api_success(array(
+            'message' => $result['message'],
+            'item'    => lc_inquiry_to_api($result['inquiry'], true),
+        ));
+    }
 
     $contact_name = trim((string) ($body['contactName'] ?? ''));
     $contact_email = trim((string) ($body['contactEmail'] ?? ''));
