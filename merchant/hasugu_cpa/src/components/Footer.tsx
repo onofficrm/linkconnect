@@ -40,7 +40,7 @@ export default function Footer() {
               <CallButton
                 placement="footer"
                 className="inline-flex items-center gap-2 text-2xl font-black text-white hover:text-blue-400 transition-colors"
-                aria-label="대표전화"
+                aria-label="추적용 안심번호"
               >
                 <Phone size={24} className="text-blue-500" />
                 <span className="partner-phone-text">{data.tracking_phone_display}</span>

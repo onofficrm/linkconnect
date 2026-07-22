@@ -19,8 +19,6 @@ export interface LandingVars {
   business_address: string;
   privacy_policy_url: string;
   lead_submit_url: string;
-  /** 카카오 채널/오픈채팅 URL (없으면 폼 상담으로 유도) */
-  kakao_chat_url: string;
 }
 
 export interface PartnerData extends PartnerTracking, LandingVars {
@@ -167,7 +165,6 @@ export function getPartnerData(): PartnerData {
     business_address: injectedString('business_address'),
     privacy_policy_url: injectedString('privacy_policy_url') || DEFAULT_PRIVACY_URL,
     lead_submit_url: injectedString('lead_submit_url') || DEFAULT_LEAD_SUBMIT_URL,
-    kakao_chat_url: injectedString('kakao_chat_url'),
     lkCode: getParam('lkCode') || getParam('code') || injectedString('lkCode'),
     has_partner_phone: Boolean(phone),
   };

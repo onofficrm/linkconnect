@@ -71,7 +71,6 @@ export function buildInquiryText(fields: {
   preferredTime?: string;
   message?: string;
   photoCount?: number;
-  channelHint?: string;
 }): string {
   const parts: string[] = [];
   if (fields.area) parts.push(`지역: ${fields.area}`);
@@ -82,7 +81,6 @@ export function buildInquiryText(fields: {
   if (fields.photoCount && fields.photoCount > 0) {
     parts.push(`현장사진: ${fields.photoCount}장(상담 시 전달)`);
   }
-  if (fields.channelHint) parts.push(`희망채널: ${fields.channelHint}`);
   return trimInquiry(parts.join(' | '));
 }
 

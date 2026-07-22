@@ -1,25 +1,12 @@
-import { Phone, ChevronRight, MessageCircle, Clock } from 'lucide-react';
+import { Phone, ChevronRight, Clock } from 'lucide-react';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
 
 export default function FinalCTA() {
-  const { data, hasPhone } = usePartnerContext();
+  const { hasPhone } = usePartnerContext();
 
   const scrollToForm = () => {
     document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleKakao = () => {
-    if (data.kakao_chat_url) {
-      window.open(data.kakao_chat_url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    window.dispatchEvent(
-      new CustomEvent('hasugu:prefill-symptom', {
-        detail: { message: '카카오톡으로 상담 희망' },
-      }),
-    );
-    scrollToForm();
   };
 
   return (
@@ -59,14 +46,6 @@ export default function FinalCTA() {
               지금 전화하기
             </CallButton>
           ) : null}
-          <button
-            type="button"
-            onClick={handleKakao}
-            className="flex justify-center items-center gap-2 bg-[#FEE500] hover:bg-[#f5dc00] text-[#191919] text-[17px] font-bold min-h-[56px] px-8 rounded-2xl transition-all active:scale-[0.98]"
-          >
-            <MessageCircle size={22} />
-            카카오 상담
-          </button>
         </div>
       </div>
     </section>

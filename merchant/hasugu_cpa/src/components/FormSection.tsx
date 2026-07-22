@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
-import { Phone, CheckCircle2, AlertTriangle, Loader2, ImagePlus, X, Clock, MessageCircle } from 'lucide-react';
+import { Phone, CheckCircle2, AlertTriangle, Loader2, ImagePlus, X, Clock } from 'lucide-react';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
 import { buildInquiryText, resolveLkCode, submitConsultation } from '../lib/linkconnect';
@@ -13,7 +13,6 @@ export default function FormSection() {
   const [serviceType, setServiceType] = useState('');
   const [message, setMessage] = useState('');
   const [photoNames, setPhotoNames] = useState<string[]>([]);
-  const [channelHint, setChannelHint] = useState('');
   const serviceTypeRef = useRef<HTMLSelectElement>(null);
   const [trackingData, setTrackingData] = useState({
     utm_source: '',
@@ -49,7 +48,9 @@ export default function FormSection() {
       const detail = (event as CustomEvent<PrefillDetail>).detail || {};
       if (detail.serviceType) setServiceType(detail.serviceType);
       if (detail.message) {
-        setMessage((prev) => (prev.includes(detail.message!) ? prev : [prev, detail.message].filter(Boolean).join('\n')));
+        setMessage((prev) =>
+          prev.includes(detail.message!) ? prev : [prev, detail.message].filter(Boolean).join('\n'),
+        );
       }
       window.setTimeout(() => serviceTypeRef.current?.focus({ preventScroll: true }), 400);
     };
@@ -66,16 +67,6 @@ export default function FormSection() {
     setPhotoNames([]);
     const input = document.getElementById('site_photos') as HTMLInputElement | null;
     if (input) input.value = '';
-  };
-
-  const handleKakaoClick = () => {
-    if (data.kakao_chat_url) {
-      window.open(data.kakao_chat_url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    setChannelHint('카카오 상담 희망');
-    setMessage((prev) => (prev.includes('카카오') ? prev : [prev, '카카오톡으로 상담 희망'].filter(Boolean).join('\n')));
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -98,7 +89,6 @@ export default function FormSection() {
       preferredTime: String(formData.get('preferred_contact_time') || ''),
       message: String(formData.get('customer_message') || ''),
       photoCount: photoNames.length,
-      channelHint: channelHint || undefined,
     });
 
     try {
@@ -158,8 +148,8 @@ export default function FormSection() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-          {hasPhone ? (
+        {hasPhone ? (
+          <div className="flex justify-center mb-8">
             <CallButton
               placement="form_top"
               className="inline-flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-xl"
@@ -167,16 +157,8 @@ export default function FormSection() {
               <Phone size={18} />
               전화 상담
             </CallButton>
-          ) : null}
-          <button
-            type="button"
-            onClick={handleKakaoClick}
-            className="inline-flex justify-center items-center gap-2 bg-[#FEE500] hover:bg-[#f5dc00] text-[#191919] font-bold px-6 py-3.5 rounded-xl"
-          >
-            <MessageCircle size={18} />
-            {data.kakao_chat_url ? '카카오 상담하기' : '카카오로 상담 남기기'}
-          </button>
-        </div>
+          </div>
+        ) : null}
 
         <div className="bg-slate-50 rounded-[2rem] p-6 sm:p-10 border border-slate-200 shadow-sm relative overflow-hidden">
           {status === 'success' && (

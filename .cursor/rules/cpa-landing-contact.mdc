@@ -1,0 +1,22 @@
+---
+description: CPA 머천트 랜딩 — 카카오·광고주번호 금지, 상담폼·콜디비만 허용
+globs: merchant/**/*,plugin/onoff-builder-bridge/imports/**/*,plugin/linkconnect/inc/landing.php
+alwaysApply: false
+---
+
+# CPA 랜딩 연락 채널
+
+상세: [docs/cpa-landing-contact-rules.md](docs/cpa-landing-contact-rules.md)
+
+## 필수
+
+- CTA는 **상담신청 폼** (+ 선택적으로 **콜디비 안심번호**만).
+- **카카오채널 / 오픈채팅 / 카톡 버튼 금지** (전 CPA 상품).
+- **광고주 직통·대표 전화번호 금지** — 성과 측정 불가.
+- 전화 UI는 `partner_phone` / `tracking_phone`(콜디비 배정)이 있을 때만.
+
+## 하지 말 것
+
+- `kakao`, `pf.kakao`, 오픈채팅 URL, “카카오 상담” 버튼
+- merchants/계약서 전화를 `tel:`·콜 버튼에 연결
+- 안심번호 없을 때 카카오로 대체
