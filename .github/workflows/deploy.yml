@@ -139,8 +139,12 @@ jobs:
             cp -R plugin/onoff-builder-bridge/imports/banktupt/assets "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
           fi
           if [[ -d plugin/onoff-builder-bridge/imports/dasibom ]]; then
-            cp plugin/onoff-builder-bridge/imports/dasibom/index.html "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
-            cp -R plugin/onoff-builder-bridge/imports/dasibom/assets "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
+            # index.html + assets + public root files (favicon, portrait, og-image, manifest)
+            rsync -a --delete \
+              --exclude '._*' \
+              --exclude '.DS_Store' \
+              plugin/onoff-builder-bridge/imports/dasibom/ \
+              "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
           fi
           if [[ -d plugin/onoff-builder-bridge/imports/hasugu_cpa ]]; then
             cp plugin/onoff-builder-bridge/imports/hasugu_cpa/index.html "$ROOT/plugin/onoff-builder-bridge/imports/hasugu_cpa/"
