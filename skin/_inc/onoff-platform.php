@@ -301,10 +301,22 @@ if (!function_exists('onoff_platform_member_footer')) {
     function onoff_platform_member_footer()
     {
         $title = onoff_platform_homepage_title();
-        $phone = function_exists('g5site_cfg') ? trim((string) g5site_cfg('phone', '')) : '';
-        if ($phone === '' && function_exists('lc_contact_phone')) {
+        $phone = '';
+
+        if (onoff_platform_is_linkconnect()) {
             onoff_platform_linkconnect_config();
-            $phone = trim((string) lc_contact_phone());
+            if (function_exists('lc_contact_phone')) {
+                $phone = trim((string) lc_contact_phone());
+            }
+        }
+
+        if ($phone === '' && function_exists('g5site_cfg')) {
+            $phone = trim((string) g5site_cfg('phone', ''));
+        }
+
+        // 템플릿 플레이스홀더 · 미배포 _site.config 값 보정
+        if ($phone === '' || $phone === '010-0000-0000') {
+            $phone = '070-8098-6824';
         }
 
         echo '<p class="onoff-platform__footer">&copy; ' . date('Y') . ' ' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8');

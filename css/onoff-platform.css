@@ -441,6 +441,10 @@
   background-image: none !important;
 }
 
+.onoff-platform #mb_login #login_pw {
+  margin-top: 10px;
+}
+
 .onoff-platform #mb_confirm .onoff-platform__brand {
   margin-bottom: 16px;
 }

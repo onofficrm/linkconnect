@@ -253,21 +253,24 @@ if (!function_exists('lc_contact_email')) {
 if (!function_exists('lc_contact_phone')) {
     function lc_contact_phone()
     {
+        $placeholder = '010-0000-0000';
+        $fallback = '070-8098-6824';
+
         if (function_exists('lc_settings_get')) {
             $phone = trim((string) lc_settings_get('supportPhone', ''));
-            if ($phone !== '') {
+            if ($phone !== '' && $phone !== $placeholder) {
                 return $phone;
             }
         }
 
         if (function_exists('g5site_cfg')) {
-            $phone = g5site_cfg('phone', '');
-            if ($phone !== '') {
+            $phone = trim((string) g5site_cfg('phone', ''));
+            if ($phone !== '' && $phone !== $placeholder) {
                 return $phone;
             }
         }
 
-        return '070-8098-6824';
+        return $fallback;
     }
 }
 
