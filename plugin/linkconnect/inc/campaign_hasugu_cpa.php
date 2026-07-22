@@ -5,7 +5,7 @@ if (!defined('_GNUBOARD_')) {
 
 if (!function_exists('lc_hasugu_cpa_campaign_definition')) {
     /**
-     * 하수구/배관 CPA 광고상품 정의 (광고주 연결 전 준비용).
+     * 하수구/배관 CPA 광고상품 정의 (광고주 연결 전에도 등록 가능).
      *
      * @return array<string,mixed>
      */
@@ -16,6 +16,7 @@ if (!function_exists('lc_hasugu_cpa_campaign_definition')) {
             'title'              => '하수구·배관 상담 DB',
             'category'           => '생활서비스',
             'price'              => 25000,
+            'merchant_price'     => 35000,
             'approval_rate'      => '70%',
             'avg_time'           => '1.5일',
             'allowed_channels'   => '블로그, 카페, 지식iN, SNS',
@@ -23,7 +24,8 @@ if (!function_exists('lc_hasugu_cpa_campaign_definition')) {
             'description'        => '하수구막힘·싱크대막힘·변기막힘·악취·역류 상담 DB. hasugu_cpa 랜딩 연동.',
             'badge'              => '신규',
             'recommended'        => true,
-            'status'             => LC_STATUS_ACTIVE,
+            // 광고주 미연결 시 일시중지 — 연결 후 운영중으로 전환
+            'status'             => 'paused',
         );
     }
 }
@@ -49,9 +51,9 @@ if (!function_exists('lc_hasugu_cpa_landing_url')) {
 
 if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
     /**
-     * 하수구 CPA 상품을 생성/갱신한다. 광고주(mt_id) 없으면 생성하지 않음.
+     * 하수구 CPA 상품을 생성/갱신한다. 광고주(mt_id) 없어도 등록 가능(일시중지).
      *
-     * @param array{advertiser_mb_id?:string,mt_id?:int} $options
+     * @param array{advertiser_mb_id?:string,mt_id?:int,activate?:bool} $options
      * @return array{ok:bool,message:string,cpId?:int,created?:bool}
      */
     function lc_campaign_ensure_hasugu_cpa(array $options = array())
@@ -74,12 +76,25 @@ if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
             }
         }
 
+        $status = (string) $def['status'];
+        if ($mt_id > 0 && !empty($options['activate'])) {
+            $status = LC_STATUS_ACTIVE;
+        }
+
         $code_esc = lc_sql_escape((string) $def['code']);
         $keep = lc_sql_fetch(" SELECT * FROM `{$table}` WHERE cp_code = '{$code_esc}' LIMIT 1 ");
 
         if ($keep) {
             $cp_id = (int) $keep['cp_id'];
             $next_mt = $mt_id > 0 ? $mt_id : (int) $keep['mt_id'];
+            // 이미 운영중이면 상태 유지, 신규 옵션으로 activate만 올릴 때 갱신
+            $next_status = (string) $keep['cp_status'];
+            if (!empty($options['activate']) && $next_mt > 0) {
+                $next_status = LC_STATUS_ACTIVE;
+            } elseif ($next_status === '' || $next_status === LC_STATUS_DRAFT) {
+                $next_status = $status;
+            }
+
             lc_sql_query(" UPDATE `{$table}` SET
                 mt_id = '{$next_mt}',
                 cp_code = '{$code_esc}',
@@ -87,6 +102,7 @@ if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
                 cp_category = '" . lc_sql_escape((string) $def['category']) . "',
                 cp_type = 'cpa',
                 cp_price = '" . (int) $def['price'] . "',
+                cp_merchant_price = '" . (int) $def['merchant_price'] . "',
                 cp_approval_rate = '" . lc_sql_escape((string) $def['approval_rate']) . "',
                 cp_avg_time = '" . lc_sql_escape((string) $def['avg_time']) . "',
                 cp_allowed_channels = '" . lc_sql_escape((string) $def['allowed_channels']) . "',
@@ -94,7 +110,7 @@ if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
                 cp_description = '" . lc_sql_escape((string) $def['description']) . "',
                 cp_landing_url = '" . lc_sql_escape($landing) . "',
                 cp_tracking_base_url = '" . lc_sql_escape($tracking_base) . "',
-                cp_status = '" . lc_sql_escape((string) $def['status']) . "',
+                cp_status = '" . lc_sql_escape($next_status) . "',
                 cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
                 cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
                 cp_updated_at = NOW()
@@ -108,44 +124,48 @@ if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
             );
         }
 
-        if ($mt_id <= 0) {
-            return array(
-                'ok'      => false,
-                'message' => '광고주(mt_id 또는 advertiser_mb_id)를 지정해 주세요. 랜딩(/merchant/hasugu_cpa/)은 이미 준비되어 있습니다.',
-            );
+        // 광고주 없어도 직접 INSERT (계약 검증 우회) — 관리자에서 광고주 배정 후 활성화
+        lc_sql_query(" INSERT INTO `{$table}` SET
+            mt_id = '{$mt_id}',
+            cp_code = '{$code_esc}',
+            cp_name = '" . lc_sql_escape((string) $def['title']) . "',
+            cp_category = '" . lc_sql_escape((string) $def['category']) . "',
+            cp_type = 'cpa',
+            cp_price = '" . (int) $def['price'] . "',
+            cp_merchant_price = '" . (int) $def['merchant_price'] . "',
+            cp_approval_rate = '" . lc_sql_escape((string) $def['approval_rate']) . "',
+            cp_avg_time = '" . lc_sql_escape((string) $def['avg_time']) . "',
+            cp_allowed_channels = '" . lc_sql_escape((string) $def['allowed_channels']) . "',
+            cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
+            cp_description = '" . lc_sql_escape((string) $def['description']) . "',
+            cp_landing_url = '" . lc_sql_escape($landing) . "',
+            cp_tracking_base_url = '" . lc_sql_escape($tracking_base) . "',
+            cp_status = '" . lc_sql_escape($status) . "',
+            cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
+            cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
+            cp_sort = 0,
+            cp_created_at = NOW(),
+            cp_updated_at = NOW() ", false);
+
+        $cp_id = 0;
+        if (function_exists('sql_insert_id')) {
+            $cp_id = (int) sql_insert_id();
+        }
+        if ($cp_id <= 0) {
+            $row = lc_sql_fetch(" SELECT cp_id FROM `{$table}` WHERE cp_code = '{$code_esc}' LIMIT 1 ");
+            $cp_id = $row ? (int) $row['cp_id'] : 0;
         }
 
-        if (!function_exists('lc_campaign_save')) {
-            return array('ok' => false, 'message' => 'lc_campaign_save 를 사용할 수 없습니다.');
-        }
-
-        $saved = lc_campaign_save(array(
-            'mt_id'               => $mt_id,
-            'cp_code'             => $def['code'],
-            'cp_name'             => $def['title'],
-            'cp_category'         => $def['category'],
-            'cp_type'             => 'cpa',
-            'cp_price'            => $def['price'],
-            'cp_approval_rate'    => $def['approval_rate'],
-            'cp_avg_time'         => $def['avg_time'],
-            'cp_allowed_channels' => $def['allowed_channels'],
-            'cp_forbidden_channels' => $def['forbidden_channels'],
-            'cp_description'      => $def['description'],
-            'cp_landing_url'      => $landing,
-            'cp_tracking_base_url'=> $tracking_base,
-            'cp_status'           => $def['status'],
-            'cp_badge'            => $def['badge'],
-            'cp_recommended'      => !empty($def['recommended']) ? 1 : 0,
-        ));
-
-        if (empty($saved['ok'])) {
-            return array('ok' => false, 'message' => (string) ($saved['message'] ?? '캠페인 생성 실패'));
+        if ($cp_id <= 0) {
+            return array('ok' => false, 'message' => '하수구 CPA 캠페인 생성에 실패했습니다.');
         }
 
         return array(
             'ok'      => true,
-            'message' => '하수구 CPA 캠페인을 생성했습니다.',
-            'cpId'    => (int) ($saved['cpId'] ?? 0),
+            'message' => $mt_id > 0
+                ? '하수구 CPA 캠페인을 생성했습니다.'
+                : '하수구 CPA 캠페인을 광고주 미연결(일시중지) 상태로 등록했습니다.',
+            'cpId'    => $cp_id,
             'created' => true,
         );
     }
