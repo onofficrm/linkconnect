@@ -98,6 +98,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/campaign_banktupt.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign_dasibom.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign_dasibom.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
     require_once LC_PLUGIN_PATH . '/inc/settlement.php';
 }

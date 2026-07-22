@@ -98,7 +98,7 @@ if (!function_exists('onoff_builder_extract_body_content')) {
 if (!function_exists('onoff_builder_landing_context_script')) {
     function onoff_builder_landing_context_script($id)
     {
-        if (!in_array($id, array('banktupt', 'dasibom'), true) || !function_exists('lc_landing_context_for_api')) {
+        if (!in_array($id, array('banktupt', 'dasibom', 'hasugu_cpa'), true) || !function_exists('lc_landing_context_for_api')) {
             return '';
         }
 

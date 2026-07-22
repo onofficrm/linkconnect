@@ -109,6 +109,7 @@ if (!function_exists('lc_landing_context_resolve')) {
         $pt_code = '';
         $cp_code = '';
         $mt_code = $merchant_ref !== '' ? $merchant_ref : 'banktupt';
+        $merchant_name = '';
 
         $link = null;
         if ($lk_code !== '' && function_exists('lc_link_get_with_campaign')) {
@@ -158,6 +159,23 @@ if (!function_exists('lc_landing_context_resolve')) {
             $merchant = lc_get_merchant_by_id($mt_id);
             if (is_array($merchant)) {
                 $mt_code = (string) $merchant['mt_code'];
+                $merchant_name = (string) ($merchant['mt_company'] ?? '');
+            }
+        }
+
+        // 체결된 계약 스냅샷이 있으면 푸터용 사업자 정보를 보강
+        $representative_name = '';
+        $business_number = '';
+        $business_address = '';
+        if ($mt_id > 0 && function_exists('lc_merchant_contract_latest_signed')) {
+            $signed = lc_merchant_contract_latest_signed($mt_id);
+            if (is_array($signed)) {
+                if ($merchant_name === '') {
+                    $merchant_name = (string) ($signed['mc_company_name'] ?? '');
+                }
+                $representative_name = (string) ($signed['mc_representative_name'] ?? '');
+                $business_number = (string) ($signed['mc_business_number'] ?? '');
+                $business_address = (string) ($signed['mc_company_address'] ?? '');
             }
         }
 
@@ -172,6 +190,10 @@ if (!function_exists('lc_landing_context_resolve')) {
             'partnerCode'          => $pt_code !== '' ? $pt_code : $partner_ref,
             'campaignCode'         => $cp_code !== '' ? $cp_code : $campaign_ref,
             'merchantCode'         => $mt_code,
+            'merchantName'         => $merchant_name,
+            'representativeName'   => $representative_name,
+            'businessNumber'       => $business_number,
+            'businessAddress'      => $business_address,
             'partnerPhone'         => $partner_phone,
             'partnerPhoneDisplay'  => $partner_phone_display,
             'hasPartnerPhone'      => $partner_phone !== '',
@@ -192,9 +214,20 @@ if (!function_exists('lc_landing_context_for_api')) {
             'partner_id'          => $ctx['partnerCode'],
             'campaign_id'         => $ctx['campaignCode'],
             'merchant_id'         => $ctx['merchantCode'],
+            'affiliate_id'        => $ctx['partnerCode'],
+            'landing_id'          => $ctx['merchantCode'] !== '' ? $ctx['merchantCode'] : 'hasugu_cpa',
+            'sub_id'              => $ctx['utmCampaign'],
             'partner_phone'       => $ctx['partnerPhone'],
             'partner_phone_display' => $ctx['partnerPhoneDisplay'],
+            'tracking_phone'      => $ctx['partnerPhone'],
+            'tracking_phone_display' => $ctx['partnerPhoneDisplay'],
             'has_partner_phone'   => $ctx['hasPartnerPhone'],
+            'merchant_name'       => $ctx['merchantName'],
+            'representative_name' => $ctx['representativeName'],
+            'business_number'     => $ctx['businessNumber'],
+            'business_address'    => $ctx['businessAddress'],
+            'privacy_policy_url'  => '/privacy',
+            'lead_submit_url'     => (defined('G5_URL') ? rtrim((string) G5_URL, '/') : '') . '/plugin/linkconnect/api/receive.php',
             'utm_source'          => $ctx['utmSource'],
             'utm_medium'          => $ctx['utmMedium'],
             'utm_campaign'        => $ctx['utmCampaign'],
