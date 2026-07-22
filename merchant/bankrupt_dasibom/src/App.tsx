@@ -56,8 +56,6 @@ export default function App() {
     phone: '',
     time: '',
     type: '',
-    income: '',
-    debt: '',
     situation: '',
     memo: '',
     agree: false,
@@ -93,7 +91,7 @@ export default function App() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.time || !formData.type || !formData.income || !formData.debt) {
+    if (!formData.name || !formData.phone || !formData.time || !formData.type) {
       alert('필수 항목을 모두 입력해주세요.');
       return;
     }
@@ -114,8 +112,6 @@ export default function App() {
     const inquiry = buildInquiryText({
       type: formData.type,
       time: formData.time,
-      debt: formData.debt,
-      income: formData.income,
       status: formData.situation,
       message: formData.memo,
     });
@@ -134,8 +130,6 @@ export default function App() {
         phone: '',
         time: '',
         type: '',
-        income: '',
-        debt: '',
         situation: '',
         memo: '',
         agree: false,
@@ -746,35 +740,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 flex items-center gap-1">
-                        월평균 소득 <span className="text-orange-500">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        name="income"
-                        value={formData.income}
-                        onChange={handleFormChange}
-                        placeholder="예: 250만원 (또는 없음)"
-                        className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-slate-700 flex items-center gap-1">
-                        예상 채무금액 <span className="text-orange-500">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        name="debt"
-                        value={formData.debt}
-                        onChange={handleFormChange}
-                        placeholder="예: 5,000만원"
-                        className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-
                   {/* Optional Fields */}
                   <div className="space-y-1.5 pt-2 border-t border-slate-100">
                     <label className="text-sm font-bold text-slate-700">현재 상황 (선택)</label>
@@ -826,8 +791,8 @@ export default function App() {
                         </button>
                         {showPrivacy && (
                           <div className="mt-2 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 border border-slate-200">
-                            수집 항목: 이름, 연락처, 희망 상담시간, 상담 구분, 월평균 소득, 예상 채무금액, 현재 상황 등<br/>
-                            수집 목적: 재정회복 상담 및 관련 안내<br/>
+                            수집 항목: 이름, 연락처, 희망 상담시간, 상담 구분, 현재 상황 등<br/>
+                            수집 목적: 개인회생·개인파산 상담 및 관련 안내<br/>
                             보유 기간: 상담 완료 후 6개월 보관 후 파기
                           </div>
                         )}
