@@ -208,7 +208,7 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
             return;
         }
         // 독립 도메인: 브라우저 기본 요청 /favicon.ico 등
-        if (preg_match('#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png)$#', $path, $fm)) {
+        if (preg_match('#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png|lawyer-portrait\.jpg)$#', $path, $fm)) {
             $landing_file = linkconnect_tracking_home_landing_file($host);
             $import_id = 'dasibom';
             if ($landing_file !== '' && preg_match('#/merchant/([A-Za-z0-9_-]+)/#', str_replace('\\', '/', $landing_file), $mm)) {
@@ -219,12 +219,16 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
                 $name = 'apple-touch-icon.png';
             }
             $icon = G5_PATH . '/plugin/onoff-builder-bridge/imports/' . $import_id . '/' . $name;
+            if ($name === 'lawyer-portrait.jpg' && !is_file($icon)) {
+                $icon = G5_PATH . '/lawyer-portrait.jpg';
+            }
             if (is_file($icon)) {
                 $mimes = array(
                     'favicon.ico' => 'image/x-icon',
                     'favicon.svg' => 'image/svg+xml',
                     'favicon-32x32.png' => 'image/png',
                     'apple-touch-icon.png' => 'image/png',
+                    'lawyer-portrait.jpg' => 'image/jpeg',
                 );
                 if (!headers_sent()) {
                     header('Content-Type: ' . (isset($mimes[$name]) ? $mimes[$name] : 'application/octet-stream'));

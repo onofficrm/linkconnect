@@ -8,7 +8,8 @@ on:
 
 concurrency:
   group: linkconnect-ftp-deploy
-  cancel-in-progress: true
+  # 연속 push 시 중간 배포 취소로 정적파일(사진·파비콘)이 빠지지 않게 대기
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -94,6 +95,11 @@ jobs:
           fi
           if [[ -f plugin/onoff-builder-bridge/imports/dasibom/favicon-32x32.png ]]; then
             cp plugin/onoff-builder-bridge/imports/dasibom/favicon-32x32.png "$ROOT/favicon-32x32.png"
+          fi
+          if [[ -f plugin/onoff-builder-bridge/imports/dasibom/lawyer-portrait.jpg ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/lawyer-portrait.jpg "$ROOT/lawyer-portrait.jpg"
+          elif [[ -f merchant/bankrupt_dasibom/public/lawyer-portrait.jpg ]]; then
+            cp merchant/bankrupt_dasibom/public/lawyer-portrait.jpg "$ROOT/lawyer-portrait.jpg"
           fi
           cp merchant/banktupt/index.php "$ROOT/merchant/banktupt/"
           cp merchant/dasibom/index.php "$ROOT/merchant/dasibom/"

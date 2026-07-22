@@ -3,7 +3,11 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
-import lawyerPortrait from './assets/lawyer-lee-jeongyong.jpg';
+
+/** 절대 URL — Vite base 재작성·상대경로 이슈 방지 (파비콘과 동일 방식) */
+const LAWYER_PORTRAIT_SRC = 'https://air911.co.kr/lawyer-portrait.jpg';
+const LAWYER_PORTRAIT_FALLBACK =
+  'https://air911.co.kr/plugin/onoff-builder-bridge/imports/dasibom/lawyer-portrait.jpg';
 
 const CONTACT_INFO = {
   companyName: '다시봄 개인회생센터',
@@ -215,24 +219,26 @@ export default function App() {
         {/* Hero Section */}
         <section className="lg:col-span-8 bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-xl shadow-slate-900/10">
           <div className="grid md:grid-cols-2 gap-8 items-center h-full relative z-10">
-            <div className="space-y-5 md:space-y-6">
+            <div className="space-y-5 md:space-y-6 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 text-xs font-semibold">
                 <Scale className="w-4 h-4" />
                 검사출신 변호사 · 1:1 무료상담
               </div>
               
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-snug break-keep">
-                감당하기 어려운 채무,<br />
-                <span className="text-teal-400">검사출신의 시선</span>으로<br />
-                해결부터 확인하세요
+              <h1 className="text-[1.625rem] sm:text-[1.75rem] md:text-[1.9rem] font-bold text-white leading-[1.55] break-keep tracking-tight">
+                <span className="block">감당하기 어려운 채무,</span>
+                <span className="block mt-1.5">
+                  <span className="text-teal-400">검사출신의 시선</span>으로
+                </span>
+                <span className="block mt-1.5">해결부터 확인하세요</span>
               </h1>
               
-              <p className="text-sm md:text-base text-slate-300 leading-relaxed font-medium break-keep">
-                서울중앙지검·부장검사 출신 변호사가 소득·채무 상황을 파악하고,
+              <p className="text-sm md:text-[15px] text-slate-300 leading-[1.7] font-medium break-keep">
+                서울중앙지검·부장검사 출신 변호사가 소득·채무 상황을 파악하고
                 개인회생·개인파산 방향을 무료로 안내합니다.
               </p>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 pt-0.5">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 검사출신 상담
                 </span>
@@ -245,32 +251,47 @@ export default function App() {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-6 py-3.5 rounded-xl text-base font-bold transition-all flex justify-center items-center gap-2">
+                <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-6 py-3.5 rounded-xl text-[15px] font-bold transition-all flex justify-center items-center gap-2">
                   무료 상담 신청하기
                 </a>
                 <a
                   href={partnerTel || undefined}
-                  className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-all phone-only partner-phone-link"
+                  className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2 transition-all phone-only partner-phone-link"
                 >
                   <Phone className="w-5 h-5" />
                   전화 상담
                 </a>
               </div>
               
-              <p className="text-xs text-slate-400">상담 신청만으로 비용이 발생하지 않습니다.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">상담 신청만으로 비용이 발생하지 않습니다.</p>
             </div>
             
             <div className="relative mt-6 md:mt-0 flex items-center justify-center self-stretch">
               <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10"></div>
               
-              <div className="aspect-[4/5] w-full h-full min-h-[360px] md:min-h-[420px] bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700">
+              <div
+                className="aspect-[4/5] w-full min-h-[380px] md:min-h-[440px] bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700 bg-cover bg-[center_18%]"
+                style={{ backgroundImage: `url(${LAWYER_PORTRAIT_SRC})` }}
+              >
                 <img 
-                  src={lawyerPortrait}
+                  src={LAWYER_PORTRAIT_SRC}
                   alt={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
                   width={900}
                   height={1100}
                   decoding="async"
-                  className="w-full h-full object-cover object-[center_18%] opacity-95"
+                  loading="eager"
+                  fetchPriority="high"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    if (el.dataset.fallback === '1') return;
+                    el.dataset.fallback = '1';
+                    el.src = LAWYER_PORTRAIT_FALLBACK;
+                    el.parentElement?.style.setProperty(
+                      'background-image',
+                      `url(${LAWYER_PORTRAIT_FALLBACK})`,
+                    );
+                  }}
+                  className="absolute inset-0 w-full h-full object-cover object-[center_18%]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
                 
