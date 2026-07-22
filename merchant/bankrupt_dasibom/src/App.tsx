@@ -214,8 +214,8 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 auto-rows-min gap-4 md:gap-6">
         {/* Hero Section */}
-        <section className="lg:col-span-8 bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-xl shadow-slate-900/10">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start h-full relative z-10">
+        <section className="lg:col-span-8 bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-xl shadow-slate-900/10 min-h-0 lg:min-h-full">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-center relative z-10 w-full my-auto">
             <div className="space-y-5 md:space-y-6 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 text-xs font-semibold">
                 <Scale className="w-4 h-4" />
@@ -263,7 +263,7 @@ export default function App() {
               <p className="text-xs text-slate-400 leading-relaxed">상담 신청만으로 비용이 발생하지 않습니다.</p>
             </div>
             
-            <div className="relative mt-2 md:mt-0 flex justify-center md:justify-end">
+            <div className="relative flex justify-center md:justify-end items-center">
               <div className="relative w-full max-w-[260px] sm:max-w-[280px] md:max-w-[300px]">
                 <div
                   className="absolute -inset-1 rounded-[1.75rem] bg-gradient-to-br from-teal-500/20 via-slate-700/40 to-transparent -z-10 rotate-2"
