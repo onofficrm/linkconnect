@@ -3,11 +3,8 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
-
-/** 절대 URL — Vite base 재작성·상대경로 이슈 방지 (파비콘과 동일 방식) */
-const LAWYER_PORTRAIT_SRC = 'https://air911.co.kr/lawyer-portrait.jpg';
-const LAWYER_PORTRAIT_FALLBACK =
-  'https://air911.co.kr/plugin/onoff-builder-bridge/imports/dasibom/lawyer-portrait.jpg';
+// ?inline → data URL로 번들 (외부 URL 404/캐시로 사진이 깨지는 문제 방지)
+import lawyerPortraitInline from './assets/lawyer-lee-jeongyong-hero.jpg?inline';
 
 const CONTACT_INFO = {
   companyName: '다시봄 개인회생센터',
@@ -267,33 +264,15 @@ export default function App() {
             </div>
             
             <div className="relative mt-6 md:mt-0 flex items-center justify-center self-stretch">
-              <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10" aria-hidden />
               
               <div
-                className="aspect-[4/5] w-full min-h-[380px] md:min-h-[440px] bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700 bg-cover bg-[center_18%]"
-                style={{ backgroundImage: `url(${LAWYER_PORTRAIT_SRC})` }}
+                role="img"
+                aria-label={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
+                className="aspect-[4/5] w-full min-h-[380px] md:min-h-[440px] rounded-[2.5rem] overflow-hidden relative border border-slate-700 bg-slate-800 bg-cover bg-no-repeat bg-[center_18%]"
+                style={{ backgroundImage: `url(${lawyerPortraitInline})` }}
               >
-                <img 
-                  src={LAWYER_PORTRAIT_SRC}
-                  alt={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
-                  width={900}
-                  height={1100}
-                  decoding="async"
-                  loading="eager"
-                  fetchPriority="high"
-                  onError={(e) => {
-                    const el = e.currentTarget;
-                    if (el.dataset.fallback === '1') return;
-                    el.dataset.fallback = '1';
-                    el.src = LAWYER_PORTRAIT_FALLBACK;
-                    el.parentElement?.style.setProperty(
-                      'background-image',
-                      `url(${LAWYER_PORTRAIT_FALLBACK})`,
-                    );
-                  }}
-                  className="absolute inset-0 w-full h-full object-cover object-[center_18%]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent pointer-events-none" aria-hidden />
                 
                 <div className="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-700">
                    <div className="flex items-center gap-3">
