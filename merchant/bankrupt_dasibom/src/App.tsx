@@ -215,7 +215,7 @@ export default function App() {
       <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 auto-rows-min gap-4 md:gap-6">
         {/* Hero Section */}
         <section className="lg:col-span-8 bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-xl shadow-slate-900/10">
-          <div className="grid md:grid-cols-2 gap-8 items-center h-full relative z-10">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-10 items-start h-full relative z-10">
             <div className="space-y-5 md:space-y-6 max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 text-xs font-semibold">
                 <Scale className="w-4 h-4" />
@@ -263,30 +263,36 @@ export default function App() {
               <p className="text-xs text-slate-400 leading-relaxed">상담 신청만으로 비용이 발생하지 않습니다.</p>
             </div>
             
-            <div className="relative mt-6 md:mt-0 flex items-center justify-center self-stretch">
-              <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10" aria-hidden />
-              
-              <div
-                role="img"
-                aria-label={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
-                className="aspect-[4/5] w-full min-h-[380px] md:min-h-[440px] rounded-[2.5rem] overflow-hidden relative border border-slate-700 bg-slate-800 bg-cover bg-no-repeat bg-[center_18%]"
-                style={{ backgroundImage: `url(${lawyerPortraitInline})` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent pointer-events-none" aria-hidden />
-                
-                <div className="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-700">
-                   <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 shrink-0">
-                         <BadgeCheck className="w-5 h-5" />
-                      </div>
-                      <div>
-                         <p className="text-[11px] font-bold text-teal-400 mb-0.5">{LAWYER_PROFILE.title}</p>
-                         <p className="font-bold text-sm text-white leading-tight">
-                           {LAWYER_PROFILE.name} 변호사<br/>
-                           <span className="text-slate-300 font-medium text-xs">서울중앙지검·부장검사 출신</span>
-                         </p>
-                      </div>
-                   </div>
+            <div className="relative mt-2 md:mt-0 flex justify-center md:justify-end">
+              <div className="relative w-full max-w-[260px] sm:max-w-[280px] md:max-w-[300px]">
+                <div
+                  className="absolute -inset-1 rounded-[1.75rem] bg-gradient-to-br from-teal-500/20 via-slate-700/40 to-transparent -z-10 rotate-2"
+                  aria-hidden
+                />
+                <div
+                  role="img"
+                  aria-label={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
+                  className="aspect-[3/4] w-full rounded-[1.75rem] overflow-hidden relative border border-slate-600/80 bg-slate-800 bg-cover bg-no-repeat bg-[center_12%] shadow-xl shadow-black/40"
+                  style={{ backgroundImage: `url(${lawyerPortraitInline})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none" aria-hidden />
+                  
+                  <div className="absolute bottom-3 left-3 right-3 bg-slate-950/90 backdrop-blur-sm rounded-xl px-3.5 py-3 shadow-lg border border-slate-700/80">
+                     <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 shrink-0">
+                           <BadgeCheck className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                           <p className="text-[10px] font-bold text-teal-400 mb-0.5">{LAWYER_PROFILE.title}</p>
+                           <p className="font-bold text-sm text-white leading-snug">
+                             {LAWYER_PROFILE.name} 변호사
+                           </p>
+                           <p className="text-slate-400 font-medium text-[11px] leading-snug mt-0.5">
+                             서울중앙지검·부장검사 출신
+                           </p>
+                        </div>
+                     </div>
+                  </div>
                 </div>
               </div>
             </div>
