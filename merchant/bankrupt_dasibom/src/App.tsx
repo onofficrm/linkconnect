@@ -3,10 +3,12 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
-import lawyerPortrait from './assets/lawyer-lee-jeongyong.webp';
+
+const LAWYER_PORTRAIT_SRC =
+  '/plugin/onoff-builder-bridge/imports/dasibom/lawyer-portrait.jpg';
 
 const CONTACT_INFO = {
-  companyName: '다시봄 재정회복센터',
+  companyName: '다시봄 개인회생센터',
   ceo: '',
   bizNumber: '',
   address: '',
@@ -69,7 +71,7 @@ export default function App() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    document.title = '개인회생무료상담 | 다시봄 재정회복센터 검사출신 변호사';
+    document.title = '개인회생무료상담 | 다시봄 개인회생센터 검사출신 변호사';
   }, []);
 
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -176,7 +178,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">봄</div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">다시봄 <span className="text-teal-600">재정회복센터</span></span>
+            <span className="text-xl font-bold text-slate-900 tracking-tight">다시봄 <span className="text-teal-600">개인회생센터</span></span>
           </div>
           
           {/* Desktop Nav */}
@@ -223,91 +225,61 @@ export default function App() {
         {/* Hero Section */}
         <section className="lg:col-span-8 bg-slate-900 rounded-3xl p-8 md:p-10 flex flex-col justify-center text-white relative overflow-hidden shadow-xl shadow-slate-900/10">
           <div className="grid md:grid-cols-2 gap-8 items-center h-full relative z-10">
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 text-xs font-semibold">
                 <Scale className="w-4 h-4" />
-                검사출신 변호사 · 비공개 1:1 무료상담
+                검사출신 변호사 · 1:1 무료상담
               </div>
               
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+              <h1 className="text-2xl md:text-[1.75rem] lg:text-3xl font-bold tracking-tight text-white leading-snug break-keep">
                 감당하기 어려운 채무,<br />
-                <span className="text-teal-400">검사 출신의 시선</span>으로<br className="hidden sm:block" />
-                해결 가능성부터 확인하세요
+                <span className="text-teal-400">검사출신의 시선</span>으로<br />
+                해결부터 확인하세요
               </h1>
               
-              <p className="text-base text-slate-300 leading-relaxed font-medium">
-                서울중앙지검·부장검사 경력을 바탕으로, 소득·채무·재산 상황을 구조적으로 파악합니다.<br className="hidden md:block" />
-                개인회생무료상담으로 개인회생·개인파산 중 무엇이 맞는지, 현실적인 방향을 안내받으세요.
+              <p className="text-sm md:text-[15px] text-slate-300 leading-relaxed font-medium break-keep">
+                서울중앙지검·부장검사 출신 변호사가 소득·채무 상황을 파악하고,
+                개인회생·개인파산 방향을 무료로 안내합니다.
               </p>
 
-              <div className="flex flex-wrap gap-2 pt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 검사출신 전문 상담
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 검사출신 상담
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 상담내용 비공개
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 상담 비공개
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 상황별 맞춤 안내
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 전화·온라인 상담
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 맞춤 안내
                 </span>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-6 py-3.5 rounded-xl text-base font-bold transition-all flex justify-center items-center gap-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-5 py-3 rounded-xl text-sm font-bold transition-all flex justify-center items-center gap-2">
                   무료 상담 신청하기
                 </a>
                 <a
                   href={partnerTel || undefined}
-                  className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-all phone-only partner-phone-link"
+                  className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all phone-only partner-phone-link"
                 >
-                  <Phone className="w-5 h-5" />
-                  전화로 바로 상담하기
+                  <Phone className="w-4 h-4" />
+                  전화 상담
                 </a>
               </div>
               
-              <div className="text-xs text-slate-400 pt-1">
-                <p>상담 신청만으로 비용이 발생하지 않습니다.</p>
-              </div>
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-6 mt-2 border-t border-slate-800/60">
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
-                    <Scale className="w-4 h-4" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-300">검사출신</p>
-                </div>
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-300">비공개 상담</p>
-                </div>
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-300">상황별 맞춤</p>
-                </div>
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-300">전화상담 가능</p>
-                </div>
-              </div>
+              <p className="text-xs text-slate-400">상담 신청만으로 비용이 발생하지 않습니다.</p>
             </div>
             
-            <div className="relative mt-8 md:mt-0 flex items-center justify-center">
+            <div className="relative mt-6 md:mt-0 flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10"></div>
               
-              <div className="aspect-[4/5] sm:aspect-square md:aspect-[4/5] w-full bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700">
+              <div className="aspect-[4/5] sm:aspect-square md:aspect-[4/5] w-full max-h-[420px] bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700">
                 <img 
-                  src={lawyerPortrait}
+                  src={LAWYER_PORTRAIT_SRC}
                   alt={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
+                  width={900}
+                  height={1100}
+                  decoding="async"
                   className="w-full h-full object-cover object-[center_18%] opacity-95"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
@@ -1015,7 +987,7 @@ export default function App() {
           <div className="border-t border-slate-200 pt-6">
             <p className="text-[11px] text-slate-400 leading-relaxed text-center md:text-left">
               * 본 페이지의 내용은 일반적인 제도 안내이며, 실제 신청 가능 여부와 결과는 개인별 상황 및 관련 기관의 판단에 따라 달라질 수 있습니다.<br />
-              © {new Date().getFullYear()} 다시봄 재정회복센터. All rights reserved.
+              © {new Date().getFullYear()} 다시봄 개인회생센터. All rights reserved.
             </p>
           </div>
         </div>
