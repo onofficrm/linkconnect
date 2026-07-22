@@ -5,7 +5,9 @@ import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
 import { CONTRACT_REQUIRED_AGREEMENTS } from '../../components/advertiser/contract/contractForm';
 import {
+  addMerchantContractAddendum,
   fetchMerchantContractRead,
+  type MerchantContractAddendum,
   type MerchantContractCampaignItem,
   type MerchantContractRead,
   PartnerApiError,
@@ -36,8 +38,14 @@ export function AdvertiserContractView() {
   const [history, setHistory] = useState<Array<{ contractVersion: string; contractCode: string; signedAt: string }>>([]);
   const [campaigns, setCampaigns] = useState<MerchantContractCampaignItem[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<MerchantContractCampaignItem | null>(null);
+  const [addenda, setAddenda] = useState<MerchantContractAddendum[]>([]);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [addendumTitle, setAddendumTitle] = useState('특약사항');
+  const [addendumBody, setAddendumBody] = useState('');
+  const [addendumSaving, setAddendumSaving] = useState(false);
   const [notSigned, setNotSigned] = useState(false);
   const [error, setError] = useState('');
+  const [addendumError, setAddendumError] = useState('');
   const selectedVersion = searchParams.get('version') ?? '';
   const selectedCpId = Number(searchParams.get('cpId') || 0) || 0;
 
@@ -64,6 +72,8 @@ export function AdvertiserContractView() {
         setHistory(data.history);
         setCampaigns(data.campaigns ?? []);
         setSelectedCampaign(data.campaign ?? null);
+        setAddenda(data.addenda ?? []);
+        setCsrfToken(data.csrfToken ?? '');
       })
       .catch((err) => {
         if (err instanceof PartnerApiError && (err.code === 'NOT_FOUND' || err.status === 404)) {
@@ -74,6 +84,37 @@ export function AdvertiserContractView() {
       })
       .finally(() => setLoading(false));
   }, [auth.isMerchant, selectedVersion, selectedCpId]);
+
+  const handleAddAddendum = async () => {
+    if (!contract?.canAddAddendum || !csrfToken || !addendumBody.trim()) {
+      setAddendumError('특약 내용을 입력해 주세요.');
+      return;
+    }
+    if (!window.confirm('원 계약은 유지한 채 특약을 추가합니다. 계속할까요?')) {
+      return;
+    }
+    setAddendumSaving(true);
+    setAddendumError('');
+    try {
+      const result = await addMerchantContractAddendum({
+        csrfToken,
+        title: addendumTitle.trim() || '특약사항',
+        body: addendumBody.trim(),
+        version: contract.contractVersion,
+      });
+      if (result.data?.contract) {
+        setContract(result.data.contract);
+        setAddenda(result.data.addenda ?? []);
+        if (result.data.csrfToken) setCsrfToken(result.data.csrfToken);
+      }
+      setAddendumBody('');
+      setAddendumTitle('특약사항');
+    } catch (err) {
+      setAddendumError(err instanceof Error ? err.message : '특약 추가에 실패했습니다.');
+    } finally {
+      setAddendumSaving(false);
+    }
+  };
 
   const updateParams = (next: { version?: string; cpId?: number | null }) => {
     const params: Record<string, string> = {};
@@ -271,6 +312,86 @@ export function AdvertiserContractView() {
             <ReadOnlyField label="담당자 이메일" value={contract.signerEmail} />
             <ReadOnlyField label="PDF 해시 (일부)" value={contract.pdfHashMasked} />
           </div>
+          {(contract.negotiatedTerms?.trim() || contract.specialClauses?.trim()) ? (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-800">별도 협의·특별조항</h3>
+              {contract.negotiatedTerms?.trim() ? (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-1">별도 협의사항</p>
+                  <pre className="text-sm text-slate-800 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    {contract.negotiatedTerms}
+                  </pre>
+                </div>
+              ) : null}
+              {contract.specialClauses?.trim() ? (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-1">특별조항</p>
+                  <pre className="text-sm text-slate-800 whitespace-pre-wrap rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+                    {contract.specialClauses}
+                  </pre>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">체결 후 특약</h3>
+              <p className="text-xs text-slate-500 mt-0.5">원 계약 이후 추가된 부속 합의입니다. 충돌 시 특약이 우선합니다.</p>
+            </div>
+            {addenda.filter((a) => a.status === 'active').length > 0 ? (
+              <ul className="space-y-2">
+                {addenda.map((item) => (
+                  <li
+                    key={item.id}
+                    className={`rounded-xl border p-3 ${item.status === 'active' ? 'border-cyan-200 bg-cyan-50/40' : 'border-slate-200 bg-slate-50 opacity-60'}`}
+                  >
+                    <p className="text-sm font-bold text-slate-900">
+                      특약 {item.seq}. {item.title}
+                      {item.status !== 'active' ? <span className="ml-2 text-xs text-slate-500">무효</span> : null}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {item.createdByType === 'merchant' ? '광고주' : '관리자'} · {item.createdAt}
+                    </p>
+                    <pre className="mt-2 text-sm text-slate-800 whitespace-pre-wrap">{item.body}</pre>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">등록된 특약이 없습니다.</p>
+            )}
+            {contract.canAddAddendum ? (
+              <div className="rounded-xl border border-dashed border-cyan-300 bg-white p-3 space-y-2">
+                {addendumError ? (
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    {addendumError}
+                  </p>
+                ) : null}
+                <input
+                  type="text"
+                  value={addendumTitle}
+                  onChange={(e) => setAddendumTitle(e.target.value)}
+                  placeholder="특약 제목"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                />
+                <textarea
+                  value={addendumBody}
+                  onChange={(e) => setAddendumBody(e.target.value)}
+                  placeholder="추가할 특약 내용을 입력하세요."
+                  className="w-full min-h-[100px] px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                />
+                <button
+                  type="button"
+                  disabled={addendumSaving || !addendumBody.trim() || !csrfToken}
+                  onClick={() => void handleAddAddendum()}
+                  className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-bold disabled:opacity-50"
+                >
+                  {addendumSaving ? '저장 중...' : '특약 추가'}
+                </button>
+              </div>
+            ) : null}
+          </div>
+
           <div>
             <h3 className="text-sm font-bold text-slate-800 mb-2">동의 항목</h3>
             <ul className="space-y-1.5">

@@ -5,10 +5,12 @@ import { SummaryCard } from '../../components/admin/AdminShared';
 import { ContractDocumentViewer } from '../../components/contract/ContractDocumentViewer';
 import { ContractProcessGuide } from '../../components/contract/ContractProcessGuide';
 import {
+  addAdminContractAddendum,
   fetchAdminContractDetail,
   fetchAdminContracts,
   seedAdminDemoContract,
   updateAdminContractStatus,
+  voidAdminContractAddendum,
   type AdminContractDetail,
   type AdminContractListItem,
   type AdminContractSummary,
@@ -65,6 +67,9 @@ export function AdminContracts() {
   const [seedMessage, setSeedMessage] = useState('');
   const [error, setError] = useState('');
   const [detailTab, setDetailTab] = useState<DetailTab>('document');
+  const [addendumTitle, setAddendumTitle] = useState('특약사항');
+  const [addendumBody, setAddendumBody] = useState('');
+  const [addendumSaving, setAddendumSaving] = useState(false);
 
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -185,6 +190,52 @@ export function AdminContracts() {
       setError(err instanceof Error ? err.message : '샘플 계약 생성에 실패했습니다.');
     } finally {
       setSeeding(false);
+    }
+  };
+
+  const handleAddAddendum = async () => {
+    if (!selectedId || !addendumBody.trim()) {
+      setError('특약 내용을 입력해 주세요.');
+      return;
+    }
+    if (!window.confirm('원 계약은 유지한 채 특약(부속)을 추가합니다. 계속할까요?')) {
+      return;
+    }
+    setAddendumSaving(true);
+    setError('');
+    try {
+      const result = await addAdminContractAddendum({
+        mcId: selectedId,
+        title: addendumTitle.trim() || '특약사항',
+        body: addendumBody.trim(),
+      });
+      setDetail(result.detail);
+      setAddendumBody('');
+      setAddendumTitle('특약사항');
+      setDetailTab('document');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '특약 추가에 실패했습니다.');
+    } finally {
+      setAddendumSaving(false);
+    }
+  };
+
+  const handleVoidAddendum = async (addendumId: number) => {
+    const reason = window.prompt('특약 무효 사유를 입력하세요.');
+    if (reason === null) return;
+    setAddendumSaving(true);
+    setError('');
+    try {
+      const result = await voidAdminContractAddendum({ addendumId, reason: reason.trim() });
+      if (result.detail) {
+        setDetail(result.detail);
+      } else if (selectedId) {
+        await loadDetail(selectedId);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '특약 무효 처리에 실패했습니다.');
+    } finally {
+      setAddendumSaving(false);
     }
   };
 
@@ -385,6 +436,33 @@ export function AdminContracts() {
                   <Info label="등록일" value={detail.contract.createdAt} />
                 </section>
 
+                {(detail.contract.negotiatedTerms?.trim() || detail.contract.specialClauses?.trim()) ? (
+                  <section className="space-y-3">
+                    <h3 className="font-bold text-slate-900">별도 협의·특별조항</h3>
+                    {detail.contract.negotiatedTerms?.trim() ? (
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 mb-1">별도 협의사항</p>
+                        <pre className="text-sm text-slate-800 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          {detail.contract.negotiatedTerms}
+                        </pre>
+                      </div>
+                    ) : null}
+                    {detail.contract.specialClauses?.trim() ? (
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700 mb-1">특별조항</p>
+                        <pre className="text-sm text-slate-800 whitespace-pre-wrap rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+                          {detail.contract.specialClauses}
+                        </pre>
+                      </div>
+                    ) : null}
+                  </section>
+                ) : (
+                  <section>
+                    <h3 className="font-bold text-slate-900 mb-1">별도 협의·특별조항</h3>
+                    <p className="text-sm text-slate-500">추가 협의사항·특별조항 없음</p>
+                  </section>
+                )}
+
                 {detail.signatureUrl ? (
                   <section>
                     <h3 className="font-bold text-slate-900 mb-2">서명 이미지</h3>
@@ -405,6 +483,83 @@ export function AdminContracts() {
                     </ul>
                   </section>
                 ) : null}
+
+                <section className="space-y-3">
+                  <div>
+                    <h3 className="font-bold text-slate-900 mb-1">체결 후 특약(부속)</h3>
+                    <p className="text-xs text-slate-500">
+                      원 계약서·PDF는 변경하지 않고, 특약을 부속으로 추가합니다. 충돌 시 특약이 우선합니다.
+                    </p>
+                  </div>
+                  {(detail.addenda ?? []).length > 0 ? (
+                    <ul className="space-y-2">
+                      {(detail.addenda ?? []).map((item) => (
+                        <li
+                          key={item.id}
+                          className={`rounded-xl border p-3 ${item.status === 'active' ? 'border-cyan-200 bg-cyan-50/40' : 'border-slate-200 bg-slate-50 opacity-70'}`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-bold text-slate-900">
+                                특약 {item.seq}. {item.title}
+                                {item.status !== 'active' ? (
+                                  <span className="ml-2 text-xs font-semibold text-slate-500">무효</span>
+                                ) : null}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {item.createdByType === 'merchant' ? '광고주' : '관리자'}
+                                {item.createdBy ? ` (${item.createdBy})` : ''} · {item.createdAt}
+                              </p>
+                            </div>
+                            {item.status === 'active' ? (
+                              <button
+                                type="button"
+                                disabled={addendumSaving}
+                                onClick={() => handleVoidAddendum(item.id)}
+                                className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50"
+                              >
+                                무효
+                              </button>
+                            ) : null}
+                          </div>
+                          <pre className="mt-2 text-sm text-slate-800 whitespace-pre-wrap">{item.body}</pre>
+                          {item.status === 'void' && item.voidReason ? (
+                            <p className="mt-1 text-xs text-slate-500">무효 사유: {item.voidReason}</p>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-slate-500">등록된 특약이 없습니다.</p>
+                  )}
+                  {detail.contract.canAddAddendum ? (
+                    <div className="rounded-xl border border-dashed border-cyan-300 bg-white p-3 space-y-2">
+                      <input
+                        type="text"
+                        value={addendumTitle}
+                        onChange={(e) => setAddendumTitle(e.target.value)}
+                        placeholder="특약 제목"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                      />
+                      <textarea
+                        value={addendumBody}
+                        onChange={(e) => setAddendumBody(e.target.value)}
+                        placeholder="체결 후 추가할 특약 내용을 입력하세요."
+                        className="w-full min-h-[100px] px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                      />
+                      <button
+                        type="button"
+                        disabled={addendumSaving || !addendumBody.trim()}
+                        onClick={() => void handleAddAddendum()}
+                        className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-bold disabled:opacity-50"
+                      >
+                        {addendumSaving ? '저장 중...' : '특약 추가'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">승인 완료(또는 승인 대기) 계약에서만 특약을 추가할 수 있습니다.</p>
+                  )}
+                </section>
 
                 <section>
                   <h3 className="font-bold text-slate-900 mb-2">계약 승인 관리</h3>

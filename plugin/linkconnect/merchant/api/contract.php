@@ -27,6 +27,9 @@ if ($method === 'GET') {
     if (function_exists('lc_merchant_contract_log_db_ensure_schema')) {
         lc_merchant_contract_log_db_ensure_schema();
     }
+    if (function_exists('lc_merchant_contract_addendum_db_ensure_schema')) {
+        lc_merchant_contract_addendum_db_ensure_schema();
+    }
 
     $mode = isset($_GET['mode']) ? (string) $_GET['mode'] : 'write';
     if ($mode === 'read') {
@@ -58,7 +61,37 @@ if ($method === 'POST') {
 
     $action = isset($body['action']) ? (string) $body['action'] : 'draft';
 
-    if ($action !== 'sign' && !lc_merchant_contract_can_write($mt_id)) {
+    if ($action === 'add_addendum') {
+        if (function_exists('lc_merchant_contract_addendum_db_ensure_schema')) {
+            lc_merchant_contract_addendum_db_ensure_schema();
+        }
+        $version_param = isset($body['version']) ? trim((string) $body['version']) : '';
+        $version = $version_param !== ''
+            ? lc_merchant_contract_sanitize_version($version_param)
+            : lc_merchant_contract_current_version();
+        $contract = lc_merchant_contract_get($mt_id, $version);
+        if (!is_array($contract) || !lc_merchant_contract_assert_merchant_owns($contract, $mt_id)) {
+            lc_api_error('계약서를 찾을 수 없습니다.', 'NOT_FOUND', 404);
+        }
+        global $member;
+        $result = lc_merchant_contract_addendum_create((int) $contract['mc_id'], array(
+            'title'           => isset($body['title']) ? (string) $body['title'] : '특약사항',
+            'body'            => isset($body['body']) ? (string) $body['body'] : '',
+            'created_by_type' => 'merchant',
+            'created_by'      => is_array($member) ? (string) ($member['mb_id'] ?? '') : '',
+        ));
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'ADDENDUM_FAILED', 400);
+        }
+        $read = lc_merchant_contract_read_view_for_merchant($mt_id, $version);
+        lc_api_success(array(
+            'message'  => $result['message'],
+            'addendum' => $result['addendum'] ?? null,
+            'data'     => !empty($read['ok']) ? ($read['data'] ?? null) : null,
+        ));
+    }
+
+    if ($action !== 'sign' && $action !== 'add_addendum' && !lc_merchant_contract_can_write($mt_id)) {
         lc_api_error('이미 체결된 계약서는 수정할 수 없습니다.', 'CONTRACT_SIGNED', 403);
     }
 

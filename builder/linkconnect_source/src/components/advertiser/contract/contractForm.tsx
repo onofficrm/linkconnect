@@ -3,13 +3,14 @@ import { Check } from 'lucide-react';
 
 const STEPS = [
   { id: 1, label: '광고주 정보 확인' },
-  { id: 2, label: '계약서 확인 및 동의' },
-  { id: 3, label: '담당자 입력 및 서명' },
+  { id: 2, label: '별도 협의·특별조항' },
+  { id: 3, label: '계약서 확인 및 동의' },
+  { id: 4, label: '담당자 입력 및 서명' },
 ] as const;
 
 export function ContractStepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <ol className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-8">
+    <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
       {STEPS.map((step) => {
         const active = currentStep === step.id;
         const done = currentStep > step.id;
@@ -26,7 +27,7 @@ export function ContractStepIndicator({ currentStep }: { currentStep: number }) 
           >
             <div className="flex items-center gap-2">
               <span
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                   active
                     ? 'bg-cyan-600 text-white'
                     : done
@@ -69,6 +70,8 @@ export type ContractFormState = {
   signerPosition: string;
   signerPhone: string;
   signerEmail: string;
+  negotiatedTerms: string;
+  specialClauses: string;
   agreements: Record<ContractAgreementKey, boolean>;
   step: number;
 };
@@ -86,6 +89,8 @@ export const EMPTY_CONTRACT_FORM: ContractFormState = {
   signerPosition: '',
   signerPhone: '',
   signerEmail: '',
+  negotiatedTerms: '',
+  specialClauses: '',
   agreements: {
     readAll: false,
     hasAuthority: false,
@@ -128,7 +133,12 @@ export function validateStep1(form: ContractFormState) {
   return errors;
 }
 
-export function validateStep2(form: ContractFormState) {
+/** 2단계: 별도 협의·특별조항은 선택 입력 */
+export function validateStep2(_form: ContractFormState) {
+  return {} as Record<string, string>;
+}
+
+export function validateStep3(form: ContractFormState) {
   const errors: Record<string, string> = {};
   CONTRACT_REQUIRED_AGREEMENTS.forEach(({ key, label }) => {
     if (!form.agreements[key]) {
@@ -138,7 +148,7 @@ export function validateStep2(form: ContractFormState) {
   return errors;
 }
 
-export function validateStep3(form: ContractFormState, hasSignature: boolean) {
+export function validateStep4(form: ContractFormState, hasSignature: boolean) {
   const errors: Record<string, string> = {};
   const labels: Record<string, string> = {
     signerName: '계약 담당자 이름',
@@ -176,27 +186,24 @@ export function TextField({
   error,
   type = 'text',
   placeholder,
-  disabled,
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (v: string) => void;
   error?: string;
   type?: string;
   placeholder?: string;
-  disabled?: boolean;
 }) {
   return (
-    <label className="block">
+    <label className="block space-y-1.5">
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
         type={type}
         value={value}
-        disabled={disabled}
-        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={`mt-1 w-full rounded-xl border px-3 py-2.5 text-slate-900 ${
-          error ? 'border-amber-400 bg-amber-50/40' : 'border-slate-300 bg-white'
+        placeholder={placeholder}
+        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm ${
+          error ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'
         }`}
       />
       <FieldError message={error} />

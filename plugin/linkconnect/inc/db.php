@@ -1035,6 +1035,13 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        if (function_exists('lc_merchant_contract_addendum_db_ensure_schema')) {
+            $mc_addenda = lc_merchant_contract_addendum_db_ensure_schema();
+            if (empty($mc_addenda['ok'])) {
+                return $mc_addenda;
+            }
+        }
+
         // ── 광고상품 홍보 가이드 (campaigns 테이블과 분리) ──
         if (function_exists('lc_campaign_promo_guide_db_ensure_schema')) {
             $cpg = lc_campaign_promo_guide_db_ensure_schema();
@@ -1116,6 +1123,25 @@ if (!function_exists('lc_merchant_contract_db_ensure_schema')) {
             $alter = lc_sql_query("ALTER TABLE `{$table}` ADD COLUMN `mc_contract_code` varchar(50) NOT NULL DEFAULT '' AFTER `mc_contract_version`, ADD KEY `idx_mc_contract_code` (`mc_contract_code`)", false);
             if ($alter === false) {
                 return array('ok' => false, 'message' => 'merchant_contracts mc_contract_code 컬럼 추가 실패: ' . lc_sql_error());
+            }
+        }
+
+        if (lc_db_table_exists($table) && !lc_db_column_exists($table, 'mc_negotiated_terms')) {
+            $alter = lc_sql_query(
+                "ALTER TABLE `{$table}` ADD COLUMN `mc_negotiated_terms` mediumtext NULL AFTER `mc_agreement_snapshot`",
+                false
+            );
+            if ($alter === false) {
+                return array('ok' => false, 'message' => 'merchant_contracts mc_negotiated_terms 컬럼 추가 실패: ' . lc_sql_error());
+            }
+        }
+        if (lc_db_table_exists($table) && !lc_db_column_exists($table, 'mc_special_clauses')) {
+            $alter = lc_sql_query(
+                "ALTER TABLE `{$table}` ADD COLUMN `mc_special_clauses` mediumtext NULL AFTER `mc_negotiated_terms`",
+                false
+            );
+            if ($alter === false) {
+                return array('ok' => false, 'message' => 'merchant_contracts mc_special_clauses 컬럼 추가 실패: ' . lc_sql_error());
             }
         }
 

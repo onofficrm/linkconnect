@@ -214,6 +214,28 @@
   margin-bottom: 0.35rem;
 }
 
+.lc-contract-extra-terms {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.lc-contract-extra-body {
+  margin-top: 0.75rem;
+  padding: 1rem 1.15rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.lc-contract-addendum-meta {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
 .lc-contract-campaign-schedule {
   margin-top: 1.75rem;
   padding-top: 1.25rem;

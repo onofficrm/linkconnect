@@ -87,6 +87,8 @@ if (!function_exists('lc_merchant_contract_form_from_row')) {
             'signerPosition'     => '',
             'signerPhone'        => '',
             'signerEmail'        => '',
+            'negotiatedTerms'    => '',
+            'specialClauses'     => '',
             'agreements'         => array(
                 'readAll'      => false,
                 'hasAuthority' => false,
@@ -109,6 +111,12 @@ if (!function_exists('lc_merchant_contract_form_from_row')) {
         $form['signerPosition'] = (string) ($contract['mc_signer_position'] ?? '');
         $form['signerPhone'] = (string) ($contract['mc_signer_phone'] ?? '');
         $form['signerEmail'] = (string) ($contract['mc_signer_email'] ?? '');
+        if (isset($contract['mc_negotiated_terms'])) {
+            $form['negotiatedTerms'] = (string) $contract['mc_negotiated_terms'];
+        }
+        if (isset($contract['mc_special_clauses'])) {
+            $form['specialClauses'] = (string) $contract['mc_special_clauses'];
+        }
 
         $snapshot = lc_merchant_contract_decode_snapshot($contract['mc_company_snapshot'] ?? '');
         if (is_array($snapshot)) {
@@ -132,6 +140,12 @@ if (!function_exists('lc_merchant_contract_form_from_row')) {
             }
             if (!empty($agreement['agreementCheckedAt'])) {
                 $form['agreementCheckedAt'] = (string) $agreement['agreementCheckedAt'];
+            }
+            if ($form['negotiatedTerms'] === '' && !empty($agreement['negotiatedTerms'])) {
+                $form['negotiatedTerms'] = (string) $agreement['negotiatedTerms'];
+            }
+            if ($form['specialClauses'] === '' && !empty($agreement['specialClauses'])) {
+                $form['specialClauses'] = (string) $agreement['specialClauses'];
             }
         }
 
@@ -258,6 +272,9 @@ if (!function_exists('lc_merchant_contract_read_to_api')) {
                 'business_number'     => $form['businessNumber'],
                 'company_address'     => $form['companyAddress'],
                 'company_phone'       => $form['companyPhone'],
+            ), array(
+                'negotiatedTerms' => $form['negotiatedTerms'],
+                'specialClauses'  => $form['specialClauses'],
             ));
         }
 
@@ -284,6 +301,8 @@ if (!function_exists('lc_merchant_contract_read_to_api')) {
             'signerPosition'     => $form['signerPosition'],
             'signerPhone'        => $form['signerPhone'],
             'signerEmail'        => $form['signerEmail'],
+            'negotiatedTerms'    => $form['negotiatedTerms'],
+            'specialClauses'     => $form['specialClauses'],
             'signedAt'           => (string) ($contract['mc_signed_at'] ?? ''),
             'signedIp'           => (string) ($contract['mc_signed_ip'] ?? ''),
             'userAgent'          => (string) ($contract['mc_user_agent'] ?? ''),
@@ -305,6 +324,9 @@ if (!function_exists('lc_merchant_contract_read_to_api')) {
             'documentPdfUrl'     => LC_PLUGIN_URL . '/merchant/contract-download.php?version=' . $version_q,
             'isReadOnly'         => true,
             'isFullySigned'      => lc_merchant_contract_is_row_fully_signed($contract),
+            'canAddAddendum'     => function_exists('lc_merchant_contract_addendum_can_add')
+                ? lc_merchant_contract_addendum_can_add($contract, 'merchant')
+                : false,
         );
     }
 }
@@ -486,6 +508,12 @@ if (!function_exists('lc_merchant_contract_read_view_for_merchant')) {
         }
 
         $contract_api = lc_merchant_contract_read_to_api($contract);
+        if (!empty($contract_api['contractHtml']) && function_exists('lc_merchant_contract_append_addenda_to_html')) {
+            $contract_api['contractHtml'] = lc_merchant_contract_append_addenda_to_html(
+                (string) $contract_api['contractHtml'],
+                (int) ($contract['mc_id'] ?? 0)
+            );
+        }
         if (is_array($campaign_row) && !empty($contract_api['contractHtml'])) {
             $contract_api['contractHtml'] = lc_merchant_contract_append_campaign_to_html(
                 (string) $contract_api['contractHtml'],
@@ -493,6 +521,10 @@ if (!function_exists('lc_merchant_contract_read_view_for_merchant')) {
             );
             $contract_api['campaignId'] = $cp_id;
         }
+
+        $addenda = function_exists('lc_merchant_contract_addendum_list_for_api')
+            ? lc_merchant_contract_addendum_list_for_api((int) ($contract['mc_id'] ?? 0), true)
+            : array();
 
         return array(
             'ok'      => true,
@@ -502,6 +534,10 @@ if (!function_exists('lc_merchant_contract_read_view_for_merchant')) {
                 'history'   => $history,
                 'campaigns' => $campaigns,
                 'campaign'  => $campaign_api,
+                'addenda'   => $addenda,
+                'csrfToken' => function_exists('lc_merchant_contract_csrf_token')
+                    ? lc_merchant_contract_csrf_token()
+                    : '',
             ),
         );
     }

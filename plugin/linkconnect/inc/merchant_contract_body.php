@@ -6,8 +6,9 @@ if (!defined('_GNUBOARD_')) {
 if (!function_exists('lc_merchant_contract_render_html')) {
     /**
      * @param array<string,string> $party_a
+     * @param array{negotiatedTerms?:string,specialClauses?:string} $extras
      */
-    function lc_merchant_contract_render_html(array $party_a)
+    function lc_merchant_contract_render_html(array $party_a, array $extras = array())
     {
         $party_b = lc_merchant_contract_party_b();
         $version = lc_merchant_contract_current_version();
@@ -29,6 +30,33 @@ if (!function_exists('lc_merchant_contract_render_html')) {
         $b_phone = $esc($party_b['company_phone'] ?? '');
 
         $a_display = $a_name !== '' ? $a_name : '[ 광고주 회사명 ]';
+
+        $negotiated = trim((string) ($extras['negotiatedTerms'] ?? ''));
+        $special = trim((string) ($extras['specialClauses'] ?? ''));
+        $extra_sections = '';
+        if ($negotiated !== '') {
+            $negotiated_html = nl2br($esc($negotiated));
+            $extra_sections .= <<<HTML
+
+  <section class="lc-contract-article lc-contract-extra-terms">
+    <h2>제 11 조 [ 별도 협의사항 ]</h2>
+    <p>본 조는 기본 계약 외에 갑·을이 별도로 합의한 사항을 기재한다. 본 조와 기본 조항이 충돌하는 경우, 본 조의 내용이 우선한다.</p>
+    <div class="lc-contract-extra-body">{$negotiated_html}</div>
+  </section>
+HTML;
+        }
+        if ($special !== '') {
+            $special_html = nl2br($esc($special));
+            $article_no = $negotiated !== '' ? '12' : '11';
+            $extra_sections .= <<<HTML
+
+  <section class="lc-contract-article lc-contract-extra-terms lc-contract-special-clauses">
+    <h2>제 {$article_no} 조 [ 특별조항 ]</h2>
+    <p>본 조는 기본 계약에 추가되는 특별조항(제한·의무·패널티 등)을 기재한다. 본 조와 기본 조항이 충돌하는 경우, 본 조의 내용이 우선한다.</p>
+    <div class="lc-contract-extra-body">{$special_html}</div>
+  </section>
+HTML;
+        }
 
         return <<<HTML
 <div class="lc-contract-document">
@@ -163,6 +191,7 @@ if (!function_exists('lc_merchant_contract_render_html')) {
     <p>본 계약의 해석 및 이행과 관련하여 분쟁이 발생한 경우 상호 합의에 의해 원만히 해결하는 것을 원칙으로 한다. 합의가 이루어지지 않을 경우, 대한민국 법률의 적용을 받으며, &quot;갑&quot;의 본점 소재지를 관할하는 지방법원을 관할 법원으로 한다.</p>
     <p>본 계약의 성립을 증명하기 위하여 계약서 2부를 작성하고, 양 당사자가 기명날인 또는 서명한 후 각각 1부씩 보관한다. (전자적 방식으로 체결된 경우에도 서면 계약과 동일한 효력을 갖는다.)</p>
   </section>
+{$extra_sections}
 </div>
 HTML;
     }
@@ -190,6 +219,9 @@ if (!function_exists('lc_merchant_contract_document_styles')) {
 .lc-contract-article ol { padding-left: 1.25rem; }
 .lc-contract-article ul { padding-left: 1.25rem; list-style: disc; margin-top: 0.5rem; }
 .lc-contract-article li { margin-bottom: 0.35rem; }
+.lc-contract-extra-terms { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed #cbd5e1; }
+.lc-contract-extra-body { margin-top: 0.75rem; padding: 1rem 1.15rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; white-space: pre-wrap; color: #0f172a; font-weight: 500; }
+.lc-contract-addendum-meta { font-size: 0.875rem; color: #64748b; }
 CSS;
     }
 }

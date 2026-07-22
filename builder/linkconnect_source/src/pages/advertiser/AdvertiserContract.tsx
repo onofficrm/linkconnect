@@ -17,6 +17,7 @@ import {
   validateStep1,
   validateStep2,
   validateStep3,
+  validateStep4,
 } from '../../components/advertiser/contract/contractForm';
 import {
   fetchMerchantContract,
@@ -43,13 +44,15 @@ function mapStateToForm(state: MerchantContractState): ContractFormState {
     signerPosition: state.form.signerPosition ?? '',
     signerPhone: state.form.signerPhone ?? '',
     signerEmail: state.form.signerEmail ?? '',
+    negotiatedTerms: state.form.negotiatedTerms ?? '',
+    specialClauses: state.form.specialClauses ?? '',
     agreements: {
       readAll: Boolean(state.form.agreements?.readAll),
       hasAuthority: Boolean(state.form.agreements?.hasAuthority),
       electronic: Boolean(state.form.agreements?.electronic),
       noModify: Boolean(state.form.agreements?.noModify),
     },
-    step: Math.min(3, Math.max(1, Number(state.form.step) || 1)),
+    step: Math.min(4, Math.max(1, Number(state.form.step) || 1)),
   };
 }
 
@@ -70,6 +73,8 @@ function formToPayload(form: ContractFormState, csrfToken: string, step: number)
     signerPosition: form.signerPosition,
     signerPhone: form.signerPhone,
     signerEmail: form.signerEmail,
+    negotiatedTerms: form.negotiatedTerms,
+    specialClauses: form.specialClauses,
     agreements: form.agreements,
   };
 }
@@ -206,6 +211,16 @@ export function AdvertiserContract() {
       setStep(nextStep);
       persistLocalDraft(form, nextStep);
       await saveDraft(form, nextStep);
+      return;
+    }
+    if (step === 3) {
+      const stepErrors = validateStep3(form);
+      setErrors(stepErrors);
+      if (Object.keys(stepErrors).length > 0) return;
+      const nextStep = 4;
+      setStep(nextStep);
+      persistLocalDraft(form, nextStep);
+      await saveDraft(form, nextStep);
     }
   };
 
@@ -241,7 +256,7 @@ export function AdvertiserContract() {
 
   const handleSignSubmit = async () => {
     setSubmitError('');
-    const stepErrors = validateStep3(form, hasSignature);
+    const stepErrors = validateStep4(form, hasSignature);
     setErrors(stepErrors);
     if (Object.keys(stepErrors).length > 0) {
       setShowConfirm(false);
@@ -254,7 +269,7 @@ export function AdvertiserContract() {
         await uploadSignatureIfNeeded();
       }
       const payload = {
-        ...formToPayload(form, state!.csrfToken, 3),
+        ...formToPayload(form, state!.csrfToken, 4),
         action: 'sign' as const,
         signatureDataUrl: signatureDataUrl ?? undefined,
       };
@@ -433,9 +448,57 @@ export function AdvertiserContract() {
       {step === 2 ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 md:p-8 shadow-sm space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1">2단계: 계약서 확인 및 동의</h2>
-            <p className="text-sm text-slate-500">계약서 전문을 확인하고 필수 항목에 동의해 주세요.</p>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">2단계: 별도 협의·특별조항</h2>
+            <p className="text-sm text-slate-500">
+              기본 계약서 외에 합의할 내용이 있으면 입력하세요. 없으면 비워 두고 다음으로 진행할 수 있습니다.
+              입력한 내용은 다음 단계의 계약서 전문(제11·12조)에 반영됩니다.
+            </p>
           </div>
+
+          <label className="block space-y-1.5">
+            <span className="text-sm font-semibold text-slate-800">별도 협의사항</span>
+            <p className="text-xs text-slate-500">단가 예외, 검수 기간 조정, 캠페인 운영 조건 등 상호 합의 내용을 적어 주세요.</p>
+            <textarea
+              value={form.negotiatedTerms}
+              onChange={(e) => updateForm({ negotiatedTerms: e.target.value })}
+              rows={6}
+              placeholder="예: 유효 DB 1건당 단가는 별도 합의된 ○○원(VAT 별도)을 적용한다. …"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
+            />
+          </label>
+
+          <label className="block space-y-1.5">
+            <span className="text-sm font-semibold text-slate-800">특별조항 (독소조항·제한 조건 등)</span>
+            <p className="text-xs text-slate-500">독점, 최소 보장, 위약금, 금지 사항 등 특별 제한·의무 조항이 있으면 적어 주세요.</p>
+            <textarea
+              value={form.specialClauses}
+              onChange={(e) => updateForm({ specialClauses: e.target.value })}
+              rows={6}
+              placeholder="예: 갑은 계약 기간 중 동일 업종에 대해 타 제휴 플랫폼에 동일 조건의 상품을 등록하지 않는다. …"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
+            />
+          </label>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            관리자 승인 과정에서 내용이 검토되며, 필요 시 반려 후 수정 요청될 수 있습니다.
+          </div>
+        </section>
+      ) : null}
+
+      {step === 3 ? (
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 md:p-8 shadow-sm space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">3단계: 계약서 확인 및 동의</h2>
+            <p className="text-sm text-slate-500">
+              기본 계약과 별도 협의·특별조항이 포함된 전문을 확인하고 필수 항목에 동의해 주세요.
+            </p>
+          </div>
+
+          {(form.negotiatedTerms.trim() || form.specialClauses.trim()) ? (
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+              별도 협의·특별조항이 계약서에 포함되어 있습니다. 제11조(및 제12조)를 꼭 확인해 주세요.
+            </div>
+          ) : null}
 
           <ContractDocumentViewer
             html={state?.contractHtml ?? ''}
@@ -466,10 +529,10 @@ export function AdvertiserContract() {
         </section>
       ) : null}
 
-      {step === 3 ? (
+      {step === 4 ? (
         <section className="bg-white border border-slate-200 rounded-2xl p-5 md:p-8 shadow-sm space-y-6">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1">3단계: 계약 담당자 입력 및 서명</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-1">4단계: 계약 담당자 입력 및 서명</h2>
             <p className="text-sm text-slate-500">계약 체결 권한을 가진 담당자 정보와 서명을 입력해 주세요.</p>
           </div>
 
@@ -497,7 +560,7 @@ export function AdvertiserContract() {
             type="button"
             disabled={submitting}
             onClick={() => {
-              const stepErrors = validateStep3(form, hasSignature);
+              const stepErrors = validateStep4(form, hasSignature);
               setErrors(stepErrors);
               if (Object.keys(stepErrors).length === 0) {
                 setShowConfirm(true);
@@ -521,7 +584,7 @@ export function AdvertiserContract() {
         </button>
         <div className="flex items-center gap-3">
           {saving ? <span className="text-xs text-slate-500">저장 중...</span> : null}
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               type="button"
               onClick={() => void goNext()}

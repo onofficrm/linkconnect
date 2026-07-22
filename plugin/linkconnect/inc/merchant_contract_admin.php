@@ -503,7 +503,18 @@ if (!function_exists('lc_merchant_contract_admin_detail_for_api')) {
             $history[] = lc_merchant_contract_history_item_to_api($row);
         }
 
-        $version_q = rawurlencode((string) ($contract['mc_contract_version'] ?? ''));
+        $addenda = function_exists('lc_merchant_contract_addendum_list_for_api')
+            ? lc_merchant_contract_addendum_list_for_api($mc_id, true)
+            : array();
+        if (!empty($read['contractHtml']) && function_exists('lc_merchant_contract_append_addenda_to_html')) {
+            $read['contractHtml'] = lc_merchant_contract_append_addenda_to_html(
+                (string) $read['contractHtml'],
+                $mc_id
+            );
+        }
+        $read['canAddAddendum'] = function_exists('lc_merchant_contract_addendum_can_add')
+            ? lc_merchant_contract_addendum_can_add($contract, 'admin')
+            : false;
 
         return array(
             'contract'       => $read,
@@ -517,6 +528,7 @@ if (!function_exists('lc_merchant_contract_admin_detail_for_api')) {
             'companyCompare' => lc_merchant_contract_compare_company($contract),
             'companySnapshot'=> lc_merchant_contract_decode_snapshot($contract['mc_company_snapshot'] ?? ''),
             'history'        => $history,
+            'addenda'        => $addenda,
             'statusLogs'     => lc_merchant_contract_status_log_list($mc_id),
             'signLogs'       => lc_merchant_contract_sign_logs_for_api($mc_id),
             'documentPreviewUrl' => LC_PLUGIN_URL . '/admin/contract-document.php?mcId=' . (int) $mc_id,

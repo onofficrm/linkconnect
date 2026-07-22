@@ -9,6 +9,9 @@ if (function_exists('lc_merchant_contract_db_ensure_schema')) {
 if (function_exists('lc_merchant_contract_status_log_db_ensure_schema')) {
     lc_merchant_contract_status_log_db_ensure_schema();
 }
+if (function_exists('lc_merchant_contract_addendum_db_ensure_schema')) {
+    lc_merchant_contract_addendum_db_ensure_schema();
+}
 
 $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
 
@@ -79,6 +82,48 @@ if ($method === 'POST') {
 
     $mc_id = isset($body['mcId']) ? (int) $body['mcId'] : 0;
     $reason = isset($body['reason']) ? (string) $body['reason'] : '';
+
+    if ($action === 'add_addendum') {
+        if ($mc_id <= 0) {
+            lc_api_error('계약 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+        global $member;
+        $result = lc_merchant_contract_addendum_create($mc_id, array(
+            'title'           => isset($body['title']) ? (string) $body['title'] : '특약사항',
+            'body'            => isset($body['body']) ? (string) $body['body'] : '',
+            'created_by_type' => 'admin',
+            'created_by'      => is_array($member) ? (string) ($member['mb_id'] ?? '') : '',
+        ));
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'ADDENDUM_FAILED', 400);
+        }
+        lc_api_success(array(
+            'message'  => $result['message'],
+            'addendum' => $result['addendum'] ?? null,
+            'detail'   => lc_merchant_contract_admin_detail_for_api($mc_id),
+        ));
+    }
+
+    if ($action === 'void_addendum') {
+        $mca_id = isset($body['addendumId']) ? (int) $body['addendumId'] : 0;
+        if ($mca_id <= 0) {
+            lc_api_error('특약 ID가 필요합니다.', 'INVALID_REQUEST', 400);
+        }
+        $existing = lc_merchant_contract_addendum_get($mca_id);
+        if (!is_array($existing)) {
+            lc_api_error('특약을 찾을 수 없습니다.', 'NOT_FOUND', 404);
+        }
+        $result = lc_merchant_contract_addendum_void($mca_id, $reason);
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'VOID_FAILED', 400);
+        }
+        $owner_mc_id = (int) ($existing['mc_id'] ?? 0);
+        lc_api_success(array(
+            'message'  => $result['message'],
+            'addendum' => $result['addendum'] ?? null,
+            'detail'   => $owner_mc_id > 0 ? lc_merchant_contract_admin_detail_for_api($owner_mc_id) : null,
+        ));
+    }
 
     if ($mc_id <= 0) {
         lc_api_error('계약 ID가 필요합니다.', 'INVALID_REQUEST', 400);

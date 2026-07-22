@@ -65,6 +65,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_access.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_read.php')) {
     require_once LC_PLUGIN_PATH . '/inc/merchant_contract_read.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_addendum.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_addendum.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php')) {
     require_once LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php';
 }

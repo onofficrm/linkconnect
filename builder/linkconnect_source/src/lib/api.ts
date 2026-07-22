@@ -3384,6 +3384,8 @@ export type MerchantContractForm = {
   signerPosition: string;
   signerPhone: string;
   signerEmail: string;
+  negotiatedTerms?: string;
+  specialClauses?: string;
   step: number;
   agreements: {
     readAll: boolean;
@@ -3477,6 +3479,8 @@ export type MerchantContractRead = {
   signerPosition: string;
   signerPhone: string;
   signerEmail: string;
+  negotiatedTerms?: string;
+  specialClauses?: string;
   signedAt: string;
   signedIp: string;
   userAgent: string;
@@ -3492,7 +3496,24 @@ export type MerchantContractRead = {
   documentPdfUrl: string;
   isReadOnly: boolean;
   isFullySigned: boolean;
+  canAddAddendum?: boolean;
   campaignId?: number;
+};
+
+export type MerchantContractAddendum = {
+  id: number;
+  contractId: number;
+  advertiserId: number;
+  seq: number;
+  title: string;
+  body: string;
+  status: string;
+  createdByType: string;
+  createdBy: string;
+  voidedAt: string;
+  voidReason: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type MerchantContractCampaignItem = {
@@ -3524,6 +3545,8 @@ export type MerchantContractReadResponse = {
   history: MerchantContractHistoryItem[];
   campaigns?: MerchantContractCampaignItem[];
   campaign?: MerchantContractCampaignItem | null;
+  addenda?: MerchantContractAddendum[];
+  csrfToken?: string;
 };
 
 export function fetchMerchantContractRead(options?: { version?: string; cpId?: number } | string) {
@@ -3572,6 +3595,7 @@ export type AdminContractDetail = {
   companyCompare: Record<string, { contract: string; current: string; changed: boolean }>;
   companySnapshot: Record<string, unknown> | null;
   history: MerchantContractHistoryItem[];
+  addenda?: MerchantContractAddendum[];
   statusLogs: Array<{
     id: number;
     adminId: string;
@@ -3639,6 +3663,52 @@ export function updateAdminContractStatus(payload: {
   reason: string;
 }) {
   return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', payload);
+}
+
+export function addAdminContractAddendum(payload: {
+  mcId: number;
+  title?: string;
+  body: string;
+}) {
+  return adminApiPost<{ message: string; addendum: MerchantContractAddendum | null; detail: AdminContractDetail }>(
+    'contracts.php',
+    {
+      action: 'add_addendum',
+      mcId: payload.mcId,
+      title: payload.title ?? '특약사항',
+      body: payload.body,
+    },
+  );
+}
+
+export function voidAdminContractAddendum(payload: { addendumId: number; reason?: string }) {
+  return adminApiPost<{ message: string; addendum: MerchantContractAddendum | null; detail: AdminContractDetail | null }>(
+    'contracts.php',
+    {
+      action: 'void_addendum',
+      addendumId: payload.addendumId,
+      reason: payload.reason ?? '',
+    },
+  );
+}
+
+export function addMerchantContractAddendum(payload: {
+  csrfToken: string;
+  body: string;
+  title?: string;
+  version?: string;
+}) {
+  return merchantApiPost<{
+    message: string;
+    addendum: MerchantContractAddendum | null;
+    data: MerchantContractReadResponse | null;
+  }>('contract.php', {
+    action: 'add_addendum',
+    csrfToken: payload.csrfToken,
+    body: payload.body,
+    title: payload.title ?? '특약사항',
+    version: payload.version ?? '',
+  });
 }
 
 export function seedAdminDemoContract(mtId?: number) {

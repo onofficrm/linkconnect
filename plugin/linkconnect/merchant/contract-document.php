@@ -42,7 +42,13 @@ if ($html === '' && function_exists('lc_merchant_contract_render_html')) {
         'business_number'     => $form['businessNumber'],
         'company_address'     => $form['companyAddress'],
         'company_phone'       => $form['companyPhone'],
+    ), array(
+        'negotiatedTerms' => $form['negotiatedTerms'] ?? '',
+        'specialClauses'  => $form['specialClauses'] ?? '',
     ));
+}
+if ($html !== '' && function_exists('lc_merchant_contract_append_addenda_to_html')) {
+    $html = lc_merchant_contract_append_addenda_to_html($html, (int) ($contract['mc_id'] ?? 0));
 }
 
 $mode = isset($_GET['mode']) ? (string) $_GET['mode'] : 'preview';

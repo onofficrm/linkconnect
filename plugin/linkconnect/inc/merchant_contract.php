@@ -424,6 +424,8 @@ if (!function_exists('lc_merchant_contract_get_form_defaults')) {
             'signerPosition'     => '',
             'signerPhone'        => '',
             'signerEmail'        => '',
+            'negotiatedTerms'    => '',
+            'specialClauses'     => '',
             'step'               => 1,
             'agreements'         => array(
                 'readAll'      => false,
@@ -478,6 +480,12 @@ if (!function_exists('lc_merchant_contract_get_form_defaults')) {
             $defaults['signerPosition'] = (string) ($contract['mc_signer_position'] ?? '');
             $defaults['signerPhone'] = (string) ($contract['mc_signer_phone'] ?? '');
             $defaults['signerEmail'] = (string) ($contract['mc_signer_email'] ?? '');
+            if (isset($contract['mc_negotiated_terms'])) {
+                $defaults['negotiatedTerms'] = (string) $contract['mc_negotiated_terms'];
+            }
+            if (isset($contract['mc_special_clauses'])) {
+                $defaults['specialClauses'] = (string) $contract['mc_special_clauses'];
+            }
 
             $agreement = lc_merchant_contract_decode_snapshot($contract['mc_agreement_snapshot'] ?? '');
             if (is_array($agreement)) {
@@ -728,6 +736,8 @@ if (!function_exists('lc_merchant_contract_save_draft')) {
             'signerPhone'        => lc_merchant_contract_sanitize_text($payload['signerPhone'] ?? '', 30),
             'signerEmail'        => lc_merchant_contract_sanitize_text($payload['signerEmail'] ?? '', 200),
         );
+        $negotiated_terms = lc_merchant_contract_sanitize_text($payload['negotiatedTerms'] ?? '', 8000);
+        $special_clauses = lc_merchant_contract_sanitize_text($payload['specialClauses'] ?? '', 8000);
 
         $step = isset($payload['step']) ? (int) $payload['step'] : 1;
         $agreements = isset($payload['agreements']) && is_array($payload['agreements']) ? $payload['agreements'] : array();
@@ -738,7 +748,7 @@ if (!function_exists('lc_merchant_contract_save_draft')) {
                 return array('ok' => false, 'message' => '광고주 정보를 먼저 완성해 주세요.', 'errors' => $company_check['errors']);
             }
         }
-        if ($step >= 2) {
+        if ($step >= 3) {
             $agreement_check = lc_merchant_contract_validate_agreements($agreements);
             if (!$agreement_check['ok']) {
                 return array('ok' => false, 'message' => '필수 동의 항목을 모두 선택해 주세요.', 'errors' => $agreement_check['errors']);
@@ -752,8 +762,12 @@ if (!function_exists('lc_merchant_contract_save_draft')) {
             'company_address'     => $form['companyAddress'],
             'company_phone'       => $form['companyPhone'],
         );
+        $terms_extras = array(
+            'negotiatedTerms' => $negotiated_terms,
+            'specialClauses'  => $special_clauses,
+        );
         $contract_html = function_exists('lc_merchant_contract_render_html')
-            ? lc_merchant_contract_render_html($party_a)
+            ? lc_merchant_contract_render_html($party_a, $terms_extras)
             : '';
 
         $agreement_snapshot = array(
@@ -766,6 +780,8 @@ if (!function_exists('lc_merchant_contract_save_draft')) {
             ),
             'agreementCheckedAt' => !empty($agreements['readAll']) ? date('c') : '',
             'draftSavedAt'       => date('c'),
+            'negotiatedTerms'    => $negotiated_terms,
+            'specialClauses'     => $special_clauses,
         );
 
         $company_snapshot = lc_merchant_contract_build_company_snapshot_from_form($mt_id, $form);
@@ -788,6 +804,12 @@ if (!function_exists('lc_merchant_contract_save_draft')) {
             "mc_agreement_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($agreement_snapshot)) . "'",
             'mc_updated_at = NOW()',
         );
+        if (function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'mc_negotiated_terms')) {
+            $sets[] = "mc_negotiated_terms = '" . lc_sql_escape($negotiated_terms) . "'";
+        }
+        if (function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'mc_special_clauses')) {
+            $sets[] = "mc_special_clauses = '" . lc_sql_escape($special_clauses) . "'";
+        }
 
         $mc_id = (int) ($contract['mc_id'] ?? 0);
         $update = lc_sql_query(" UPDATE `{$table}` SET " . implode(', ', $sets) . " WHERE mc_id = '{$mc_id}' AND mc_mt_id = '{$mt_id}' ", false);
@@ -907,6 +929,11 @@ if (!function_exists('lc_merchant_contract_view_to_api')) {
             'companyPhone'       => (string) ($defaults['companyPhone'] ?? ''),
         );
 
+        $terms_extras = array(
+            'negotiatedTerms' => (string) ($defaults['negotiatedTerms'] ?? ''),
+            'specialClauses'  => (string) ($defaults['specialClauses'] ?? ''),
+        );
+
         $contract_html = function_exists('lc_merchant_contract_render_html')
             ? lc_merchant_contract_render_html(array(
                 'company_name'        => $party_a['companyName'],
@@ -914,10 +941,11 @@ if (!function_exists('lc_merchant_contract_view_to_api')) {
                 'business_number'     => $party_a['businessNumber'],
                 'company_address'     => $party_a['companyAddress'],
                 'company_phone'       => $party_a['companyPhone'],
-            ))
+            ), $terms_extras)
             : '';
 
-        if (is_array($contract) && (string) ($contract['mc_contract_snapshot'] ?? '') !== '') {
+        $can_write = lc_merchant_contract_can_write($mt_id);
+        if (!$can_write && is_array($contract) && (string) ($contract['mc_contract_snapshot'] ?? '') !== '') {
             $contract_html = (string) $contract['mc_contract_snapshot'];
         }
 
@@ -929,7 +957,7 @@ if (!function_exists('lc_merchant_contract_view_to_api')) {
             'isApprovalPending' => $status === LC_MERCHANT_CONTRACT_STATUS_REVIEW_PENDING,
             'isRejected'      => $status === LC_MERCHANT_CONTRACT_STATUS_REJECTED,
             'rejectionReason' => $rejection_reason,
-            'canWrite'        => lc_merchant_contract_can_write($mt_id),
+            'canWrite'        => $can_write,
             'requiresContract'=> lc_merchant_contract_requires($mt_id),
             'partyB'          => array(
                 'companyName'        => (string) ($party_b['company_name'] ?? ''),
@@ -1163,6 +1191,8 @@ if (!function_exists('lc_merchant_contract_sign')) {
             'signerPhone'        => lc_merchant_contract_sanitize_text($payload['signerPhone'] ?? '', 30),
             'signerEmail'        => lc_merchant_contract_sanitize_text($payload['signerEmail'] ?? '', 200),
         );
+        $negotiated_terms = lc_merchant_contract_sanitize_text($payload['negotiatedTerms'] ?? '', 8000);
+        $special_clauses = lc_merchant_contract_sanitize_text($payload['specialClauses'] ?? '', 8000);
         $agreements = isset($payload['agreements']) && is_array($payload['agreements']) ? $payload['agreements'] : array();
 
         $company_check = lc_merchant_contract_validate_company_form($form);
@@ -1192,6 +1222,13 @@ if (!function_exists('lc_merchant_contract_sign')) {
         if ($signature_path === '' && is_array($draft)) {
             $signature_path = (string) ($draft['mc_signature_file_path'] ?? '');
         }
+        // 페이로드에 없으면 기존 초안 값 유지
+        if ($negotiated_terms === '' && is_array($draft) && isset($draft['mc_negotiated_terms'])) {
+            $negotiated_terms = (string) $draft['mc_negotiated_terms'];
+        }
+        if ($special_clauses === '' && is_array($draft) && isset($draft['mc_special_clauses'])) {
+            $special_clauses = (string) $draft['mc_special_clauses'];
+        }
 
         $form['hasSignature'] = $signature_path !== '';
         $signer_check = lc_merchant_contract_validate_signer_form($form, true);
@@ -1209,7 +1246,13 @@ if (!function_exists('lc_merchant_contract_sign')) {
             'company_phone'       => $form['companyPhone'],
         );
         $company_snapshot = lc_merchant_contract_build_company_snapshot_from_form($mt_id, $form);
-        $contract_html = function_exists('lc_merchant_contract_render_html') ? lc_merchant_contract_render_html($party_a) : '';
+        $terms_extras = array(
+            'negotiatedTerms' => $negotiated_terms,
+            'specialClauses'  => $special_clauses,
+        );
+        $contract_html = function_exists('lc_merchant_contract_render_html')
+            ? lc_merchant_contract_render_html($party_a, $terms_extras)
+            : '';
         $agreement_snapshot = array(
             'agreements' => array(
                 'readAll'      => !empty($agreements['readAll']),
@@ -1221,6 +1264,8 @@ if (!function_exists('lc_merchant_contract_sign')) {
             'signedAt'           => $signed_at,
             'ip'                 => $meta['ip'],
             'userAgent'          => $meta['user_agent'],
+            'negotiatedTerms'    => $negotiated_terms,
+            'specialClauses'     => $special_clauses,
         );
 
         if (!lc_sql_begin()) {
@@ -1325,6 +1370,8 @@ if (!function_exists('lc_merchant_contract_sign')) {
                 mc_company_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($company_snapshot)) . "',
                 mc_contract_snapshot = '" . lc_sql_escape($contract_html) . "',
                 mc_agreement_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($agreement_snapshot)) . "',
+                mc_negotiated_terms = '" . lc_sql_escape($negotiated_terms) . "',
+                mc_special_clauses = '" . lc_sql_escape($special_clauses) . "',
                 mc_updated_at = NOW()
                 WHERE mc_id = '{$mc_id}' AND mc_mt_id = '{$mt_id}'
                   AND mc_status NOT IN ('" . lc_sql_escape(LC_MERCHANT_CONTRACT_STATUS_SIGNED) . "','{$status}') ", false);
