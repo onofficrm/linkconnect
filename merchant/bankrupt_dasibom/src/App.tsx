@@ -69,7 +69,7 @@ export default function App() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    document.title = '다시봄 재정회복센터 | 개인회생·개인파산 상담';
+    document.title = '개인회생무료상담 | 다시봄 재정회복센터 검사출신 변호사';
   }, []);
 
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -237,7 +237,7 @@ export default function App() {
               
               <p className="text-base text-slate-300 leading-relaxed font-medium">
                 서울중앙지검·부장검사 경력을 바탕으로, 소득·채무·재산 상황을 구조적으로 파악합니다.<br className="hidden md:block" />
-                개인회생·개인파산 중 무엇이 맞는지, 혼자 고민하지 말고 현실적인 방향을 상담받아 보세요.
+                개인회생무료상담으로 개인회생·개인파산 중 무엇이 맞는지, 현실적인 방향을 안내받으세요.
               </p>
 
               <div className="flex flex-wrap gap-2 pt-2">
