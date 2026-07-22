@@ -207,7 +207,35 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
         if (preg_match('#^/(r|c|s)/[A-Za-z0-9_-]+/?$#', $path)) {
             return;
         }
-        if (in_array($path, array('/favicon.ico', '/robots.txt'), true)) {
+        // 독립 도메인: 브라우저 기본 요청 /favicon.ico 등
+        if (preg_match('#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png)$#', $path, $fm)) {
+            $landing_file = linkconnect_tracking_home_landing_file($host);
+            $import_id = 'dasibom';
+            if ($landing_file !== '' && preg_match('#/merchant/([A-Za-z0-9_-]+)/#', str_replace('\\', '/', $landing_file), $mm)) {
+                $import_id = $mm[1];
+            }
+            $name = $fm[1];
+            if ($name === 'apple-touch-icon-precomposed.png') {
+                $name = 'apple-touch-icon.png';
+            }
+            $icon = G5_PATH . '/plugin/onoff-builder-bridge/imports/' . $import_id . '/' . $name;
+            if (is_file($icon)) {
+                $mimes = array(
+                    'favicon.ico' => 'image/x-icon',
+                    'favicon.svg' => 'image/svg+xml',
+                    'favicon-32x32.png' => 'image/png',
+                    'apple-touch-icon.png' => 'image/png',
+                );
+                if (!headers_sent()) {
+                    header('Content-Type: ' . (isset($mimes[$name]) ? $mimes[$name] : 'application/octet-stream'));
+                    header('Cache-Control: public, max-age=604800');
+                    header('Content-Length: ' . (string) filesize($icon));
+                }
+                readfile($icon);
+                exit;
+            }
+        }
+        if ($path === '/robots.txt') {
             return;
         }
 

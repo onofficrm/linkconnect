@@ -82,6 +82,19 @@ jobs:
           cp -R skin/member/onoff "$ROOT/skin/member/"
           cp -R mobile/skin/member/onoff "$ROOT/mobile/skin/member/"
           cp favicon.png .htaccess "$ROOT/"
+          # air911 등 독립도메인 브라우저 기본 /favicon.ico 요청용
+          if [[ -f plugin/onoff-builder-bridge/imports/dasibom/favicon.ico ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/favicon.ico "$ROOT/favicon.ico"
+          fi
+          if [[ -f plugin/onoff-builder-bridge/imports/dasibom/apple-touch-icon.png ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/apple-touch-icon.png "$ROOT/apple-touch-icon.png"
+          fi
+          if [[ -f plugin/onoff-builder-bridge/imports/dasibom/favicon.svg ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/favicon.svg "$ROOT/favicon.svg"
+          fi
+          if [[ -f plugin/onoff-builder-bridge/imports/dasibom/favicon-32x32.png ]]; then
+            cp plugin/onoff-builder-bridge/imports/dasibom/favicon-32x32.png "$ROOT/favicon-32x32.png"
+          fi
           cp merchant/banktupt/index.php "$ROOT/merchant/banktupt/"
           cp merchant/dasibom/index.php "$ROOT/merchant/dasibom/"
           cp merchant/hasugu_cpa/index.php "$ROOT/merchant/hasugu_cpa/"
