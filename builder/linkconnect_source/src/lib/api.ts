@@ -1126,6 +1126,8 @@ export type MerchantCampaign = {
   guideExists?: boolean;
   guideStatus?: string;
   guideStatusLabel?: string;
+  contractViewable?: boolean;
+  contractStatusLabel?: string;
 };
 
 export type MerchantCampaignSummary = {
@@ -3490,6 +3492,19 @@ export type MerchantContractRead = {
   documentPdfUrl: string;
   isReadOnly: boolean;
   isFullySigned: boolean;
+  campaignId?: number;
+};
+
+export type MerchantContractCampaignItem = {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  status: string;
+  statusCode: string;
+  cpa: number;
+  contractViewable?: boolean;
+  contractStatusLabel?: string;
 };
 
 export type MerchantContractHistoryItem = {
@@ -3507,12 +3522,17 @@ export type MerchantContractHistoryItem = {
 export type MerchantContractReadResponse = {
   contract: MerchantContractRead;
   history: MerchantContractHistoryItem[];
+  campaigns?: MerchantContractCampaignItem[];
+  campaign?: MerchantContractCampaignItem | null;
 };
 
-export function fetchMerchantContractRead(version?: string) {
+export function fetchMerchantContractRead(options?: { version?: string; cpId?: number } | string) {
   const query: Record<string, string> = { mode: 'read' };
-  if (version) {
-    query.version = version;
+  if (typeof options === 'string') {
+    if (options) query.version = options;
+  } else if (options) {
+    if (options.version) query.version = options.version;
+    if (options.cpId && options.cpId > 0) query.cpId = String(options.cpId);
   }
   return merchantApiGet<MerchantContractReadResponse>('contract.php', query);
 }

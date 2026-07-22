@@ -1,7 +1,7 @@
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
-import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, BookOpen } from 'lucide-react';
+import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, BookOpen, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMerchantCampaigns, MerchantCampaign, PartnerApiError } from '../../lib/api';
@@ -97,17 +97,18 @@ export function AdvertiserCampaigns() {
                 <th className="px-5 py-4 font-medium whitespace-nowrap text-right">단가 (CPA)</th>
                 <th className="px-5 py-4 font-medium whitespace-nowrap text-right">소진 금액</th>
                 <th className="px-5 py-4 font-medium whitespace-nowrap text-right">수집 DB</th>
+                <th className="px-5 py-4 font-medium whitespace-nowrap text-center">계약</th>
                 <th className="px-5 py-4 font-medium whitespace-nowrap text-center">관리</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-slate-500">불러오는 중...</td>
+                  <td colSpan={8} className="px-5 py-10 text-center text-slate-500">불러오는 중...</td>
                 </tr>
               ) : campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-slate-500">등록된 광고상품이 없습니다.</td>
+                  <td colSpan={8} className="px-5 py-10 text-center text-slate-500">등록된 광고상품이 없습니다.</td>
                 </tr>
               ) : campaigns.map((camp) => (
                 <tr key={camp.id} className="hover:bg-slate-50 transition-colors">
@@ -123,6 +124,27 @@ export function AdvertiserCampaigns() {
                     <span className="font-bold text-cyan-600">{camp.spend.toLocaleString()}원</span>
                   </td>
                   <td className="px-5 py-4 text-right font-bold text-slate-900 whitespace-nowrap">{camp.dbCount}건</td>
+                  <td className="px-5 py-4 text-center whitespace-nowrap">
+                    {camp.contractViewable ? (
+                      <Link
+                        to={`/advertiser/contract/view?cpId=${camp.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors"
+                        title="광고상품별 계약서 보기"
+                      >
+                        <FileText size={14} />
+                        계약서
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/advertiser/contract"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors"
+                        title="계약 체결 필요"
+                      >
+                        <FileText size={14} />
+                        미체결
+                      </Link>
+                    )}
+                  </td>
                   <td className="px-5 py-4 text-center whitespace-nowrap">
                     <div className="flex items-center justify-center gap-2">
                       <Link

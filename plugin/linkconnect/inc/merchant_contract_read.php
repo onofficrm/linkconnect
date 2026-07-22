@@ -309,13 +309,147 @@ if (!function_exists('lc_merchant_contract_read_to_api')) {
     }
 }
 
+if (!function_exists('lc_merchant_contract_campaign_schedule_html')) {
+    /**
+     * 광고상품(캠페인)별 계약 부속 표기용 HTML
+     *
+     * @param array<string,mixed> $campaign
+     */
+    function lc_merchant_contract_campaign_schedule_html(array $campaign)
+    {
+        $esc = static function ($value) {
+            return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        };
+
+        $name = $esc($campaign['cp_name'] ?? $campaign['name'] ?? '');
+        $code = $esc($campaign['cp_code'] ?? $campaign['code'] ?? '');
+        $type = $esc(strtoupper((string) ($campaign['cp_type'] ?? $campaign['type'] ?? 'CPA')));
+        $price = isset($campaign['cpa'])
+            ? (int) $campaign['cpa']
+            : (function_exists('lc_campaign_resolve_merchant_price') ? (int) lc_campaign_resolve_merchant_price($campaign) : (int) ($campaign['cp_price'] ?? 0));
+        $price_fmt = number_format($price);
+        $status = '';
+        if (isset($campaign['status']) && is_string($campaign['status'])) {
+            $status = $esc($campaign['status']);
+        } elseif (function_exists('lc_campaign_merchant_status_ui')) {
+            $status = $esc(lc_campaign_merchant_status_ui($campaign['cp_status'] ?? ''));
+        }
+
+        return <<<HTML
+<section class="lc-contract-article lc-contract-campaign-schedule">
+  <h2>부속 [ 광고상품별 계약 조건 ]</h2>
+  <p>본 부속은 위 CPA 광고 제휴 계약서에 따라 아래 광고상품에 적용되는 조건을 명시한다.</p>
+  <dl>
+    <dt>광고상품명</dt><dd>{$name}</dd>
+    <dt>상품코드</dt><dd>{$code}</dd>
+    <dt>광고 유형</dt><dd>{$type}</dd>
+    <dt>유효 DB 1건당 단가 (VAT 별도)</dt><dd>{$price_fmt} 원</dd>
+    <dt>상품 상태</dt><dd>{$status}</dd>
+  </dl>
+  <p>단가 및 상품 운영 조건은 플랫폼에 등록된 해당 광고상품 설정을 기준으로 하며, 상호 합의 시 변경될 수 있다.</p>
+</section>
+HTML;
+    }
+}
+
+if (!function_exists('lc_merchant_contract_append_campaign_to_html')) {
+    /**
+     * @param array<string,mixed>|null $campaign
+     */
+    function lc_merchant_contract_append_campaign_to_html($html, $campaign)
+    {
+        $html = (string) $html;
+        if (!is_array($campaign) || $html === '') {
+            return $html;
+        }
+
+        $schedule = lc_merchant_contract_campaign_schedule_html($campaign);
+        if (stripos($html, '</div>') !== false) {
+            $pos = strripos($html, '</div>');
+            if ($pos !== false) {
+                return substr($html, 0, $pos) . $schedule . substr($html, $pos);
+            }
+        }
+
+        return $html . $schedule;
+    }
+}
+
+if (!function_exists('lc_merchant_contract_campaigns_for_view')) {
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    function lc_merchant_contract_campaigns_for_view($mt_id)
+    {
+        $mt_id = (int) $mt_id;
+        if ($mt_id <= 0 || !function_exists('lc_campaign_list_for_merchant')) {
+            return array();
+        }
+
+        $signed = function_exists('lc_merchant_contract_is_signed') && lc_merchant_contract_is_signed($mt_id);
+        $status = function_exists('lc_merchant_contract_status') ? (string) lc_merchant_contract_status($mt_id) : '';
+        $status_label = function_exists('lc_merchant_contract_status_label')
+            ? lc_merchant_contract_status_label($status)
+            : $status;
+
+        $items = array();
+        foreach (lc_campaign_list_for_merchant($mt_id) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $api = function_exists('lc_campaign_merchant_to_api')
+                ? lc_campaign_merchant_to_api($row)
+                : array(
+                    'id'   => (int) ($row['cp_id'] ?? 0),
+                    'code' => (string) ($row['cp_code'] ?? ''),
+                    'name' => (string) ($row['cp_name'] ?? ''),
+                    'type' => strtoupper((string) ($row['cp_type'] ?? 'CPA')),
+                    'cpa'  => (int) ($row['cp_price'] ?? 0),
+                    'status' => (string) ($row['cp_status'] ?? ''),
+                    'statusCode' => (string) ($row['cp_status'] ?? ''),
+                );
+
+            $api['contractViewable'] = $signed;
+            $api['contractStatus'] = $status;
+            $api['contractStatusLabel'] = $signed ? '체결완료' : ($status_label !== '' ? $status_label : '미체결');
+
+            $items[] = $api;
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('lc_merchant_contract_find_merchant_campaign')) {
+    /**
+     * @return array<string,mixed>|null
+     */
+    function lc_merchant_contract_find_merchant_campaign($mt_id, $cp_id)
+    {
+        $mt_id = (int) $mt_id;
+        $cp_id = (int) $cp_id;
+        if ($mt_id <= 0 || $cp_id <= 0 || !function_exists('lc_campaign_list_for_merchant')) {
+            return null;
+        }
+
+        foreach (lc_campaign_list_for_merchant($mt_id) as $row) {
+            if (is_array($row) && (int) ($row['cp_id'] ?? 0) === $cp_id) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('lc_merchant_contract_read_view_for_merchant')) {
     /**
      * @return array{ok:bool,message:string,data?:array<string,mixed>}
      */
-    function lc_merchant_contract_read_view_for_merchant($mt_id, $requested_version = null)
+    function lc_merchant_contract_read_view_for_merchant($mt_id, $requested_version = null, $cp_id = 0)
     {
         $mt_id = (int) $mt_id;
+        $cp_id = (int) $cp_id;
         $version = lc_merchant_contract_resolve_read_version($mt_id, $requested_version);
         if ($version === null) {
             return array('ok' => false, 'message' => '열람 가능한 체결 계약서가 없습니다.');
@@ -333,12 +467,41 @@ if (!function_exists('lc_merchant_contract_read_view_for_merchant')) {
             }
         }
 
+        $campaigns = lc_merchant_contract_campaigns_for_view($mt_id);
+        $campaign_api = null;
+        $campaign_row = null;
+        if ($cp_id > 0) {
+            $campaign_row = lc_merchant_contract_find_merchant_campaign($mt_id, $cp_id);
+            if (!is_array($campaign_row)) {
+                return array('ok' => false, 'message' => '해당 광고상품을 찾을 수 없습니다.');
+            }
+            $campaign_api = function_exists('lc_campaign_merchant_to_api')
+                ? lc_campaign_merchant_to_api($campaign_row)
+                : array(
+                    'id'   => $cp_id,
+                    'name' => (string) ($campaign_row['cp_name'] ?? ''),
+                    'code' => (string) ($campaign_row['cp_code'] ?? ''),
+                    'cpa'  => (int) ($campaign_row['cp_price'] ?? 0),
+                );
+        }
+
+        $contract_api = lc_merchant_contract_read_to_api($contract);
+        if (is_array($campaign_row) && !empty($contract_api['contractHtml'])) {
+            $contract_api['contractHtml'] = lc_merchant_contract_append_campaign_to_html(
+                (string) $contract_api['contractHtml'],
+                $campaign_row
+            );
+            $contract_api['campaignId'] = $cp_id;
+        }
+
         return array(
             'ok'      => true,
             'message' => '',
             'data'    => array(
-                'contract' => lc_merchant_contract_read_to_api($contract),
-                'history'  => $history,
+                'contract'  => $contract_api,
+                'history'   => $history,
+                'campaigns' => $campaigns,
+                'campaign'  => $campaign_api,
             ),
         );
     }

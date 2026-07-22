@@ -930,6 +930,11 @@ if (!function_exists('lc_campaign_merchant_to_api')) {
             $payload['guideStatusLabel'] = $guide_exists ? $guide_status : '미작성';
         }
 
+        $mt_id = (int) ($row['mt_id'] ?? 0);
+        $signed = $mt_id > 0 && function_exists('lc_merchant_contract_is_signed') && lc_merchant_contract_is_signed($mt_id);
+        $payload['contractViewable'] = $signed;
+        $payload['contractStatusLabel'] = $signed ? '체결완료' : '미체결';
+
         return $payload;
     }
 }

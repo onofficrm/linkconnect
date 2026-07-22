@@ -214,6 +214,30 @@
   margin-bottom: 0.35rem;
 }
 
+.lc-contract-campaign-schedule {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.lc-contract-campaign-schedule dl {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 0.4rem 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.lc-contract-campaign-schedule dt {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.lc-contract-campaign-schedule dd {
+  margin: 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
 @media print {
   body * {
     visibility: hidden;

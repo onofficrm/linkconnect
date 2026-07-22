@@ -38,7 +38,8 @@ if ($method === 'GET') {
                 lc_api_error('유효하지 않은 계약서 버전입니다.', 'INVALID_VERSION', 400);
             }
         }
-        $read = lc_merchant_contract_read_view_for_merchant($mt_id, $version);
+        $cp_id = isset($_GET['cpId']) ? (int) $_GET['cpId'] : 0;
+        $read = lc_merchant_contract_read_view_for_merchant($mt_id, $version, $cp_id);
         if (empty($read['ok'])) {
             lc_api_error($read['message'], 'NOT_FOUND', 404);
         }

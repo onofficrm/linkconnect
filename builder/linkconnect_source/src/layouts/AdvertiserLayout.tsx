@@ -1,7 +1,7 @@
 import React from 'react';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, Megaphone } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, Megaphone, ScrollText } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
 import { getLcAuth, shouldShowMerchantContractNotice } from '../lib/auth';
@@ -45,6 +45,7 @@ export function AdvertiserLayout({
           <nav className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
             <CenterNavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" accent="cyan" />
             <CenterNavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" accent="cyan" />
+            <CenterNavItem icon={<ScrollText size={20} />} label="계약정보" active={activeMenu === 'contract'} to="/advertiser/contract/view" accent="cyan" />
             <CenterNavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" accent="cyan" />
             <CenterNavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" accent="cyan" />
             <CenterNavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" accent="cyan" />
