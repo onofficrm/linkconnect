@@ -12,11 +12,13 @@ import Equipment from './components/Equipment';
 import BeforeAfter from './components/BeforeAfter';
 import Process from './components/Process';
 import SiteTypes from './components/SiteTypes';
+import CommonPipeGuide from './components/CommonPipeGuide';
 import ExpertiseBanner from './components/ExpertiseBanner';
 import WorkCases from './components/WorkCases';
 import Reviews from './components/Reviews';
 import Pricing from './components/Pricing';
 import ServiceAreas from './components/ServiceAreas';
+import Faq from './components/Faq';
 import FormSection from './components/FormSection';
 import FinalCTA from './components/FinalCTA';
 import StickyCallButton from './components/StickyCallButton';
@@ -40,11 +42,13 @@ export default function App() {
           <BeforeAfter />
           <Process />
           <SiteTypes />
+          <CommonPipeGuide />
           <ExpertiseBanner />
           <WorkCases />
           <Reviews />
           <Pricing />
           <ServiceAreas />
+          <Faq />
           <FormSection />
           <FinalCTA />
         </main>

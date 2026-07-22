@@ -1,13 +1,20 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Phone, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
+import { Phone, CheckCircle2, AlertTriangle, Loader2, ImagePlus, X, Clock, MessageCircle } from 'lucide-react';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
 import { buildInquiryText, resolveLkCode, submitConsultation } from '../lib/linkconnect';
+
+type PrefillDetail = { serviceType?: string; message?: string };
 
 export default function FormSection() {
   const { data, hasPhone } = usePartnerContext();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [serviceType, setServiceType] = useState('');
+  const [message, setMessage] = useState('');
+  const [photoNames, setPhotoNames] = useState<string[]>([]);
+  const [channelHint, setChannelHint] = useState('');
+  const serviceTypeRef = useRef<HTMLSelectElement>(null);
   const [trackingData, setTrackingData] = useState({
     utm_source: '',
     utm_medium: '',
@@ -37,6 +44,40 @@ export default function FormSection() {
     });
   }, [data.utm_source, data.utm_medium, data.utm_campaign]);
 
+  useEffect(() => {
+    const onPrefill = (event: Event) => {
+      const detail = (event as CustomEvent<PrefillDetail>).detail || {};
+      if (detail.serviceType) setServiceType(detail.serviceType);
+      if (detail.message) {
+        setMessage((prev) => (prev.includes(detail.message!) ? prev : [prev, detail.message].filter(Boolean).join('\n')));
+      }
+      window.setTimeout(() => serviceTypeRef.current?.focus({ preventScroll: true }), 400);
+    };
+    window.addEventListener('hasugu:prefill-symptom', onPrefill);
+    return () => window.removeEventListener('hasugu:prefill-symptom', onPrefill);
+  }, []);
+
+  const handlePhotos = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 3);
+    setPhotoNames(files.map((f) => f.name));
+  };
+
+  const clearPhotos = () => {
+    setPhotoNames([]);
+    const input = document.getElementById('site_photos') as HTMLInputElement | null;
+    if (input) input.value = '';
+  };
+
+  const handleKakaoClick = () => {
+    if (data.kakao_chat_url) {
+      window.open(data.kakao_chat_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    setChannelHint('카카오 상담 희망');
+    setMessage((prev) => (prev.includes('카카오') ? prev : [prev, '카카오톡으로 상담 희망'].filter(Boolean).join('\n')));
+    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -56,6 +97,8 @@ export default function FormSection() {
       serviceType: String(formData.get('service_type') || ''),
       preferredTime: String(formData.get('preferred_contact_time') || ''),
       message: String(formData.get('customer_message') || ''),
+      photoCount: photoNames.length,
+      channelHint: channelHint || undefined,
     });
 
     try {
@@ -101,7 +144,7 @@ export default function FormSection() {
   return (
     <section id="consultation-form" className="py-16 sm:py-24 bg-white scroll-mt-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10 sm:mb-14">
+        <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight word-break-keep">
             전화가 어려우신가요?<br className="sm:hidden" />
             <span className="text-blue-600"> 빠른 상담을 신청해주세요</span>
@@ -109,6 +152,30 @@ export default function FormSection() {
           <p className="mt-4 text-slate-600 text-lg max-w-2xl mx-auto word-break-keep">
             지역과 증상을 남겨주시면 접수 내용을 확인한 후 연락드립니다.
           </p>
+          <div className="mt-5 inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2.5 rounded-full text-sm font-bold border border-blue-100">
+            <Clock size={16} />
+            영업시간 기준 평균 10분 이내 연락 목표
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+          {hasPhone ? (
+            <CallButton
+              placement="form_top"
+              className="inline-flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-xl"
+            >
+              <Phone size={18} />
+              전화 상담
+            </CallButton>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleKakaoClick}
+            className="inline-flex justify-center items-center gap-2 bg-[#FEE500] hover:bg-[#f5dc00] text-[#191919] font-bold px-6 py-3.5 rounded-xl"
+          >
+            <MessageCircle size={18} />
+            {data.kakao_chat_url ? '카카오 상담하기' : '카카오로 상담 남기기'}
+          </button>
         </div>
 
         <div className="bg-slate-50 rounded-[2rem] p-6 sm:p-10 border border-slate-200 shadow-sm relative overflow-hidden">
@@ -120,7 +187,10 @@ export default function FormSection() {
               <h3 className="text-2xl font-bold text-slate-900 mb-2 word-break-keep">
                 상담신청이 접수되었습니다.
               </h3>
-              <p className="text-slate-600 text-lg mb-8 word-break-keep">확인 후 연락드리겠습니다.</p>
+              <p className="text-slate-600 text-lg mb-2 word-break-keep">확인 후 연락드리겠습니다.</p>
+              <p className="text-slate-500 text-sm word-break-keep">
+                영업시간 기준 평균 10분 이내 연락을 목표로 합니다.
+              </p>
             </div>
           )}
 
@@ -229,7 +299,7 @@ export default function FormSection() {
                     type="text"
                     id="service_area_detail"
                     name="service_area_detail"
-                    placeholder="상세 지역 입력 (예: 강남구, 부천시)"
+                    placeholder="상세 지역 (예: 강남구, 부천시)"
                     aria-label="상세 지역 입력"
                     className="w-full px-5 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium text-[15px] text-slate-900"
                   />
@@ -241,9 +311,12 @@ export default function FormSection() {
                   증상 선택 <span className="text-red-500">*</span>
                 </label>
                 <select
+                  ref={serviceTypeRef}
                   id="service_type"
                   name="service_type"
                   required
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
                   className="w-full px-5 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium text-[15px] text-slate-900 cursor-pointer"
                 >
                   <option value="">어떤 문제가 있으신가요?</option>
@@ -266,9 +339,53 @@ export default function FormSection() {
                   id="customer_message"
                   name="customer_message"
                   rows={3}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   placeholder="현재 겪고 계신 증상이나 문의사항을 자유롭게 남겨주세요."
                   className="w-full px-5 py-4 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium text-[15px] text-slate-900 resize-none"
                 />
+              </div>
+
+              <div className="space-y-2.5 md:col-span-2">
+                <label htmlFor="site_photos" className="block text-[15px] font-bold text-slate-700">
+                  현장 사진 (선택, 최대 3장)
+                </label>
+                <p className="text-xs text-slate-500 mb-2 word-break-keep">
+                  사진은 서버에 바로 업로드되지 않으며, 접수 메모에 ‘사진 N장’으로 남겨 상담 시 전달을 안내합니다.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex items-center gap-2 cursor-pointer bg-white border border-dashed border-slate-300 hover:border-blue-400 px-5 py-3.5 rounded-xl font-bold text-slate-700 text-sm">
+                    <ImagePlus size={18} className="text-blue-600" />
+                    사진 선택
+                    <input
+                      id="site_photos"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      onChange={handlePhotos}
+                    />
+                  </label>
+                  {photoNames.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={clearPhotos}
+                      className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-red-600 font-medium"
+                    >
+                      <X size={16} />
+                      지우기
+                    </button>
+                  ) : null}
+                </div>
+                {photoNames.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {photoNames.map((name) => (
+                      <li key={name} className="text-sm text-slate-600 font-medium truncate">
+                        · {name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
 
               <div className="space-y-2.5 md:col-span-2">

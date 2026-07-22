@@ -12,7 +12,14 @@ export default function Footer() {
           <p className="text-slate-300 font-bold mb-2 break-keep text-base sm:text-lg">
             현장 구조와 배관 상태에 따라 작업 방법과 비용이 달라질 수 있습니다.
           </p>
-          <p className="text-slate-400 text-[15px] break-keep">방문 및 작업 진행 전 안내 내용을 확인해주세요.</p>
+          <p className="text-slate-400 text-[15px] break-keep mb-4">방문 및 작업 진행 전 안내 내용을 확인해주세요.</p>
+          <div className="flex flex-wrap gap-2">
+            {['상담만으로 비용 없음', '협의 후 작업', '7일 재점검 안내', '평균 10분 이내 연락'].map((t) => (
+              <span key={t} className="text-xs font-bold text-slate-300 bg-slate-900/60 border border-slate-700 px-3 py-1.5 rounded-full">
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-800">

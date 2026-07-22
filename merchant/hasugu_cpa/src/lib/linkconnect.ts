@@ -70,6 +70,8 @@ export function buildInquiryText(fields: {
   serviceType?: string;
   preferredTime?: string;
   message?: string;
+  photoCount?: number;
+  channelHint?: string;
 }): string {
   const parts: string[] = [];
   if (fields.area) parts.push(`지역: ${fields.area}`);
@@ -77,6 +79,10 @@ export function buildInquiryText(fields: {
   if (fields.serviceType) parts.push(`증상: ${fields.serviceType}`);
   if (fields.preferredTime) parts.push(`상담가능시간: ${fields.preferredTime}`);
   if (fields.message) parts.push(`문의: ${fields.message}`);
+  if (fields.photoCount && fields.photoCount > 0) {
+    parts.push(`현장사진: ${fields.photoCount}장(상담 시 전달)`);
+  }
+  if (fields.channelHint) parts.push(`희망채널: ${fields.channelHint}`);
   return trimInquiry(parts.join(' | '));
 }
 
