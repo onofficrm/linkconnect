@@ -1,14 +1,41 @@
-import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, Briefcase, FileText, Calculator, Wallet, Compass, Building2, Sprout, ShieldCheck, User, MessageSquare, Smartphone, Info, ThumbsUp, AlertTriangle, ChevronDown } from 'lucide-react';
+import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, Briefcase, FileText, Calculator, Wallet, Compass, Building2, Sprout, ShieldCheck, User, MessageSquare, Smartphone, Info, ThumbsUp, AlertTriangle, ChevronDown, Scale, BadgeCheck } from 'lucide-react';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
+import lawyerPortrait from './assets/lawyer-lee-jeongyong.webp';
 
 const CONTACT_INFO = {
   companyName: '다시봄 재정회복센터',
   ceo: '',
   bizNumber: '',
   address: '',
+};
+
+const LAWYER_PROFILE = {
+  name: '이정용',
+  title: '검사출신 변호사',
+  career: [
+    '서울대 법대 졸업 / 서울대 대학원 법학과 수료',
+    '사법시험(38회) / 사법연수원(28기)',
+    '서울중앙지검(특수3부) 검사',
+    '서울중앙지검 부부장 검사',
+    '인천지검 부천지청 부장검사',
+  ],
+  strengths: [
+    {
+      title: '수사·기소 실무를 아는 진단',
+      desc: '검사 시절 사건 구조를 파악하던 시각으로, 채무·재산·위험을 빠르게 정리합니다.',
+    },
+    {
+      title: '채권자·법원 대응의 전문성',
+      desc: '특수부·부장검사 경력으로 복잡한 법적 쟁점과 대응 순서를 차분히 안내합니다.',
+    },
+    {
+      title: '개인회생·파산의 현실적 해법',
+      desc: '가능성만 이야기하지 않고, 현재 상황에서 기준으로 실행 가능한 방향을 제시합니다.',
+    },
+  ],
 };
 
 function formatPhoneInput(value: string): string {
@@ -156,6 +183,7 @@ export default function App() {
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
             <a href="#rehab" className="hover:text-teal-600 transition-colors">개인회생</a>
             <a href="#bankruptcy" className="hover:text-teal-600 transition-colors">개인파산</a>
+            <a href="#lawyer" className="hover:text-teal-600 transition-colors">검사출신 변호사</a>
             <a href="#process" className="hover:text-teal-600 transition-colors">진행절차</a>
             <a href="#faq" className="hover:text-teal-600 transition-colors">자주 묻는 질문</a>
             <a href="#consultation-form" className="hover:text-teal-600 transition-colors font-bold text-slate-900">상담신청</a>
@@ -197,32 +225,33 @@ export default function App() {
           <div className="grid md:grid-cols-2 gap-8 items-center h-full relative z-10">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-400 text-xs font-semibold">
-                <CheckCircle2 className="w-4 h-4" />
-                비공개 1:1 무료상담
+                <Scale className="w-4 h-4" />
+                검사출신 변호사 · 비공개 1:1 무료상담
               </div>
               
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
                 감당하기 어려운 채무,<br />
-                <span className="text-teal-400">해결 가능한 방법</span>부터 확인하세요
+                <span className="text-teal-400">검사 출신의 시선</span>으로<br className="hidden sm:block" />
+                해결 가능성부터 확인하세요
               </h1>
               
               <p className="text-base text-slate-300 leading-relaxed font-medium">
-                소득, 채무금액, 재산상황에 따라 개인회생 또는 개인파산 신청 가능성을 확인할 수 있습니다.<br className="hidden md:block" />
-                혼자 고민하지 말고 현재 상황에 맞는 해결 방향을 상담받아 보세요.
+                서울중앙지검·부장검사 경력을 바탕으로, 소득·채무·재산 상황을 구조적으로 파악합니다.<br className="hidden md:block" />
+                개인회생·개인파산 중 무엇이 맞는지, 혼자 고민하지 말고 현실적인 방향을 상담받아 보세요.
               </p>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 검사출신 전문 상담
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 상담내용 비공개
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 개인별 상황에 맞춘 안내
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 상황별 맞춤 안내
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 전화 및 온라인 상담 가능
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 간편한 상담 접수
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> 전화·온라인 상담
                 </span>
               </div>
               
@@ -247,6 +276,12 @@ export default function App() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-6 mt-2 border-t border-slate-800/60">
                 <div className="text-center flex flex-col items-center">
                   <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
+                    <Scale className="w-4 h-4" />
+                  </div>
+                  <p className="text-[11px] font-bold text-slate-300">검사출신</p>
+                </div>
+                <div className="text-center flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <p className="text-[11px] font-bold text-slate-300">비공개 상담</p>
@@ -255,13 +290,7 @@ export default function App() {
                   <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
-                  <p className="text-[11px] font-bold text-slate-300">상황별 맞춤 안내</p>
-                </div>
-                <div className="text-center flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <p className="text-[11px] font-bold text-slate-300">간편 접수</p>
+                  <p className="text-[11px] font-bold text-slate-300">상황별 맞춤</p>
                 </div>
                 <div className="text-center flex flex-col items-center">
                   <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-2 text-teal-400">
@@ -273,26 +302,27 @@ export default function App() {
             </div>
             
             <div className="relative mt-8 md:mt-0 flex items-center justify-center">
-              {/* Decorative Elements */}
               <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 to-transparent rounded-[2.5rem] transform rotate-3 scale-105 -z-10"></div>
               
-              {/* Hero Image */}
               <div className="aspect-[4/5] sm:aspect-square md:aspect-[4/5] w-full bg-slate-800 rounded-[2.5rem] overflow-hidden relative border border-slate-700">
                 <img 
-                  src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1000&auto=format&fit=crop" 
-                  alt="상담을 받고 미소 짓는 한국인 여성" 
-                  className="w-full h-full object-cover opacity-90"
+                  src={lawyerPortrait}
+                  alt={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
+                  className="w-full h-full object-cover object-[center_18%] opacity-95"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
                 
-                {/* Floating Notification Card */}
                 <div className="absolute bottom-4 left-4 right-4 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-700">
                    <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 shrink-0">
-                         <CheckCircle2 className="w-5 h-5" />
+                         <BadgeCheck className="w-5 h-5" />
                       </div>
                       <div>
-                         <p className="text-[11px] font-bold text-slate-400 mb-0.5">상담 접수 완료</p>
-                         <p className="font-bold text-sm text-white leading-tight">상황에 맞는 최적의<br/>솔루션이 준비되었습니다.</p>
+                         <p className="text-[11px] font-bold text-teal-400 mb-0.5">{LAWYER_PROFILE.title}</p>
+                         <p className="font-bold text-sm text-white leading-tight">
+                           {LAWYER_PROFILE.name} 변호사<br/>
+                           <span className="text-slate-300 font-medium text-xs">서울중앙지검·부장검사 출신</span>
+                         </p>
                       </div>
                    </div>
                 </div>
@@ -350,6 +380,61 @@ export default function App() {
               내 상황 상담받기
               <ArrowRight className="w-4 h-4" />
             </a>
+          </div>
+        </section>
+
+        {/* Lawyer Profile — 검사출신 약력 */}
+        <section id="lawyer" className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 scroll-mt-24">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            <div className="lg:col-span-5 space-y-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold border border-teal-100">
+                <Scale className="w-4 h-4" />
+                검사출신 변호사 약력
+              </div>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                {LAWYER_PROFILE.name} {LAWYER_PROFILE.title}<br />
+                <span className="text-teal-600">실무를 아는 상담</span>이 다릅니다
+              </h2>
+              <p className="text-slate-600 font-medium leading-relaxed">
+                검사로 사건 구조를 파악하고, 부장검사로 복잡한 쟁점을 조율해 온 경험을
+                개인회생·개인파산 상담에 그대로 적용합니다.
+              </p>
+              <ol className="space-y-3">
+                {LAWYER_PROFILE.career.map((item, idx) => (
+                  <li key={item} className="flex items-start gap-3 text-slate-800 font-medium">
+                    <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 1}
+                    </span>
+                    <span className="leading-snug pt-1">{item}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="lg:col-span-7 space-y-4">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-teal-600" />
+                검사출신 변호사의 장점
+              </h3>
+              <div className="grid sm:grid-cols-1 gap-4">
+                {LAWYER_PROFILE.strengths.map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:border-teal-200 hover:bg-teal-50/40 transition-colors"
+                  >
+                    <p className="font-bold text-slate-900 mb-1.5">{item.title}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <a
+                href="#consultation-form"
+                className="mt-2 inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-6 py-3.5 rounded-xl transition-colors"
+              >
+                검사출신 변호사에게 상담 신청
+                <ArrowRight className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         </section>
 
