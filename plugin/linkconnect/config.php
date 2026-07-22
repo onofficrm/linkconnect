@@ -246,7 +246,7 @@ if (!function_exists('lc_contact_email')) {
             }
         }
 
-        return 'support@linkconnect.co.kr';
+        return 'support2580_@linkconnect.co.kr';
     }
 }
 

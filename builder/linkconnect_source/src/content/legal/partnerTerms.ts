@@ -201,7 +201,7 @@ export const partnerTermsDocument: LegalDocument = {
         },
         {
           type: 'p',
-          text: '문의: support@linkconnect.co.kr · 070-8098-6824',
+          text: '문의: support2580_@linkconnect.co.kr · 070-8098-6824',
         },
       ],
     },

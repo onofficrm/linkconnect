@@ -10,7 +10,7 @@ if (!function_exists('lc_settings_defaults')) {
             'siteName'              => '링크커넥트',
             'siteStatus'            => 'active',
             'adminEmail'            => 'admin@linkconnect.com',
-            'supportEmail'          => 'support@linkconnect.co.kr',
+            'supportEmail'          => 'support2580_@linkconnect.co.kr',
             'supportPhone'          => '070-8098-6824',
             'timezone'              => 'Asia/Seoul',
             'duplicateDays'         => 30,

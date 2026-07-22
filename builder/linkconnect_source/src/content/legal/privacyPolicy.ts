@@ -149,7 +149,7 @@ export const privacyPolicyDocument: LegalDocument = {
           items: [
             '개인정보 보호책임자: 링크커넥트 개인정보보호 담당',
             '연락처: 070-8098-6824',
-            '이메일: support@linkconnect.co.kr',
+            '이메일: support2580_@linkconnect.co.kr',
           ],
         },
       ],
