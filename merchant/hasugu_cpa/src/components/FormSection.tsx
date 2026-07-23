@@ -60,7 +60,7 @@ export default function FormSection() {
 
   const handlePhotos = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 3);
-    setPhotoNames(files.map((f) => f.name));
+    setPhotoNames(files.map((f: File) => f.name));
   };
 
   const clearPhotos = () => {
