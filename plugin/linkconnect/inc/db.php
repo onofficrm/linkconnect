@@ -429,6 +429,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `ac_code` varchar(30) NOT NULL,
                 `ac_name` varchar(100) NOT NULL DEFAULT '',
                 `ac_type` varchar(30) NOT NULL DEFAULT 'landing',
+                `ac_mt_id` int unsigned NOT NULL DEFAULT 0,
                 `ac_api_key` varchar(64) NOT NULL DEFAULT '',
                 `ac_api_secret` varchar(64) NOT NULL DEFAULT '',
                 `ac_allowed_ips` varchar(500) NOT NULL DEFAULT '',
@@ -437,7 +438,9 @@ if (!function_exists('lc_db_run_schema')) {
                 `ac_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (`ac_id`),
                 UNIQUE KEY `uk_ac_code` (`ac_code`),
-                UNIQUE KEY `uk_ac_api_key` (`ac_api_key`)
+                UNIQUE KEY `uk_ac_api_key` (`ac_api_key`),
+                KEY `idx_ac_mt_id` (`ac_mt_id`),
+                KEY `idx_ac_type` (`ac_type`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
             "CREATE TABLE IF NOT EXISTS `" . lc_table('api_logs') . "` (
@@ -637,6 +640,11 @@ if (!function_exists('lc_db_run_migrations')) {
         $nf = lc_table('notifications');
         if (lc_db_table_exists($nf) && !lc_db_column_exists($nf, 'nf_priority')) {
             $alters[] = "ALTER TABLE `{$nf}` ADD COLUMN `nf_priority` varchar(20) NOT NULL DEFAULT 'normal' AFTER `nf_type`, ADD KEY `idx_nf_priority` (`nf_priority`)";
+        }
+
+        $api_clients = lc_table('api_clients');
+        if (lc_db_table_exists($api_clients) && !lc_db_column_exists($api_clients, 'ac_mt_id')) {
+            $alters[] = "ALTER TABLE `{$api_clients}` ADD COLUMN `ac_mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `ac_type`, ADD KEY `idx_ac_mt_id` (`ac_mt_id`)";
         }
 
         foreach (array(

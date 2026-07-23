@@ -90,6 +90,81 @@ if (!function_exists('lc_conversion_get_by_id')) {
     }
 }
 
+if (!function_exists('lc_conversion_get_by_code')) {
+    function lc_conversion_get_by_code($cv_code)
+    {
+        if (!lc_db_installed()) {
+            return null;
+        }
+
+        $cv_code = trim((string) $cv_code);
+        if ($cv_code === '') {
+            return null;
+        }
+
+        $table = lc_table('conversions');
+
+        return lc_sql_fetch(" SELECT * FROM `{$table}` WHERE cv_code = '" . lc_sql_escape($cv_code) . "' LIMIT 1 ");
+    }
+}
+
+if (!function_exists('lc_conversion_reject_reasons')) {
+    function lc_conversion_reject_reasons()
+    {
+        return array(
+            '연락불가',
+            '중복디비',
+            '장난접수',
+            '조건불일치',
+            '지역불가',
+            '이미상담',
+            '기타',
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_to_api_v1')) {
+    /**
+     * 외부 광고주 플랫폼용 디비 페이로드.
+     */
+    function lc_conversion_to_api_v1(array $row)
+    {
+        $status = (string) ($row['cv_status'] ?? '');
+        $created = (string) ($row['cv_created_at'] ?? '');
+
+        return array(
+            'code'           => (string) ($row['cv_code'] ?? ''),
+            'status'         => $status,
+            'statusLabel'    => function_exists('lc_conversion_status_label') ? lc_conversion_status_label($status) : $status,
+            'campaign'       => (string) ($row['cp_name'] ?? ''),
+            'campaignId'     => (int) ($row['cp_id'] ?? 0),
+            'name'           => (string) ($row['cv_name'] ?? ''),
+            'phone'          => function_exists('lc_conversion_format_phone')
+                ? lc_conversion_format_phone((string) ($row['cv_phone'] ?? ''))
+                : (string) ($row['cv_phone'] ?? ''),
+            'email'          => (string) ($row['cv_email'] ?? ''),
+            'region'         => (string) ($row['cv_region'] ?? ''),
+            'inquiry'        => (string) ($row['cv_inquiry'] ?? ''),
+            'channel'        => (string) ($row['cv_channel'] ?? ''),
+            'subId'          => (string) ($row['cv_sub_id'] ?? ''),
+            'price'          => (int) ($row['cv_price'] ?? 0),
+            'comment'        => (string) ($row['cv_comment'] ?? ''),
+            'rejectReason'   => (string) ($row['cv_reject_reason'] ?? ''),
+            'qualityScore'   => (int) ($row['cv_quality_score'] ?? 0),
+            'qualityTags'    => function_exists('lc_conversion_decode_quality_tags')
+                ? lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? '')
+                : array(),
+            'partnerVisible' => !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1,
+            'finalLocked'    => !empty($row['cv_final_locked']),
+            'createdAt'      => $created,
+            'updatedAt'      => (string) ($row['cv_updated_at'] ?? $created),
+            'needsAction'    => function_exists('lc_conversion_needs_action')
+                ? lc_conversion_needs_action($status)
+                : ($status === LC_STATUS_PENDING),
+        );
+    }
+}
+
 if (!function_exists('lc_conversion_merchant_campaign_ids')) {
     function lc_conversion_merchant_campaign_ids($mt_id)
     {

@@ -38,6 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $clients = array_map('lc_api_client_to_api', lc_api_client_list());
+    $merchant_clients = array();
+    $landing_clients = array();
+    foreach ($clients as $c) {
+        if (($c['type'] ?? '') === 'merchant') {
+            $merchant_clients[] = $c;
+        } else {
+            $landing_clients[] = $c;
+        }
+    }
+
     $dbshare = null;
     foreach (lc_api_client_list() as $row) {
         if (stripos((string) $row['ac_name'], '디비쉐어') !== false || stripos((string) $row['ac_type'], 'dbshare') !== false) {
@@ -47,13 +57,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     lc_api_success(array(
-        'summary'  => lc_api_log_summary(),
-        'clients'  => $clients,
-        'dbshare'  => $dbshare,
-        'items'    => array_map(function ($row) {
+        'summary'          => lc_api_log_summary(),
+        'clients'          => $clients,
+        'landingClients'   => $landing_clients,
+        'merchantClients'  => $merchant_clients,
+        'dbshare'          => $dbshare,
+        'items'            => array_map(function ($row) {
             return lc_api_log_to_api($row, false);
         }, lc_api_log_list($filters, 50)),
-        'dbReady'  => lc_db_installed(),
+        'dbReady'          => lc_db_installed(),
+        'merchantApiPath'  => '/plugin/linkconnect/api/v1/merchant/conversions.php',
     ));
 }
 
@@ -86,6 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = lc_api_client_update_status($ac_id, 'inactive');
     } elseif ($action === 'activate') {
         $result = lc_api_client_update_status($ac_id, 'active');
+    } elseif ($action === 'update_ips') {
+        $result = lc_api_client_update_ips($ac_id, (string) ($body['allowedIps'] ?? ''));
     } else {
         lc_api_error('유효하지 않은 액션입니다.', 'INVALID_ACTION', 400);
     }

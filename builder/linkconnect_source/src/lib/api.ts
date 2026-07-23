@@ -1892,6 +1892,8 @@ export type ApiClientItem = {
   code: string;
   name: string;
   type: string;
+  mtId?: number;
+  merchantName?: string;
   apiKey: string;
   allowedIps: string;
   status: string;
@@ -1909,7 +1911,16 @@ export type ApiIntegrationSummary = {
 };
 
 export function fetchAdminIntegrations(filters?: { status?: string; client?: string; q?: string; errors?: boolean }) {
-  return adminApiGet<{ summary: ApiIntegrationSummary; clients: ApiClientItem[]; dbshare: ApiClientItem | null; items: ApiLogItem[]; dbReady: boolean }>(
+  return adminApiGet<{
+    summary: ApiIntegrationSummary;
+    clients: ApiClientItem[];
+    landingClients?: ApiClientItem[];
+    merchantClients?: ApiClientItem[];
+    merchantApiPath?: string;
+    dbshare: ApiClientItem | null;
+    items: ApiLogItem[];
+    dbReady: boolean;
+  }>(
     'integrations.php',
     {
       status: filters?.status ?? '',
@@ -1924,7 +1935,14 @@ export function fetchAdminIntegrationDetail(alId: number) {
   return adminApiGet<{ item: ApiLogItem }>('integrations.php', { id: String(alId) });
 }
 
-export function updateAdminIntegration(payload: { action: string; acId?: number; name?: string; type?: string; allowedIps?: string }) {
+export function updateAdminIntegration(payload: {
+  action: string;
+  acId?: number;
+  name?: string;
+  type?: string;
+  mtId?: number;
+  allowedIps?: string;
+}) {
   return adminApiPost<{ message: string; client?: ApiClientItem }>('integrations.php', payload);
 }
 

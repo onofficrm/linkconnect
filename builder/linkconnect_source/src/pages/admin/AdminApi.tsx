@@ -1,8 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { Code, ShieldAlert, ArrowDownToLine, Clock, CheckCircle2, Database, Eye, Search, FileText, AlertCircle, X, Key, RefreshCcw } from 'lucide-react';
-import { ApiClientItem, ApiIntegrationSummary, ApiLogItem, fetchAdminIntegrationDetail, fetchAdminIntegrations, updateAdminIntegration } from '../../lib/api';
+import {
+  Code,
+  ShieldAlert,
+  ArrowDownToLine,
+  Clock,
+  CheckCircle2,
+  Database,
+  Eye,
+  FileText,
+  AlertCircle,
+  X,
+  RefreshCcw,
+  KeyRound,
+  Plus,
+} from 'lucide-react';
+import {
+  AdminMerchant,
+  ApiClientItem,
+  ApiIntegrationSummary,
+  ApiLogItem,
+  fetchAdminIntegrationDetail,
+  fetchAdminIntegrations,
+  fetchAdminMerchants,
+  updateAdminIntegration,
+} from '../../lib/api';
 
 const emptySummary: ApiIntegrationSummary = {
   todayTotal: 0,
@@ -16,23 +39,39 @@ const emptySummary: ApiIntegrationSummary = {
 export function AdminApi() {
   const [summary, setSummary] = useState<ApiIntegrationSummary>(emptySummary);
   const [clients, setClients] = useState<ApiClientItem[]>([]);
+  const [merchantClients, setMerchantClients] = useState<ApiClientItem[]>([]);
+  const [merchantApiPath, setMerchantApiPath] = useState('/plugin/linkconnect/api/v1/merchant/conversions.php');
+  const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
   const [logs, setLogs] = useState<ApiLogItem[]>([]);
   const [selectedLog, setSelectedLog] = useState<number | null>(null);
   const [activeLog, setActiveLog] = useState<ApiLogItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [newMtId, setNewMtId] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newIps, setNewIps] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const primaryClient = clients[0] ?? null;
+  const primaryClient = useMemo(
+    () => clients.find((c) => c.type !== 'merchant') ?? clients[0] ?? null,
+    [clients],
+  );
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchAdminIntegrations();
+      const [data, merchantData] = await Promise.all([
+        fetchAdminIntegrations(),
+        fetchAdminMerchants({ status: 'active' }).catch(() => ({ items: [] as AdminMerchant[] })),
+      ]);
       setSummary(data.summary);
       setClients(data.clients);
+      setMerchantClients(data.merchantClients ?? data.clients.filter((c) => c.type === 'merchant'));
+      if (data.merchantApiPath) setMerchantApiPath(data.merchantApiPath);
       setLogs(data.items);
+      setMerchants(merchantData.items ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'API 연동 정보를 불러오지 못했습니다.');
     } finally {
@@ -54,19 +93,69 @@ export function AdminApi() {
     }
   };
 
-  const regenerateKey = async () => {
-    if (!primaryClient) return;
+  const regenerateKey = async (acId: number) => {
+    setBusy(true);
+    setMessage('');
+    setError('');
     try {
-      const result = await updateAdminIntegration({ action: 'regenerate_key', acId: primaryClient.id });
+      const result = await updateAdminIntegration({ action: 'regenerate_key', acId });
       setMessage(result.message);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : '키 재발급에 실패했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createMerchantKey = async () => {
+    const mtId = Number(newMtId);
+    if (!Number.isFinite(mtId) || mtId <= 0) {
+      setError('광고주를 선택하세요.');
+      return;
+    }
+    const merchant = merchants.find((m) => m.id === mtId);
+    setBusy(true);
+    setMessage('');
+    setError('');
+    try {
+      const result = await updateAdminIntegration({
+        action: 'create_client',
+        name: newName.trim() || `${merchant?.name ?? '광고주'} 검수 API`,
+        type: 'merchant',
+        mtId,
+        allowedIps: newIps.trim(),
+      });
+      setMessage(result.message + (result.client?.apiKey ? ` · Key: ${result.client.apiKey}` : ''));
+      setNewMtId('');
+      setNewName('');
+      setNewIps('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '광고주 API 키 발급에 실패했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleClient = async (client: ApiClientItem) => {
+    setBusy(true);
+    try {
+      const result = await updateAdminIntegration({
+        action: client.statusCode === 'active' ? 'deactivate' : 'activate',
+        acId: client.id,
+      });
+      setMessage(result.message);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '상태 변경에 실패했습니다.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <AdminLayout activeMenu="api" title="API 연동 관리" description="외부 디비 수집 솔루션과의 API 연동 상태와 로그를 관리하세요.">
+    <AdminLayout activeMenu="api" title="API 연동 관리" description="외부 디비 수집·광고주 검수 API 연동 상태와 로그를 관리하세요.">
       {(error || message) && (
         <div className={`mb-6 rounded-xl border px-4 py-3 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
           {error || message}
@@ -113,8 +202,8 @@ export function AdminApi() {
                 </div>
               </div>
               <div className="mt-6 flex gap-2 pt-6 border-t border-slate-100">
-                <button type="button" onClick={regenerateKey} className="flex-1 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-800 flex items-center justify-center gap-1.5">
-                  <RefreshCcw size={16} /> Secret 재발급
+                <button type="button" disabled={busy} onClick={() => regenerateKey(primaryClient.id)} className="flex-1 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-slate-800 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                  <RefreshCcw size={16} /> Key 재발급
                 </button>
               </div>
               <p className="text-xs text-slate-500 mt-4">외부 DB 수신 엔드포인트: <code className="bg-slate-100 px-1 rounded">/plugin/linkconnect/api/db_receive.php</code></p>
@@ -126,16 +215,83 @@ export function AdminApi() {
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><Database className="text-blue-600" size={20} /></div>
+            <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center"><KeyRound className="text-cyan-600" size={20} /></div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900">연동 안내</h3>
-              <p className="text-sm text-slate-500">X-API-Key 헤더 또는 api_key 파라미터로 인증</p>
+              <h3 className="font-bold text-slate-900">광고주 검수 API</h3>
+              <p className="text-sm text-slate-500">광고주 자체 플랫폼에서 디비 승인·취소</p>
             </div>
           </div>
-          <div className="text-sm text-slate-600 space-y-2 bg-slate-50 p-4 rounded-xl">
-            <p>필수: <strong>phone</strong>, <strong>lkCode</strong> 또는 <strong>campaign_code</strong></p>
-            <p>선택: name, email, region, inquiry, ext_id</p>
-            <p>성공 시 <strong>db_code</strong>가 반환됩니다.</p>
+
+          <div className="space-y-3 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">광고주 *</label>
+              <select
+                value={newMtId}
+                onChange={(e) => setNewMtId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+              >
+                <option value="">선택</option>
+                {merchants.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.code})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">클라이언트명</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="예: ○○사 CRM 연동"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">허용 IP (쉼표 구분, 권장)</label>
+              <input
+                type="text"
+                value={newIps}
+                onChange={(e) => setNewIps(e.target.value)}
+                placeholder="203.0.113.10, 203.0.113.*"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-mono"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={busy || !newMtId}
+              onClick={createMerchantKey}
+              className="w-full py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <Plus size={16} /> 광고주 API Key 발급
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 mb-3">
+            엔드포인트: <code className="bg-slate-100 px-1 rounded break-all">{merchantApiPath}</code>
+          </p>
+
+          <div className="space-y-3 max-h-72 overflow-y-auto">
+            {merchantClients.length === 0 ? (
+              <p className="text-sm text-slate-500">발급된 광고주 검수 API 키가 없습니다.</p>
+            ) : merchantClients.map((c) => (
+              <div key={c.id} className="p-3 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 text-sm truncate">{c.name}</div>
+                    <div className="text-xs text-slate-500">{c.merchantName || `mtId ${c.mtId}`} · {c.code}</div>
+                  </div>
+                  <StatusBadge status={c.status} />
+                </div>
+                <div className="font-mono text-xs text-slate-700 break-all bg-slate-50 px-2 py-1.5 rounded">{c.apiKey}</div>
+                <div className="text-[11px] text-slate-500">IP: {c.allowedIps || '제한 없음'} · 최근: {c.lastCallAt}</div>
+                <div className="flex gap-2">
+                  <button type="button" disabled={busy} onClick={() => regenerateKey(c.id)} className="flex-1 py-1.5 text-xs font-bold bg-slate-900 text-white rounded-lg disabled:opacity-50">재발급</button>
+                  <button type="button" disabled={busy} onClick={() => toggleClient(c)} className="flex-1 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50">
+                    {c.statusCode === 'active' ? '비활성' : '활성'}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

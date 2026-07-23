@@ -17,6 +17,18 @@ if (!function_exists('lc_api_client_generate_key')) {
     }
 }
 
+if (!function_exists('lc_api_client_key_prefix_for_type')) {
+    function lc_api_client_key_prefix_for_type($type)
+    {
+        $type = trim((string) $type);
+        if ($type === 'merchant') {
+            return 'sk_mt_';
+        }
+
+        return 'sk_live_';
+    }
+}
+
 if (!function_exists('lc_api_client_get_by_id')) {
     function lc_api_client_get_by_id($ac_id)
     {
@@ -109,19 +121,43 @@ if (!function_exists('lc_api_client_create')) {
             return array('ok' => false, 'message' => '클라이언트명은 필수입니다.', 'client' => null);
         }
 
+        $type = trim((string) ($payload['type'] ?? 'landing'));
+        if ($type === '') {
+            $type = 'landing';
+        }
+        $mt_id = (int) ($payload['mtId'] ?? $payload['mt_id'] ?? 0);
+
+        if ($type === 'merchant') {
+            if ($mt_id <= 0) {
+                return array('ok' => false, 'message' => '광고주(mtId)가 필요합니다.', 'client' => null);
+            }
+            if (!function_exists('lc_get_merchant_by_id') || !lc_get_merchant_by_id($mt_id)) {
+                return array('ok' => false, 'message' => '광고주를 찾을 수 없습니다.', 'client' => null);
+            }
+        } else {
+            $mt_id = 0;
+        }
+
         $table = lc_table('api_clients');
         $code = lc_api_client_generate_code();
-        $api_key = lc_api_client_generate_key();
+        $api_key = lc_api_client_generate_key(lc_api_client_key_prefix_for_type($type));
 
-        lc_sql_query(" INSERT INTO `{$table}` SET
-            ac_code = '" . lc_sql_escape($code) . "',
-            ac_name = '" . lc_sql_escape($name) . "',
-            ac_type = '" . lc_sql_escape($payload['type'] ?? 'landing') . "',
-            ac_api_key = '" . lc_sql_escape($api_key) . "',
-            ac_api_secret = '" . lc_sql_escape(bin2hex(random_bytes(12))) . "',
-            ac_allowed_ips = '" . lc_sql_escape($payload['allowedIps'] ?? '') . "',
-            ac_status = 'active',
-            ac_created_at = NOW() ", false);
+        $has_mt = function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'ac_mt_id');
+        $sets = array(
+            "ac_code = '" . lc_sql_escape($code) . "'",
+            "ac_name = '" . lc_sql_escape($name) . "'",
+            "ac_type = '" . lc_sql_escape($type) . "'",
+            "ac_api_key = '" . lc_sql_escape($api_key) . "'",
+            "ac_api_secret = '" . lc_sql_escape(bin2hex(random_bytes(12))) . "'",
+            "ac_allowed_ips = '" . lc_sql_escape($payload['allowedIps'] ?? '') . "'",
+            "ac_status = 'active'",
+            'ac_created_at = NOW()',
+        );
+        if ($has_mt) {
+            $sets[] = "ac_mt_id = '" . (int) $mt_id . "'";
+        }
+
+        lc_sql_query(' INSERT INTO `' . $table . '` SET ' . implode(', ', $sets) . ' ', false);
 
         $ac_id = (int) lc_sql_insert_id();
 
@@ -150,7 +186,8 @@ if (!function_exists('lc_api_client_regenerate_key')) {
             $value = bin2hex(random_bytes(12));
             lc_sql_query(" UPDATE `{$table}` SET ac_api_secret = '" . lc_sql_escape($value) . "' WHERE ac_id = '" . (int) $ac_id . "' LIMIT 1 ", false);
         } else {
-            $value = lc_api_client_generate_key();
+            $prefix = lc_api_client_key_prefix_for_type((string) ($client['ac_type'] ?? 'landing'));
+            $value = lc_api_client_generate_key($prefix);
             lc_sql_query(" UPDATE `{$table}` SET ac_api_key = '" . lc_sql_escape($value) . "' WHERE ac_id = '" . (int) $ac_id . "' LIMIT 1 ", false);
         }
 
@@ -176,6 +213,32 @@ if (!function_exists('lc_api_client_update_status')) {
         return array(
             'ok'      => true,
             'message' => $status === 'active' ? '활성화되었습니다.' : '비활성화되었습니다.',
+            'client'  => lc_api_client_get_by_id($ac_id),
+        );
+    }
+}
+
+if (!function_exists('lc_api_client_update_ips')) {
+    /**
+     * @return array{ok:bool,message:string,client:array|null}
+     */
+    function lc_api_client_update_ips($ac_id, $allowed_ips)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'client' => null);
+        }
+
+        $client = lc_api_client_get_by_id($ac_id);
+        if (!$client) {
+            return array('ok' => false, 'message' => '클라이언트를 찾을 수 없습니다.', 'client' => null);
+        }
+
+        $table = lc_table('api_clients');
+        lc_sql_query(" UPDATE `{$table}` SET ac_allowed_ips = '" . lc_sql_escape((string) $allowed_ips) . "' WHERE ac_id = '" . (int) $ac_id . "' LIMIT 1 ", false);
+
+        return array(
+            'ok'      => true,
+            'message' => '허용 IP가 저장되었습니다.',
             'client'  => lc_api_client_get_by_id($ac_id),
         );
     }
@@ -208,7 +271,8 @@ if (!function_exists('lc_api_client_validate_request')) {
             return array('ok' => false, 'message' => 'Invalid API Key', 'client' => null);
         }
 
-        if (lc_settings_get_bool('apiIpRestrict') && trim((string) $client['ac_allowed_ips']) !== '') {
+        $check_ip = lc_settings_get_bool('apiIpRestrict') || trim((string) ($client['ac_type'] ?? '')) === 'merchant';
+        if ($check_ip && trim((string) $client['ac_allowed_ips']) !== '') {
             $allowed = array_filter(array_map('trim', explode(',', (string) $client['ac_allowed_ips'])));
             $ip_ok = false;
             foreach ($allowed as $pattern) {
@@ -223,6 +287,81 @@ if (!function_exists('lc_api_client_validate_request')) {
         }
 
         return array('ok' => true, 'message' => '', 'client' => $client);
+    }
+}
+
+if (!function_exists('lc_api_extract_key_from_request')) {
+    function lc_api_extract_key_from_request(array $body = array())
+    {
+        if (isset($_SERVER['HTTP_X_API_KEY']) && trim((string) $_SERVER['HTTP_X_API_KEY']) !== '') {
+            return trim((string) $_SERVER['HTTP_X_API_KEY']);
+        }
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth = trim((string) $_SERVER['HTTP_AUTHORIZATION']);
+            if (stripos($auth, 'Bearer ') === 0) {
+                return trim(substr($auth, 7));
+            }
+        }
+        if (isset($body['api_key'])) {
+            return trim((string) $body['api_key']);
+        }
+        if (isset($body['apiKey'])) {
+            return trim((string) $body['apiKey']);
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('lc_api_require_merchant_client')) {
+    /**
+     * 광고주 외부 API 인증. 성공 시 client 배열 반환, 실패 시 응답 종료.
+     *
+     * @return array
+     */
+    function lc_api_require_merchant_client(array $body = array())
+    {
+        $api_key = lc_api_extract_key_from_request($body);
+        if ($api_key === '') {
+            lc_api_error('API Key가 필요합니다.', 'UNAUTHORIZED', 401);
+        }
+
+        $client_ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+        $client = lc_api_client_get_by_key($api_key);
+        if (!$client) {
+            lc_api_error('Invalid API Key', 'UNAUTHORIZED', 401);
+        }
+
+        // 광고주 키는 허용 IP가 있으면 항상 검사
+        if (trim((string) ($client['ac_allowed_ips'] ?? '')) !== '') {
+            $auth = lc_api_client_validate_request($api_key, $client_ip);
+            if (!$auth['ok']) {
+                lc_api_error($auth['message'] !== '' ? $auth['message'] : 'IP not allowed', 'UNAUTHORIZED', 401);
+            }
+        }
+
+        if ((string) ($client['ac_type'] ?? '') !== 'merchant') {
+            lc_api_error('Merchant API Key가 필요합니다.', 'FORBIDDEN', 403);
+        }
+
+        $mt_id = (int) ($client['ac_mt_id'] ?? 0);
+        if ($mt_id <= 0) {
+            lc_api_error('API Key에 광고주가 연결되어 있지 않습니다.', 'FORBIDDEN', 403);
+        }
+
+        $merchant = function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+        if (!$merchant) {
+            lc_api_error('광고주를 찾을 수 없습니다.', 'FORBIDDEN', 403);
+        }
+
+        if (function_exists('lc_api_client_touch')) {
+            lc_api_client_touch((int) $client['ac_id']);
+        }
+
+        $client['_merchant'] = $merchant;
+        $client['_mt_id'] = $mt_id;
+
+        return $client;
     }
 }
 
@@ -413,16 +552,27 @@ if (!function_exists('lc_api_log_summary')) {
 if (!function_exists('lc_api_client_to_api')) {
     function lc_api_client_to_api(array $row)
     {
+        $mt_id = (int) ($row['ac_mt_id'] ?? 0);
+        $merchant_name = '';
+        if ($mt_id > 0 && function_exists('lc_get_merchant_by_id')) {
+            $mt = lc_get_merchant_by_id($mt_id);
+            if ($mt) {
+                $merchant_name = (string) ($mt['mt_company'] ?? '');
+            }
+        }
+
         return array(
-            'id'          => (int) ($row['ac_id'] ?? 0),
-            'code'        => (string) ($row['ac_code'] ?? ''),
-            'name'        => (string) ($row['ac_name'] ?? ''),
-            'type'        => (string) ($row['ac_type'] ?? ''),
-            'apiKey'      => (string) ($row['ac_api_key'] ?? ''),
-            'allowedIps'  => (string) ($row['ac_allowed_ips'] ?? ''),
-            'status'      => (string) ($row['ac_status'] ?? '') === 'active' ? '정상' : '비활성',
-            'statusCode'  => (string) ($row['ac_status'] ?? ''),
-            'lastCallAt'  => !empty($row['ac_last_call_at']) ? date('Y.m.d H:i', strtotime($row['ac_last_call_at'])) : '-',
+            'id'            => (int) ($row['ac_id'] ?? 0),
+            'code'          => (string) ($row['ac_code'] ?? ''),
+            'name'          => (string) ($row['ac_name'] ?? ''),
+            'type'          => (string) ($row['ac_type'] ?? ''),
+            'mtId'          => $mt_id,
+            'merchantName'  => $merchant_name,
+            'apiKey'        => (string) ($row['ac_api_key'] ?? ''),
+            'allowedIps'    => (string) ($row['ac_allowed_ips'] ?? ''),
+            'status'        => (string) ($row['ac_status'] ?? '') === 'active' ? '정상' : '비활성',
+            'statusCode'    => (string) ($row['ac_status'] ?? ''),
+            'lastCallAt'    => !empty($row['ac_last_call_at']) ? date('Y.m.d H:i', strtotime($row['ac_last_call_at'])) : '-',
         );
     }
 }
