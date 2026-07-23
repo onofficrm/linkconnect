@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 
 export function AdvertiserIntro() {
   return (
-    <section id="lc-inquiry" className="py-24 bg-slate-50 border-b border-slate-200 overflow-hidden">
+    <section id="advertiser" className="py-24 bg-slate-50 border-b border-slate-200 overflow-hidden">
+      {/* 레거시 앵커 호환 */}
+      <span id="lc-inquiry" className="sr-only" aria-hidden="true" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center flex-col-reverse lg:flex-row">
           

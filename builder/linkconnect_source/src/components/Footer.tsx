@@ -20,12 +20,13 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
   if (item.scrollTarget) {
     return (
       <Link
-        to="/"
+        to={item.to}
         onClick={(e) => {
-          handleSectionLink(item.scrollTarget!);
           if (location.pathname === '/') {
             e.preventDefault();
             scrollToSection(item.scrollTarget!);
+          } else if (item.to === '/') {
+            handleSectionLink(item.scrollTarget!);
           }
         }}
         className={className}
@@ -88,10 +89,8 @@ export function Footer() {
           <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8">
             <FooterColumn title="회사소개">
               {companyNavItems.map((item) => (
-                <li key={item.to}>
-                  <Link to={item.to} className="hover:text-emerald-400 transition-colors">
-                    {item.label}
-                  </Link>
+                <li key={`${item.to}-${item.label}`}>
+                  <FooterNavLink item={item} />
                 </li>
               ))}
             </FooterColumn>

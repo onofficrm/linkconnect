@@ -10,10 +10,11 @@ function sectionLinkClick(
   sectionId: string,
   pathname: string,
 ) {
-  handleSectionLink(sectionId);
   if (pathname === '/') {
     e.preventDefault();
     scrollToSection(sectionId);
+  } else {
+    handleSectionLink(sectionId);
   }
 }
 

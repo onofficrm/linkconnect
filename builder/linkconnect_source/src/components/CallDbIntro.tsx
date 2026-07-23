@@ -23,7 +23,7 @@ const steps = [
 
 export function CallDbIntro() {
   return (
-    <section id="call-db" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-violet-50/80 via-white to-white border-t border-slate-200 scroll-mt-24">
+    <section id="call-db" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-violet-50/80 via-white to-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-sm font-bold mb-4">

@@ -2,7 +2,7 @@ export interface NavLinkItem {
   to: string;
   label: string;
   accent?: 'emerald' | 'cyan';
-  /** 홈 섹션 앵커 (예: call-db → /#call-db) */
+  /** 홈(/)에 있을 때 해당 섹션으로 스크롤 (예: cpa → #cpa) */
   scrollTarget?: string;
 }
 
@@ -17,11 +17,11 @@ export const companySubItems: NavLinkItem[] = [
 /** @deprecated Footer 등 — companySubItems 사용 */
 export const companyNavItems = companySubItems;
 
-/** 캠페인·프로모션 */
+/** 캠페인·프로모션 — 홈에서는 섹션 스크롤, 그 외 경로에서는 전용 페이지 */
 export const campaignNavItems: NavLinkItem[] = [
-  { to: '/cpa-list', label: 'CPA' },
-  { to: '/cps', label: 'CPS' },
-  { to: '/events', label: '이벤트/프로모션' },
+  { to: '/cpa-list', label: 'CPA', scrollTarget: 'cpa' },
+  { to: '/cps', label: 'CPS', scrollTarget: 'cps' },
+  { to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' },
 ];
 
 /** 커뮤니티 대메뉴 */
@@ -32,23 +32,23 @@ export const communityNavItem: NavLinkItem = {
 
 /** 푸터 — 캠페인 */
 export const footerCampaignNavItems: NavLinkItem[] = [
-  { to: '/cpa-list', label: 'CPA' },
-  { to: '/cps', label: 'CPS' },
+  { to: '/cpa-list', label: 'CPA', scrollTarget: 'cpa' },
+  { to: '/cps', label: 'CPS', scrollTarget: 'cps' },
   { to: '/', label: '콜디비란?', scrollTarget: 'call-db' },
 ];
 
 /** 푸터 — 서비스 */
 export const footerServiceNavItems: NavLinkItem[] = [
-  { to: '/partner', label: '파트너센터', accent: 'emerald' },
-  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
-  { to: '/events', label: '이벤트/프로모션' },
+  { to: '/partner', label: '파트너센터', accent: 'emerald', scrollTarget: 'partner' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan', scrollTarget: 'advertiser' },
+  { to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' },
   communityNavItem,
 ];
 
 /** 센터 */
 export const centerNavItems: NavLinkItem[] = [
-  { to: '/partner', label: '파트너센터', accent: 'emerald' },
-  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
+  { to: '/partner', label: '파트너센터', accent: 'emerald', scrollTarget: 'partner' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan', scrollTarget: 'advertiser' },
 ];
 
 /** 관리자센터 (헤더 우측 끝 배지) */
@@ -60,7 +60,7 @@ export const adminNavItem: NavLinkItem = {
 
 export function isCompanyNavActive(pathname: string): boolean {
   return companySubItems.some((item) => {
-    if (item.scrollTarget) return false;
+    if (item.scrollTarget && item.to === '/') return false;
     return pathname === item.to || pathname.startsWith(`${item.to}/`);
   });
 }

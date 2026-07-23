@@ -44,12 +44,14 @@ function PublicNavLink({
   if (item.scrollTarget) {
     return (
       <Link
-        to="/"
+        to={item.to}
         onClick={(e) => {
-          handleSectionLink(item.scrollTarget!);
+          // 홈에서는 해당 섹션으로 스크롤, 그 외는 to 경로로 이동
           if (location.pathname === '/') {
             e.preventDefault();
             scrollToSection(item.scrollTarget!);
+          } else if (item.to === '/') {
+            handleSectionLink(item.scrollTarget!);
           }
           onNavigate?.();
         }}
@@ -169,7 +171,11 @@ export function Header() {
               <PublicNavLink
                 key={item.label}
                 item={item}
-                className={navLinkClass(isActive(location.pathname, item.to) || Boolean(item.scrollTarget && location.pathname === '/'))}
+                className={navLinkClass(
+                  item.scrollTarget && location.pathname === '/'
+                    ? location.hash === `#${item.scrollTarget}`
+                    : isActive(location.pathname, item.to),
+                )}
               />
             ))}
             <PublicNavLink
@@ -177,13 +183,16 @@ export function Header() {
               className={navLinkClass(isActive(location.pathname, communityNavItem.to))}
             />
             {centerNavItems.map((item) => (
-              <Link
+              <PublicNavLink
                 key={item.to}
-                to={item.to}
-                className={navLinkClass(isActive(location.pathname, item.to), item.accent)}
-              >
-                {item.label}
-              </Link>
+                item={item}
+                className={navLinkClass(
+                  item.scrollTarget && location.pathname === '/'
+                    ? location.hash === `#${item.scrollTarget}`
+                    : isActive(location.pathname, item.to),
+                  item.accent,
+                )}
+              />
             ))}
           </nav>
 
@@ -245,16 +254,14 @@ export function Header() {
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">센터</p>
           {centerNavItems.map((item) => (
-            <Link
+            <PublicNavLink
               key={item.to}
-              to={item.to}
-              onClick={closeMobile}
+              item={item}
+              onNavigate={closeMobile}
               className={`block px-3 py-2.5 pl-5 text-base font-medium rounded-lg ${
                 item.accent === 'emerald' ? 'text-emerald-400 hover:bg-white/5' : 'text-cyan-400 hover:bg-white/5'
               }`}
-            >
-              {item.label}
-            </Link>
+            />
           ))}
 
           <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-3">
