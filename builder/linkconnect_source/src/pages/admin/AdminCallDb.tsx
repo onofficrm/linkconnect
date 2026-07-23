@@ -311,6 +311,8 @@ export function AdminCallDb() {
       const res = await saveAdminCallSettings({
         cpId: settingsCp.cpId,
         adminEnabled: true,
+        forward1: String(settingsDraft.cs_forward1 ?? ''),
+        forward2: String(settingsDraft.cs_forward2 ?? ''),
         recordingMode: String(settingsDraft.cs_recording_mode ?? 'normal'),
         coloring: String(settingsDraft.cs_coloring ?? ''),
         callMent: String(settingsDraft.cs_call_ment ?? ''),
@@ -893,8 +895,32 @@ export function AdminCallDb() {
         <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSettingsCp(null)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="font-bold text-lg text-slate-900 mb-1">콜 설정 — {settingsCp.name}</div>
-            <p className="text-sm text-slate-500 mb-4">가상번호 배정 시 설정한 단가를 변경하거나 녹음·업무시간을 조정합니다.</p>
+            <p className="text-sm text-slate-500 mb-4">수신번호·단가·녹음·업무시간을 설정합니다. 수신번호는 광고주도 수정할 수 있으며, 변경 시 중요알림이 갑니다.</p>
             <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">수신번호 1</label>
+                  <input
+                    type="text"
+                    inputMode="tel"
+                    value={String(settingsDraft.cs_forward1 ?? '')}
+                    onChange={(e) => setDraft('cs_forward1', e.target.value)}
+                    placeholder="01012345678"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">수신번호 2</label>
+                  <input
+                    type="text"
+                    inputMode="tel"
+                    value={String(settingsDraft.cs_forward2 ?? '')}
+                    onChange={(e) => setDraft('cs_forward2', e.target.value)}
+                    placeholder="01087654321"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
                 <input type="number" min={1} value={Number(settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />

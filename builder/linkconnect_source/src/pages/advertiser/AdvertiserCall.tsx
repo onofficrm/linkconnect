@@ -127,7 +127,7 @@ export function AdvertiserCall() {
         <InsightBanner
           accent="cyan"
           message={<>콜디비 수신 상품 <strong>{summary.enabled}개</strong>, 최근 통화 <strong>{summary.totalCalls}건</strong>이 집계되었습니다.</>}
-          subMessage="상품별 착신번호를 저장하면 관리자가 업로드한 통화내역이 가상번호 기준으로 자동 매칭됩니다."
+          subMessage="상품별 수신번호 1·2를 저장하면 관리자가 업로드한 통화내역이 가상번호 기준으로 자동 매칭됩니다. 수신번호 변경 시 관리자에게 중요알림이 갑니다."
           actions={[{ label: '디비 확인', to: '/advertiser/db', variant: 'secondary' }]}
         />
 
@@ -229,20 +229,21 @@ export function AdvertiserCall() {
                     </div>
                     <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1">착신번호 1</label>
-                        <input type="text" value={d.forward1} disabled={blocked} onChange={(e) => update(c.cpId, { forward1: e.target.value })} placeholder="01012345678"
+                        <label className="block text-xs font-bold text-slate-500 mb-1">수신번호 1</label>
+                        <input type="text" inputMode="tel" value={d.forward1} disabled={blocked} onChange={(e) => update(c.cpId, { forward1: e.target.value })} placeholder="01012345678"
                           className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono disabled:bg-slate-100 focus:border-cyan-500 outline-none" />
                       </div>
                       <div>
-                        <label className="block text-xs font-bold text-slate-500 mb-1">착신번호 2</label>
-                        <input type="text" value={d.forward2} disabled={blocked} onChange={(e) => update(c.cpId, { forward2: e.target.value })} placeholder="(선택)"
+                        <label className="block text-xs font-bold text-slate-500 mb-1">수신번호 2</label>
+                        <input type="text" inputMode="tel" value={d.forward2} disabled={blocked} onChange={(e) => update(c.cpId, { forward2: e.target.value })} placeholder="01087654321"
                           className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono disabled:bg-slate-100 focus:border-cyan-500 outline-none" />
                       </div>
                     </div>
                     <div className="md:col-span-2 flex items-center justify-between gap-3 pt-1">
                       <div className="text-xs text-slate-400">
-                        착신: <span className="font-mono text-slate-600">{formatPhone(d.forward1)}</span>
+                        수신: <span className="font-mono text-slate-600">{formatPhone(d.forward1)}</span>
                         {d.forward2 ? <span className="font-mono text-slate-500"> / {formatPhone(d.forward2)}</span> : null}
+                        <span className="block sm:inline sm:ml-2 text-amber-600 font-medium">번호 변경 시 관리자에게 중요알림이 전달됩니다.</span>
                       </div>
                       <button type="button" onClick={() => handleSave(c.cpId)} disabled={saving === c.cpId || blocked}
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl text-sm disabled:opacity-50 shadow-sm">

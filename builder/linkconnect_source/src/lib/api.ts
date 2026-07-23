@@ -2285,6 +2285,8 @@ export type LcNotification = {
   center: string;
   userId: number;
   type: string;
+  priority?: 'normal' | 'critical';
+  critical?: boolean;
   title: string;
   body: string;
   link: string;

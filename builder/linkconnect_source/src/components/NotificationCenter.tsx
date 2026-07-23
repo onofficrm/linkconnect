@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Check, Loader2 } from 'lucide-react';
+import { AlertTriangle, Bell, Check, Loader2 } from 'lucide-react';
 import {
   LcNotification,
   LcNotificationCenter,
@@ -27,6 +27,10 @@ const typeLabels: Record<string, string> = {
   call: '콜디비',
   contract: '계약',
 };
+
+function isCritical(item: LcNotification) {
+  return item.critical === true || item.priority === 'critical';
+}
 
 function fetchByCenter(center: LcNotificationCenter) {
   if (center === 'admin') return fetchAdminNotifications();
@@ -90,6 +94,8 @@ export function NotificationCenter({ center, variant = 'light' }: NotificationCe
     setOpen(false);
   };
 
+  const criticalUnread = items.some((item) => !item.read && isCritical(item));
+
   const buttonClass =
     variant === 'dark'
       ? 'p-2 text-slate-400 hover:text-white relative transition-colors'
@@ -105,7 +111,11 @@ export function NotificationCenter({ center, variant = 'light' }: NotificationCe
       <button type="button" className={buttonClass} onClick={() => setOpen((v) => !v)} aria-label="알림">
         <Bell size={20} />
         {unread > 0 ? (
-          <span className="absolute top-1.5 right-1.5 min-w-[8px] h-2 px-0.5 bg-rose-500 rounded-full border border-white text-[9px] text-white font-bold flex items-center justify-center">
+          <span
+            className={`absolute top-1.5 right-1.5 min-w-[8px] h-2 px-0.5 rounded-full border border-white text-[9px] text-white font-bold flex items-center justify-center ${
+              criticalUnread ? 'bg-rose-600 ring-2 ring-rose-300 animate-pulse' : 'bg-rose-500'
+            }`}
+          >
             {unread > 9 ? '9+' : unread}
           </span>
         ) : null}
@@ -135,18 +145,33 @@ export function NotificationCenter({ center, variant = 'light' }: NotificationCe
               </div>
             ) : (
               items.map((item) => {
+                const critical = isCritical(item);
                 const content = (
                   <div
                     className={`px-4 py-3 border-b last:border-b-0 transition-colors ${
-                      variant === 'dark'
-                        ? `border-slate-800 hover:bg-slate-800/60 ${item.read ? 'opacity-60' : ''}`
-                        : `border-slate-50 hover:bg-slate-50 ${item.read ? 'opacity-70' : ''}`
+                      critical && !item.read
+                        ? variant === 'dark'
+                          ? 'border-rose-900/60 bg-rose-950/40 hover:bg-rose-950/60'
+                          : 'border-rose-100 bg-rose-50 hover:bg-rose-100/70'
+                        : variant === 'dark'
+                          ? `border-slate-800 hover:bg-slate-800/60 ${item.read ? 'opacity-60' : ''}`
+                          : `border-slate-50 hover:bg-slate-50 ${item.read ? 'opacity-70' : ''}`
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      {!item.read ? <span className="w-2 h-2 mt-1.5 rounded-full bg-rose-500 shrink-0" /> : <span className="w-2 shrink-0" />}
+                      {!item.read ? (
+                        <span className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${critical ? 'bg-rose-600' : 'bg-rose-500'}`} />
+                      ) : (
+                        <span className="w-2 shrink-0" />
+                      )}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          {critical ? (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-600 text-white">
+                              <AlertTriangle size={10} />
+                              중요
+                            </span>
+                          ) : null}
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${variant === 'dark' ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                             {typeLabels[item.type] ?? item.type}
                           </span>

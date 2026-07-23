@@ -634,6 +634,11 @@ if (!function_exists('lc_db_run_migrations')) {
             $alters[] = "ALTER TABLE `{$merchants}` ADD COLUMN `mt_notify_prefs` text AFTER `mt_balance`";
         }
 
+        $nf = lc_table('notifications');
+        if (lc_db_table_exists($nf) && !lc_db_column_exists($nf, 'nf_priority')) {
+            $alters[] = "ALTER TABLE `{$nf}` ADD COLUMN `nf_priority` varchar(20) NOT NULL DEFAULT 'normal' AFTER `nf_type`, ADD KEY `idx_nf_priority` (`nf_priority`)";
+        }
+
         foreach (array(
             'cv_review_status' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_comment`",
             'cv_reject_reason' => "varchar(100) NOT NULL DEFAULT '' AFTER `cv_review_status`",
@@ -791,6 +796,7 @@ if (!function_exists('lc_db_run_migrations')) {
                 `nf_center` varchar(20) NOT NULL DEFAULT 'admin',
                 `nf_user_id` int unsigned NOT NULL DEFAULT 0,
                 `nf_type` varchar(30) NOT NULL DEFAULT 'system',
+                `nf_priority` varchar(20) NOT NULL DEFAULT 'normal',
                 `nf_title` varchar(200) NOT NULL DEFAULT '',
                 `nf_body` varchar(500) NOT NULL DEFAULT '',
                 `nf_link` varchar(200) NOT NULL DEFAULT '',
@@ -801,6 +807,7 @@ if (!function_exists('lc_db_run_migrations')) {
                 PRIMARY KEY (`nf_id`),
                 KEY `idx_nf_center_user` (`nf_center`, `nf_user_id`),
                 KEY `idx_nf_type` (`nf_type`),
+                KEY `idx_nf_priority` (`nf_priority`),
                 KEY `idx_nf_read` (`nf_read_at`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
 

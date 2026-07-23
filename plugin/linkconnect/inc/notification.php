@@ -20,6 +20,10 @@ if (!function_exists('lc_notification_create')) {
         $center = trim((string) ($payload['center'] ?? 'admin'));
         $user_id = (int) ($payload['userId'] ?? 0);
         $type = trim((string) ($payload['type'] ?? 'system'));
+        $priority = trim((string) ($payload['priority'] ?? 'normal'));
+        if ($priority !== 'critical') {
+            $priority = 'normal';
+        }
         $title = trim((string) ($payload['title'] ?? ''));
         $body = trim((string) ($payload['body'] ?? ''));
         $link = trim((string) ($payload['link'] ?? ''));
@@ -31,20 +35,40 @@ if (!function_exists('lc_notification_create')) {
         }
 
         $table = lc_notification_table();
-        lc_sql_query("
-            INSERT INTO `{$table}` (
-                nf_center, nf_user_id, nf_type, nf_title, nf_body, nf_link, nf_ref_type, nf_ref_id
-            ) VALUES (
-                '" . lc_sql_escape($center) . "',
-                {$user_id},
-                '" . lc_sql_escape($type) . "',
-                '" . lc_sql_escape($title) . "',
-                '" . lc_sql_escape($body) . "',
-                '" . lc_sql_escape($link) . "',
-                '" . lc_sql_escape($ref_type) . "',
-                {$ref_id}
-            )
-        ", false);
+        $has_priority = function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'nf_priority');
+
+        if ($has_priority) {
+            lc_sql_query("
+                INSERT INTO `{$table}` (
+                    nf_center, nf_user_id, nf_type, nf_priority, nf_title, nf_body, nf_link, nf_ref_type, nf_ref_id
+                ) VALUES (
+                    '" . lc_sql_escape($center) . "',
+                    {$user_id},
+                    '" . lc_sql_escape($type) . "',
+                    '" . lc_sql_escape($priority) . "',
+                    '" . lc_sql_escape($title) . "',
+                    '" . lc_sql_escape($body) . "',
+                    '" . lc_sql_escape($link) . "',
+                    '" . lc_sql_escape($ref_type) . "',
+                    {$ref_id}
+                )
+            ", false);
+        } else {
+            lc_sql_query("
+                INSERT INTO `{$table}` (
+                    nf_center, nf_user_id, nf_type, nf_title, nf_body, nf_link, nf_ref_type, nf_ref_id
+                ) VALUES (
+                    '" . lc_sql_escape($center) . "',
+                    {$user_id},
+                    '" . lc_sql_escape($type) . "',
+                    '" . lc_sql_escape($title) . "',
+                    '" . lc_sql_escape($body) . "',
+                    '" . lc_sql_escape($link) . "',
+                    '" . lc_sql_escape($ref_type) . "',
+                    {$ref_id}
+                )
+            ", false);
+        }
 
         return (int) lc_sql_insert_id();
     }
@@ -53,11 +77,17 @@ if (!function_exists('lc_notification_create')) {
 if (!function_exists('lc_notification_row_to_api')) {
     function lc_notification_row_to_api(array $row)
     {
+        $priority = (string) ($row['nf_priority'] ?? 'normal');
+        if ($priority !== 'critical') {
+            $priority = 'normal';
+        }
+
         return array(
             'id'        => (int) ($row['nf_id'] ?? 0),
             'center'    => (string) ($row['nf_center'] ?? ''),
             'userId'    => (int) ($row['nf_user_id'] ?? 0),
             'type'      => (string) ($row['nf_type'] ?? ''),
+            'priority'  => $priority,
             'title'     => (string) ($row['nf_title'] ?? ''),
             'body'      => (string) ($row['nf_body'] ?? ''),
             'link'      => (string) ($row['nf_link'] ?? ''),
@@ -66,6 +96,7 @@ if (!function_exists('lc_notification_row_to_api')) {
             'read'      => !empty($row['nf_read_at']),
             'readAt'    => (string) ($row['nf_read_at'] ?? ''),
             'createdAt' => (string) ($row['nf_created_at'] ?? ''),
+            'critical'  => $priority === 'critical',
         );
     }
 }
@@ -94,10 +125,15 @@ if (!function_exists('lc_notification_list_for_api')) {
         }
 
         $items = array();
+        $has_priority = function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'nf_priority');
+        $order = $has_priority
+            ? "ORDER BY CASE WHEN nf_priority = 'critical' AND nf_read_at IS NULL THEN 0 ELSE 1 END, nf_id DESC"
+            : 'ORDER BY nf_id DESC';
+
         $result = lc_sql_query("
             SELECT * FROM `{$table}`
             WHERE " . implode(' AND ', $where) . "
-            ORDER BY nf_id DESC
+            {$order}
             LIMIT {$limit}
         ", false);
         if ($result) {

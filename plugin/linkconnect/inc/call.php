@@ -205,9 +205,10 @@ if (!function_exists('lc_call_settings_save')) {
         $mt_id = (int) $campaign['mt_id'];
 
         $table = lc_table('call_settings');
-        $existing = lc_sql_fetch(" SELECT cs_id FROM `{$table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ");
+        $before = lc_call_settings_get($cp_id, $mt_id);
+        $existing = !empty($before['cs_id']);
 
-        // 광고주가 편집 가능한 필드
+        // 광고주가 편집 가능한 필드 (관리자도 수신번호 입력 가능)
         $merchant_fields = array(
             'cs_enabled'  => isset($payload['enabled']) ? (!empty($payload['enabled']) ? 1 : 0) : null,
             'cs_alias'    => isset($payload['alias']) ? (string) $payload['alias'] : null,
@@ -236,6 +237,12 @@ if (!function_exists('lc_call_settings_save')) {
         }
         if ($scope === 'admin' || $scope === 'all') {
             $fields = array_merge($fields, $admin_fields);
+            // 관리자도 수신번호 1·2 설정 가능
+            foreach (array('cs_forward1', 'cs_forward2', 'cs_alias', 'cs_enabled') as $fwd_col) {
+                if (array_key_exists($fwd_col, $merchant_fields) && $merchant_fields[$fwd_col] !== null) {
+                    $fields[$fwd_col] = $merchant_fields[$fwd_col];
+                }
+            }
         }
 
         $sets = array();
@@ -284,7 +291,85 @@ if (!function_exists('lc_call_settings_save')) {
             lc_sql_query(" INSERT INTO `{$table}` SET " . implode(', ', $cols) . " ", false);
         }
 
-        return array('ok' => true, 'message' => '콜 설정이 저장되었습니다.', 'settings' => lc_call_settings_get($cp_id, $mt_id));
+        $after = lc_call_settings_get($cp_id, $mt_id);
+
+        if ($scope === 'merchant' && function_exists('lc_call_notify_admin_forward_changed')) {
+            lc_call_notify_admin_forward_changed($cp_id, $mt_id, $before, $after);
+        }
+
+        return array('ok' => true, 'message' => '콜 설정이 저장되었습니다.', 'settings' => $after);
+    }
+}
+
+if (!function_exists('lc_call_notify_admin_forward_changed')) {
+    /**
+     * 광고주가 수신번호(착신번호)를 변경하면 관리자에게 중요알림.
+     */
+    function lc_call_notify_admin_forward_changed($cp_id, $mt_id, array $before, array $after)
+    {
+        if (!function_exists('lc_notification_create')) {
+            return;
+        }
+
+        $old1 = (string) ($before['cs_forward1'] ?? '');
+        $old2 = (string) ($before['cs_forward2'] ?? '');
+        $new1 = (string) ($after['cs_forward1'] ?? '');
+        $new2 = (string) ($after['cs_forward2'] ?? '');
+
+        if ($old1 === $new1 && $old2 === $new2) {
+            return;
+        }
+
+        $cp_id = (int) $cp_id;
+        $mt_id = (int) $mt_id;
+        $cp_name = '';
+        $mt_name = '';
+
+        $cp_table = lc_table('campaigns');
+        $cp = lc_sql_fetch(" SELECT cp_name FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ");
+        if ($cp) {
+            $cp_name = (string) $cp['cp_name'];
+        }
+
+        if ($mt_id > 0) {
+            $mt_table = lc_table('merchants');
+            $mt = lc_sql_fetch(" SELECT mt_company FROM `{$mt_table}` WHERE mt_id = '{$mt_id}' LIMIT 1 ");
+            if ($mt) {
+                $mt_name = (string) $mt['mt_company'];
+            }
+        }
+
+        $fmt = function ($n) {
+            $n = trim((string) $n);
+            return $n !== '' ? $n : '(없음)';
+        };
+
+        $body = sprintf(
+            '%s / %s — 수신1: %s → %s, 수신2: %s → %s',
+            $mt_name !== '' ? $mt_name : ('광고주#' . $mt_id),
+            $cp_name !== '' ? $cp_name : ('캠페인#' . $cp_id),
+            $fmt($old1),
+            $fmt($new1),
+            $fmt($old2),
+            $fmt($new2)
+        );
+        if (function_exists('mb_substr')) {
+            $body = mb_substr($body, 0, 480);
+        } else {
+            $body = substr($body, 0, 480);
+        }
+
+        lc_notification_create(array(
+            'center'   => 'admin',
+            'userId'   => 0,
+            'type'     => 'call',
+            'priority' => 'critical',
+            'title'    => '광고주 콜디비 수신번호 변경',
+            'body'     => $body,
+            'link'     => '/admin/call',
+            'refType'  => 'campaign',
+            'refId'    => $cp_id,
+        ));
     }
 }
 
