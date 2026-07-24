@@ -263,6 +263,7 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
             'contactEmail' => $contact_email,
             'contactPhone' => $contact_phone,
             'campaign'     => $ad_method,
+            'skipNotify'   => true,
         ));
 
         if (empty($result['ok']) || !is_array($result['inquiry'])) {
@@ -287,6 +288,10 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
             WHERE iq_id = '{$iq_id}' ", false);
 
         $inquiry = lc_inquiry_get_by_id($iq_id);
+        // 사업자등록증 첨부 완료 후 support2580_@linkconnect.co.kr 로 알림
+        if (is_array($inquiry)) {
+            lc_inquiry_notify_admin_new($inquiry);
+        }
 
         return array(
             'ok'      => true,
@@ -353,6 +358,16 @@ if (!function_exists('lc_inquiry_mailer_ready')) {
     }
 }
 
+if (!function_exists('lc_inquiry_admin_recipient_email')) {
+    /**
+     * 문의·입점신청 관리자 수신 메일 (고정)
+     */
+    function lc_inquiry_admin_recipient_email()
+    {
+        return 'support2580_@linkconnect.co.kr';
+    }
+}
+
 if (!function_exists('lc_inquiry_center_label')) {
     function lc_inquiry_center_label($center)
     {
@@ -381,7 +396,7 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
 
         $from_name = function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect';
         $from_email = !empty($config['cf_admin_email']) ? (string) $config['cf_admin_email'] : (function_exists('lc_contact_email') ? lc_contact_email() : '');
-        $admin_email = function_exists('lc_contact_email') ? lc_contact_email() : (string) ($config['cf_admin_email'] ?? '');
+        $admin_email = lc_inquiry_admin_recipient_email();
 
         if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
             $from_email = $admin_email;
@@ -394,18 +409,24 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
         $subject_text = (string) ($inquiry['iq_subject'] ?? '');
         $center_label = lc_inquiry_center_label($inquiry['iq_center'] ?? '');
         $category = (string) ($inquiry['iq_category'] ?? '');
+        $is_advertiser_apply = ($category === '광고주 가입' || strpos($subject_text, '[입점신청]') === 0);
         $author = (string) ($inquiry['iq_contact_name'] ?? '');
         $email = (string) ($inquiry['iq_contact_email'] ?? '');
         $phone = (string) ($inquiry['iq_contact_phone'] ?? '');
         $body_text = (string) ($inquiry['iq_body'] ?? '');
+        $attach_name = (string) ($inquiry['iq_attachment_name'] ?? '');
         $admin_url = (defined('G5_URL') ? G5_URL : '') . '/admin/support';
 
         $esc = function ($v) {
             return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
         };
 
-        $subject = '[' . $from_name . '] 신규 문의 접수: ' . $subject_text;
-        $html = '<p><strong>새 문의가 접수되었습니다.</strong></p>';
+        $subject = $is_advertiser_apply
+            ? '[' . $from_name . '] 광고주 입점 신청 접수: ' . preg_replace('/^\[입점신청\]\s*/u', '', $subject_text)
+            : '[' . $from_name . '] 신규 문의 접수: ' . $subject_text;
+        $html = $is_advertiser_apply
+            ? '<p><strong>광고주 입점 신청이 접수되었습니다.</strong></p>'
+            : '<p><strong>새 문의가 접수되었습니다.</strong></p>';
         $html .= '<table style="border-collapse:collapse;width:100%;max-width:560px;font-size:14px;">';
         $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">문의번호</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($code) . '</td></tr>';
         $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">구분</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($center_label) . '</td></tr>';
@@ -420,9 +441,13 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
         if ($phone !== '') {
             $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">연락처</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($phone) . '</td></tr>';
         }
+        if ($attach_name !== '') {
+            $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;">첨부</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . $esc($attach_name) . ' (관리자 문의에서 확인)</td></tr>';
+        }
         $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;vertical-align:top;">내용</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . nl2br($esc($body_text)) . '</td></tr>';
         $html .= '</table>';
         $html .= '<p style="margin-top:16px;"><a href="' . $esc($admin_url) . '">관리자에서 문의 확인</a></p>';
+        $html .= '<p style="margin-top:8px;color:#64748b;font-size:12px;">수신: ' . $esc($admin_email) . '</p>';
 
         try {
             return (bool) @mailer($from_name, $from_email, $admin_email, $subject, $html, 1);
@@ -571,7 +596,7 @@ if (!function_exists('lc_inquiry_create')) {
         }
 
         $inquiry = lc_inquiry_get_by_id($iq_id);
-        if (is_array($inquiry)) {
+        if (is_array($inquiry) && empty($payload['skipNotify'])) {
             lc_inquiry_notify_admin_new($inquiry);
         }
 
