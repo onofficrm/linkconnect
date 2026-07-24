@@ -1,11 +1,13 @@
 import { Calendar, ChevronRight, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { events } from '../data';
+import { HomeSectionAnchor } from './HomeSectionAnchor';
 
 export function EventBoard() {
   return (
-    <section id="events" className="py-24 bg-white border-b border-slate-100">
+    <section className="py-24 bg-white border-b border-slate-100">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <HomeSectionAnchor id="events" />
         <div className="flex items-end justify-between mb-8">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">

@@ -5,7 +5,7 @@ import {
   footerCampaignNavItems,
   footerServiceNavItems,
 } from '../lib/publicNav';
-import { handleSectionLink, scrollToSection } from '../lib/navigation';
+import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
 import type { NavLinkItem } from '../lib/publicNav';
 
 function footerLinkClass(accent?: NavLinkItem['accent']) {
@@ -24,8 +24,10 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
         onClick={(e) => {
           if (location.pathname === '/') {
             e.preventDefault();
-            scrollToSection(item.scrollTarget!);
-          } else if (item.to === '/') {
+            scrollToSectionAfterPaint(item.scrollTarget!);
+            return;
+          }
+          if (item.to === '/') {
             handleSectionLink(item.scrollTarget!);
           }
         }}

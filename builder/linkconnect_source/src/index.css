@@ -5,3 +5,12 @@
   --font-sans: "Pretendard", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* 고정 헤더(h-20)와 동일 — 해시/네이티브 스크롤·앵커 공통 오프셋 */
+html {
+  scroll-padding-top: 5rem;
+}
+
+.lc-home-anchor {
+  scroll-margin-top: 5rem;
+}
+

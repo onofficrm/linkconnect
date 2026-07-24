@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { fetchPublicCampaigns, PublicCampaign } from '../lib/api';
 import { CpsPublicList } from './cps/CpsPublicList';
+import { HomeSectionAnchor } from './HomeSectionAnchor';
 
 const HOME_PREVIEW_LIMIT = 6;
 
@@ -30,8 +31,9 @@ export function CPSList() {
   }, []);
 
   return (
-    <section id="cps" className="py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto">
+        <HomeSectionAnchor id="cps" />
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-50 border border-cyan-100 text-cyan-700 text-sm font-bold mb-4">
             <ShoppingBag size={16} /> CPS (Cost Per Sale)

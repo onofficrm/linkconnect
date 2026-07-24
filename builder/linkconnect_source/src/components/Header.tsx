@@ -10,7 +10,7 @@ import {
   isCompanyNavActive,
   type NavLinkItem,
 } from '../lib/publicNav';
-import { handleSectionLink, scrollToSection } from '../lib/navigation';
+import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
 import { MemberAuthMenu, MemberAuthMenuMobile } from './MemberAuthMenu';
 
 function navLinkClass(active: boolean, accent?: NavLinkItem['accent']) {
@@ -49,8 +49,12 @@ function PublicNavLink({
           // 홈에서는 해당 섹션으로 스크롤, 그 외는 to 경로로 이동
           if (location.pathname === '/') {
             e.preventDefault();
-            scrollToSection(item.scrollTarget!);
-          } else if (item.to === '/') {
+            // 모바일 메뉴를 먼저 닫은 뒤 스크롤(헤더 높이 측정 정확도)
+            onNavigate?.();
+            scrollToSectionAfterPaint(item.scrollTarget!);
+            return;
+          }
+          if (item.to === '/') {
             handleSectionLink(item.scrollTarget!);
           }
           onNavigate?.();
@@ -156,7 +160,7 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/10"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 w-full gap-3 lg:gap-4">
+        <div data-lc-nav-bar className="flex items-center justify-between h-20 w-full gap-3 lg:gap-4">
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <LinkIcon className="w-6 h-6 text-cyan-400 shrink-0" />
             <span className="text-lg lg:text-xl font-bold text-white tracking-tight whitespace-nowrap">링크커넥트</span>

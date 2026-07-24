@@ -1,6 +1,7 @@
 import { Bar, BarChart, ResponsiveContainer, XAxis } from 'recharts';
 import { ArrowRight, ArrowUpRight, BarChart3, Database, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { HomeSectionAnchor } from './HomeSectionAnchor';
 
 const dbData = [
   { name: '11/01', db: 45 },
@@ -14,8 +15,9 @@ const dbData = [
 
 export function PartnerIntro() {
   return (
-    <section id="partner" className="py-24 bg-slate-900 border-b border-slate-800 overflow-hidden">
+    <section className="py-24 bg-slate-900 border-b border-slate-800 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <HomeSectionAnchor id="partner" />
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-8">
             <div>

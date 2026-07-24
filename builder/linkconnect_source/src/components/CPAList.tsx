@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { fetchPublicCampaigns, PublicCampaign } from '../lib/api';
 import { cn, openLandingPage } from '../lib/utils';
 import { CPA_THUMBNAIL_ASPECT_CLASS } from '../lib/cpaThumbnail';
+import { HomeSectionAnchor } from './HomeSectionAnchor';
 
 const filters = ['전체', '고수익', '신규', '승인율 높은 상품', '법률', '병원', '보험', '교육', '부동산'];
 
@@ -37,8 +38,9 @@ export function CPAList() {
   }, []);
 
   return (
-    <section id="cpa" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-100">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-100">
       <div className="max-w-7xl mx-auto">
+        <HomeSectionAnchor id="cpa" />
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             지금 바로 홍보 가능한 <span className="text-emerald-500">CPA 상품</span>

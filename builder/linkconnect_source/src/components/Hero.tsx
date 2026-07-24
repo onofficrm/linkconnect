@@ -1,7 +1,7 @@
 import { ArrowUpRight } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { handleSectionLink, scrollToSection } from '../lib/navigation';
+import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
 
 const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.png`;
 
@@ -12,7 +12,7 @@ function sectionLinkClick(
 ) {
   if (pathname === '/') {
     e.preventDefault();
-    scrollToSection(sectionId);
+    scrollToSectionAfterPaint(sectionId);
   } else {
     handleSectionLink(sectionId);
   }

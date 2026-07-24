@@ -1,5 +1,6 @@
 import { ArrowRight, Headphones, PhoneCall, Route, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { HomeSectionAnchor } from './HomeSectionAnchor';
 
 const SAMPLE_NUMBER = '0503-6982-0000';
 
@@ -23,8 +24,9 @@ const steps = [
 
 export function CallDbIntro() {
   return (
-    <section id="call-db" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-violet-50/80 via-white to-white border-t border-slate-200">
+    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-violet-50/80 via-white to-white border-t border-slate-200">
       <div className="max-w-7xl mx-auto">
+        <HomeSectionAnchor id="call-db" />
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-sm font-bold mb-4">
             <Headphones size={16} />

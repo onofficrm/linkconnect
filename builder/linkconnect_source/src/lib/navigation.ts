@@ -1,5 +1,6 @@
 const SCROLL_KEY = 'lc-scroll-target';
-/** 헤더 h-20(80px)과 동일 — JS 오프셋 기준 */
+
+/** 헤더 바 h-20(80px) — 모바일 드롭다운 높이는 제외 */
 export const HOME_SCROLL_OFFSET_PX = 80;
 
 export function queueScrollTo(id: string) {
@@ -23,26 +24,17 @@ export function consumeScrollTarget(): string | null {
   return null;
 }
 
+/** 고정 네비 바 높이만 측정 (펼친 모바일 메뉴 제외) */
 export function getFixedHeaderOffset(): number {
-  const header = document.querySelector<HTMLElement>('header[data-lc-nav]');
-  if (header) {
-    const h = Math.ceil(header.getBoundingClientRect().height);
+  const bar = document.querySelector<HTMLElement>('[data-lc-nav-bar]');
+  if (bar) {
+    const h = Math.ceil(bar.getBoundingClientRect().height);
     if (h > 0) return h;
   }
   return HOME_SCROLL_OFFSET_PX;
 }
 
-/**
- * 고정 헤더 높이를 빼서 섹션 상단이 헤더 바로 아래에 오도록 스크롤.
- */
-export function scrollToSection(id: string, behavior: ScrollBehavior = 'smooth'): boolean {
-  const el = document.getElementById(id);
-  if (!el) return false;
-
-  const offset = getFixedHeaderOffset();
-  const top = el.getBoundingClientRect().top + window.scrollY - offset;
-  window.scrollTo({ top: Math.max(0, Math.round(top)), behavior });
-
+function syncHash(id: string) {
   try {
     const next = `#${id}`;
     if (window.location.hash !== next) {
@@ -51,36 +43,84 @@ export function scrollToSection(id: string, behavior: ScrollBehavior = 'smooth')
   } catch {
     /* ignore */
   }
+}
 
+/**
+ * 홈 섹션 앵커로 스크롤.
+ * 앵커는 섹션 패딩 안쪽(제목 바로 위)에 두고 scroll-margin-top과 JS 오프셋을 함께 씀.
+ */
+export function scrollToSection(id: string, behavior: ScrollBehavior = 'smooth'): boolean {
+  const el = document.getElementById(id);
+  if (!el) return false;
+
+  const offset = getFixedHeaderOffset();
+  const top = el.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top: Math.max(0, Math.round(top)), behavior });
+  syncHash(id);
   return true;
 }
 
-/** 섹션이 아직 없거나 레이아웃이 변하는 경우를 대비해 재시도·재보정 */
-export function scrollToSectionWhenReady(id: string, behavior: ScrollBehavior = 'smooth') {
-  let found = false;
+/** 모바일 메뉴 닫힘·레이아웃 반영 후 스크롤 */
+export function scrollToSectionAfterPaint(id: string, behavior: ScrollBehavior = 'smooth') {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      scrollToSection(id, behavior);
+      // 닫힌 헤더 높이로 한 번 더 보정
+      window.setTimeout(() => scrollToSection(id, 'auto'), 80);
+    });
+  });
+}
 
-  const attempt = (b: ScrollBehavior) => {
-    if (scrollToSection(id, b)) {
-      found = true;
-      return true;
-    }
-    return false;
+/**
+ * 섹션 미마운트·CPA/CPS 비동기 로딩으로 높이가 바뀌는 경우까지 재보정.
+ */
+export function scrollToSectionWhenReady(id: string, behavior: ScrollBehavior = 'smooth') {
+  let stopped = false;
+  let debounce: number | undefined;
+
+  const go = (b: ScrollBehavior) => {
+    if (stopped) return;
+    scrollToSection(id, b);
   };
 
-  if (attempt(behavior)) {
-    window.setTimeout(() => scrollToSection(id, 'auto'), 200);
-    window.setTimeout(() => scrollToSection(id, 'auto'), 450);
-    return;
-  }
+  const armResizeSync = () => {
+    const root = document.querySelector('main') ?? document.body;
+    if (!root || typeof ResizeObserver === 'undefined') {
+      [120, 350, 700, 1200].forEach((ms) => {
+        window.setTimeout(() => go('auto'), ms);
+      });
+      return;
+    }
 
-  [50, 120, 250, 450, 800].forEach((ms) => {
+    const ro = new ResizeObserver(() => {
+      if (stopped) return;
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => go('auto'), 40);
+    });
+    ro.observe(root);
+
+    [120, 350, 700, 1200].forEach((ms) => {
+      window.setTimeout(() => go('auto'), ms);
+    });
+
     window.setTimeout(() => {
-      if (!found) {
-        attempt(behavior);
-      } else {
-        scrollToSection(id, 'auto');
-      }
-    }, ms);
+      ro.disconnect();
+      stopped = true;
+    }, 2200);
+  };
+
+  window.requestAnimationFrame(() => {
+    if (!scrollToSection(id, behavior)) {
+      [50, 120, 250, 450, 800].forEach((ms) => {
+        window.setTimeout(() => {
+          if (!stopped && scrollToSection(id, behavior)) {
+            armResizeSync();
+          }
+        }, ms);
+      });
+      return;
+    }
+    armResizeSync();
   });
 }
 
