@@ -51,6 +51,10 @@ export function AdvertiserApply() {
       setError('사업자등록증을 첨부해주세요.');
       return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('사업자등록증은 10MB 이하만 첨부할 수 있습니다.');
+      return;
+    }
 
     setLoading(true);
     setError('');

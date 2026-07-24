@@ -39,8 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if (!$row) {
             lc_api_error('문의를 찾을 수 없습니다.', 'NOT_FOUND', 404);
         }
-        $rows = lc_inquiry_list(array('q' => (string) ($row['iq_code'] ?? '')), 1);
-        $detail = $rows ? $rows[0] : $row;
+        // JOIN으로 파트너/광고주명 보강 (첨부 컬럼은 iq.*에 포함)
+        $rows = lc_inquiry_list(array('q' => (string) ($row['iq_code'] ?? '')), 5);
+        $detail = $row;
+        foreach ((is_array($rows) ? $rows : array()) as $candidate) {
+            if ((int) ($candidate['iq_id'] ?? 0) === $iq_id) {
+                $detail = $candidate;
+                break;
+            }
+        }
         lc_api_success(array(
             'item' => lc_inquiry_to_api($detail, true),
         ));

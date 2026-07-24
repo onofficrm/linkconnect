@@ -69,6 +69,12 @@ if ($method === 'POST') {
         $body = array();
     }
 
+    // post_max_size 초과 등으로 본문·파일이 모두 비는 경우
+    $content_length = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+    if ($is_multipart && $content_length > 0 && empty($_POST) && empty($_FILES)) {
+        lc_api_error('업로드 용량이 서버 제한을 초과했을 수 있습니다. 파일 크기를 줄여 다시 시도해 주세요. (최대 10MB)', 'UPLOAD_TOO_LARGE', 400);
+    }
+
     // honeypot (일반 문의·입점 공통)
     if (!empty($body['website']) || !empty($body['companyUrl'])) {
         lc_api_success(array(
@@ -93,6 +99,11 @@ if ($method === 'POST') {
             $file = $_FILES['bizLicense'];
         }
 
+        // 파일이 선택됐는데 서버에 안 도착한 경우 (용량·네트워크)
+        if ($file === null && $form_type === 'advertiser_apply') {
+            lc_api_error('사업자등록증 첨부는 필수입니다. 파일이 전송되지 않았습니다.', 'ATTACHMENT_REQUIRED', 400);
+        }
+
         $result = lc_inquiry_create_advertiser_apply(array(
             'mb_id'        => $mb_id,
             'companyName'  => $body['companyName'] ?? '',
@@ -110,8 +121,9 @@ if ($method === 'POST') {
         }
 
         lc_api_success(array(
-            'message' => $result['message'],
-            'item'    => lc_inquiry_to_api($result['inquiry'], true),
+            'message'  => $result['message'],
+            'item'     => lc_inquiry_to_api($result['inquiry'], true),
+            'mailSent' => !empty($result['mailSent']),
         ));
     }
 

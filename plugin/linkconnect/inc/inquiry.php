@@ -232,6 +232,9 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
         if ($company === '' || $contact_name === '' || $contact_phone === '' || $contact_email === '') {
             return array('ok' => false, 'message' => '업체명, 담당자명, 연락처, 이메일은 필수입니다.', 'inquiry' => null);
         }
+        if (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+            return array('ok' => false, 'message' => '올바른 이메일 주소를 입력해주세요.', 'inquiry' => null);
+        }
         if ($homepage === '' || $industry === '' || $ad_method === '' || $message === '') {
             return array('ok' => false, 'message' => '홈페이지, 광고 업종, 희망 광고 방식, 소개/문의 내용은 필수입니다.', 'inquiry' => null);
         }
@@ -239,6 +242,11 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
             return array('ok' => false, 'message' => '희망 광고 방식을 선택해주세요. (CPA / CPS)', 'inquiry' => null);
         }
         if (!is_array($file) || empty($file['tmp_name'])) {
+            $upload_err = is_array($file) ? (int) ($file['error'] ?? 0) : -1;
+            if ($upload_err === UPLOAD_ERR_INI_SIZE || $upload_err === UPLOAD_ERR_FORM_SIZE) {
+                return array('ok' => false, 'message' => '사업자등록증 파일이 너무 큽니다. 10MB 이하로 첨부해 주세요.', 'inquiry' => null);
+            }
+
             return array('ok' => false, 'message' => '사업자등록증 첨부는 필수입니다.', 'inquiry' => null);
         }
 
@@ -289,14 +297,16 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
 
         $inquiry = lc_inquiry_get_by_id($iq_id);
         // 사업자등록증 첨부 완료 후 support2580_@linkconnect.co.kr 로 알림
+        $mail_sent = false;
         if (is_array($inquiry)) {
-            lc_inquiry_notify_admin_new($inquiry);
+            $mail_sent = lc_inquiry_notify_admin_new($inquiry);
         }
 
         return array(
-            'ok'      => true,
-            'message' => '광고주 입점 신청이 접수되었습니다. 검토 후 안내드리겠습니다.',
-            'inquiry' => $inquiry,
+            'ok'       => true,
+            'message'  => '광고주 입점 신청이 접수되었습니다. 검토 후 안내드리겠습니다.',
+            'inquiry'  => $inquiry,
+            'mailSent' => $mail_sent,
         );
     }
 }
@@ -395,14 +405,22 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
         global $config;
 
         $from_name = function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect';
-        $from_email = !empty($config['cf_admin_email']) ? (string) $config['cf_admin_email'] : (function_exists('lc_contact_email') ? lc_contact_email() : '');
         $admin_email = lc_inquiry_admin_recipient_email();
-
-        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
-            $from_email = $admin_email;
+        // 입점/문의 알림은 운영 메일 도메인으로 From/To 통일 (발송 실패 감소)
+        $from_email = $admin_email;
+        if (!empty($config['cf_admin_email']) && filter_var((string) $config['cf_admin_email'], FILTER_VALIDATE_EMAIL)) {
+            // 그누보드 관리자 메일이 같은 도메인이면 From으로 사용
+            $cf = (string) $config['cf_admin_email'];
+            if (stripos($cf, '@linkconnect.co.kr') !== false) {
+                $from_email = $cf;
+            }
         }
+
         if ($admin_email === '' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
             return false;
+        }
+        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+            $from_email = $admin_email;
         }
 
         $code = (string) ($inquiry['iq_code'] ?? '');
@@ -510,6 +528,9 @@ if (!function_exists('lc_inquiry_send_reply_email')) {
 }
 
 if (!function_exists('lc_inquiry_notify_admin_new')) {
+    /**
+     * @return bool 관리자 메일 발송 성공 여부 (인앱 알림과 무관)
+     */
     function lc_inquiry_notify_admin_new(array $inquiry)
     {
         if (function_exists('lc_notification_create')) {
@@ -530,7 +551,12 @@ if (!function_exists('lc_inquiry_notify_admin_new')) {
             ));
         }
 
-        lc_inquiry_send_admin_email($inquiry);
+        $mail_ok = lc_inquiry_send_admin_email($inquiry);
+        if (!$mail_ok) {
+            error_log('[LinkConnect Inquiry] admin email failed for ' . (string) ($inquiry['iq_code'] ?? '') . ' → ' . lc_inquiry_admin_recipient_email());
+        }
+
+        return (bool) $mail_ok;
     }
 }
 
