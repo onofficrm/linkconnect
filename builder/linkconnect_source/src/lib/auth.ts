@@ -173,6 +173,35 @@ export function getMerchantContractPath(auth: LcAuth = getLcAuth()): string {
   return '/advertiser/contract';
 }
 
+/**
+ * 사이드바 계약 메뉴 라벨
+ * - 체결 전: 계약서 체결하기
+ * - 체결 후: 계약 정보
+ */
+export function getMerchantContractMenuLabel(auth: LcAuth = getLcAuth()): string {
+  if (auth.merchantContractStatus === 'review_pending') {
+    return '계약 승인 대기';
+  }
+  if (auth.merchantContractStatus === 'rejected') {
+    return '계약서 재작성';
+  }
+  if (auth.merchantContractSigned || auth.merchantContractViewable) {
+    return '계약 정보';
+  }
+  if (auth.merchantContractRequires || shouldEnforceMerchantContract(auth)) {
+    return '계약서 체결하기';
+  }
+  return '계약 정보';
+}
+
+/** 계약 체결 후 광고등록 신청 메뉴 표시 */
+export function shouldShowMerchantAdApplyMenu(auth: LcAuth = getLcAuth()): boolean {
+  if (!auth.isMerchant && !auth.isActiveMerchant) {
+    return false;
+  }
+  return Boolean(auth.merchantContractSigned);
+}
+
 /** 사이드바 CPA 계약 메뉴 표시 여부 */
 export function shouldShowMerchantContractMenu(auth: LcAuth = getLcAuth()): boolean {
   return shouldEnforceMerchantContract(auth);

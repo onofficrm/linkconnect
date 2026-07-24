@@ -74,6 +74,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_custom.php')) {
     require_once LC_PLUGIN_PATH . '/inc/merchant_contract_custom.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/merchant_ad_apply.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/merchant_ad_apply.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/wallet.php')) {
     require_once LC_PLUGIN_PATH . '/inc/wallet.php';
 }

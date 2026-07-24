@@ -1,10 +1,17 @@
 import React from 'react';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, Megaphone, ScrollText } from 'lucide-react';
+import { LayoutDashboard, FileText, Target, Wallet, BarChart3, MessageSquare, PhoneCall, Megaphone, ScrollText, ClipboardPen } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
-import { getLcAuth, shouldShowMerchantContractNotice } from '../lib/auth';
+import {
+  getLcAuth,
+  getMerchantContractMenuLabel,
+  getMerchantContractPath,
+  shouldShowMerchantAdApplyMenu,
+  shouldShowMerchantContractMenu,
+  shouldShowMerchantContractNotice,
+} from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { AdvertiserContractNotice } from '../components/advertiser/AdvertiserContractNotice';
 import { NotificationCenter } from '../components/NotificationCenter';
@@ -27,6 +34,16 @@ export function AdvertiserLayout({
 }) {
   const auth = getLcAuth();
   const showContractGraceBanner = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
+  const showContractMenu = shouldShowMerchantContractMenu(auth);
+  const showAdApplyMenu = shouldShowMerchantAdApplyMenu(auth);
+  const contractLabel = getMerchantContractMenuLabel(auth);
+  const contractPath = getMerchantContractPath(auth);
+  const contractBadge =
+    auth.merchantContractStatus === 'review_pending'
+      ? '대기'
+      : auth.merchantContractRequires && !auth.merchantContractSigned
+        ? '필수'
+        : undefined;
   const displayCompany = companyName ?? auth.merchantCompany ?? '광고주';
   const displayBalance = balance ?? (auth.merchantBalance !== null && auth.merchantBalance !== undefined
     ? auth.merchantBalance.toLocaleString()
@@ -45,7 +62,25 @@ export function AdvertiserLayout({
           <nav className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
             <CenterNavItem icon={<LayoutDashboard size={20} />} label="대시보드" active={activeMenu === 'dashboard'} to="/advertiser" accent="cyan" />
             <CenterNavItem icon={<FileText size={20} />} label="내 광고상품" active={activeMenu === 'campaigns'} to="/advertiser/campaigns" accent="cyan" />
-            <CenterNavItem icon={<ScrollText size={20} />} label="계약정보" active={activeMenu === 'contract'} to="/advertiser/contract/view" accent="cyan" />
+            {showContractMenu ? (
+              <CenterNavItem
+                icon={<ScrollText size={20} />}
+                label={contractLabel}
+                badge={contractBadge}
+                active={activeMenu === 'contract'}
+                to={contractPath}
+                accent="cyan"
+              />
+            ) : null}
+            {showAdApplyMenu ? (
+              <CenterNavItem
+                icon={<ClipboardPen size={20} />}
+                label="광고 등록 신청하기"
+                active={activeMenu === 'ad-apply'}
+                to="/advertiser/ad-apply"
+                accent="cyan"
+              />
+            ) : null}
             <CenterNavItem icon={<Target size={20} />} label="디비 확인" badge={dbBadge} active={activeMenu === 'db'} to="/advertiser/db" accent="cyan" />
             <CenterNavItem icon={<PhoneCall size={20} />} label="콜디비" active={activeMenu === 'call'} to="/advertiser/call" accent="cyan" />
             <CenterNavItem icon={<Wallet size={20} />} label="광고비 충전/내역" active={activeMenu === 'billing'} to="/advertiser/billing" accent="cyan" />

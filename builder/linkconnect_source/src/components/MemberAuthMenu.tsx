@@ -1,6 +1,5 @@
-import { User, UserCog, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { getLcAuth, getMemberDisplayName, isLcLoggedIn, getMerchantContractPath, shouldShowMerchantContractMenu } from '../lib/auth';
+import { User, UserCog } from 'lucide-react';
+import { getMemberDisplayName, isLcLoggedIn } from '../lib/auth';
 import {
   currentSpaReturnPath,
   currentSpaReturnUrl,
@@ -15,7 +14,7 @@ type MemberAuthMenuProps = {
   loginReturnUrl?: string;
   logoutReturnPath?: string;
   onNavigate?: () => void;
-  /** 사이드바에서 계약 메뉴 활성 표시용 */
+  /** @deprecated 계약 메뉴는 AdvertiserLayout 본문으로 이동 */
   activeMenu?: string;
 };
 
@@ -24,25 +23,9 @@ export function MemberAuthMenu({
   loginReturnUrl,
   logoutReturnPath,
   onNavigate,
-  activeMenu,
 }: MemberAuthMenuProps) {
   const loggedIn = isLcLoggedIn();
-  const auth = getLcAuth();
   const displayName = getMemberDisplayName();
-  const showContractInfo =
-    loggedIn &&
-    logoutReturnPath === '/advertiser' &&
-    shouldShowMerchantContractMenu(auth);
-  const contractMenuPath = getMerchantContractPath(auth);
-  const contractMenuLabel =
-    auth.merchantContractStatus === 'review_pending'
-      ? '계약 승인 대기'
-      : auth.merchantContractStatus === 'rejected'
-        ? '계약서 재작성'
-        : auth.merchantContractRequires
-          ? '계약서 작성'
-          : '계약정보';
-  const contractActive = activeMenu === 'contract';
   const loginUrl = g5LoginUrl(loginReturnUrl ?? currentSpaReturnUrl());
   const logoutUrl = g5LogoutUrl(logoutReturnPath ?? currentSpaReturnPath());
   const editUrl = g5MemberEditUrl();
@@ -145,27 +128,6 @@ export function MemberAuthMenu({
               <UserCog size={20} />
               <span>회원정보 수정</span>
             </a>
-            {showContractInfo ? (
-              <Link
-                to={contractMenuPath}
-                onClick={handleClick}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-medium ${
-                  contractActive
-                    ? 'bg-cyan-500/15 text-cyan-300'
-                    : auth.merchantContractRequires
-                      ? 'bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 border border-cyan-500/30'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <FileText size={20} />
-                <span className="flex-1">{contractMenuLabel}</span>
-                {auth.merchantContractStatus === 'review_pending' ? (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500 text-white">대기</span>
-                ) : auth.merchantContractRequires ? (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500 text-white">필수</span>
-                ) : null}
-              </Link>
-            ) : null}
           </>
         )}
         {loggedIn ? (

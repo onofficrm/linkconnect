@@ -119,15 +119,15 @@ export function AdvertiserOnboarding() {
           active={currentPhase === 2}
           locked={!contractDone}
           icon={<Package size={20} />}
-          title="2. 광고상품 확인"
+          title="2. 광고등록 신청"
           body={
             !contractDone
-              ? '계약서 작성 후 관리자 승인이 완료되면 광고상품을 등록할 수 있습니다.'
+              ? '계약 체결 후 캠페인 광고등록 신청서를 작성할 수 있습니다.'
               : loading
                 ? '광고상품을 불러오는 중...'
                 : campaignDone
                   ? `${campaigns.length}개의 광고상품이 준비되어 있습니다. 홍보 가이드를 작성해 주세요.`
-                  : '아직 배정된 광고상품이 없습니다. 관리자 배정 후 가이드 작성이 가능합니다. 문의가 필요하면 고객지원으로 연락해 주세요.'
+                  : '광고등록 신청서를 제출하면 관리자가 캠페인을 등록·오픈합니다.'
           }
           action={
             contractDone && !loading ? (
@@ -140,10 +140,10 @@ export function AdvertiserOnboarding() {
                 </Link>
               ) : (
                 <Link
-                  to="/advertiser/support"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-bold hover:bg-slate-50"
+                  to="/advertiser/ad-apply"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold"
                 >
-                  문의하기
+                  광고 등록 신청하기 <ArrowRight size={16} />
                 </Link>
               )
             ) : loading ? (

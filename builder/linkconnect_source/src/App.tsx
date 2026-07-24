@@ -35,6 +35,7 @@ import { PartnerLiveEarnings } from './pages/partner/PartnerLiveEarnings';
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
 import { AdvertiserOnboarding } from './pages/advertiser/AdvertiserOnboarding';
+import { AdvertiserAdApply } from './pages/advertiser/AdvertiserAdApply';
 import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
 import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
@@ -50,6 +51,7 @@ import { AdminDashboard } from './pages/admin/Dashboard';
 import { AdminPartners } from './pages/admin/AdminPartners';
 import { AdminAdvertisers } from './pages/admin/AdminAdvertisers';
 import { AdminContracts } from './pages/admin/AdminContracts';
+import { AdminAdApply } from './pages/admin/AdminAdApply';
 import { AdminCampaigns } from './pages/admin/AdminCampaigns';
 import { AdminInspections } from './pages/admin/AdminInspections';
 import { AdminBilling } from './pages/admin/AdminBilling';
@@ -145,6 +147,7 @@ export default function App() {
           <Route element={<AdvertiserContractAccessGuard />}>
             <Route path="advertiser" element={<AdvertiserDashboard />} />
             <Route path="advertiser/onboarding" element={<AdvertiserOnboarding />} />
+            <Route path="advertiser/ad-apply" element={<AdvertiserAdApply />} />
             <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
             <Route path="advertiser/campaigns/:cpId/guide" element={<AdvertiserCampaignGuide />} />
             <Route path="advertiser/db" element={<AdvertiserDb />} />
@@ -159,6 +162,7 @@ export default function App() {
           <Route path="admin/partners" element={<AdminPartners />} />
           <Route path="admin/advertisers" element={<AdminAdvertisers />} />
           <Route path="admin/contracts" element={<AdminContracts />} />
+          <Route path="admin/ad-apply" element={<AdminAdApply />} />
           <Route path="admin/campaigns" element={<AdminCampaigns />} />
           <Route path="admin/conversions" element={<AdminConversions />} />
           <Route path="admin/call" element={<AdminCallDb />} />

@@ -123,16 +123,16 @@ export function AdvertiserContractComplete() {
             : 'border-amber-200 bg-amber-50 text-amber-900'
         }`}>
           {state?.isSigned
-            ? <>다음 단계: <strong>광고 등록하기</strong>에서 광고상품을 등록할 수 있습니다.</>
+            ? <>다음 단계: <strong>광고 등록 신청하기</strong>에서 캠페인 광고등록 신청서를 작성해 주세요.</>
             : <>관리자 승인 후 <strong>광고 등록</strong> 기능이 자동으로 열립니다.</>}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
-            to={state?.isSigned ? '/advertiser/onboarding' : '/advertiser'}
+            to={state?.isSigned ? '/advertiser/ad-apply' : '/advertiser'}
             className="inline-flex justify-center items-center px-5 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
           >
-            {state?.isSigned ? '광고 등록하기' : '대시보드로'}
+            {state?.isSigned ? '광고 등록 신청하기' : '대시보드로'}
           </Link>
           {state?.isSigned ? (
             <Link

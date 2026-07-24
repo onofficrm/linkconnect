@@ -19,6 +19,7 @@ const sidebarSections = [
       { id: 'review', label: '자동 심사 큐', icon: <ClipboardList size={20} />, path: '/admin/review-queue' },
       { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
       { id: 'contracts', label: '광고주 계약', icon: <FileText size={20} />, path: '/admin/contracts' },
+      { id: 'ad-apply', label: '광고등록 신청', icon: <ClipboardList size={20} />, path: '/admin/ad-apply' },
     ],
   },
   {

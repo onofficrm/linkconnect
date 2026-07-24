@@ -1244,6 +1244,108 @@ export function createMerchantPromoGuide(cpId: number, csrfToken: string) {
   });
 }
 
+export type MerchantAdApplyAsset = {
+  id: number;
+  kind: string;
+  filename: string;
+  mime: string;
+  size: number;
+  url: string;
+};
+
+export type MerchantAdApplication = {
+  id: number;
+  mtId: number;
+  status: string;
+  campaignTitle: string;
+  landingUrl: string;
+  intro: string;
+  sellingPoints: string;
+  allowedChannels: string[];
+  forbiddenChannels: string[];
+  recommendedKeywords: string;
+  forbiddenKeywords: string;
+  precautions: string;
+  bannerName: string;
+  hasBanner: boolean;
+  bannerUrl: string;
+  adminNote: string;
+  submittedAt: string;
+  reviewedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  assets: MerchantAdApplyAsset[];
+  merchantCode?: string;
+  merchantCompany?: string;
+};
+
+export function fetchMerchantAdApply() {
+  return merchantApiGet<{ application: MerchantAdApplication }>('ad-apply.php');
+}
+
+export function saveMerchantAdApplyDraft(payload: Record<string, unknown>) {
+  return merchantApiPost<{ message: string; application: MerchantAdApplication | null }>('ad-apply.php', {
+    action: 'save_draft',
+    ...payload,
+  });
+}
+
+export function submitMerchantAdApply(payload: Record<string, unknown>) {
+  return merchantApiPost<{ message: string; application: MerchantAdApplication | null }>('ad-apply.php', {
+    action: 'submit',
+    ...payload,
+  });
+}
+
+export function deleteMerchantAdApplyAsset(maaId: number, assetId: number) {
+  return merchantApiPost<{ message: string; application: MerchantAdApplication | null }>('ad-apply.php', {
+    action: 'delete_asset',
+    maaId,
+    assetId,
+  });
+}
+
+export function uploadMerchantAdApplyFile(maaId: number, kind: 'banner' | 'extra', file: File) {
+  const form = new FormData();
+  form.append('maaId', String(maaId));
+  form.append('kind', kind);
+  form.append('file', file);
+  return merchantApiPostFormData<{ message: string; application: MerchantAdApplication | null; asset?: MerchantAdApplyAsset }>(
+    'ad-apply-asset.php',
+    form,
+  );
+}
+
+export function merchantAdApplyAssetUrl(relative: string) {
+  if (!relative) return '';
+  if (relative.startsWith('http') || relative.startsWith('/')) return relative;
+  return `${MERCHANT_API_BASE}/${relative}`;
+}
+
+export function fetchAdminAdApplyList(filters?: { status?: string; page?: number; limit?: number }) {
+  return adminApiGet<{
+    items: MerchantAdApplication[];
+    total: number;
+    page: number;
+    limit: number;
+  }>('ad-apply.php', {
+    status: filters?.status ?? '',
+    page: filters?.page ? String(filters.page) : '1',
+    limit: filters?.limit ? String(filters.limit) : '30',
+  });
+}
+
+export function fetchAdminAdApplyDetail(maaId: number) {
+  return adminApiGet<{ application: MerchantAdApplication }>('ad-apply.php', { maaId: String(maaId) });
+}
+
+export function updateAdminAdApplyStatus(payload: { maaId: number; status: string; note?: string }) {
+  return adminApiPost<{ message: string; application: MerchantAdApplication | null }>('ad-apply.php', {
+    action: 'set_status',
+    ...payload,
+  });
+}
+
 export function uploadMerchantPromoGuideImage(cpId: number, csrfToken: string, file: File, imageTitle = '') {
   const form = new FormData();
   form.append('action', 'upload');

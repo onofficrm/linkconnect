@@ -1065,6 +1065,13 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        if (function_exists('lc_merchant_ad_apply_db_ensure_schema')) {
+            $maa = lc_merchant_ad_apply_db_ensure_schema();
+            if (empty($maa['ok'])) {
+                return $maa;
+            }
+        }
+
         // ── 링크프라이스 CPS (CPA 테이블과 완전 분리) ──
         if (function_exists('lc_lp_db_ensure_schema')) {
             $lp = lc_lp_db_ensure_schema();
