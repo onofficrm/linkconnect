@@ -202,9 +202,15 @@ if (!function_exists('lc_merchant_ad_apply_list_assets')) {
             return array();
         }
         $table = lc_merchant_ad_apply_asset_table();
-        $rows = lc_sql_rows(" SELECT * FROM `{$table}` WHERE maaa_maa_id = '{$maa_id}' ORDER BY maaa_sort ASC, maaa_id ASC ");
+        $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE maaa_maa_id = '{$maa_id}' ORDER BY maaa_sort ASC, maaa_id ASC ", false);
+        $rows = array();
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $rows[] = $row;
+            }
+        }
 
-        return is_array($rows) ? $rows : array();
+        return $rows;
     }
 }
 
@@ -521,15 +527,17 @@ if (!function_exists('lc_merchant_ad_apply_admin_list')) {
         }
         $total_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` WHERE {$where} ");
         $total = (int) ($total_row['cnt'] ?? 0);
-        $rows = lc_sql_rows(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY maa_id DESC LIMIT {$offset}, {$limit} ");
+        $result = lc_sql_query(" SELECT * FROM `{$table}` WHERE {$where} ORDER BY maa_id DESC LIMIT {$offset}, {$limit} ", false);
         $items = array();
-        foreach ((is_array($rows) ? $rows : array()) as $row) {
-            $api = lc_merchant_ad_apply_to_api($row, false);
-            $mt_id = (int) ($row['maa_mt_id'] ?? 0);
-            $merchant = $mt_id > 0 && function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
-            $api['merchantCode'] = is_array($merchant) ? (string) ($merchant['mt_code'] ?? '') : '';
-            $api['merchantCompany'] = is_array($merchant) ? (string) ($merchant['mt_company'] ?? '') : '';
-            $items[] = $api;
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $api = lc_merchant_ad_apply_to_api($row, false);
+                $mt_id = (int) ($row['maa_mt_id'] ?? 0);
+                $merchant = $mt_id > 0 && function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+                $api['merchantCode'] = is_array($merchant) ? (string) ($merchant['mt_code'] ?? '') : '';
+                $api['merchantCompany'] = is_array($merchant) ? (string) ($merchant['mt_company'] ?? '') : '';
+                $items[] = $api;
+            }
         }
 
         return array(
