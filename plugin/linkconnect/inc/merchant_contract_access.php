@@ -117,6 +117,16 @@ if (!function_exists('lc_merchant_contract_is_fully_signed')) {
         }
 
         if (trim((string) ($contract['mc_contract_pdf_path'] ?? '')) === '') {
+            // 관리자 첨부 계약서: HTML 스냅샷이 커스텀 본문이면 PDF 없이도 체결로 인정
+            $snap = (string) ($contract['mc_contract_snapshot'] ?? '');
+            if (
+                $snap !== ''
+                && function_exists('lc_merchant_contract_custom_snapshot_matches')
+                && lc_merchant_contract_custom_snapshot_matches($snap)
+            ) {
+                return true;
+            }
+
             return false;
         }
 

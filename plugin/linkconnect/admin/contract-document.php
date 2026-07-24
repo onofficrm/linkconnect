@@ -15,6 +15,19 @@ if (!is_array($contract)) {
     exit('계약서를 찾을 수 없습니다.');
 }
 
+$mt_id = (int) ($contract['mc_mt_id'] ?? 0);
+if ($mt_id > 0 && function_exists('lc_merchant_contract_custom_ensure_adv0008')) {
+    $merchant = function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+    $code = is_array($merchant) ? strtoupper((string) ($merchant['mt_code'] ?? '')) : '';
+    if ($code === 'ADV-0008' || $mt_id === 8) {
+        lc_merchant_contract_custom_ensure_adv0008(false);
+        $refreshed = lc_merchant_contract_get_by_id($mc_id);
+        if (is_array($refreshed)) {
+            $contract = $refreshed;
+        }
+    }
+}
+
 $form = lc_merchant_contract_form_from_row($contract);
 $html = (string) ($contract['mc_contract_snapshot'] ?? '');
 if ($html === '' && function_exists('lc_merchant_contract_render_html')) {

@@ -64,9 +64,16 @@ if (!function_exists('lc_merchant_contract_generate_signed_pdf')) {
         }
 
         $filename = lc_merchant_contract_signed_pdf_filename($mt_id);
+        if (!empty($data['unique_filename'])) {
+            $filename = 'CPA_CONTRACT_' . $mt_id . '_' . date('YmdHis') . '.pdf';
+        }
         $absolute = $dir . '/' . $filename;
         if (is_file($absolute)) {
-            return array('ok' => false, 'message' => '동일한 PDF 파일이 이미 존재합니다.', 'path' => '', 'absolute' => '', 'hash' => '');
+            if (!empty($data['overwrite'])) {
+                @unlink($absolute);
+            } else {
+                return array('ok' => false, 'message' => '동일한 PDF 파일이 이미 존재합니다.', 'path' => '', 'absolute' => '', 'hash' => '');
+            }
         }
 
         $party_b = lc_merchant_contract_party_b();

@@ -338,10 +338,8 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
         }
 
         $docx_rel = (string) ($meta['docx'] ?? '');
-        $docx_abs = LC_PLUGIN_PATH . '/' . ltrim($docx_rel, '/');
-        if ($docx_rel === '' || !is_file($docx_abs)) {
-            return array('ok' => false, 'message' => '원본 계약서 파일(docx)을 찾을 수 없습니다.');
-        }
+        $docx_abs = $docx_rel !== '' ? (LC_PLUGIN_PATH . '/' . ltrim($docx_rel, '/')) : '';
+        // docx는 보관용 — 없으면 HTML 본문만으로 적용 가능
 
         if (function_exists('lc_merchant_contract_db_ensure_schema')) {
             $schema = lc_merchant_contract_db_ensure_schema();
@@ -356,9 +354,8 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
         if (
             !$force
             && is_array($existing)
-            && (string) ($existing['mc_status'] ?? '') === LC_MERCHANT_CONTRACT_STATUS_SIGNED
-            && trim((string) ($existing['mc_contract_snapshot'] ?? '')) !== ''
-            && strpos((string) $existing['mc_contract_snapshot'], '모두의철거 x 링크커넥트') !== false
+            && function_exists('lc_merchant_contract_custom_snapshot_matches')
+            && lc_merchant_contract_custom_snapshot_matches((string) ($existing['mc_contract_snapshot'] ?? ''))
         ) {
             return array(
                 'ok'           => true,
@@ -374,6 +371,14 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             ? $options['partyOverrides']
             : array();
         $party_a = lc_merchant_contract_custom_party_a_from_merchant($merchant, $overrides);
+        if (trim((string) ($party_a['company_name'] ?? '')) === '' || trim((string) $party_a['company_name']) === '광고주') {
+            $party_a['company_name'] = '모두의철거';
+        }
+        if (trim((string) ($party_a['representative_name'] ?? '')) === '') {
+            $party_a['representative_name'] = '김장수';
+            $party_a['signer_name'] = '김장수';
+        }
+
         $contract_html = lc_merchant_contract_custom_render_html($document_key, $party_a);
         if ($contract_html === '') {
             return array('ok' => false, 'message' => '계약서 HTML을 생성하지 못했습니다.');
@@ -406,37 +411,49 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
         $signed_at = date('Y-m-d H:i:s');
         $meta_req = lc_merchant_contract_request_meta();
 
-        $pdf = lc_merchant_contract_generate_signed_pdf(array(
-            'mt_id'               => $mt_id,
-            'contract_version'    => $version,
-            'contract_code'       => $contract_code,
-            'company_name'        => $party_a['company_name'],
-            'representative_name' => $party_a['representative_name'],
-            'business_number'     => $party_a['business_number'],
-            'company_address'     => $party_a['company_address'],
-            'company_phone'       => $party_a['company_phone'],
-            'signer_name'         => $party_a['signer_name'],
-            'signer_position'     => $party_a['signer_position'],
-            'signer_phone'        => $party_a['signer_phone'],
-            'signer_email'        => $party_a['signer_email'],
-            'signed_at'           => $signed_at,
-            'signed_ip'           => $meta_req['ip'],
-            'contract_html'       => $contract_html,
-            'signature_absolute'  => $signature_absolute,
-        ));
-
-        if (empty($pdf['ok'])) {
-            return array('ok' => false, 'message' => $pdf['message'] ?? 'PDF 생성 실패');
+        $pdf_path = '';
+        $pdf_hash = '';
+        if (function_exists('lc_merchant_contract_generate_signed_pdf')) {
+            $pdf = lc_merchant_contract_generate_signed_pdf(array(
+                'mt_id'               => $mt_id,
+                'contract_version'    => $version,
+                'contract_code'       => $contract_code,
+                'company_name'        => $party_a['company_name'],
+                'representative_name' => $party_a['representative_name'],
+                'business_number'     => $party_a['business_number'],
+                'company_address'     => $party_a['company_address'],
+                'company_phone'       => $party_a['company_phone'],
+                'signer_name'         => $party_a['signer_name'],
+                'signer_position'     => $party_a['signer_position'],
+                'signer_phone'        => $party_a['signer_phone'],
+                'signer_email'        => $party_a['signer_email'],
+                'signed_at'           => $signed_at,
+                'signed_ip'           => $meta_req['ip'],
+                'contract_html'       => $contract_html,
+                'signature_absolute'  => $signature_absolute,
+                'overwrite'           => true,
+                'unique_filename'     => true,
+            ));
+            if (!empty($pdf['ok'])) {
+                $pdf_path = (string) ($pdf['path'] ?? '');
+                $pdf_hash = (string) ($pdf['hash'] ?? '');
+            } elseif (is_array($existing) && trim((string) ($existing['mc_contract_pdf_path'] ?? '')) !== '') {
+                // PDF 재생성 실패 시 기존 경로 유지하되 HTML 스냅샷은 교체
+                $pdf_path = (string) $existing['mc_contract_pdf_path'];
+                $pdf_hash = (string) ($existing['mc_contract_file_hash'] ?? '');
+            }
+            // PDF 실패해도 본문 HTML 스냅샷은 저장 (체결 인정은 custom snapshot 기준)
         }
 
-        // 원본 docx도 광고주 스토리지에 보관
+        // 원본 docx도 광고주 스토리지에 보관(있을 때만)
         $version_dir = preg_replace('/[^a-zA-Z0-9._-]/', '_', $version);
         $store_dir = lc_merchant_contract_signed_pdf_dir($mt_id, $version_dir);
-        if (!is_dir($store_dir)) {
-            @mkdir($store_dir, 0755, true);
+        if ($docx_abs !== '' && is_file($docx_abs) && $store_dir !== '') {
+            if (!is_dir($store_dir)) {
+                @mkdir($store_dir, 0755, true);
+            }
+            @copy($docx_abs, rtrim($store_dir, '/') . '/ORIGINAL_' . basename($docx_abs));
         }
-        $docx_stored = rtrim($store_dir, '/') . '/ORIGINAL_' . basename($docx_abs);
-        @copy($docx_abs, $docx_stored);
 
         $company_snapshot = lc_merchant_contract_build_company_snapshot($mt_id);
         $company_snapshot['company_name'] = $party_a['company_name'];
@@ -455,10 +472,10 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             'noModify'     => true,
             'appliedBy'    => 'admin_custom_document',
             'documentKey'  => $document_key,
-            'sourceFile'   => basename($docx_abs),
+            'sourceFile'   => $docx_abs !== '' ? basename($docx_abs) : 'moduicheolge-html',
         );
 
-        $special_note = '원본 첨부 파일: ' . $meta['label'] . ' (' . basename($docx_abs) . ') — 관리자가 서면 계약을 시스템에 적용함.';
+        $special_note = '원본 첨부 파일: ' . $meta['label'] . ' — 관리자가 서면 계약을 시스템에 적용함. (단가 30,000원 / 영업일 10일 검수)';
 
         $table = lc_merchant_contract_table();
         $old_status = (string) ($row['mc_status'] ?? '');
@@ -479,8 +496,8 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             mc_signed_at = '" . lc_sql_escape($signed_at) . "',
             mc_signed_ip = '" . lc_sql_escape($meta_req['ip']) . "',
             mc_user_agent = '" . lc_sql_escape($meta_req['user_agent']) . "',
-            mc_contract_pdf_path = '" . lc_sql_escape((string) $pdf['path']) . "',
-            mc_contract_file_hash = '" . lc_sql_escape((string) $pdf['hash']) . "',
+            mc_contract_pdf_path = '" . lc_sql_escape($pdf_path) . "',
+            mc_contract_file_hash = '" . lc_sql_escape($pdf_hash) . "',
             mc_company_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($company_snapshot)) . "',
             mc_contract_snapshot = '" . lc_sql_escape($contract_html) . "',
             mc_agreement_snapshot = '" . lc_sql_escape(lc_merchant_contract_encode_snapshot($agreement_snapshot)) . "',
@@ -501,8 +518,8 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             'mcl_signed_at'     => $signed_at,
             'mcl_ip'            => $meta_req['ip'],
             'mcl_user_agent'    => $meta_req['user_agent'],
-            'mcl_pdf_path'      => (string) $pdf['path'],
-            'mcl_pdf_hash'      => (string) $pdf['hash'],
+            'mcl_pdf_path'      => $pdf_path,
+            'mcl_pdf_hash'      => $pdf_hash,
             'mcl_result'        => 'success',
             'mcl_message'       => '관리자 첨부 계약서 적용: ' . $meta['label'],
         ));
@@ -533,5 +550,76 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             'contractCode' => $contract_code,
             'mtId'         => $mt_id,
         );
+    }
+}
+
+if (!function_exists('lc_merchant_contract_custom_snapshot_matches')) {
+    function lc_merchant_contract_custom_snapshot_matches($html)
+    {
+        $html = (string) $html;
+        if ($html === '') {
+            return false;
+        }
+
+        return strpos($html, '30,000원') !== false
+            && strpos($html, '영업일 기준 10일') !== false
+            && strpos($html, '영업일 기준 11일') !== false
+            && (strpos($html, '모두의철거 x 링크커넥트') !== false || strpos($html, '관리자 적용') !== false);
+    }
+}
+
+if (!function_exists('lc_merchant_contract_custom_ensure_adv0008')) {
+    /**
+     * ADV-0008(김장수) 모두의철거 계약서가 미적용이면 강제 적용.
+     *
+     * @return array{ok:bool,message:string,skipped?:bool,mcId?:int,applied?:bool}
+     */
+    function lc_merchant_contract_custom_ensure_adv0008($force = false)
+    {
+        if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
+            return array('ok' => false, 'message' => '커스텀 계약 모듈이 없습니다.');
+        }
+
+        $resolved = lc_merchant_contract_custom_resolve_merchant(0, 'ADV-0008');
+        if (empty($resolved['ok']) || !is_array($resolved['merchant'])) {
+            // mt_id=8 폴백
+            $resolved = lc_merchant_contract_custom_resolve_merchant(8, '');
+        }
+        if (empty($resolved['ok']) || !is_array($resolved['merchant'])) {
+            return array('ok' => false, 'message' => 'ADV-0008 광고주를 찾을 수 없습니다.');
+        }
+
+        $mt_id = (int) $resolved['mt_id'];
+        $existing = lc_merchant_contract_get($mt_id);
+        if (
+            !$force
+            && is_array($existing)
+            && lc_merchant_contract_custom_snapshot_matches((string) ($existing['mc_contract_snapshot'] ?? ''))
+        ) {
+            return array(
+                'ok'      => true,
+                'message' => '이미 적용됨',
+                'skipped' => true,
+                'mcId'    => (int) ($existing['mc_id'] ?? 0),
+                'applied' => false,
+            );
+        }
+
+        $result = lc_merchant_contract_admin_apply_custom_document(array(
+            'mtId'        => $mt_id,
+            'mtCode'      => (string) ($resolved['merchant']['mt_code'] ?? 'ADV-0008'),
+            'documentKey' => 'adv-0008-moduicheolge',
+            'force'       => true,
+            'partyOverrides' => array(
+                'company_name'        => '모두의철거',
+                'representative_name' => '김장수',
+                'signer_name'         => '김장수',
+                'signer_position'     => '대표',
+            ),
+        ));
+
+        $result['applied'] = !empty($result['ok']) && empty($result['skipped']);
+
+        return $result;
     }
 }

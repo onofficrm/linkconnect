@@ -18,6 +18,14 @@ if (!is_array($merchant)) {
 }
 
 $mt_id = (int) $merchant['mt_id'];
+$mt_code = strtoupper((string) ($merchant['mt_code'] ?? ''));
+if (
+    ($mt_code === 'ADV-0008' || $mt_id === 8)
+    && function_exists('lc_merchant_contract_custom_ensure_adv0008')
+) {
+    lc_merchant_contract_custom_ensure_adv0008(false);
+}
+
 $version_param = isset($_GET['version']) ? trim((string) $_GET['version']) : '';
 $version = $version_param !== ''
     ? lc_merchant_contract_sanitize_version($version_param)

@@ -16,11 +16,20 @@ $do = isset($_POST['do']) && (string) $_POST['do'] === '1';
 
 $result = null;
 if ($do) {
-    $result = lc_merchant_contract_admin_apply_custom_document(array(
-        'mtCode'      => 'ADV-0008',
-        'documentKey' => 'adv-0008-moduicheolge',
-        'force'       => $force || !empty($_POST['force']),
-    ));
+    $result = lc_merchant_contract_custom_ensure_adv0008($force || !empty($_POST['force']));
+    if (!is_array($result)) {
+        $result = lc_merchant_contract_admin_apply_custom_document(array(
+            'mtCode'      => 'ADV-0008',
+            'documentKey' => 'adv-0008-moduicheolge',
+            'force'       => $force || !empty($_POST['force']),
+            'partyOverrides' => array(
+                'company_name'        => '모두의철거',
+                'representative_name' => '김장수',
+                'signer_name'         => '김장수',
+                'signer_position'     => '대표',
+            ),
+        ));
+    }
 }
 
 $merchant = lc_get_merchant_by_code('ADV-0008');

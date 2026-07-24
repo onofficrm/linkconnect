@@ -93,6 +93,13 @@ export function AdminContracts() {
       setItems(data.items);
       setSummary(data.summary);
       setCurrentVersion(data.currentVersion);
+      const ensure = data.customEnsureAdv0008;
+      if (ensure?.ok && ensure.applied && ensure.message) {
+        setSeedMessage(ensure.message);
+        if (ensure.mcId) {
+          setSelectedId(ensure.mcId);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '계약 목록을 불러오지 못했습니다.');
     } finally {

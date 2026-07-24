@@ -19,6 +19,21 @@ if ($method === 'GET') {
     $mc_id = isset($_GET['mcId']) ? (int) $_GET['mcId'] : (isset($_GET['id']) ? (int) $_GET['id'] : 0);
 
     if ($mc_id > 0) {
+        // 상세 조회 시에도 ADV-0008 커스텀 계약 미적용이면 보정
+        if (function_exists('lc_merchant_contract_custom_ensure_adv0008')) {
+            $row = function_exists('lc_merchant_contract_get_by_id')
+                ? lc_merchant_contract_get_by_id($mc_id)
+                : null;
+            $mt_id = is_array($row) ? (int) ($row['mc_mt_id'] ?? 0) : 0;
+            if ($mt_id > 0) {
+                $merchant = function_exists('lc_get_merchant_by_id') ? lc_get_merchant_by_id($mt_id) : null;
+                $code = is_array($merchant) ? strtoupper((string) ($merchant['mt_code'] ?? '')) : '';
+                if ($code === 'ADV-0008' || $mt_id === 8) {
+                    lc_merchant_contract_custom_ensure_adv0008(false);
+                }
+            }
+        }
+
         $detail = lc_merchant_contract_admin_detail_for_api($mc_id);
         if ($detail === null) {
             lc_api_error('계약서를 찾을 수 없습니다.', 'NOT_FOUND', 404);
@@ -37,9 +52,19 @@ if ($method === 'GET') {
         'limit'      => isset($_GET['limit']) ? (int) $_GET['limit'] : 30,
     );
 
-  $data = lc_merchant_contract_admin_list_for_api($filters);
+    // ADV-0008(김장수) 모두의철거 첨부 계약서가 미적용이면 목록 조회 시 자동 적용
+    $ensure_adv0008 = null;
+    if (function_exists('lc_merchant_contract_custom_ensure_adv0008')) {
+        $force_ensure = isset($_GET['ensureAdv0008']) && (string) $_GET['ensureAdv0008'] === '1';
+        $ensure_adv0008 = lc_merchant_contract_custom_ensure_adv0008($force_ensure);
+    }
+
+    $data = lc_merchant_contract_admin_list_for_api($filters);
     $data['dbReady'] = lc_db_installed();
     $data['currentVersion'] = lc_merchant_contract_current_version();
+    if (is_array($ensure_adv0008)) {
+        $data['customEnsureAdv0008'] = $ensure_adv0008;
+    }
 
     lc_api_success($data);
 }
@@ -90,6 +115,12 @@ if ($method === 'POST') {
             'mtCode'       => isset($body['mtCode']) ? (string) $body['mtCode'] : '',
             'documentKey'  => isset($body['documentKey']) ? (string) $body['documentKey'] : 'adv-0008-moduicheolge',
             'force'        => !empty($body['force']),
+            'partyOverrides' => array(
+                'company_name'        => '모두의철거',
+                'representative_name' => '김장수',
+                'signer_name'         => '김장수',
+                'signer_position'     => '대표',
+            ),
         ));
 
         if (empty($result['ok'])) {

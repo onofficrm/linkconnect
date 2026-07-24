@@ -3667,6 +3667,14 @@ export function fetchAdminContracts(filters?: {
     summary: AdminContractSummary;
     dbReady: boolean;
     currentVersion: string;
+    customEnsureAdv0008?: {
+      ok?: boolean;
+      message?: string;
+      skipped?: boolean;
+      applied?: boolean;
+      mcId?: number;
+      contractCode?: string;
+    };
   }>('contracts.php', {
     q: filters?.q ?? '',
     status: filters?.status ?? '',
