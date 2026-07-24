@@ -3737,3 +3737,25 @@ export function seedAdminDemoContract(mtId?: number) {
     mtId: mtId ?? 0,
   });
 }
+
+export function applyAdminCustomContractDocument(payload?: {
+  mtId?: number;
+  mtCode?: string;
+  documentKey?: string;
+  force?: boolean;
+}) {
+  return adminApiPost<{
+    message: string;
+    skipped?: boolean;
+    contractCode?: string;
+    mtId?: number;
+    mcId?: number;
+    detail?: AdminContractDetail | null;
+  }>('contracts.php', {
+    action: 'apply_custom_document',
+    mtId: payload?.mtId ?? 0,
+    mtCode: payload?.mtCode ?? 'ADV-0008',
+    documentKey: payload?.documentKey ?? 'adv-0008-moduicheolge',
+    force: payload?.force ?? true,
+  });
+}

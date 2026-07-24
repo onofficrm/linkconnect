@@ -80,6 +80,33 @@ if ($method === 'POST') {
         ));
     }
 
+    if ($action === 'apply_custom_document') {
+        if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
+            lc_api_error('커스텀 계약 모듈을 사용할 수 없습니다.', 'NOT_AVAILABLE', 500);
+        }
+
+        $result = lc_merchant_contract_admin_apply_custom_document(array(
+            'mtId'         => isset($body['mtId']) ? (int) $body['mtId'] : 0,
+            'mtCode'       => isset($body['mtCode']) ? (string) $body['mtCode'] : '',
+            'documentKey'  => isset($body['documentKey']) ? (string) $body['documentKey'] : 'adv-0008-moduicheolge',
+            'force'        => !empty($body['force']),
+        ));
+
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'APPLY_FAILED', 400);
+        }
+
+        $mc_id = (int) ($result['mcId'] ?? 0);
+        lc_api_success(array(
+            'message'      => $result['message'],
+            'skipped'      => !empty($result['skipped']),
+            'contractCode' => (string) ($result['contractCode'] ?? ''),
+            'mtId'         => (int) ($result['mtId'] ?? 0),
+            'mcId'         => $mc_id,
+            'detail'       => $mc_id > 0 ? lc_merchant_contract_admin_detail_for_api($mc_id) : null,
+        ));
+    }
+
     $mc_id = isset($body['mcId']) ? (int) $body['mcId'] : 0;
     $reason = isset($body['reason']) ? (string) $body['reason'] : '';
 

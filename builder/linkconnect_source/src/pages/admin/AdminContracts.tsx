@@ -6,6 +6,7 @@ import { ContractDocumentViewer } from '../../components/contract/ContractDocume
 import { ContractProcessGuide } from '../../components/contract/ContractProcessGuide';
 import {
   addAdminContractAddendum,
+  applyAdminCustomContractDocument,
   fetchAdminContractDetail,
   fetchAdminContracts,
   seedAdminDemoContract,
@@ -15,7 +16,7 @@ import {
   type AdminContractListItem,
   type AdminContractSummary,
 } from '../../lib/api';
-import { FileText, Search, X, Clock, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import { FileText, Search, X, Clock, CheckCircle2, AlertTriangle, Sparkles, FilePlus2 } from 'lucide-react';
 
 type DetailTab = 'document' | 'admin';
 
@@ -65,6 +66,7 @@ export function AdminContracts() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState('');
+  const [applyingCustom, setApplyingCustom] = useState(false);
   const [error, setError] = useState('');
   const [detailTab, setDetailTab] = useState<DetailTab>('document');
   const [addendumTitle, setAddendumTitle] = useState('특약사항');
@@ -193,6 +195,37 @@ export function AdminContracts() {
     }
   };
 
+  const handleApplyModuicheolge = async () => {
+    if (
+      !window.confirm(
+        'ADV-0008(김장수/모두의철거)에 「모두의철거 x 링크커넥트 계약서」를 적용하고 체결 완료 처리할까요?\n이미 체결된 경우 강제로 덮어씁니다.',
+      )
+    ) {
+      return;
+    }
+    setApplyingCustom(true);
+    setSeedMessage('');
+    setError('');
+    try {
+      const result = await applyAdminCustomContractDocument({
+        mtCode: 'ADV-0008',
+        documentKey: 'adv-0008-moduicheolge',
+        force: true,
+      });
+      setSeedMessage(result.message);
+      await load();
+      if (result.mcId) {
+        setSelectedId(result.mcId);
+      } else if (result.detail?.listItem?.id) {
+        setSelectedId(result.detail.listItem.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '첨부 계약서 적용에 실패했습니다.');
+    } finally {
+      setApplyingCustom(false);
+    }
+  };
+
   const handleAddAddendum = async () => {
     if (!selectedId || !addendumBody.trim()) {
       setError('특약 내용을 입력해 주세요.');
@@ -247,15 +280,26 @@ export function AdminContracts() {
         <p className="text-sm text-slate-600">
           광고주가 작성·서명한 계약서를 검토하여 <b>승인 또는 반려</b>해 주세요. 승인 즉시 광고 등록이 가능합니다.
         </p>
-        <button
-          type="button"
-          disabled={seeding}
-          onClick={() => void handleSeedDemo()}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold disabled:opacity-50 shrink-0"
-        >
-          <Sparkles size={16} />
-          {seeding ? '생성 중...' : '데모광고주 샘플 계약 생성'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            disabled={applyingCustom}
+            onClick={() => void handleApplyModuicheolge()}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-semibold disabled:opacity-50"
+          >
+            <FilePlus2 size={16} />
+            {applyingCustom ? '적용 중...' : 'ADV-0008 첨부계약 적용'}
+          </button>
+          <button
+            type="button"
+            disabled={seeding}
+            onClick={() => void handleSeedDemo()}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold disabled:opacity-50"
+          >
+            <Sparkles size={16} />
+            {seeding ? '생성 중...' : '데모광고주 샘플 계약 생성'}
+          </button>
+        </div>
       </div>
 
       {seedMessage ? (
