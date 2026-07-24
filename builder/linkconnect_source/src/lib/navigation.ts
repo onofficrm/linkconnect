@@ -1,4 +1,5 @@
-const SCROLL_KEY = 'lc-scroll-target';
+/** sessionStorage key — ScrollToTop에서도 사용 */
+export const SCROLL_KEY = 'lc-scroll-target';
 
 /** 헤더 바 h-20(80px) — 모바일 드롭다운 높이는 제외 */
 export const HOME_SCROLL_OFFSET_PX = 80;

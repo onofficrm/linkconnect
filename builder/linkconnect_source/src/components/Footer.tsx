@@ -39,7 +39,16 @@ function FooterNavLink({ item }: { item: NavLinkItem }) {
   }
 
   return (
-    <Link to={item.to} className={className}>
+    <Link
+      to={item.to}
+      onClick={() => {
+        // 같은 페이지(예: /about에서 다시 회사소개)여도 상단으로
+        if (location.pathname === item.to) {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        }
+      }}
+      className={className}
+    >
       {item.label}
     </Link>
   );

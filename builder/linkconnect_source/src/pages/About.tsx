@@ -72,7 +72,9 @@ export function About() {
       window.requestAnimationFrame(() => {
         document.getElementById('call-db')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
+      return;
     }
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
 
   return (
