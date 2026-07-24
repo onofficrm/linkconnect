@@ -39,6 +39,7 @@ const emptySummary: ApiIntegrationSummary = {
 export function AdminApi() {
   const [summary, setSummary] = useState<ApiIntegrationSummary>(emptySummary);
   const [clients, setClients] = useState<ApiClientItem[]>([]);
+  const [landingClients, setLandingClients] = useState<ApiClientItem[]>([]);
   const [merchantClients, setMerchantClients] = useState<ApiClientItem[]>([]);
   const [merchantApiPath, setMerchantApiPath] = useState('/plugin/linkconnect/api/v1/merchant/conversions.php');
   const [merchants, setMerchants] = useState<AdminMerchant[]>([]);
@@ -48,15 +49,30 @@ export function AdminApi() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [issuedKey, setIssuedKey] = useState<ApiClientItem | null>(null);
   const [newMtId, setNewMtId] = useState('');
   const [newName, setNewName] = useState('');
   const [newIps, setNewIps] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const primaryClient = useMemo(
-    () => clients.find((c) => c.type !== 'merchant') ?? clients[0] ?? null,
-    [clients],
-  );
+  const primaryClient = useMemo(() => landingClients[0] ?? null, [landingClients]);
+
+  const applyClientsPayload = (data: {
+    clients?: ApiClientItem[];
+    landingClients?: ApiClientItem[];
+    merchantClients?: ApiClientItem[];
+  }) => {
+    const all = data.clients ?? [];
+    setClients(all);
+    setLandingClients(
+      data.landingClients ??
+        all.filter((c) => c.type !== 'merchant' && !(c.mtId && c.mtId > 0)),
+    );
+    setMerchantClients(
+      data.merchantClients ??
+        all.filter((c) => c.type === 'merchant' || (c.mtId !== undefined && c.mtId > 0)),
+    );
+  };
 
   const load = async () => {
     setLoading(true);
@@ -67,8 +83,7 @@ export function AdminApi() {
         fetchAdminMerchants({ status: 'active' }).catch(() => ({ items: [] as AdminMerchant[] })),
       ]);
       setSummary(data.summary);
-      setClients(data.clients);
-      setMerchantClients(data.merchantClients ?? data.clients.filter((c) => c.type === 'merchant'));
+      applyClientsPayload(data);
       if (data.merchantApiPath) setMerchantApiPath(data.merchantApiPath);
       setLogs(data.items);
       setMerchants(merchantData.items ?? []);
@@ -118,6 +133,7 @@ export function AdminApi() {
     setBusy(true);
     setMessage('');
     setError('');
+    setIssuedKey(null);
     try {
       const result = await updateAdminIntegration({
         action: 'create_client',
@@ -126,7 +142,15 @@ export function AdminApi() {
         mtId,
         allowedIps: newIps.trim(),
       });
-      setMessage(result.message + (result.client?.apiKey ? ` · Key: ${result.client.apiKey}` : ''));
+      if (result.client) {
+        setIssuedKey(result.client);
+        setMessage(`${result.message} — 아래 발급 키를 복사해 보관하세요.`);
+      } else {
+        setMessage(result.message);
+      }
+      if (result.merchantClients || result.clients) {
+        applyClientsPayload(result);
+      }
       setNewMtId('');
       setNewName('');
       setNewIps('');
@@ -209,7 +233,9 @@ export function AdminApi() {
               <p className="text-xs text-slate-500 mt-4">외부 DB 수신 엔드포인트: <code className="bg-slate-100 px-1 rounded">/plugin/linkconnect/api/db_receive.php</code></p>
             </>
           ) : (
-            <p className="text-sm text-slate-500">{loading ? '불러오는 중...' : 'API 클라이언트가 없습니다.'}</p>
+            <p className="text-sm text-slate-500">
+              {loading ? '불러오는 중...' : '랜딩페이지용 API 클라이언트가 없습니다. (광고주 검수 키는 오른쪽 목록에 표시됩니다)'}
+            </p>
           )}
         </div>
 
@@ -221,6 +247,26 @@ export function AdminApi() {
               <p className="text-sm text-slate-500">광고주 자체 플랫폼에서 디비 승인·취소</p>
             </div>
           </div>
+
+          {issuedKey ? (
+            <div className="mb-5 p-4 rounded-xl border border-emerald-200 bg-emerald-50 space-y-2">
+              <div className="text-sm font-bold text-emerald-900">방금 발급된 키</div>
+              <div className="text-xs text-emerald-800">{issuedKey.name} · {issuedKey.merchantName || issuedKey.code}</div>
+              <div className="font-mono text-xs sm:text-sm text-slate-900 break-all bg-white border border-emerald-100 rounded-lg px-3 py-2">
+                {issuedKey.apiKey}
+              </div>
+              <button
+                type="button"
+                className="text-xs font-bold text-emerald-800 underline"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(issuedKey.apiKey);
+                  setMessage('API Key를 클립보드에 복사했습니다.');
+                }}
+              >
+                키 복사
+              </button>
+            </div>
+          ) : null}
 
           <div className="space-y-3 mb-5 p-4 bg-slate-50 rounded-xl border border-slate-100">
             <div>

@@ -1943,7 +1943,13 @@ export function updateAdminIntegration(payload: {
   mtId?: number;
   allowedIps?: string;
 }) {
-  return adminApiPost<{ message: string; client?: ApiClientItem }>('integrations.php', payload);
+  return adminApiPost<{
+    message: string;
+    client?: ApiClientItem | null;
+    clients?: ApiClientItem[];
+    landingClients?: ApiClientItem[];
+    merchantClients?: ApiClientItem[];
+  }>('integrations.php', payload);
 }
 
 export type PartnerCancelSummary = {

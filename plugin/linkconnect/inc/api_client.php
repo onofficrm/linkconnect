@@ -77,6 +77,29 @@ if (!function_exists('lc_api_client_list')) {
     }
 }
 
+if (!function_exists('lc_api_client_ensure_schema')) {
+    function lc_api_client_ensure_schema()
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $table = lc_table('api_clients');
+        if (!lc_db_table_exists($table)) {
+            return array('ok' => false, 'message' => 'api_clients 테이블이 없습니다.');
+        }
+
+        if (function_exists('lc_db_column_exists') && !lc_db_column_exists($table, 'ac_mt_id')) {
+            lc_sql_query(" ALTER TABLE `{$table}` ADD COLUMN `ac_mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `ac_type`, ADD KEY `idx_ac_mt_id` (`ac_mt_id`) ", false);
+            if (!lc_db_column_exists($table, 'ac_mt_id')) {
+                return array('ok' => false, 'message' => 'ac_mt_id 컬럼 추가에 실패했습니다.');
+            }
+        }
+
+        return array('ok' => true, 'message' => 'ok');
+    }
+}
+
 if (!function_exists('lc_api_client_ensure_default')) {
     function lc_api_client_ensure_default()
     {
@@ -84,15 +107,20 @@ if (!function_exists('lc_api_client_ensure_default')) {
             return null;
         }
 
+        lc_api_client_ensure_schema();
+
         $table = lc_table('api_clients');
-        $existing = lc_sql_fetch(" SELECT * FROM `{$table}` LIMIT 1 ");
-        if ($existing) {
+        // 랜딩용 클라이언트가 없으면 생성 (광고주 키만 있어도 랜딩 기본키는 별도로 유지)
+        $existing = lc_sql_fetch(" SELECT * FROM `{$table}` WHERE ac_type <> 'merchant' ORDER BY ac_id ASC LIMIT 1 ", false);
+        if (is_array($existing) && !empty($existing['ac_id'])) {
             return $existing;
         }
 
         $code = lc_api_client_generate_code();
         $api_key = lc_api_client_generate_key();
-        lc_sql_query(" INSERT INTO `{$table}` SET
+        $has_mt = function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'ac_mt_id');
+        $mt_sql = $has_mt ? ", ac_mt_id = '0'" : '';
+        $ok = lc_sql_query(" INSERT INTO `{$table}` SET
             ac_code = '" . lc_sql_escape($code) . "',
             ac_name = '랜딩페이지',
             ac_type = 'landing',
@@ -100,9 +128,19 @@ if (!function_exists('lc_api_client_ensure_default')) {
             ac_api_secret = '" . lc_sql_escape(bin2hex(random_bytes(12))) . "',
             ac_allowed_ips = '',
             ac_status = 'active',
-            ac_created_at = NOW() ", false);
+            ac_created_at = NOW()
+            {$mt_sql} ", false);
 
-        return lc_api_client_get_by_id((int) lc_sql_insert_id());
+        if ($ok === false) {
+            return null;
+        }
+
+        $ac_id = (int) lc_sql_insert_id();
+        if ($ac_id > 0) {
+            return lc_api_client_get_by_id($ac_id);
+        }
+
+        return lc_api_client_get_by_key($api_key);
     }
 }
 
@@ -114,6 +152,11 @@ if (!function_exists('lc_api_client_create')) {
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'client' => null);
+        }
+
+        $schema = lc_api_client_ensure_schema();
+        if (empty($schema['ok'])) {
+            return array('ok' => false, 'message' => $schema['message'] ?? '스키마 준비 실패', 'client' => null);
         }
 
         $name = trim((string) ($payload['name'] ?? ''));
@@ -143,6 +186,10 @@ if (!function_exists('lc_api_client_create')) {
         $api_key = lc_api_client_generate_key(lc_api_client_key_prefix_for_type($type));
 
         $has_mt = function_exists('lc_db_column_exists') && lc_db_column_exists($table, 'ac_mt_id');
+        if ($type === 'merchant' && !$has_mt) {
+            return array('ok' => false, 'message' => '광고주 연동용 ac_mt_id 컬럼이 없습니다. DB 마이그레이션을 실행해 주세요.', 'client' => null);
+        }
+
         $sets = array(
             "ac_code = '" . lc_sql_escape($code) . "'",
             "ac_name = '" . lc_sql_escape($name) . "'",
@@ -157,14 +204,30 @@ if (!function_exists('lc_api_client_create')) {
             $sets[] = "ac_mt_id = '" . (int) $mt_id . "'";
         }
 
-        lc_sql_query(' INSERT INTO `' . $table . '` SET ' . implode(', ', $sets) . ' ', false);
+        $ok = lc_sql_query(' INSERT INTO `' . $table . '` SET ' . implode(', ', $sets) . ' ', false);
+        if ($ok === false) {
+            $err = function_exists('lc_sql_error') ? trim((string) lc_sql_error()) : '';
+
+            return array(
+                'ok'      => false,
+                'message' => 'API 클라이언트 저장에 실패했습니다.' . ($err !== '' ? " ({$err})" : ''),
+                'client'  => null,
+            );
+        }
 
         $ac_id = (int) lc_sql_insert_id();
+        $client = $ac_id > 0 ? lc_api_client_get_by_id($ac_id) : null;
+        if (!is_array($client)) {
+            $client = lc_api_client_get_by_key($api_key);
+        }
+        if (!is_array($client)) {
+            return array('ok' => false, 'message' => 'API 클라이언트 생성 후 조회에 실패했습니다.', 'client' => null);
+        }
 
         return array(
             'ok'      => true,
             'message' => 'API 클라이언트가 생성되었습니다.',
-            'client'  => lc_api_client_get_by_id($ac_id),
+            'client'  => $client,
         );
     }
 }
@@ -553,6 +616,14 @@ if (!function_exists('lc_api_client_to_api')) {
     function lc_api_client_to_api(array $row)
     {
         $mt_id = (int) ($row['ac_mt_id'] ?? 0);
+        $type = trim((string) ($row['ac_type'] ?? ''));
+        if ($type === '' && $mt_id > 0) {
+            $type = 'merchant';
+        }
+        if ($type === '') {
+            $type = 'landing';
+        }
+
         $merchant_name = '';
         if ($mt_id > 0 && function_exists('lc_get_merchant_by_id')) {
             $mt = lc_get_merchant_by_id($mt_id);
@@ -565,7 +636,7 @@ if (!function_exists('lc_api_client_to_api')) {
             'id'            => (int) ($row['ac_id'] ?? 0),
             'code'          => (string) ($row['ac_code'] ?? ''),
             'name'          => (string) ($row['ac_name'] ?? ''),
-            'type'          => (string) ($row['ac_type'] ?? ''),
+            'type'          => $type,
             'mtId'          => $mt_id,
             'merchantName'  => $merchant_name,
             'apiKey'        => (string) ($row['ac_api_key'] ?? ''),

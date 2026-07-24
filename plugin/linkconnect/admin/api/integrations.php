@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $merchant_clients = array();
     $landing_clients = array();
     foreach ($clients as $c) {
-        if (($c['type'] ?? '') === 'merchant') {
+        if (($c['type'] ?? '') === 'merchant' || (int) ($c['mtId'] ?? 0) > 0) {
             $merchant_clients[] = $c;
         } else {
             $landing_clients[] = $c;
@@ -80,9 +80,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$result['ok']) {
             lc_api_error($result['message'], 'CLIENT_CREATE_FAILED', 400);
         }
+        $client_row = is_array($result['client'] ?? null) ? $result['client'] : null;
+        $client_api = $client_row ? lc_api_client_to_api($client_row) : null;
+
+        $all = array_map('lc_api_client_to_api', lc_api_client_list());
+        $merchant_clients = array();
+        $landing_clients = array();
+        foreach ($all as $c) {
+            if (($c['type'] ?? '') === 'merchant' || (int) ($c['mtId'] ?? 0) > 0) {
+                $merchant_clients[] = $c;
+            } else {
+                $landing_clients[] = $c;
+            }
+        }
+
         lc_api_success(array(
-            'message' => $result['message'],
-            'client'  => lc_api_client_to_api($result['client']),
+            'message'         => $result['message'],
+            'client'          => $client_api,
+            'clients'         => $all,
+            'landingClients'  => $landing_clients,
+            'merchantClients' => $merchant_clients,
         ));
     }
 
