@@ -471,6 +471,15 @@ if (!function_exists('lc_conversion_update_status')) {
             return array('ok' => false, 'message' => '접근 권한이 없습니다.');
         }
 
+        // 다중 플랫폼: 로컬이 관리 플랫폼이 아닌 광고주는 상태 변경 차단
+        // 인증된 관리 플랫폼 웹훅 ACK($opts['mp_remote_ack'])는 게이트 우회
+        $mp_remote_ack = !empty($opts['mp_remote_ack']);
+        if (!$mp_remote_ack
+            && function_exists('lc_mp_local_is_management_for_mt')
+            && !lc_mp_local_is_management_for_mt($mt_id)) {
+            return array('ok' => false, 'message' => '이 광고주의 DB는 지정된 관리 플랫폼(온오프CPA)에서만 처리할 수 있습니다.');
+        }
+
         if (!empty($conversion['cv_final_locked'])) {
             return array('ok' => false, 'message' => '관리자 최종확정으로 잠긴 디비입니다.');
         }
@@ -552,6 +561,11 @@ if (!function_exists('lc_conversion_update_status')) {
                     'refId'   => (int) $cv_id,
                 ));
             }
+        }
+
+        // 다중 플랫폼 동기화 훅 — 원격 원본 lead 상태 변경 시 outbox
+        if (empty($opts['mp_no_sync']) && function_exists('lc_mp_on_local_conversion_status_changed')) {
+            lc_mp_on_local_conversion_status_changed($cv_id, $mt_id, $new_status, $comment);
         }
 
         return array(
@@ -1197,6 +1211,12 @@ if (!function_exists('lc_conversion_create')) {
 
         if (function_exists('lc_abuse_on_conversion_created')) {
             lc_abuse_on_conversion_created($cv_id, $payload, $duplicate, $abuse_score);
+        }
+
+        // 다중 플랫폼: 원본(링크커넥트) → 관리(온오프CPA) 유입 푸시
+        if (function_exists('lc_mp_on_local_conversion_created')) {
+            $mt_for_mp = isset($campaign['mt_id']) ? (int) $campaign['mt_id'] : 0;
+            lc_mp_on_local_conversion_created($cv_id, $mt_for_mp);
         }
 
         return array(

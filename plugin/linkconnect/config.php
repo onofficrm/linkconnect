@@ -72,6 +72,24 @@ if (!defined('ADVERTISER_CONTRACT_GRACE_UNTIL')) {
     define('ADVERTISER_CONTRACT_GRACE_UNTIL', '');
 }
 
+/* ── 다중 플랫폼 광고주 DB 거버넌스 ── */
+/**
+ * 온오프CPA와 DB 승인/반려 동기화.
+ * 개인회생 광고주(banktupt/dasibom)는 온오프CPA가 관리 플랫폼.
+ */
+if (!defined('LC_MULTI_PLATFORM_ENABLED')) {
+    define('LC_MULTI_PLATFORM_ENABLED', true);
+}
+if (!defined('LC_PLATFORM_CODE')) {
+    define('LC_PLATFORM_CODE', 'LINKCONNECT');
+}
+if (!defined('LC_PLATFORM_LINKCONNECT')) {
+    define('LC_PLATFORM_LINKCONNECT', 'LINKCONNECT');
+}
+if (!defined('LC_PLATFORM_ONOFFCPA')) {
+    define('LC_PLATFORM_ONOFFCPA', 'ONOFFCPA');
+}
+
 /* ── LinkConnect 전용 DB (그누보드 기본 DB와 분리) ── */
 if (!defined('LC_MYSQL_DB')) {
     if (function_exists('g5site_cfg')) {

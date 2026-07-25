@@ -1,0 +1,82 @@
+name: Deploy multi-platform hotfix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-mp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare MP hotfix bundle
+        run: |
+          ROOT=".deploy/mp"
+          rm -rf "$ROOT"
+          FILES=(
+            "plugin/linkconnect/config.php"
+            "plugin/linkconnect/_common.php"
+            "plugin/linkconnect/inc/conversion.php"
+            "plugin/linkconnect/inc/platform.php"
+            "plugin/linkconnect/inc/platform_db.php"
+            "plugin/linkconnect/inc/platform_policy.php"
+            "plugin/linkconnect/inc/platform_adapter.php"
+            "plugin/linkconnect/inc/platform_sync.php"
+            "plugin/linkconnect/api/platform/health.php"
+            "plugin/linkconnect/api/platform/inbound_lead.php"
+            "plugin/linkconnect/api/platform/status_change.php"
+            "plugin/linkconnect/api/platform/remote_status.php"
+            "plugin/linkconnect/admin/api/platform.php"
+            "plugin/linkconnect/cron/platform_sync_outbox.php"
+            "plugin/linkconnect/install/seed_personal_rehab_mp.php"
+          )
+          for f in "${FILES[@]}"; do
+            mkdir -p "$ROOT/$(dirname "$f")"
+            cp "$f" "$ROOT/$f"
+          done
+          echo "Bundle: $(find "$ROOT" -type f | wc -l)"
+
+      - name: FTP upload
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ftp
+          local-dir: .deploy/mp/
+          server-dir: /public_html/
+          state-name: linkconnect-mp-hotfix-v1
+          log-level: minimal
+          timeout: 600000
+
+      - name: Seed personal rehab advertisers
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          cat > seed_mp_run.php << 'PHP'
+          <?php
+          header('Content-Type: application/json; charset=utf-8');
+          require_once __DIR__ . '/plugin/linkconnect/_common.php';
+          if (!function_exists('lc_mp_seed_personal_rehab_pair')) {
+            require_once G5_PLUGIN_PATH . '/linkconnect/install/seed_personal_rehab_mp.php';
+          }
+          echo json_encode(lc_mp_seed_personal_rehab_pair(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+          PHP
+          curl --fail --silent --show-error --ftp-create-dirs \
+            --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+            -T seed_mp_run.php \
+            "ftp://${FTP_SERVER}:${FTP_PORT}/public_html/seed_mp_run.php"
+          echo "=== SEED ==="
+          curl -sS "https://linkconnect.co.kr/seed_mp_run.php" || true
+          echo
+          curl --silent --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+            -Q "DELE /public_html/seed_mp_run.php" \
+            "ftp://${FTP_SERVER}:${FTP_PORT}/" || true
+          echo "=== HEALTH ==="
+          curl -sS "https://linkconnect.co.kr/plugin/linkconnect/api/platform/health.php" || true
+          echo
