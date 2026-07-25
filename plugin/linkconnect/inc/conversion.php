@@ -471,13 +471,20 @@ if (!function_exists('lc_conversion_update_status')) {
             return array('ok' => false, 'message' => '접근 권한이 없습니다.');
         }
 
-        // 다중 플랫폼: 로컬이 관리 플랫폼이 아닌 광고주는 상태 변경 차단
-        // 인증된 관리 플랫폼 웹훅 ACK($opts['mp_remote_ack'])는 게이트 우회
+        // 다중 플랫폼: 단독=로컬만 / 공동 입점=멤버 플랫폼 모두 승인·취소 가능
+        // 원격 ACK($opts['mp_remote_ack'])는 게이트 우회.
         $mp_remote_ack = !empty($opts['mp_remote_ack']);
         if (!$mp_remote_ack
+            && function_exists('lc_mp_local_can_mutate_for_mt')
+            && !lc_mp_local_can_mutate_for_mt($mt_id)) {
+            return array('ok' => false, 'message' => '이 광고주의 DB는 입점된 플랫폼에서만 처리할 수 있습니다.');
+        }
+        // 레거시 심볼만 있는 환경 대비
+        if (!$mp_remote_ack
+            && !function_exists('lc_mp_local_can_mutate_for_mt')
             && function_exists('lc_mp_local_is_management_for_mt')
             && !lc_mp_local_is_management_for_mt($mt_id)) {
-            return array('ok' => false, 'message' => '이 광고주의 DB는 지정된 관리 플랫폼(온오프CPA)에서만 처리할 수 있습니다.');
+            return array('ok' => false, 'message' => '이 광고주의 DB는 지정된 관리 플랫폼에서만 처리할 수 있습니다.');
         }
 
         if (!empty($conversion['cv_final_locked'])) {
@@ -494,7 +501,7 @@ if (!function_exists('lc_conversion_update_status')) {
         }
 
         if ($new_status === LC_STATUS_APPROVED) {
-            // 원격 ACK(원본 플랫폼): 광고주 지갑 차감은 관리 플랫폼에서 이미 수행.
+            // 원격 ACK(원본/상대 플랫폼): 광고주 지갑 차감은 승인을 시작한 플랫폼에서만 수행.
             // 여기서 다시 차감하면 이중 과금이 되므로 건너뛰고, 파트너 적립만 수행.
             if (!$mp_remote_ack) {
                 $deduct = lc_wallet_deduct_for_conversion(
@@ -567,7 +574,8 @@ if (!function_exists('lc_conversion_update_status')) {
             }
         }
 
-        // 다중 플랫폼 동기화 훅 — 원격 원본 lead 상태 변경 시 outbox
+        // 다중 플랫폼 동기화 훅 — 플래그 OFF / 순수 로컬 DB 면 내부에서 즉시 return
+        // 원격 ACK($opts['mp_no_sync'])는 역전송 루프 방지를 위해 훅을 건너뛴다.
         if (empty($opts['mp_no_sync']) && function_exists('lc_mp_on_local_conversion_status_changed')) {
             lc_mp_on_local_conversion_status_changed($cv_id, $mt_id, $new_status, $comment);
         }
@@ -1217,9 +1225,12 @@ if (!function_exists('lc_conversion_create')) {
             lc_abuse_on_conversion_created($cv_id, $payload, $duplicate, $abuse_score);
         }
 
-        // 다중 플랫폼: 원본(링크커넥트) → 관리(온오프CPA) 유입 푸시
+        // 다중 플랫폼: 원본 플랫폼이면 관리 플랫폼으로 유입 푸시 (플래그 OFF 시 no-op)
         if (function_exists('lc_mp_on_local_conversion_created')) {
-            $mt_for_mp = isset($campaign['mt_id']) ? (int) $campaign['mt_id'] : 0;
+            $mt_for_mp = 0;
+            if (isset($campaign['mt_id'])) {
+                $mt_for_mp = (int) $campaign['mt_id'];
+            }
             lc_mp_on_local_conversion_created($cv_id, $mt_for_mp);
         }
 
