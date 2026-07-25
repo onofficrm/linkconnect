@@ -89,6 +89,17 @@ if (!defined('LC_PLATFORM_LINKCONNECT')) {
 if (!defined('LC_PLATFORM_ONOFFCPA')) {
     define('LC_PLATFORM_ONOFFCPA', 'ONOFFCPA');
 }
+/**
+ * 온오프CPA 공개 URL (다중 플랫폼 peer / 시드용).
+ * 우선: onoffcpa.icrm.co.kr / 폴백: onoffcpa.iwinv.net
+ */
+if (!defined('LC_ONOFFCPA_PUBLIC_URL')) {
+    define('LC_ONOFFCPA_PUBLIC_URL', 'https://onoffcpa.icrm.co.kr');
+}
+if (!defined('LC_ONOFFCPA_LEGACY_URL')) {
+    define('LC_ONOFFCPA_LEGACY_URL', 'https://onoffcpa.iwinv.net');
+}
+
 
 /* ── LinkConnect 전용 DB (그누보드 기본 DB와 분리) ── */
 if (!defined('LC_MYSQL_DB')) {
