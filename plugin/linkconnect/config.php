@@ -237,13 +237,13 @@ if (!function_exists('lc_site_name')) {
     function lc_site_name()
     {
         if (function_exists('g5site_cfg')) {
-            $name = g5site_cfg('site_name', 'LinkConnect');
+            $name = g5site_cfg('site_name', '링크커넥트');
             if ($name !== '') {
                 return $name;
             }
         }
 
-        return 'LinkConnect';
+        return '링크커넥트';
     }
 }
 
@@ -251,10 +251,10 @@ if (!function_exists('lc_site_desc')) {
     function lc_site_desc()
     {
         if (function_exists('g5site_cfg')) {
-            return g5site_cfg('site_desc', 'CPA/CPS 제휴마케팅 플랫폼');
+            return g5site_cfg('site_desc', '링크커넥트는 CPA·CPS 제휴마케팅 플랫폼입니다. 광고주와 파트너를 연결해 온라인 마케팅 성과를 관리하세요.');
         }
 
-        return 'CPA/CPS 제휴마케팅 플랫폼';
+        return '링크커넥트는 CPA·CPS 제휴마케팅 플랫폼입니다. 광고주와 파트너를 연결해 온라인 마케팅 성과를 관리하세요.';
     }
 }
 

@@ -38,7 +38,7 @@ export function LegalDocumentPage({ doc, variant = 'terms' }: LegalDocumentPageP
   const Icon = variant === 'privacy' ? Shield : FileText;
 
   useEffect(() => {
-    document.title = `${doc.title} | LinkConnect`;
+    document.title = `${doc.title} | 링크커넥트`;
   }, [doc.title]);
 
   return (
