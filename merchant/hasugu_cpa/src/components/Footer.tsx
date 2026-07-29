@@ -14,7 +14,7 @@ export default function Footer() {
           </p>
           <p className="text-slate-400 text-[15px] break-keep mb-4">방문 및 작업 진행 전 안내 내용을 확인해주세요.</p>
           <div className="flex flex-wrap gap-2">
-            {['상담만으로 비용 없음', '협의 후 작업', '7일 재점검 안내', '평균 10분 이내 연락'].map((t) => (
+            {['상담만으로 비용 없음', '협의 후 작업', '30분 이내 현장도착', '평균 10분 이내 연락'].map((t) => (
               <span key={t} className="text-xs font-bold text-slate-300 bg-slate-900/60 border border-slate-700 px-3 py-1.5 rounded-full">
                 {t}
               </span>

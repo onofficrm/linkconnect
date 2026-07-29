@@ -233,7 +233,7 @@ export default function Hero() {
               {[
                 { text: '협의 후 작업', icon: CheckCircle },
                 { text: '전문 장비 점검', icon: Wrench },
-                { text: '7일 재점검 안내', icon: BadgeCheck },
+                { text: '30분 이내 현장도착', icon: BadgeCheck },
               ].map((badge) => (
                 <div key={badge.text} className="flex items-center gap-2 text-slate-700 font-bold">
                   <badge.icon size={18} className="text-blue-500" />
@@ -243,7 +243,7 @@ export default function Hero() {
             </div>
 
             <div className="flex sm:hidden gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-              {['협의 후 작업', '장비 점검', '재점검 안내'].map((t) => (
+              {['협의 후 작업', '장비 점검', '30분 이내 현장도착'].map((t) => (
                 <span
                   key={t}
                   className="shrink-0 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 px-3 py-2 rounded-full"
@@ -263,15 +263,15 @@ export default function Hero() {
           >
             <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white">
               <img
-                src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?q=80&w=800&auto=format&fit=crop"
-                alt="전문 설비 기사가 배관을 점검하는 모습"
-                className="w-full h-full object-cover object-center"
+                src={`${import.meta.env.BASE_URL}hero-technician.png`}
+                alt="하수구·배관 전문 기사가 안심 상담을 안내하는 모습"
+                className="w-full h-full object-cover object-top"
                 loading="eager"
                 fetchPriority="high"
                 width="600"
                 height="800"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
             </div>
 
             <div className="absolute top-8 -left-2 sm:-left-8 bg-white p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3">

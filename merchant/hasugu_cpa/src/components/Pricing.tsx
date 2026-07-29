@@ -4,16 +4,19 @@ const PRICE_BANDS = [
   {
     label: '단순막힘',
     range: '5만~15만',
+    suffix: '원대',
     hint: '싱크대·세면대·변기 등 단일 구간',
   },
   {
     label: '내시경 점검',
-    range: '3만~8만',
+    range: '비용 무료',
+    suffix: '',
     hint: '막힘 위치·내부 상태 확인',
   },
   {
     label: '고압세척',
     range: '15만~40만',
+    suffix: '원대',
     hint: '기름때·스케일·장거리 배관',
   },
 ];
@@ -47,7 +50,9 @@ export default function Pricing() {
                 <h3 className="text-slate-500 font-bold mb-2">{item.label}</h3>
                 <div className="text-2xl sm:text-3xl font-black text-slate-900 break-keep">
                   {item.range}
-                  <span className="text-base font-bold text-slate-500 ml-1">원대</span>
+                  {item.suffix ? (
+                    <span className="text-base font-bold text-slate-500 ml-1">{item.suffix}</span>
+                  ) : null}
                 </div>
                 <p className="mt-2 text-sm text-slate-500 font-medium word-break-keep">{item.hint}</p>
               </div>
@@ -69,10 +74,10 @@ export default function Pricing() {
           <div className="flex items-start gap-3 bg-white border border-slate-200 rounded-2xl p-5">
             <Shield size={22} className="text-blue-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-slate-900 mb-1">동일 구간 재방문 안내</p>
+              <p className="font-bold text-slate-900 mb-1">출장비 없음 · 내시경점검 비용 무료</p>
               <p className="text-sm text-slate-600 word-break-keep leading-relaxed">
-                협의된 동일 작업 구간에서 <strong className="text-slate-800">7일 이내 동일 증상</strong>이
-                재발하면 재점검 여부를 안내합니다. (현장 구조·사용 환경에 따라 달라질 수 있음)
+                내시경 점검 비용 없이 필요한 작업만 정직하게 안내합니다.
+                <span className="text-slate-500"> (현장 구조·사용 환경에 따라 달라질 수 있음)</span>
               </p>
             </div>
           </div>
@@ -81,6 +86,7 @@ export default function Pricing() {
         <div className="bg-blue-50/50 rounded-3xl p-6 sm:p-8 border border-blue-100 max-w-4xl mx-auto">
           <ul className="space-y-4">
             {[
+              '내시경 점검 비용 없이 필요한 작업만 정직하게 안내합니다. (현장 구조·사용 환경에 따라 달라질 수 있음)',
               '배관 문제는 현장 구조와 막힘 원인에 따라 작업 방법이 달라집니다.',
               '전화상담만으로 정확한 작업비를 확정하기 어려울 수 있습니다.',
               '현장 확인 후 필요한 작업과 예상 비용을 안내합니다.',

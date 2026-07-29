@@ -175,8 +175,12 @@ jobs:
               "$ROOT/plugin/onoff-builder-bridge/imports/dasibom/"
           fi
           if [[ -d plugin/onoff-builder-bridge/imports/hasugu_cpa ]]; then
-            cp plugin/onoff-builder-bridge/imports/hasugu_cpa/index.html "$ROOT/plugin/onoff-builder-bridge/imports/hasugu_cpa/"
-            cp -R plugin/onoff-builder-bridge/imports/hasugu_cpa/assets "$ROOT/plugin/onoff-builder-bridge/imports/hasugu_cpa/"
+            # index.html + assets + public root images (hero, pipe photos)
+            rsync -a --delete \
+              --exclude '._*' \
+              --exclude '.DS_Store' \
+              plugin/onoff-builder-bridge/imports/hasugu_cpa/ \
+              "$ROOT/plugin/onoff-builder-bridge/imports/hasugu_cpa/"
           fi
           find "$ROOT" -name '._*' -delete 2>/dev/null || true
           echo "Bundle: $(find "$ROOT" -type f | wc -l) files, $(du -sh "$ROOT" | cut -f1)"
