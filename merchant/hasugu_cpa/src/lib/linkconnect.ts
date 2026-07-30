@@ -28,10 +28,7 @@ export function resolveLkCode(): string {
 }
 
 export function receiveApiUrl(): string {
-  const injected = window.LC_LANDING_CONTEXT?.lead_submit_url;
-  if (typeof injected === 'string' && injected && !injected.includes('{{')) {
-    return injected;
-  }
+  // 독립도메인(skawning.co.kr Worker)에서도 동일 출처로 접수되도록 상대경로 사용
   return '/plugin/linkconnect/api/receive.php';
 }
 
