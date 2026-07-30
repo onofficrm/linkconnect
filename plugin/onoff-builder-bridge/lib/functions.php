@@ -902,6 +902,13 @@ if (!function_exists('onoff_builder_render_import_page')) {
             ? onoff_builder_resolve_import_entry($id, $meta)
             : (isset($meta['entry']) && $meta['entry'] !== '' ? $meta['entry'] : 'index.html');
         if ($entry === '') {
+            $dir = function_exists('onoff_builder_project_dir') ? onoff_builder_project_dir($id) : '';
+            $has_index = ($dir !== '' && is_file($dir . '/index.html'));
+            $is_vite_src = ($dir !== '' && function_exists('onoff_builder_is_vite_source_project')
+                && onoff_builder_is_vite_source_project($dir));
+            if (!$has_index && !$is_vite_src) {
+                onoff_builder_render_page_error('랜딩 파일이 아직 배포되지 않았습니다. 잠시 후 다시 확인해 주세요. (imports/' . $id . '/index.html)');
+            }
             $message = function_exists('onoff_builder_vite_source_message')
                 ? onoff_builder_vite_source_message()
                 : '빌드가 필요한 프로젝트입니다. 디자인 화면에서 [배포하고 바로 적용]을 실행해 주세요.';

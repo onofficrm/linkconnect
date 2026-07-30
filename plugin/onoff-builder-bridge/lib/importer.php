@@ -155,7 +155,17 @@ if (!function_exists('onoff_builder_is_production_dist_index_html')) {
             return false;
         }
 
-        return (bool) preg_match('#/assets/index-[A-Za-z0-9_-]+\.(js|mjs)#', $html);
+        // Vite: /assets/index-xxxxx.js
+        if (preg_match('#/assets/index-[A-Za-z0-9_-]+\.(js|mjs)#', $html)) {
+            return true;
+        }
+
+        // Next.js static export: /_next/static/...
+        if (preg_match('#/_next/static/#', $html)) {
+            return true;
+        }
+
+        return false;
     }
 }
 
