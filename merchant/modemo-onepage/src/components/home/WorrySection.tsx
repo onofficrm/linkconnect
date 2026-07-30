@@ -44,7 +44,7 @@ export default function WorrySection() {
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   return (
-    <section className={styles.worrySection}>
+    <section className={styles.worrySection} data-modemo-snap="worry">
       <div className={styles.worrySectionInner}>
         <FadeIn direction="up">
           <div className={`${common.sectionInner} ${styles.worryHeader}`}>

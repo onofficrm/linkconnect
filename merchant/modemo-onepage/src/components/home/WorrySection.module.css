@@ -1,5 +1,11 @@
 /* ===== Worry Section — sleepless-night atmosphere ===== */
 
+/* 페이지 전체는 자유 스크롤, 스냅 포인트만 이 섹션에 부분 적용 (proximity) */
+:global(html:has([data-modemo-snap="worry"])) {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: 88px;
+}
+
 .worrySection {
     background: #f4f1ec;
     position: relative;
@@ -20,6 +26,8 @@
 
 .worryHeader {
     margin-bottom: 48px;
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
 }
 
 .worryEyebrow {
@@ -62,11 +70,14 @@
 
 .worryRow {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
     max-width: 1290px;
     gap: 48px;
-    padding: 0 64px;
+    padding: 28px 64px;
+    min-height: min(46vh, 360px);
+    scroll-snap-align: center;
+    scroll-snap-stop: normal;
 }
 
 .worryRow:nth-child(odd) {
@@ -143,7 +154,7 @@
     letter-spacing: -0.12px;
 }
 
-/* Bottom: night scene with real site photo */
+/* Bottom: night scene with real site photo — 클라이맥스만 stop: always */
 .worryBottom {
     position: relative;
     display: flex;
@@ -155,6 +166,8 @@
     align-items: center;
     justify-content: center;
     isolation: isolate;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
 }
 
 .worryBottomMedia {
@@ -264,12 +277,25 @@
 }
 
 @media (max-width: 768px) {
+    /* 모바일은 관성 스크롤이 강해 mandatory/proximity 모두 거슬릴 수 있어 비활성 */
+    :global(html:has([data-modemo-snap="worry"])) {
+        scroll-snap-type: none;
+    }
+
     .worrySectionInner {
         padding: 100px 12px 0;
         border-radius: 20px 20px 0 0;
         background:
             radial-gradient(ellipse 90% 35% at 50% 0%, rgba(255, 107, 53, 0.1), transparent 55%),
             linear-gradient(180deg, #f7f4ef 0%, #efeae2 48%, #16181d 82%, #0e1014 100%);
+    }
+
+    .worryHeader,
+    .worryRow,
+    .worryBottom {
+        scroll-snap-align: none;
+        scroll-snap-stop: normal;
+        min-height: 0;
     }
 
     .worryHeader {
@@ -361,6 +387,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    :global(html:has([data-modemo-snap="worry"])) {
+        scroll-snap-type: none;
+    }
+
     .worryBottomPhoto,
     .worryBottomGlow {
         animation: none;
