@@ -40,7 +40,7 @@ export default function HeroSection() {
             />
             <div className={styles.heroGradient} />
             <div className={styles.heroInner} style={{ zIndex: 1, position: 'relative' }}>
-                <FadeIn className={styles.heroImages} direction="none" duration={1.5} viewport={{ amount: "some" }}>
+                <FadeIn className={styles.heroImages} direction="none" duration={1.2} fullWidth viewport={{ amount: "some" }}>
 
                     <div className={styles.heroImageCol}>
                         <div className={styles.heroImageCard}>

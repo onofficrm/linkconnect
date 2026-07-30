@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import styles from "./StatsSection.module.css";
+import styles from "./CustomerLogosSection.module.css";
 
 const BUSINESS_LOGOS = [
     "현대백화점.png", "롯데백화점.png", "현대아이파크.png", "스타벅스.png", "이마트.png",
