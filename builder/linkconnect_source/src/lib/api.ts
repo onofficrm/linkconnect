@@ -3691,6 +3691,7 @@ export function fetchMerchantContractRead(options?: { version?: string; cpId?: n
 export type AdminContractListItem = {
   id: number;
   advertiserId: number;
+  advertiserCode?: string;
   companyName: string;
   representativeName: string;
   businessNumber: string;

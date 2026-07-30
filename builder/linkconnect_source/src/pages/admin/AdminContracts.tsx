@@ -313,15 +313,34 @@ export function AdminContracts() {
         <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{seedMessage}</div>
       ) : null}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4 mb-8">
-        <SummaryCard title="전체" value={summary.total.toLocaleString()} suffix="건" icon={<FileText size={18} />} />
-        <SummaryCard title="승인 대기" value={summary.reviewPending.toLocaleString()} suffix="건" color="yellow" icon={<Clock size={18} />} />
-        <SummaryCard title="승인 완료" value={summary.signed.toLocaleString()} suffix="건" color="emerald" icon={<CheckCircle2 size={18} />} />
-        <SummaryCard title="반려" value={summary.rejected.toLocaleString()} suffix="건" color="red" icon={<AlertTriangle size={18} />} />
-        <SummaryCard title="미체결" value={summary.pending.toLocaleString()} suffix="건" color="yellow" icon={<Clock size={18} />} />
-        <SummaryCard title="작성 중" value={summary.inProgress.toLocaleString()} suffix="건" icon={<Clock size={18} />} />
-        <SummaryCard title="취소" value={summary.cancelled.toLocaleString()} suffix="건" color="red" icon={<AlertTriangle size={18} />} />
-        <SummaryCard title="만료" value={summary.expired.toLocaleString()} suffix="건" />
-        <SummaryCard title="재계약" value={summary.renewal.toLocaleString()} suffix="건" color="orange" />
+        {(
+          [
+            ['', '전체', summary.total, undefined, <FileText size={18} key="all" />],
+            ['review_pending', '승인 대기', summary.reviewPending, 'yellow', <Clock size={18} key="rp" />],
+            ['signed', '승인 완료', summary.signed, 'emerald', <CheckCircle2 size={18} key="sg" />],
+            ['rejected', '반려', summary.rejected, 'red', <AlertTriangle size={18} key="rj" />],
+            ['pending', '미체결', summary.pending, 'yellow', <Clock size={18} key="pd" />],
+            ['in_progress', '작성 중', summary.inProgress, undefined, <Clock size={18} key="ip" />],
+            ['cancelled', '취소', summary.cancelled, 'red', <AlertTriangle size={18} key="cx" />],
+            ['expired', '만료', summary.expired, undefined, undefined],
+            ['renewal', '재계약', summary.renewal, 'amber', undefined],
+          ] as const
+        ).map(([value, title, count, color, icon]) => (
+          <button
+            key={value || 'all'}
+            type="button"
+            onClick={() => setStatusFilter(value)}
+            className={`text-left rounded-2xl transition ring-offset-2 ${statusFilter === value ? 'ring-2 ring-cyan-500' : 'hover:opacity-90'}`}
+          >
+            <SummaryCard
+              title={title}
+              value={count.toLocaleString()}
+              suffix="건"
+              color={color}
+              icon={icon}
+            />
+          </button>
+        ))}
       </div>
 
       {error && <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -334,7 +353,7 @@ export function AdminContracts() {
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="회사명, 대표, 사업자번호, 담당자, 계약번호, 광고주 ID"
+                placeholder="회사명, ADV-코드, 아이디, 사업자번호, 계약번호"
                 className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm"
               />
             </div>
@@ -380,10 +399,21 @@ export function AdminContracts() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold text-slate-900">{item.companyName || '(회사명 없음)'}</p>
-                      <p className="text-xs text-slate-500 mt-1">광고주 #{item.advertiserId} · {item.contractVersion}</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {item.advertiserCode ? `${item.advertiserCode} · ` : ''}
+                        광고주 #{item.advertiserId} · {item.contractVersion}
+                      </p>
                       <p className="text-xs text-slate-500 font-mono mt-1">{item.contractCode || '-'}</p>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 whitespace-nowrap">{item.statusLabel}</span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                        item.status === 'review_pending'
+                          ? 'bg-amber-100 text-amber-800 font-semibold'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {item.statusLabel}
+                    </span>
                   </div>
                 </button>
               ))
@@ -400,14 +430,60 @@ export function AdminContracts() {
             <div className="max-h-[80vh] overflow-y-auto">
               <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">{detail.contract.companyName}</h2>
-                  <p className="text-sm text-slate-500">광고주 #{detail.listItem.advertiserId} · {detail.contract.contractVersion}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h2 className="text-lg font-bold text-slate-900">{detail.contract.companyName}</h2>
+                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">{detail.contract.statusLabel}</span>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    {detail.merchant?.code ? `${detail.merchant.code} · ` : ''}
+                    광고주 #{detail.listItem.advertiserId} · {detail.contract.contractVersion}
+                  </p>
                   <p className="text-sm font-mono text-slate-700 mt-1">{detail.contract.contractCode}</p>
                 </div>
                 <button type="button" onClick={() => setSelectedId(null)} className="p-2 text-slate-400 hover:text-slate-700">
                   <X size={18} />
                 </button>
               </div>
+
+              {detail.contract.status === 'review_pending' ? (
+                <div className="sticky top-0 z-10 border-b border-emerald-200 bg-emerald-50 px-5 py-4">
+                  <p className="text-sm font-bold text-emerald-900 mb-1">다음 단계: 계약 승인 또는 반려</p>
+                  <p className="text-xs text-emerald-800/80 mb-3">
+                    계약서·서명을 확인한 뒤 승인하면 광고주가 바로 광고를 등록할 수 있습니다. 반려 시에는 사유가 필요합니다.
+                  </p>
+                  <textarea
+                    value={statusReason}
+                    onChange={(e) => setStatusReason(e.target.value)}
+                    placeholder="반려·취소 등 상태 변경 시 사유를 입력하세요. (승인만 할 때는 생략 가능)"
+                    className="w-full min-h-[64px] px-3 py-2 border border-emerald-200 rounded-xl text-sm mb-3 bg-white"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void handleStatusAction('approve')}
+                      className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold disabled:opacity-50"
+                    >
+                      {saving ? '처리 중...' : '계약 승인'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving || !statusReason.trim()}
+                      onClick={() => void handleStatusAction('reject')}
+                      className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-bold disabled:opacity-50"
+                    >
+                      계약 반려
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDetailTab('admin')}
+                      className="px-4 py-2.5 rounded-lg border border-emerald-300 bg-white text-emerald-800 text-sm font-semibold"
+                    >
+                      관리 정보 보기
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="px-5 pt-4 border-b border-slate-100">
                 <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
