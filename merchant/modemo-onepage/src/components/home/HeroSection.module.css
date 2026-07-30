@@ -1,6 +1,6 @@
 /* ===== Hero Section (Section 1) ===== */
 .hero {
-    background: #000;
+    background: #0e1014;
     padding: 0 64px;
     position: relative;
     overflow: hidden;
@@ -12,10 +12,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 1200px;
-    height: 100vh;
+    min-height: min(88vh, 900px);
+    height: auto;
     margin: 0 auto;
     padding-top: 85px;
+    padding-bottom: 48px;
     gap: 7%;
 }
 
@@ -24,8 +25,8 @@
     top: 85px;
     left: 0;
     right: 0;
-    height: 255px;
-    background: linear-gradient(to bottom, #000, transparent);
+    height: 200px;
+    background: linear-gradient(to bottom, #0e1014, transparent);
     z-index: 2;
     pointer-events: none;
 }
@@ -48,12 +49,12 @@
 }
 
 .heroImageCol:first-child {
-    animation: heroImageScrollUp 5s linear alternate;
+    animation: heroImageScrollUp 12s ease-in-out alternate infinite;
 }
 
 .heroImageCol:nth-child(2) {
     padding-top: 100px;
-    animation: heroImageScrollDown 5s linear alternate;
+    animation: heroImageScrollDown 12s ease-in-out alternate infinite;
 }
 
 @keyframes heroImageScrollDown {
@@ -94,7 +95,7 @@
 .heroImageOverlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: linear-gradient(180deg, rgba(14, 16, 20, 0.15) 0%, rgba(14, 16, 20, 0.45) 100%);
     border-radius: 20px;
 }
 

@@ -1,9 +1,9 @@
 /* ===== Truth Section (3 시장진단) ===== */
 .truthSection {
-    background: #000;
+    background: #0e1014;
     text-align: left;
     color: #fff;
-    padding-top: 463px;
+    padding-top: 120px;
 }
 
 .truthTitle {
@@ -22,9 +22,9 @@
 .truthGrid {
     display: flex;
     flex-direction: column;
-    gap: 56px;
-    margin-top: 169px;
-    margin-bottom: 371px;
+    gap: 48px;
+    margin-top: 64px;
+    margin-bottom: 100px;
 }
 
 .truthCard {

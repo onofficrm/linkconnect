@@ -37,7 +37,7 @@ export default function SystemSection() {
                     {/* Item 1 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/agenda.png" alt="전담 매니저가 메모장과 펜을 들고 철거 현장을 꼼꼼하게 진단하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src="/images/2_여의도사무실.jpg" alt="전담 매니저가 현장 상황을 파악하며 상담하는 사무실·상가 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -60,7 +60,7 @@ export default function SystemSection() {
                     {/* Item 2 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/hand_with_search.png" alt="돋보기를 든 손으로 여러 철거 업체의 견적을 꼼꼼하게 비교하고 탐색하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src="/images/1_천안상가.jpg" alt="검증된 업체가 상가 현장을 직접 방문해 비교 견적을 산출하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -84,7 +84,7 @@ export default function SystemSection() {
                     {/* Item 3 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/boxing_glove.png" alt="복싱 글러브를 낀 손으로 부당한 추가금이나 미비한 마감 처리에 강력하게 대응하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src="/images/3_동탄상가.jpg" alt="시공 완료까지 책임 관리되는 상가 철거 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -121,7 +121,7 @@ export default function SystemSection() {
                     </p>
                 </div>
                 <div className={styles.systemBottomImageWrapper}>
-                    <Image src="/images/worker.png" alt="안전모를 쓴 듬직한 철거 전문가가 투명하고 안전한 시공을 책임지는 모습" width={474} height={282} />
+                    <Image src="/images/1_용인주택.jpg" alt="안전하고 투명한 시공을 마친 주택 철거 현장" width={474} height={282} />
                 </div>
             </div>
         </section>

@@ -1,5 +1,6 @@
 import common from "@/components/home/home.module.css";
 import HeroSection from "@/components/home/HeroSection";
+import EvidenceStrip from "@/components/home/EvidenceStrip";
 import WorrySection from "@/components/home/WorrySection";
 import MarketDiagnosisSection from "@/components/home/MarketDiagnosisSection";
 import SystemSection from "@/components/home/SystemSection";
@@ -43,6 +44,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HeroSection />
+      <EvidenceStrip />
       <StatsSection />
       <CustomerLogosSection />
       <WorrySection />

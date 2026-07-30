@@ -6,7 +6,7 @@ import FadeIn from "../animations/FadeIn";
 import CallButton from "../CallButton";
 import { usePartnerContext } from "../../context/PartnerContext";
 import { buildInquiryText, resolveLkCode, submitConsultation } from "../../lib/linkconnect";
-import { FiPhone } from "react-icons/fi";
+import { FiPhone, FiShield, FiClock, FiFileText } from "react-icons/fi";
 
 const SERVICE_TYPES = [
   "상가 철거",
@@ -15,6 +15,12 @@ const SERVICE_TYPES = [
   "학원·교육시설",
   "폐기물 처리",
   "기타",
+];
+
+const DESK_STEPS = [
+  { icon: FiFileText, title: "신청 접수", desc: "이름·연락처만으로 30초 신청" },
+  { icon: FiClock, title: "당일 매니저 배정", desc: "전담 매니저가 유선으로 현장 확인" },
+  { icon: FiShield, title: "3사 비교 견적", desc: "검증 파트너만 연결 · 추가금 원칙 준수" },
 ];
 
 export default function SimpleQuoteSection() {
@@ -88,29 +94,46 @@ export default function SimpleQuoteSection() {
 
   return (
     <section id="quote-request" className={styles.quoteSection}>
-      <div className={styles.container}>
-        <FadeIn>
-          <div className={styles.header}>
-            <h2 className={styles.title}>간편 견적 신청</h2>
-            <p className={styles.desc}>
-              이름과 연락처만 남겨주시면 빠르게 안내해 드립니다.
-              <br />
-              타업체 견적서가 있다면 첨부해 주세요. 비교 분석해 드립니다.
-            </p>
-            {hasPhone ? (
-              <div className={styles.callRow}>
-                <CallButton placement="form" className={styles.callLink}>
-                  <FiPhone size={18} />
-                  <span className="partner-phone-text">{data.partner_phone_display}</span>
-                  <span>전화 상담</span>
-                </CallButton>
-                <span className={styles.callHint}>안심번호로 연결됩니다</span>
-              </div>
-            ) : null}
-          </div>
+      <div className={styles.desk}>
+        <FadeIn className={styles.aside}>
+          <p className={styles.asideEyebrow}>견적 데스크</p>
+          <h2 className={styles.asideTitle}>
+            신청 한 번으로
+            <br />
+            비교부터 책임 시공까지
+          </h2>
+          <p className={styles.asideDesc}>
+            타업체 견적서가 있다면 첨부해 주세요. 전담 매니저가 비교 분석해 드립니다.
+          </p>
+          <ul className={styles.asideSteps}>
+            {DESK_STEPS.map((step) => (
+              <li key={step.title} className={styles.asideStep}>
+                <span className={styles.asideIcon}>
+                  <step.icon size={18} />
+                </span>
+                <span>
+                  <strong>{step.title}</strong>
+                  <em>{step.desc}</em>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className={styles.privacyNote}>
+            연락처는 상담 목적에만 사용되며, 제3자에게 판매하지 않습니다.
+          </p>
+          {hasPhone ? (
+            <div className={styles.callRow}>
+              <CallButton placement="form" className={styles.callLink}>
+                <FiPhone size={18} />
+                <span className="partner-phone-text">{data.partner_phone_display}</span>
+                <span>전화 상담</span>
+              </CallButton>
+              <span className={styles.callHint}>안심번호로 연결됩니다</span>
+            </div>
+          ) : null}
         </FadeIn>
 
-        <FadeIn delay={0.15}>
+        <FadeIn delay={0.1} className={styles.panel}>
           {status === "success" ? (
             <div className={styles.successBox} role="status">
               <p className={styles.successTitle}>신청이 완료되었습니다</p>
@@ -127,113 +150,119 @@ export default function SimpleQuoteSection() {
               </button>
             </div>
           ) : (
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <div className={styles.row}>
+            <>
+              <div className={styles.panelHeader}>
+                <h3 className={styles.title}>간편 견적 신청</h3>
+                <p className={styles.desc}>필수 항목만 남겨주시면 빠르게 안내드립니다.</p>
+              </div>
+              <form className={styles.form} onSubmit={handleSubmit}>
+                <div className={styles.row}>
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="name" className={styles.label}>
+                      이름 <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="name"
+                      type="text"
+                      className={styles.input}
+                      placeholder="이름을 입력해주세요"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      autoComplete="name"
+                    />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="phone" className={styles.label}>
+                      연락처 <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      className={styles.input}
+                      placeholder="010-0000-0000"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      autoComplete="tel"
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.row}>
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="serviceType" className={styles.label}>
+                      철거 유형
+                    </label>
+                    <select
+                      id="serviceType"
+                      className={styles.input}
+                      value={serviceType}
+                      onChange={(e) => setServiceType(e.target.value)}
+                    >
+                      <option value="">선택해주세요</option>
+                      {SERVICE_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label htmlFor="region" className={styles.label}>
+                      지역
+                    </label>
+                    <input
+                      id="region"
+                      type="text"
+                      className={styles.input}
+                      placeholder="예: 서울 강남구"
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className={styles.inputGroup}>
-                  <label htmlFor="name" className={styles.label}>
-                    이름 <span className={styles.required}>*</span>
+                  <label htmlFor="message" className={styles.label}>
+                    요청사항
                   </label>
-                  <input
-                    id="name"
-                    type="text"
-                    className={styles.input}
-                    placeholder="이름을 입력해주세요"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoComplete="name"
+                  <textarea
+                    id="message"
+                    className={`${styles.input} ${styles.textarea}`}
+                    placeholder="현장 규모, 희망 일정 등 자유롭게 적어주세요"
+                    rows={3}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
                   />
                 </div>
+
                 <div className={styles.inputGroup}>
-                  <label htmlFor="phone" className={styles.label}>
-                    연락처 <span className={styles.required}>*</span>
+                  <label htmlFor="file" className={styles.label}>
+                    타업체 견적서 첨부 (선택)
                   </label>
                   <input
-                    id="phone"
-                    type="tel"
-                    className={styles.input}
-                    placeholder="010-0000-0000"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    autoComplete="tel"
+                    id="file"
+                    type="file"
+                    className={styles.fileInput}
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    accept="image/*,.pdf"
                   />
+                  {file ? <p className={styles.fileName}>{file.name}</p> : null}
+                  <p className={styles.fileHint}>파일명은 상담 시 참고용으로만 기록됩니다.</p>
                 </div>
-              </div>
 
-              <div className={styles.row}>
-                <div className={styles.inputGroup}>
-                  <label htmlFor="serviceType" className={styles.label}>
-                    철거 유형
-                  </label>
-                  <select
-                    id="serviceType"
-                    className={styles.input}
-                    value={serviceType}
-                    onChange={(e) => setServiceType(e.target.value)}
-                  >
-                    <option value="">선택해주세요</option>
-                    {SERVICE_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.inputGroup}>
-                  <label htmlFor="region" className={styles.label}>
-                    지역
-                  </label>
-                  <input
-                    id="region"
-                    type="text"
-                    className={styles.input}
-                    placeholder="예: 서울 강남구"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                  />
-                </div>
-              </div>
+                {status === "error" && feedback ? (
+                  <p className={styles.errorMsg} role="alert">
+                    {feedback}
+                  </p>
+                ) : null}
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="message" className={styles.label}>
-                  요청사항
-                </label>
-                <textarea
-                  id="message"
-                  className={`${styles.input} ${styles.textarea}`}
-                  placeholder="현장 규모, 희망 일정 등 자유롭게 적어주세요"
-                  rows={3}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="file" className={styles.label}>
-                  타업체 견적서 첨부 (선택)
-                </label>
-                <input
-                  id="file"
-                  type="file"
-                  className={styles.fileInput}
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  accept="image/*,.pdf"
-                />
-                {file ? <p className={styles.fileName}>{file.name}</p> : null}
-                <p className={styles.fileHint}>파일은 상담 시 전달용으로 기록됩니다.</p>
-              </div>
-
-              {status === "error" && feedback ? (
-                <p className={styles.errorMsg} role="alert">
-                  {feedback}
-                </p>
-              ) : null}
-
-              <button type="submit" className={styles.submitBtn} disabled={status === "loading"}>
-                {status === "loading" ? "접수 중…" : "무료 견적 신청하기"}
-              </button>
-            </form>
+                <button type="submit" className={styles.submitBtn} disabled={status === "loading"}>
+                  {status === "loading" ? "접수 중…" : "무료 견적 신청하기"}
+                </button>
+              </form>
+            </>
           )}
         </FadeIn>
       </div>
