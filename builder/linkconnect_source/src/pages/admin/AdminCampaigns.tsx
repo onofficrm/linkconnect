@@ -771,7 +771,7 @@ export function AdminCampaigns() {
                         onChange={(e) => updateEditForm({ trackingBaseUrl: e.target.value })}
                         disabled={!isEditMode}
                         className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
-                        placeholder="https://yevely.jp"
+                        placeholder="https://yevely.kr"
                       />
                       <p className="text-[11px] text-slate-400 mt-1">
                         이 상품의 파트너 홍보 링크(/r/)·상담 랜딩(/c/)에 사용합니다. 비우면 환경설정의 기본 독립 도메인(또는 메인 사이트)을 사용합니다. 경로 없이 도메인만 입력하세요.

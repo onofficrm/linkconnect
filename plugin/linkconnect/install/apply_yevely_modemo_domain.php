@@ -1,6 +1,6 @@
 <?php
 /**
- * CPA-MODEMO 독립도메인 yevely.jp 적용
+ * CPA-MODEMO 독립도메인 yevely.kr 적용
  *
  * 브라우저: /plugin/linkconnect/install/apply_yevely_modemo_domain.php?action=run
  * CLI: php scripts/apply-yevely-modemo-domain.php
@@ -70,12 +70,12 @@ header('Content-Type: text/html; charset=utf-8');
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>yevely.jp → 모두의철거 독립도메인</title>
+  <title>yevely.kr → 모두의철거 독립도메인</title>
 </head>
 <body style="font-family:sans-serif;max-width:640px;margin:2rem auto;padding:1rem;">
-  <h1>yevely.jp 독립도메인 적용</h1>
-  <p>CPA-MODEMO 의 <code>cp_tracking_base_url</code> 을 <strong>https://yevely.jp</strong> 로 설정하고 ADV-0008에 연결·활성화합니다.</p>
-  <p>랜딩 본체 URL은 <code>/merchant/modemo/</code> (linkconnect) 유지, 파트너 공개 링크만 yevely.jp/r/… 로 나갑니다.</p>
+  <h1>yevely.kr 독립도메인 적용</h1>
+  <p>CPA-MODEMO 의 <code>cp_tracking_base_url</code> 을 <strong>https://yevely.kr</strong> 로 설정하고 ADV-0008에 연결·활성화합니다.</p>
+  <p>랜딩 본체 URL은 <code>/merchant/modemo/</code> (linkconnect) 유지, 파트너 공개 링크만 yevely.kr/r/… 로 나갑니다.</p>
   <p><a href="?action=run">실행</a></p>
 </body>
 </html>

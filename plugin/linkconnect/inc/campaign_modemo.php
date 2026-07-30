@@ -64,7 +64,7 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
         $def = lc_modemo_campaign_definition();
         $landing = lc_modemo_landing_url();
         // 철거 랜딩 독립 도메인 (다시봄 air911 과 동일 패턴)
-        $tracking_base = 'https://yevely.jp';
+        $tracking_base = 'https://yevely.kr';
         $table = lc_table('campaigns');
 
         $mt_id = isset($options['mt_id']) ? (int) $options['mt_id'] : 0;
@@ -126,7 +126,7 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
 
             return array(
                 'ok'      => true,
-                'message' => '모두의철거 CPA 캠페인을 갱신했습니다. (독립도메인 yevely.jp)',
+                'message' => '모두의철거 CPA 캠페인을 갱신했습니다. (독립도메인 yevely.kr)',
                 'cpId'    => $cp_id,
                 'created' => false,
                 'trackingBaseUrl' => $tracking_base,
@@ -171,7 +171,7 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
         return array(
             'ok'      => true,
             'message' => $mt_id > 0
-                ? '모두의철거 CPA 캠페인을 생성했습니다. (독립도메인 yevely.jp)'
+                ? '모두의철거 CPA 캠페인을 생성했습니다. (독립도메인 yevely.kr)'
                 : '모두의철거 CPA 캠페인을 광고주 미연결(일시중지) 상태로 등록했습니다.',
             'cpId'    => $cp_id,
             'created' => true,

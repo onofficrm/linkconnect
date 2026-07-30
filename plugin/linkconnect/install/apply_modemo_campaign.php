@@ -85,7 +85,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body style="font-family:sans-serif;max-width:640px;margin:2rem auto;padding:1rem;">
   <h1>모두의철거(modemo) CPA 광고상품 등록</h1>
-  <p>철거·원상복구 상담 DB(CPA-MODEMO)를 등록합니다. ADV-0008이 있으면 자동 연결·활성화하고, 독립도메인 <code>https://yevely.jp</code> 을 적용합니다.</p>
+  <p>철거·원상복구 상담 DB(CPA-MODEMO)를 등록합니다. ADV-0008이 있으면 자동 연결·활성화하고, 독립도메인 <code>https://yevely.kr</code> 을 적용합니다.</p>
   <p><a href="?action=run">실행</a></p>
 </body>
 </html>

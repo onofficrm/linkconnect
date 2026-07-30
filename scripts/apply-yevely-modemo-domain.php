@@ -1,6 +1,6 @@
 <?php
 /**
- * CLI: CPA-MODEMO 독립도메인 yevely.jp 적용
+ * CLI: CPA-MODEMO 독립도메인 yevely.kr 적용
  * php scripts/apply-yevely-modemo-domain.php
  */
 $root = dirname(__DIR__);
