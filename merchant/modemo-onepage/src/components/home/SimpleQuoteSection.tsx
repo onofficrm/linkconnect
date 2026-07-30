@@ -80,6 +80,7 @@ export default function SimpleQuoteSection() {
     if (result.ok) {
       setStatus("success");
       setFeedback(result.message);
+      sessionStorage.setItem("modemo_lead_submitted", "1");
       setName("");
       setPhone("");
       setServiceType("");

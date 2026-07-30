@@ -11,14 +11,14 @@
     max-width: 1440px;
     width: 100%;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
     align-items: center;
-    min-height: min(100svh, 820px);
-    height: min(100svh, 820px);
+    min-height: min(100svh, 860px);
+    height: auto;
     margin: 0 auto;
     padding-top: 88px;
     padding-bottom: 40px;
-    gap: 40px;
+    gap: 36px;
     position: relative;
 }
 
@@ -37,7 +37,7 @@
 .heroImages {
     width: 100% !important;
     height: 100%;
-    max-height: calc(min(100svh, 820px) - 128px);
+    max-height: min(720px, calc(100svh - 120px));
     display: flex;
     gap: 14px;
     padding: 0;
@@ -134,7 +134,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 20px;
     justify-content: center;
     padding-top: 0;
     min-width: 0;
@@ -247,6 +247,188 @@
     font-weight: 700;
     text-decoration: none;
     width: fit-content;
+}
+
+/* Hero lead form */
+.heroForm {
+    width: 100%;
+    max-width: 480px;
+}
+
+.heroFormInner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+}
+
+.heroFormTitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    letter-spacing: -0.02em;
+}
+
+.heroFormFields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.heroFormInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.96);
+    color: #12141a;
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+}
+
+.heroFormInput::placeholder {
+    color: rgba(18, 20, 26, 0.4);
+}
+
+.heroFormInput:focus {
+    border-color: #fe7743;
+    box-shadow: 0 0 0 3px rgba(254, 119, 67, 0.25);
+}
+
+.heroFormPrivacy {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.heroFormPrivacy input {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: #fe7743;
+}
+
+.heroFormPrivacy a {
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: underline;
+}
+
+.heroFormError {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ff8f8f;
+}
+
+.heroFormActions {
+    display: flex;
+    gap: 8px;
+}
+
+.heroFormSubmit {
+    flex: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    background: #fe7743;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.heroFormSubmit:hover:not(:disabled) {
+    background: #ff8a5c;
+    transform: translateY(-1px);
+}
+
+.heroFormSubmit:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.heroFormCall {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.heroFormCall:hover {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.heroFormHint {
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.heroFormSuccess {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    padding: 28px 18px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #7ddea4;
+}
+
+.heroFormSuccessTitle {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.heroFormSuccessDesc {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.spin {
+    animation: heroSpin 0.8s linear infinite;
+}
+
+@keyframes heroSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .heroImagesMobile {
@@ -366,6 +548,28 @@
 
     .heroCta {
         align-items: center;
+    }
+
+    .heroForm {
+        max-width: 100%;
+    }
+
+    .heroFormInner {
+        padding: 16px;
+        text-align: left;
+    }
+
+    .heroFormFields {
+        grid-template-columns: 1fr;
+    }
+
+    .heroFormActions {
+        flex-direction: column;
+    }
+
+    .heroFormSubmit,
+    .heroFormCall {
+        width: 100%;
     }
 
     .heroImagesMobile {
