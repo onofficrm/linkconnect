@@ -64,7 +64,8 @@ if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
 
         $def = lc_hasugu_cpa_campaign_definition();
         $landing = lc_hasugu_cpa_landing_url();
-        $tracking_base = defined('G5_URL') ? rtrim((string) G5_URL, '/') : '';
+        // 하수구 랜딩 독립 도메인 (다시봄 air911 / 철거 yevely 와 동일 패턴)
+        $tracking_base = 'https://skawning.co.kr';
         $table = lc_table('campaigns');
 
         $mt_id = isset($options['mt_id']) ? (int) $options['mt_id'] : 0;
