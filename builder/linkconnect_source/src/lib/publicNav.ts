@@ -39,16 +39,16 @@ export const footerCampaignNavItems: NavLinkItem[] = [
 
 /** 푸터 — 서비스 */
 export const footerServiceNavItems: NavLinkItem[] = [
-  { to: '/partner', label: '파트너센터', accent: 'emerald', scrollTarget: 'partner' },
-  { to: '/advertiser', label: '광고주센터', accent: 'cyan', scrollTarget: 'advertiser' },
+  { to: '/partner', label: '파트너센터', accent: 'emerald' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
   { to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' },
   communityNavItem,
 ];
 
-/** 센터 */
+/** 센터 — 홈에서도 섹션 스크롤이 아니라 센터로 바로 이동 */
 export const centerNavItems: NavLinkItem[] = [
-  { to: '/partner', label: '파트너센터', accent: 'emerald', scrollTarget: 'partner' },
-  { to: '/advertiser', label: '광고주센터', accent: 'cyan', scrollTarget: 'advertiser' },
+  { to: '/partner', label: '파트너센터', accent: 'emerald' },
+  { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
 ];
 
 /** 관리자센터 (헤더 우측 끝 배지) */
