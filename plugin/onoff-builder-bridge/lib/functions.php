@@ -821,7 +821,8 @@ if (!function_exists('onoff_builder_rewrite_asset_paths')) {
         }
 
         $root_assets = onoff_builder_get_import_root_assets_url($id);
-        $entry_assets = onoff_builder_get_import_base_url($id, $entry_path) . 'assets/';
+        $entry_base = onoff_builder_get_import_base_url($id, $entry_path);
+        $entry_assets = $entry_base . 'assets/';
 
         $patterns = array(
             '#\ssrc=(["\'])/assets/#i'   => ' src=$1' . $root_assets,
@@ -830,8 +831,12 @@ if (!function_exists('onoff_builder_rewrite_asset_paths')) {
             '#\shref=(["\'])\./assets/#i' => ' href=$1' . $entry_assets,
             '#\ssrc=(["\'])assets/#i'    => ' src=$1' . $entry_assets,
             '#\shref=(["\'])assets/#i'   => ' href=$1' . $entry_assets,
-            '#\shref=(["\'])\./(favicon[^"\']*)#i' => ' href=$1' . onoff_builder_get_import_base_url($id, $entry_path) . '$2',
-            '#\shref=(["\'])\./(apple-touch-icon[^"\']*)#i' => ' href=$1' . onoff_builder_get_import_base_url($id, $entry_path) . '$2',
+            // Next.js public/ 정적 이미지 (basePath 미적용 산출물 보정)
+            '#\ssrc=(["\'])/images/#i'   => ' src=$1' . $entry_base . 'images/',
+            '#\ssrcset=(["\'])/images/#i' => ' srcset=$1' . $entry_base . 'images/',
+            '#\shref=(["\'])/images/#i'  => ' href=$1' . $entry_base . 'images/',
+            '#\shref=(["\'])\./(favicon[^"\']*)#i' => ' href=$1' . $entry_base . '$2',
+            '#\shref=(["\'])\./(apple-touch-icon[^"\']*)#i' => ' href=$1' . $entry_base . '$2',
         );
 
         foreach ($patterns as $pattern => $replacement) {

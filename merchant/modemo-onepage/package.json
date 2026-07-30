@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:imports": "next build",
+    "build:imports": "next build && node ../../scripts/fix-modemo-asset-paths.mjs",
     "deploy:imports": "npm run build:imports && bash ../../scripts/sync-modemo-builder.sh",
     "start": "next start",
     "lint": "eslint"
