@@ -209,7 +209,7 @@ if (!function_exists('lc_merchant_contract_custom_render_moduicheolge_html')) {
   <section class="lc-contract-article">
     <h2>제 4 조 [ 광고비 및 정산 방식 ]</h2>
     <ol>
-      <li><strong>단가</strong>: 유효 DB 1건당 광고비는 캠페인별로 플랫폼에 설정·합의한 단가 43,000원(VAT 별도)로 산정한다.</li>
+      <li><strong>단가</strong>: 유효 DB 1건당 광고비는 캠페인별로 플랫폼에 설정·합의한 단가 43,000원(VAT 제외)로 산정한다.</li>
       <li><strong>선충전 원칙</strong>: 광고비는 &quot;갑&quot;이 &quot;을&quot;의 플랫폼(또는 지정 계좌)에 선충전하는 것을 원칙으로 하며, 유효 DB 발생 시 충전금에서 실시간(또는 주기적)으로 차감된다.</li>
       <li><strong>기본 선충전액</strong>: 계정당 최소 [ 500,000 원 ](VAT 별도)</li>
       <li>충전된 광고비가 모두 소진되기 전, &quot;갑&quot;은 광고가 중단되지 않도록 사전에 재충전하여야 한다.</li>
@@ -562,6 +562,7 @@ if (!function_exists('lc_merchant_contract_custom_snapshot_matches')) {
         }
 
         return strpos($html, '43,000원') !== false
+            && strpos($html, 'VAT 제외') !== false
             && strpos($html, '영업일 기준 10일') !== false
             && strpos($html, '영업일 기준 11일') !== false
             && (strpos($html, '모두의철거 x 링크커넥트') !== false || strpos($html, '관리자 적용') !== false);
