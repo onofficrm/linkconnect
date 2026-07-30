@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./FooterCtaSection.module.css";
 import common from "./home.module.css";
 import FadeIn from "../animations/FadeIn";
@@ -9,11 +11,11 @@ import { FiArrowRight } from "react-icons/fi";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const images = [
-    "/images/3_동탄상가.jpg",
-    "/images/3_동탄상가2.jpg",
-    "/images/3_목동상가.jpg",
-    "/images/3_목동상가2.jpg",
-    "/images/3_사당상가.jpg"
+    modemoAsset("/images/3_동탄상가.jpg"),
+    modemoAsset("/images/3_동탄상가2.jpg"),
+    modemoAsset("/images/3_목동상가.jpg"),
+    modemoAsset("/images/3_목동상가2.jpg"),
+    modemoAsset("/images/3_사당상가.jpg")
 ];
 
 export default function FooterCtaSection() {
@@ -51,7 +53,7 @@ export default function FooterCtaSection() {
                     </div>
                     <FadeIn>
                         <div className={styles.logoWrapper}>
-                            <Image src="/images/logo_white.png" alt="모두의철거 브랜드 로고" width={isMobile ? 161 : 253} height={isMobile ? 37 : 58} className={styles.logo} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거 브랜드 로고" width={isMobile ? 161 : 253} height={isMobile ? 37 : 58} className={styles.logo} />
                         </div>
                     </FadeIn>
 

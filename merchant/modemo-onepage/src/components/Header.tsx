@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import Link from "next/link";
 import styles from "./Header.module.css";
 import Image from "next/image";
@@ -88,16 +90,16 @@ export default function Header() {
                 <Link href="/" className={styles.logo}>
                     <div className={styles.desktopLogo}>
                         {isBlack ? (
-                            <Image src="/images/logo_white.png" alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
                         ) : (
-                            <Image src="/images/logo_black.png" alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
                         )}
                     </div>
                     <div className={styles.mobileLogo}>
                         {isBlack ? (
-                            <Image src="/images/logo_white.png" alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
                         ) : (
-                            <Image src="/images/logo_black.png" alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
                         )}
                     </div>
                 </Link>

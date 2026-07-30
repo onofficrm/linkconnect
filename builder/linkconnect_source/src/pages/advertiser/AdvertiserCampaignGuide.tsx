@@ -137,10 +137,11 @@ export function AdvertiserCampaignGuide() {
 
   const applyGuideData = useCallback((data: MerchantPromoGuideData) => {
     setGuideMeta(data);
-    setExists(Boolean(data.exists));
+    const hasGuide = Boolean(data.exists) || Boolean(data.guideId) || Boolean(data.id);
+    setExists(hasGuide);
     setCampaignName(data.campaignName ?? '');
     if (data.csrfToken) setCsrfToken(data.csrfToken);
-    if (data.exists) {
+    if (hasGuide) {
       setForm(
         formFromPromoGuideApi({
           promotionPoints: data.promotionPoints,
@@ -188,7 +189,15 @@ export function AdvertiserCampaignGuide() {
     const created = await createMerchantPromoGuide(cpId, token);
     if (created.csrfToken) setCsrfToken(created.csrfToken);
     setExists(true);
-    if (created.guide) applyGuideData({ ...created.guide, exists: true, csrfToken: created.csrfToken ?? token });
+    if (created.guide) {
+      applyGuideData({
+        ...created.guide,
+        exists: true,
+        csrfToken: created.csrfToken ?? token,
+        campaignName: created.guide.campaignName || campaignName,
+        skipReview,
+      });
+    }
     return created.csrfToken ?? token;
   };
 

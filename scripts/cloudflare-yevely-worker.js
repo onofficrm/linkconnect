@@ -9,34 +9,32 @@
  * 2. Worker → Settings → Domains & Routes
  *    - Custom domain: yevely.kr
  *    - Custom domain: www.yevely.kr
- *    (또는 Route: yevely.kr/* , www.yevely.kr/*  Zone: yevely.kr)
- * 3. DNS에서 기존 A(115.68.168.238) 레코드는 Worker 도메인 연결 시
- *    자동으로 Worker 형식으로 바뀌거나, A를 제거하고 Worker 레코드만 두면 됩니다.
- * 4. SSL/TLS → Overview → Full (또는 Full strict)
- *
- * 참고: origin에 yevely.kr 가상호스트가 없어도 Worker가 Host: linkconnect.co.kr
- * 로 요청하므로 403이 발생하지 않습니다.
+ * 3. SSL/TLS → Overview → Full (또는 Full strict)
  */
+const ORIGIN_HOST = 'linkconnect.co.kr';
+const MODEMO_BASE = '/plugin/onoff-builder-bridge/imports/modemo';
+
 export default {
   async fetch(request) {
     const incoming = new URL(request.url);
-    const originHost = 'linkconnect.co.kr';
-    const publicHost = incoming.hostname; // yevely.kr
+    const publicHost = incoming.hostname;
 
     const target = new URL(request.url);
     target.protocol = 'https:';
-    target.hostname = originHost;
+    target.hostname = ORIGIN_HOST;
 
     // 루트 → 모두의철거(modemo) 랜딩
     if (target.pathname === '/' || target.pathname === '') {
       target.pathname = '/merchant/modemo/';
-      if (!target.pathname.endsWith('/')) {
-        target.pathname += '/';
-      }
+    }
+
+    // 레거시 /images/* → modemo import 경로
+    if (target.pathname === '/images' || target.pathname.startsWith('/images/')) {
+      target.pathname = `${MODEMO_BASE}${target.pathname}`;
     }
 
     const headers = new Headers(request.headers);
-    headers.set('Host', originHost);
+    headers.set('Host', ORIGIN_HOST);
     headers.set('X-Forwarded-Host', publicHost);
     headers.set('X-LC-Public-Host', publicHost);
 
@@ -54,22 +52,27 @@ export default {
 
     const location = outHeaders.get('Location');
     if (location) {
-      outHeaders.set(
-        'Location',
-        location
-          .replaceAll('https://linkconnect.co.kr', `https://${publicHost}`)
-          .replaceAll('http://linkconnect.co.kr', `https://${publicHost}`)
-          .replaceAll('https://www.linkconnect.co.kr', `https://${publicHost}`)
-      );
+      outHeaders.set('Location', rewritePublicHost(location, publicHost));
     }
 
     const contentType = (outHeaders.get('Content-Type') || '').toLowerCase();
     if (contentType.includes('text/html')) {
       let html = await upstream.text();
+      // /plugin 정적 에셋은 오리진 호스트를 유지 (독립도메인에 파일이 없음)
+      const assetToken = '___LC_KEEP_ORIGIN___';
+      html = html.replace(
+        /https:\/\/(?:www\.)?linkconnect\.co\.kr(\/plugin\/[^"'\\\s>]*)/gi,
+        (_, path) => `${assetToken}${path}`
+      );
+      html = rewritePublicHost(html, publicHost);
+      html = html.split(assetToken).join(`https://${ORIGIN_HOST}`);
+      // 남은 상대 /images/ 도 보정
       html = html
-        .replaceAll('https://linkconnect.co.kr', `https://${publicHost}`)
-        .replaceAll('http://linkconnect.co.kr', `https://${publicHost}`)
-        .replaceAll('https://www.linkconnect.co.kr', `https://${publicHost}`);
+        .replaceAll('src="/images/', `src="${MODEMO_BASE}/images/`)
+        .replaceAll("src='/images/", `src='${MODEMO_BASE}/images/`)
+        .replaceAll('url("/images/', `url("${MODEMO_BASE}/images/`)
+        .replaceAll("url('/images/", `url('${MODEMO_BASE}/images/`)
+        .replaceAll('url(/images/', `url(${MODEMO_BASE}/images/`);
       outHeaders.delete('Content-Length');
       return new Response(html, {
         status: upstream.status,
@@ -85,3 +88,11 @@ export default {
     });
   },
 };
+
+function rewritePublicHost(text, publicHost) {
+  return text
+    .replaceAll('https://linkconnect.co.kr', `https://${publicHost}`)
+    .replaceAll('http://linkconnect.co.kr', `https://${publicHost}`)
+    .replaceAll('https://www.linkconnect.co.kr', `https://${publicHost}`)
+    .replaceAll('http://www.linkconnect.co.kr', `https://${publicHost}`);
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import Image from "next/image";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import styles from "./CustomerLogosSection.module.css";
@@ -27,7 +29,7 @@ const LogoTrack = ({ logos, reverse = false, prefix = '' }: { logos: string[]; r
                     <div key={`${prefix}-row-${setIndex}-${i}`} className={styles.logoCard}>
                         <div className={styles.logoImageWrapper}>
                             <Image
-                                src={`/images/business_logos/${logo}`}
+                                src={modemoAsset(`/images/business_logos/${logo}`)}
                                 alt={logo.replace('.png', '')}
                                 width={200}
                                 height={50}
@@ -50,7 +52,7 @@ export default function CustomerLogosSection() {
                 <span className={styles.reviewsTitleAccent}>700여곳</span>이 넘는 고객사가
                 <span className={styles.reviewsTitleLogoLine}>
                     <span>
-                        <Image src="/images/logo_black.png" alt="700여 곳 이상의 고객사가 선택한 투명한 철거 플랫폼 모두의철거 브랜드 로고" width={188} height={43} className={styles.reviewsTitleLogo} />
+                        <Image src={modemoAsset("/images/logo_black.png")} alt="700여 곳 이상의 고객사가 선택한 투명한 철거 플랫폼 모두의철거 브랜드 로고" width={188} height={43} className={styles.reviewsTitleLogo} />
                     </span>
                 </span>
                 를 선택했습니다.

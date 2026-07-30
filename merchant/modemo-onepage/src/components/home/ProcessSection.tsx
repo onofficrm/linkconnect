@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./ProcessSection.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
 import common from "./home.module.css";
@@ -9,7 +11,7 @@ const STEPS = [
     num: "01",
     time: "신청 당일",
     title: "전담 매니저 배정 및 밀착 관리",
-    photo: "/images/2_여의도사무실.jpg",
+    photo: modemoAsset("/images/2_여의도사무실.jpg"),
     photoAlt: "사무실 철거 현장을 점검하는 모습",
     paragraphs: [
       <>
@@ -23,7 +25,7 @@ const STEPS = [
     num: "02",
     time: "일정 조율",
     title: "사장님 스케줄에 맞춘 방문 상담",
-    photo: "/images/1_신림상가.jpg",
+    photo: modemoAsset("/images/1_신림상가.jpg"),
     photoAlt: "상가 철거 현장 방문 상담 장면",
     paragraphs: [
       <>일일이 전화를 돌릴 필요 없습니다.</>,
@@ -42,7 +44,7 @@ const STEPS = [
         견적 모아보기부터 결정까지 <br className={common.mobileBreak} />단번에
       </>
     ),
-    photo: "/images/2_성북구상가.jpg",
+    photo: modemoAsset("/images/2_성북구상가.jpg"),
     photoAlt: "상가 철거가 깔끔하게 마무리된 현장",
     paragraphs: [
       <>

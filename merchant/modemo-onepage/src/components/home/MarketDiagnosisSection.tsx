@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import Image from "next/image";
 import styles from "./MarketDiagnosisSection.module.css";
 import common from "./home.module.css";
@@ -8,15 +10,15 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const ASSETS = {
     row1: {
-        icon1: "/images/donut.png",
-        fork: "/images/fork.png"
+        icon1: modemoAsset("/images/donut.png"),
+        fork: modemoAsset("/images/fork.png")
     },
     row2: {
-        icon1: "/images/ladder.png",
-        icon2: "/images/trash_can.png"
+        icon1: modemoAsset("/images/ladder.png"),
+        icon2: modemoAsset("/images/trash_can.png")
     },
     row3: {
-        icon1: "/images/chat.png"
+        icon1: modemoAsset("/images/chat.png")
     }
 };
 

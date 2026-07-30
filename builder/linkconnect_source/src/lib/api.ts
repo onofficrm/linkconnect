@@ -132,6 +132,8 @@ export type PartnerCampaign = {
   badge: string;
   recommended: boolean;
   landingUrl: string;
+  /** 광고상품별 독립 도메인 — 있으면 홍보코드(/r/)가 이 도메인으로 발행됨 */
+  trackingBaseUrl?: string;
   thumbnailUrl?: string;
   hasPublishedGuide?: boolean;
   campaignType?: 'cpa' | 'cps';
@@ -224,6 +226,8 @@ export type PartnerLink = {
   subId: string;
   url: string;
   landingUrl?: string;
+  /** 광고상품별 독립 도메인 (있으면 url/landingUrl 에 반영됨) */
+  trackingBaseUrl?: string;
   clicks: number;
   received: number;
   approved: number;
@@ -1167,6 +1171,7 @@ export type MerchantPromoGuideLimits = {
 
 export type MerchantPromoGuideData = {
   exists: boolean;
+  id?: number;
   campaignId?: number;
   campaignName?: string;
   guideId?: number;

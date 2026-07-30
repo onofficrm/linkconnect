@@ -52,6 +52,13 @@ if (!function_exists('lc_campaign_resolve_merchant_price')) {
 if (!function_exists('lc_campaign_to_api')) {
     function lc_campaign_to_api(array $row)
     {
+        $tracking_base = '';
+        if (function_exists('lc_link_resolve_tracking_base')) {
+            $tracking_base = lc_link_resolve_tracking_base($row);
+        } elseif (!empty($row['cp_tracking_base_url'])) {
+            $tracking_base = rtrim((string) $row['cp_tracking_base_url'], '/');
+        }
+
         return array(
             'id'                => (int) $row['cp_id'],
             'code'              => (string) $row['cp_code'],
@@ -72,9 +79,10 @@ if (!function_exists('lc_campaign_to_api')) {
             'landingUrl'        => function_exists('lc_link_apply_tracking_host')
                 ? lc_link_apply_tracking_host(
                     (string) $row['cp_landing_url'],
-                    isset($row['cp_tracking_base_url']) ? (string) $row['cp_tracking_base_url'] : ''
+                    $tracking_base
                 )
                 : (string) $row['cp_landing_url'],
+            'trackingBaseUrl'   => $tracking_base,
             'thumbnailUrl'      => function_exists('lc_campaign_thumbnail_public_url')
                 ? lc_campaign_thumbnail_public_url((int) $row['cp_id'])
                 : '',

@@ -77,6 +77,29 @@ if (!function_exists('lc_link_host_from_base_url')) {
     }
 }
 
+if (!function_exists('lc_link_host_with_www_aliases')) {
+    /**
+     * @param string $host
+     * @return array<int,string>
+     */
+    function lc_link_host_with_www_aliases($host)
+    {
+        $host = strtolower(preg_replace('/:\d+$/', '', trim((string) $host)));
+        if ($host === '') {
+            return array();
+        }
+
+        $hosts = array($host);
+        if (strpos($host, 'www.') === 0) {
+            $hosts[] = substr($host, 4);
+        } else {
+            $hosts[] = 'www.' . $host;
+        }
+
+        return array_values(array_unique(array_filter($hosts)));
+    }
+}
+
 if (!function_exists('lc_link_configured_tracking_hosts')) {
     /**
      * 전역·광고상품별 독립 도메인 호스트 목록
@@ -92,8 +115,7 @@ if (!function_exists('lc_link_configured_tracking_hosts')) {
 
         $hosts = array();
         if (function_exists('lc_settings_get_bool') && lc_settings_get_bool('cpaTrackingDomainEnabled')) {
-            $h = lc_link_host_from_base_url((string) lc_settings_get('cpaTrackingBaseUrl', ''));
-            if ($h !== '') {
+            foreach (lc_link_host_with_www_aliases(lc_link_host_from_base_url((string) lc_settings_get('cpaTrackingBaseUrl', ''))) as $h) {
                 $hosts[] = $h;
             }
         }
@@ -108,8 +130,7 @@ if (!function_exists('lc_link_configured_tracking_hosts')) {
                 );
                 if ($result) {
                     while ($row = sql_fetch_array($result)) {
-                        $h = lc_link_host_from_base_url((string) ($row['cp_tracking_base_url'] ?? ''));
-                        if ($h !== '') {
+                        foreach (lc_link_host_with_www_aliases(lc_link_host_from_base_url((string) ($row['cp_tracking_base_url'] ?? ''))) as $h) {
                             $hosts[] = $h;
                         }
                     }
@@ -120,6 +141,51 @@ if (!function_exists('lc_link_configured_tracking_hosts')) {
         $hosts = array_values(array_unique(array_filter($hosts)));
 
         return $hosts;
+    }
+}
+
+if (!function_exists('lc_campaign_builtin_tracking_base_map')) {
+    /**
+     * 내장 광고상품 코드 → 독립 도메인 (추가 상품은 여기 또는 관리자 trackingBaseUrl)
+     *
+     * @return array<string,string>
+     */
+    function lc_campaign_builtin_tracking_base_map()
+    {
+        return array(
+            'CPA-DASIBOM' => 'https://air911.co.kr',
+            'CPA-MODEMO'  => 'https://yevely.kr',
+            'CPA-HASUGU'  => 'https://skawning.co.kr',
+        );
+    }
+}
+
+if (!function_exists('lc_campaign_sync_builtin_tracking_domains')) {
+    /**
+     * 내장 상품의 cp_tracking_base_url 만 보정 (이름/단가 등은 건드리지 않음)
+     */
+    function lc_campaign_sync_builtin_tracking_domains()
+    {
+        if (!lc_db_installed()) {
+            return;
+        }
+
+        $table = lc_table('campaigns');
+        if (!function_exists('lc_db_column_exists') || !lc_db_column_exists($table, 'cp_tracking_base_url')) {
+            return;
+        }
+
+        foreach (lc_campaign_builtin_tracking_base_map() as $code => $base) {
+            $code_esc = lc_sql_escape($code);
+            $base_esc = lc_sql_escape(rtrim($base, '/'));
+            lc_sql_query(
+                " UPDATE `{$table}`
+                  SET cp_tracking_base_url = '{$base_esc}', cp_updated_at = NOW()
+                  WHERE cp_code = '{$code_esc}'
+                    AND (cp_tracking_base_url = '' OR cp_tracking_base_url <> '{$base_esc}') ",
+                false
+            );
+        }
     }
 }
 
@@ -458,29 +524,66 @@ if (!function_exists('lc_link_status_label')) {
     }
 }
 
+if (!function_exists('lc_link_resolve_tracking_base')) {
+    /**
+     * 링크/캠페인 행에서 홍보 URL용 독립 도메인 해석
+     */
+    function lc_link_resolve_tracking_base(array $row)
+    {
+        $tracking_base = trim((string) ($row['cp_tracking_base_url'] ?? ''));
+        if ($tracking_base !== '') {
+            return rtrim($tracking_base, '/');
+        }
+
+        $cp_id = (int) ($row['cp_id'] ?? 0);
+        if ($cp_id > 0 && lc_db_installed()) {
+            $cp_table = lc_table('campaigns');
+            if (function_exists('lc_db_column_exists') && lc_db_column_exists($cp_table, 'cp_tracking_base_url')) {
+                $camp = lc_sql_fetch(
+                    " SELECT cp_tracking_base_url, cp_code FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ",
+                    false
+                );
+                if (is_array($camp)) {
+                    $tracking_base = trim((string) ($camp['cp_tracking_base_url'] ?? ''));
+                    if ($tracking_base === '') {
+                        $code = strtoupper(trim((string) ($camp['cp_code'] ?? '')));
+                        $map = lc_campaign_builtin_tracking_base_map();
+                        if ($code !== '' && isset($map[$code])) {
+                            $tracking_base = $map[$code];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $tracking_base !== '' ? rtrim($tracking_base, '/') : '';
+    }
+}
+
 if (!function_exists('lc_link_to_api')) {
     function lc_link_to_api(array $row)
     {
-        $tracking_base = isset($row['cp_tracking_base_url']) ? (string) $row['cp_tracking_base_url'] : '';
+        $tracking_base = lc_link_resolve_tracking_base($row);
 
         return array(
-            'id'          => (int) $row['lk_id'],
-            'code'        => (string) $row['lk_code'],
-            'campaign'    => (string) ($row['cp_name'] ?? ''),
-            'campaignId'  => (int) $row['cp_id'],
-            'channel'     => (string) $row['lk_channel'],
-            'subId'       => (string) $row['lk_sub_id'],
-            'url'         => lc_link_public_url($row['lk_code'], $tracking_base),
-            'landingUrl'  => lc_landing_public_url($row['lk_code'], $tracking_base),
-            'clicks'      => (int) ($row['click_cnt'] ?? 0),
-            'received'    => (int) ($row['received_cnt'] ?? 0),
-            'approved'    => (int) ($row['approved_cnt'] ?? 0),
-            'canceled'    => (int) ($row['canceled_cnt'] ?? 0),
-            'estRevenue'  => (int) ($row['est_revenue'] ?? 0),
-            'confRevenue' => (int) ($row['conf_revenue'] ?? 0),
-            'status'      => lc_link_status_label($row['lk_status']),
-            'statusCode'  => (string) $row['lk_status'],
-            'createdAt'   => (string) $row['lk_created_at'],
+            'id'               => (int) $row['lk_id'],
+            'code'             => (string) $row['lk_code'],
+            'campaign'         => (string) ($row['cp_name'] ?? ''),
+            'campaignId'       => (int) $row['cp_id'],
+            'channel'          => (string) $row['lk_channel'],
+            'subId'            => (string) $row['lk_sub_id'],
+            'url'              => lc_link_public_url($row['lk_code'], $tracking_base),
+            'landingUrl'       => lc_landing_public_url($row['lk_code'], $tracking_base),
+            'trackingBaseUrl'  => $tracking_base,
+            'clicks'           => (int) ($row['click_cnt'] ?? 0),
+            'received'         => (int) ($row['received_cnt'] ?? 0),
+            'approved'         => (int) ($row['approved_cnt'] ?? 0),
+            'canceled'         => (int) ($row['canceled_cnt'] ?? 0),
+            'estRevenue'       => (int) ($row['est_revenue'] ?? 0),
+            'confRevenue'      => (int) ($row['conf_revenue'] ?? 0),
+            'status'           => lc_link_status_label($row['lk_status']),
+            'statusCode'       => (string) $row['lk_status'],
+            'createdAt'        => (string) $row['lk_created_at'],
         );
     }
 }
@@ -516,13 +619,10 @@ if (!function_exists('lc_cpa_partner_create_shortlink')) {
         }
 
         $lk_code = (string) ($link['lk_code'] ?? '');
-        $tracking_base = '';
-        if ($lk_code !== '') {
-            $with = lc_link_get_with_campaign($lk_code);
-            if (is_array($with)) {
-                $tracking_base = (string) ($with['cp_tracking_base_url'] ?? '');
-            }
-        }
+        $with = $lk_code !== '' ? lc_link_get_with_campaign($lk_code) : null;
+        $tracking_base = is_array($with)
+            ? lc_link_resolve_tracking_base($with)
+            : lc_link_resolve_tracking_base($link);
         $promo_url = lc_link_public_url($lk_code, $tracking_base);
         if ($promo_url === '' || !function_exists('lc_shortlink_store_for_partner')) {
             $empty['message'] = '숏링크를 만들 수 없습니다.';
@@ -532,11 +632,62 @@ if (!function_exists('lc_cpa_partner_create_shortlink')) {
 
         $public_base = lc_link_tracking_base_url($tracking_base);
 
+        // 이전에 메인 도메인으로 저장된 CPA 숏링크 타겟을 독립 도메인으로 갱신
+        if (function_exists('lc_cpa_migrate_shortlink_target')) {
+            lc_cpa_migrate_shortlink_target($pt_id, $lk_id, $lk_code, $promo_url);
+        }
+
         return lc_shortlink_store_for_partner($pt_id, $promo_url, array(
             'merchant_code' => 'cpa:' . (string) ($link['lk_code'] ?? ''),
             'product_url'   => 'lk:' . $lk_id,
             'public_base'   => $public_base,
         ));
+    }
+}
+
+if (!function_exists('lc_cpa_migrate_shortlink_target')) {
+    /**
+     * 동일 홍보코드의 기존 /s/ 타겟을 현재 독립도메인 promo URL 로 맞춤
+     */
+    function lc_cpa_migrate_shortlink_target($pt_id, $lk_id, $lk_code, $promo_url)
+    {
+        $pt_id = (int) $pt_id;
+        $lk_id = (int) $lk_id;
+        $lk_code = trim((string) $lk_code);
+        $promo_url = trim((string) $promo_url);
+        if ($pt_id <= 0 || $promo_url === '' || !preg_match('#^https?://#i', $promo_url)) {
+            return false;
+        }
+        if (!function_exists('lc_lp_shortlink_ensure_table') || !lc_lp_shortlink_ensure_table()) {
+            return false;
+        }
+
+        $table = lc_table('lp_shortlinks');
+        $conds = array();
+        if ($lk_id > 0) {
+            $conds[] = "product_url = 'lk:" . (int) $lk_id . "'";
+        }
+        if ($lk_code !== '') {
+            $conds[] = "merchant_code = 'cpa:" . lc_sql_escape($lk_code) . "'";
+        }
+        if (!$conds) {
+            return false;
+        }
+
+        $hash = hash('sha256', $promo_url);
+        lc_sql_query(
+            " UPDATE `{$table}` SET
+                target_url = '" . lc_sql_escape($promo_url) . "',
+                target_hash = '" . lc_sql_escape($hash) . "',
+                merchant_code = 'cpa:" . lc_sql_escape($lk_code) . "',
+                product_url = 'lk:" . (int) $lk_id . "'
+              WHERE pt_id = {$pt_id}
+                AND (" . implode(' OR ', $conds) . ")
+                AND target_url <> '" . lc_sql_escape($promo_url) . "' ",
+            false
+        );
+
+        return true;
     }
 }
 
@@ -617,6 +768,10 @@ if (!function_exists('lc_link_create')) {
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'link' => null);
+        }
+
+        if (function_exists('lc_campaign_sync_builtin_tracking_domains')) {
+            lc_campaign_sync_builtin_tracking_domains();
         }
 
         $pt_id = (int) $pt_id;
@@ -711,7 +866,9 @@ if (!function_exists('lc_link_resolve_redirect_url')) {
     {
         $landing = trim((string) ($link['cp_landing_url'] ?? ''));
         $lk_code = trim((string) ($link['lk_code'] ?? ''));
-        $tracking_base = isset($link['cp_tracking_base_url']) ? (string) $link['cp_tracking_base_url'] : '';
+        $tracking_base = function_exists('lc_link_resolve_tracking_base')
+            ? lc_link_resolve_tracking_base($link)
+            : (isset($link['cp_tracking_base_url']) ? (string) $link['cp_tracking_base_url'] : '');
 
         if ($landing !== '') {
             $landing = lc_link_apply_tracking_host($landing, $tracking_base);

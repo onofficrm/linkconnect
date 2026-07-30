@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   Link2,
   Loader2,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react';
 import {
   PartnerPromoGuideDetail,
+  PartnerPromoGuideImage,
   PublicCampaign,
   buildPartnerCpaShortlink,
   confirmPartnerPromoGuide,
@@ -44,6 +46,38 @@ function GuideList({ title, items, tone = 'slate' }: { title: string; items: str
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function GuideImages({ images }: { images: PartnerPromoGuideImage[] }) {
+  if (!images.length) return null;
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+      <h3 className="text-sm font-bold text-slate-900 mb-3">홍보 소재 · 배너 ({images.length})</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {images.map((img) => {
+          const title = img.imageTitle || img.originalFilename || '홍보 이미지';
+          return (
+            <div key={img.id} className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+              <div className="aspect-video bg-slate-100">
+                <img src={img.downloadUrl} alt={title} className="w-full h-full object-contain" loading="lazy" />
+              </div>
+              <div className="p-2 flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-slate-700 truncate">{title}</p>
+                <a
+                  href={img.downloadUrl}
+                  download={img.originalFilename || `promo-${img.id}.jpg`}
+                  className="shrink-0 p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  aria-label={`${title} 다운로드`}
+                >
+                  <Download size={14} />
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -320,6 +354,7 @@ export function CpaCampaignDetail() {
                     <GuideList title="홍보 포인트" items={guide.promotionPoints} />
                     <GuideList title="추천 키워드" items={guide.recommendedKeywords} />
                     <GuideList title="금지 문구" items={guide.forbiddenWords} tone="rose" />
+                    <GuideImages images={guide.images ?? []} />
                     <GuideList title="주의사항" items={guide.precautions} tone="amber" />
                     <GuideList title="유효 DB 기준" items={guide.validDbRules} />
                     <GuideList title="무효 DB 기준" items={guide.invalidDbRules} tone="rose" />

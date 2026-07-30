@@ -43,9 +43,13 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
     setError('');
     try {
       const data = await fetchAdminPromoGuide(campaignId);
-      setGuide(data);
-      if (data.guideId) {
-        const logData = await fetchAdminPromoGuideLogs(data.guideId);
+      const normalized = {
+        ...data,
+        exists: Boolean(data.exists) || Boolean(data.guideId),
+      };
+      setGuide(normalized);
+      if (normalized.guideId) {
+        const logData = await fetchAdminPromoGuideLogs(normalized.guideId);
         setLogs(logData.items);
       } else {
         setLogs([]);
@@ -117,8 +121,13 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
             <div className="py-16 flex items-center justify-center text-slate-500 gap-2">
               <Loader2 className="animate-spin" size={20} /> 불러오는 중...
             </div>
-          ) : !guide?.exists ? (
-            <p className="text-sm text-slate-500 py-8 text-center">등록된 홍보 가이드가 없습니다.</p>
+          ) : error && !guide?.exists ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+          ) : !guide?.exists && !(guide?.guideId) ? (
+            <div className="py-8 text-center space-y-3">
+              <p className="text-sm text-slate-500">등록된 홍보 가이드가 없습니다.</p>
+              <p className="text-xs text-slate-400">광고주가 가이드를 저장하면 여기에 내용·소재가 표시됩니다.</p>
+            </div>
           ) : (
             <>
               {error ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
@@ -128,61 +137,65 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                 <div className="rounded-xl border border-slate-200 p-3">
                   <p className="text-xs text-slate-500 mb-1">가이드 상태</p>
                   <span className={`inline-flex px-2 py-1 rounded-lg text-xs font-bold border ${promoGuideStatusStyle(status)}`}>
-                    {guide.guideStatusLabel || promoGuideStatusLabel(status)}
+                    {guide!.guideStatusLabel || promoGuideStatusLabel(status)}
                   </span>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-3">
                   <p className="text-xs text-slate-500 mb-1">최종 수정 / 공개일</p>
-                  <p className="font-medium text-slate-800">{formatDate(guide.updatedAt)}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">공개: {formatDate(guide.publishedAt)}</p>
+                  <p className="font-medium text-slate-800">{formatDate(guide!.updatedAt)}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">공개: {formatDate(guide!.publishedAt)}</p>
                 </div>
               </div>
 
-              {guide.revisionReason ? (
+              {guide!.revisionReason ? (
                 <div className="rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
                   <p className="font-bold mb-1">수정 요청 사유</p>
-                  <p className="whitespace-pre-wrap break-words">{guide.revisionReason}</p>
+                  <p className="whitespace-pre-wrap break-words">{guide!.revisionReason}</p>
                 </div>
               ) : null}
 
-              {(guide.promotionPoints?.length ?? 0) > 0 ? (
+              {(guide!.promotionPoints?.length ?? 0) > 0 ? (
                 <section>
                   <h4 className="text-sm font-bold text-slate-900 mb-2">핵심 홍보 포인트</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide.promotionPoints!.map((item) => (
+                    {guide!.promotionPoints!.map((item) => (
                       <li key={item} className="break-words">{item}</li>
                     ))}
                   </ul>
                 </section>
-              ) : null}
+              ) : (
+                <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
+                  핵심 홍보 포인트가 아직 입력되지 않았습니다.
+                </section>
+              )}
 
-              {(guide.recommendedKeywords?.length ?? 0) > 0 ? (
+              {(guide!.recommendedKeywords?.length ?? 0) > 0 ? (
                 <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">추천키워드 ({guide.recommendedKeywords!.length})</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mb-2">추천키워드 ({guide!.recommendedKeywords!.length})</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {guide.recommendedKeywords!.map((kw) => (
+                    {guide!.recommendedKeywords!.map((kw) => (
                       <span key={kw} className="px-2 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700">{kw}</span>
                     ))}
                   </div>
                 </section>
               ) : null}
 
-              {(guide.forbiddenWords?.length ?? 0) > 0 ? (
+              {(guide!.forbiddenWords?.length ?? 0) > 0 ? (
                 <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">금지어 ({guide.forbiddenWords!.length})</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mb-2">금지어 ({guide!.forbiddenWords!.length})</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {guide.forbiddenWords!.map((kw) => (
+                    {guide!.forbiddenWords!.map((kw) => (
                       <span key={kw} className="px-2 py-1 rounded-lg bg-rose-50 text-xs font-medium text-rose-700">{kw}</span>
                     ))}
                   </div>
                 </section>
               ) : null}
 
-              {(guide.images?.length ?? 0) > 0 ? (
+              {(guide!.images?.length ?? 0) > 0 ? (
                 <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">이미지 ({guide.images!.length})</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mb-2">이미지 ({guide!.images!.length})</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {guide.images!.map((img) => (
+                    {guide!.images!.map((img) => (
                       <a
                         key={img.id}
                         href={img.downloadUrl}
@@ -196,47 +209,52 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                     ))}
                   </div>
                 </section>
-              ) : null}
+              ) : (
+                <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
+                  등록된 소재(이미지)가 없습니다.
+                </section>
+              )}
 
-              {(guide.precautions?.length ?? 0) > 0 ? (
+              {(guide!.precautions?.length ?? 0) > 0 ? (
                 <section>
                   <h4 className="text-sm font-bold text-slate-900 mb-2">유의사항</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide.precautions!.map((item) => (
+                    {guide!.precautions!.map((item) => (
                       <li key={item} className="break-words">{item}</li>
                     ))}
                   </ul>
                 </section>
               ) : null}
 
-              {(guide.validDbRules?.length ?? 0) > 0 ? (
+              {(guide!.validDbRules?.length ?? 0) > 0 ? (
                 <section>
                   <h4 className="text-sm font-bold text-slate-900 mb-2">유효 DB 기준</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide.validDbRules!.map((item) => (
+                    {guide!.validDbRules!.map((item) => (
                       <li key={item} className="break-words">{item}</li>
                     ))}
                   </ul>
                 </section>
               ) : null}
 
-              {(guide.invalidDbRules?.length ?? 0) > 0 ? (
+              {(guide!.invalidDbRules?.length ?? 0) > 0 ? (
                 <section>
                   <h4 className="text-sm font-bold text-slate-900 mb-2">무효 DB 기준</h4>
                   <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide.invalidDbRules!.map((item) => (
+                    {guide!.invalidDbRules!.map((item) => (
                       <li key={item} className="break-words">{item}</li>
                     ))}
                   </ul>
                 </section>
               ) : null}
 
-              {guide.approvalType ? (
+              {guide!.approvalType ? (
                 <section className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                  {promoGuideApprovalLabel(guide.approvalType)}
+                  {promoGuideApprovalLabel(guide!.approvalType)}
                 </section>
               ) : null}
 
+              {guide?.guideId ? (
               <div className="rounded-xl border border-slate-200 p-4 space-y-3">
                 <p className="text-sm font-bold text-slate-800">관리 작업</p>
                 <div className="flex flex-wrap gap-2">
@@ -262,6 +280,7 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                   </button>
                 </div>
               </div>
+              ) : null}
 
               {showLogs ? (
                 <section>

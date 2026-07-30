@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./VerifiedSection.module.css";
 import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
@@ -7,7 +9,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const items = [
   {
-    photo: "/images/2_수원상가.jpg",
+    photo: modemoAsset("/images/2_수원상가.jpg"),
     title: "신원 인증 업체",
     alt: "검증된 파트너가 시공한 상가 철거 현장",
     desc: (
@@ -19,7 +21,7 @@ const items = [
     ),
   },
   {
-    photo: "/images/3_목동상가.jpg",
+    photo: modemoAsset("/images/3_목동상가.jpg"),
     title: "자가 장비 보유",
     alt: "자체 장비로 진행된 상가 철거 현장",
     desc: (
@@ -31,7 +33,7 @@ const items = [
     ),
   },
   {
-    photo: "/images/1_신림상가.jpg",
+    photo: modemoAsset("/images/1_신림상가.jpg"),
     title: "무사고/AS 이행률 100%",
     alt: "마감까지 책임 시공된 상가 현장",
     desc: (
@@ -42,7 +44,7 @@ const items = [
     ),
   },
   {
-    photo: "/images/3_사당상가.jpg",
+    photo: modemoAsset("/images/3_사당상가.jpg"),
     title: "평점 및 고객후기",
     alt: "고객 만족으로 마무리된 철거 현장",
     desc: "모든 시공은 완료 후 고객 만족도 조사를 진행합니다. 파트너 업체의 평판도 함께 확인해보세요.",

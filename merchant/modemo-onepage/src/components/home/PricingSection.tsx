@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./PricingSection.module.css";
 import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
@@ -9,7 +11,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 const CARDS = [
   {
     num: "01",
-    photo: "/images/2_일산상가.jpg",
+    photo: modemoAsset("/images/2_일산상가.jpg"),
     photoAlt: "수수료 거품 없이 진행된 상가 철거 현장",
     title: "업계 최저 수수료",
     lines: [
@@ -20,7 +22,7 @@ const CARDS = [
   },
   {
     num: "02",
-    photo: "/images/1_용인주택.jpg",
+    photo: modemoAsset("/images/1_용인주택.jpg"),
     photoAlt: "실속 있는 견적으로 마무리된 주택 철거 현장",
     title: "마케팅 비용 최소화",
     lines: [
@@ -30,7 +32,7 @@ const CARDS = [
   },
   {
     num: "03",
-    photo: "/images/3_동탄상가.jpg",
+    photo: modemoAsset("/images/3_동탄상가.jpg"),
     photoAlt: "비교 경쟁으로 최적가를 찾은 상가 철거 현장",
     title: "투명한 비교 경쟁",
     lines: [

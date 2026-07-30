@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./RegionPartnerSection.module.css";
 import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
@@ -140,13 +142,13 @@ export default function RegionPartnerSection() {
                 <FadeIn>
                     <div className={styles.photoStrip} aria-hidden={false}>
                         <div className={styles.photoStripItem}>
-                            <img src="/images/1_천안상가.jpg" alt="천안 상가 철거 현장" />
+                            <img src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 상가 철거 현장" />
                         </div>
                         <div className={styles.photoStripItem}>
-                            <img src="/images/3_사당상가.jpg" alt="사당 상가 철거 현장" />
+                            <img src={modemoAsset("/images/3_사당상가.jpg")} alt="사당 상가 철거 현장" />
                         </div>
                         <div className={styles.photoStripItem}>
-                            <img src="/images/2_수원상가.jpg" alt="수원 상가 철거 현장" />
+                            <img src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 상가 철거 현장" />
                         </div>
                     </div>
                 </FadeIn>

@@ -3,6 +3,11 @@ require_once __DIR__ . '/_common.php';
 
 $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
 
+// 내장 광고상품 독립도메인이 비어 있으면 보정 (홍보코드 발행 전 보장)
+if (function_exists('lc_campaign_sync_builtin_tracking_domains')) {
+    lc_campaign_sync_builtin_tracking_domains();
+}
+
 if ($method === 'GET') {
     $partner = lc_api_require_active_partner();
     $pt_id = (int) $partner['pt_id'];

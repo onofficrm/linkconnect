@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./SafetySection.module.css";
 import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
@@ -8,7 +10,7 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 const ITEMS = [
   {
     num: "01",
-    photo: "/images/3_목동상가2.jpg",
+    photo: modemoAsset("/images/3_목동상가2.jpg"),
     photoAlt: "추가금 없이 계약대로 마무리된 철거 현장",
     title: "추가금 방지 특약",
     desc: (
@@ -21,7 +23,7 @@ const ITEMS = [
   },
   {
     num: "02",
-    photo: "/images/1_일산카페.jpg",
+    photo: modemoAsset("/images/1_일산카페.jpg"),
     photoAlt: "표준 계약서로 진행된 카페 철거 현장",
     title: "표준 계약서 의무화",
     desc: (
@@ -34,7 +36,7 @@ const ITEMS = [
   },
   {
     num: "03",
-    photo: "/images/2_성북구상가.jpg",
+    photo: modemoAsset("/images/2_성북구상가.jpg"),
     photoAlt: "AS까지 책임지고 마무리한 상가 현장",
     title: "AS 끝까지 책임",
     desc: (

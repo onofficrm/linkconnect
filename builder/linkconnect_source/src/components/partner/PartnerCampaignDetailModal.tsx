@@ -160,7 +160,7 @@ export function PartnerCampaignDetailModal({
   const tabs: Array<{ id: DetailTab; label: string; show: boolean }> = [
     { id: 'intro', label: '상품소개', show: true },
     { id: 'guide', label: '홍보 가이드', show: hasGuide },
-    { id: 'assets', label: '홍보자료', show: hasGuide && images.length > 0 },
+    { id: 'assets', label: '홍보자료', show: hasGuide },
   ];
 
   return (
@@ -480,6 +480,14 @@ function GuideTab({
 }
 
 function AssetsTab({ images }: { images: PartnerPromoGuideImage[] }) {
+  if (images.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-500">
+        광고주가 등록한 홍보 소재(배너·이미지)가 아직 없습니다.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {images.map((img) => (

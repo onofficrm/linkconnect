@@ -1,5 +1,7 @@
 "use client";
 
+import { modemoAsset } from "@/lib/modemoAsset";
+
 import styles from "./SystemSection.module.css";
 import common from "./home.module.css";
 import FadeIn from "../animations/FadeIn";
@@ -37,7 +39,7 @@ export default function SystemSection() {
                     {/* Item 1 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/2_여의도사무실.jpg" alt="전담 매니저가 현장 상황을 파악하며 상담하는 사무실·상가 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={modemoAsset("/images/2_여의도사무실.jpg")} alt="전담 매니저가 현장 상황을 파악하며 상담하는 사무실·상가 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -60,7 +62,7 @@ export default function SystemSection() {
                     {/* Item 2 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/1_천안상가.jpg" alt="검증된 업체가 상가 현장을 직접 방문해 비교 견적을 산출하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={modemoAsset("/images/1_천안상가.jpg")} alt="검증된 업체가 상가 현장을 직접 방문해 비교 견적을 산출하는 모습" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -84,7 +86,7 @@ export default function SystemSection() {
                     {/* Item 3 */}
                     <FadeIn className={styles.systemCard} viewport={{ amount: isMobile ? 0.5 : 0.8, once: true }}>
                         <div className={styles.systemCardImage}>
-                            <img src="/images/3_동탄상가.jpg" alt="시공 완료까지 책임 관리되는 상가 철거 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={modemoAsset("/images/3_동탄상가.jpg")} alt="시공 완료까지 책임 관리되는 상가 철거 현장" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div className={styles.systemCardContent}>
                             <div style={{ width: '100%' }}>
@@ -121,7 +123,7 @@ export default function SystemSection() {
                     </p>
                 </div>
                 <div className={styles.systemBottomImageWrapper}>
-                    <Image src="/images/1_용인주택.jpg" alt="안전하고 투명한 시공을 마친 주택 철거 현장" width={474} height={282} />
+                    <Image src={modemoAsset("/images/1_용인주택.jpg")} alt="안전하고 투명한 시공을 마친 주택 철거 현장" width={474} height={282} />
                 </div>
             </div>
         </section>

@@ -35,17 +35,31 @@ $allowed_hosts = function_exists('lc_link_allowed_redirect_hosts')
     ? lc_link_allowed_redirect_hosts()
     : array();
 
-// CPA /r/{code} 타겟이면 해당 캠페인 독립 도메인도 허용
+// CPA /r/{code} 타겟이면 캠페인 독립 도메인으로 재작성·허용
 if (preg_match('#^/r/([A-Za-z0-9_-]+)$#', $path, $m) && function_exists('lc_link_get_with_campaign')) {
     $link = lc_link_get_with_campaign($m[1]);
     if (is_array($link)) {
-        $tb = function_exists('lc_link_tracking_base_url')
-            ? lc_link_tracking_base_url((string) ($link['cp_tracking_base_url'] ?? ''))
-            : '';
+        $tb = function_exists('lc_link_resolve_tracking_base')
+            ? lc_link_resolve_tracking_base($link)
+            : (function_exists('lc_link_tracking_base_url')
+                ? lc_link_tracking_base_url((string) ($link['cp_tracking_base_url'] ?? ''))
+                : '');
+        if ($tb !== '' && function_exists('lc_link_public_url')) {
+            $canonical = lc_link_public_url($m[1], $tb);
+            if ($canonical !== '') {
+                $target = $canonical;
+                $host = strtolower((string) parse_url($target, PHP_URL_HOST));
+                $path = (string) parse_url($target, PHP_URL_PATH);
+            }
+        }
         $th = function_exists('lc_link_host_from_base_url')
             ? lc_link_host_from_base_url($tb)
             : '';
-        if ($th !== '') {
+        if ($th !== '' && function_exists('lc_link_host_with_www_aliases')) {
+            foreach (lc_link_host_with_www_aliases($th) as $alias) {
+                $allowed_hosts[] = $alias;
+            }
+        } elseif ($th !== '') {
             $allowed_hosts[] = $th;
         }
     }

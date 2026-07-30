@@ -3,6 +3,10 @@ require_once __DIR__ . '/_common.php';
 
 lc_api_require_method('GET');
 
+if (function_exists('lc_campaign_sync_builtin_tracking_domains')) {
+    lc_campaign_sync_builtin_tracking_domains();
+}
+
 if (LC_PARTNER_GUARD_ENABLED && lc_db_installed() && !lc_is_super_admin()) {
     lc_api_require_active_partner();
 }
