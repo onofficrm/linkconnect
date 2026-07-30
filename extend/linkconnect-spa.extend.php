@@ -128,9 +128,12 @@ if (!function_exists('linkconnect_tracking_home_landing_file')) {
             }
         }
 
-        // 기본: air911 → 다시봄
+        // 기본: air911 → 다시봄, yevely.jp → 모두의철거
         if ($landing_path === '' && ($host === 'air911.co.kr' || $host === 'www.air911.co.kr')) {
             $landing_path = '/merchant/dasibom/';
+        }
+        if ($landing_path === '' && ($host === 'yevely.jp' || $host === 'www.yevely.jp')) {
+            $landing_path = '/merchant/modemo/';
         }
 
         if ($landing_path === '') {

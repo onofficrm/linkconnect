@@ -112,15 +112,15 @@ if ($method === 'POST') {
         if (!function_exists('lc_campaign_ensure_modemo')) {
             lc_api_error('modemo 캠페인 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
         }
-        $opts = array();
+        $opts = array('activate' => true);
         if (isset($body['advertiserMbId']) && trim((string) $body['advertiserMbId']) !== '') {
             $opts['advertiser_mb_id'] = trim((string) $body['advertiserMbId']);
         }
         if (isset($body['mtId']) && (int) $body['mtId'] > 0) {
             $opts['mt_id'] = (int) $body['mtId'];
         }
-        if (!empty($body['activate'])) {
-            $opts['activate'] = true;
+        if (array_key_exists('activate', $body) && empty($body['activate'])) {
+            unset($opts['activate']);
         }
         $result = lc_campaign_ensure_modemo($opts);
         if (!$result['ok']) {
