@@ -89,15 +89,17 @@ if ($method === 'POST') {
         if (!function_exists('lc_campaign_ensure_hasugu_cpa')) {
             lc_api_error('hasugu_cpa 캠페인 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
         }
-        $opts = array();
+        $opts = array('activate' => true);
         if (isset($body['advertiserMbId']) && trim((string) $body['advertiserMbId']) !== '') {
             $opts['advertiser_mb_id'] = trim((string) $body['advertiserMbId']);
+        } else {
+            $opts['advertiser_mb_id'] = 'drainpolice';
         }
         if (isset($body['mtId']) && (int) $body['mtId'] > 0) {
             $opts['mt_id'] = (int) $body['mtId'];
         }
-        if (!empty($body['activate'])) {
-            $opts['activate'] = true;
+        if (array_key_exists('activate', $body) && empty($body['activate'])) {
+            unset($opts['activate']);
         }
         $result = lc_campaign_ensure_hasugu_cpa($opts);
         if (!$result['ok']) {

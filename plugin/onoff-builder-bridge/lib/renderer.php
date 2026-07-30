@@ -103,6 +103,22 @@ if (!function_exists('onoff_builder_landing_context_script')) {
         }
 
         $params = $_GET;
+        if ($id === 'hasugu_cpa') {
+            if (empty($params['cid']) && empty($params['campaign_id'])) {
+                $params['cid'] = 'CPA-HASUGU';
+            }
+            if (empty($params['mid']) && empty($params['merchant_id'])) {
+                $params['mid'] = 'ADV-0007';
+            }
+        }
+        if ($id === 'modemo') {
+            if (empty($params['cid']) && empty($params['campaign_id'])) {
+                $params['cid'] = 'CPA-MODEMO';
+            }
+            if (empty($params['mid']) && empty($params['merchant_id'])) {
+                $params['mid'] = 'ADV-0008';
+            }
+        }
         $ctx = lc_landing_context_for_api($params);
         $json = json_encode($ctx, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
         if ($json === false) {
