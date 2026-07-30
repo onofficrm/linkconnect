@@ -53,7 +53,8 @@ const TRACK_KEYS = [
 ] as const;
 
 const PAGE_ROOT_ID = 'hasugu-cpa-merchant-page';
-const DEFAULT_MERCHANT_ID = 'hasugu_cpa';
+const DEFAULT_MERCHANT_ID = 'ADV-0007';
+const DEFAULT_CAMPAIGN_ID = 'CPA-HASUGU';
 const DEFAULT_MERCHANT_NAME = '하수구·배관 전문센터';
 const DEFAULT_PRIVACY_URL = '/privacy';
 const DEFAULT_LEAD_SUBMIT_URL = '/plugin/linkconnect/api/receive.php';
@@ -215,7 +216,7 @@ export async function fetchLandingContext(): Promise<Partial<PartnerData>> {
   if (lk) params.set('lkCode', lk);
   const pid = getParam('pid') || getParam('partner_id');
   if (pid) params.set('pid', pid);
-  const cid = getParam('cid') || getParam('campaign_id');
+  const cid = getParam('cid') || getParam('campaign_id') || DEFAULT_CAMPAIGN_ID;
   if (cid) params.set('cid', cid);
   const mid = getParam('mid') || getParam('merchant_id') || DEFAULT_MERCHANT_ID;
   if (mid) params.set('mid', mid);
