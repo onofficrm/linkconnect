@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import styles from "./RegionPartnerSection.module.css";
 import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
@@ -125,34 +124,29 @@ export default function RegionPartnerSection() {
                             <span className={common.badge}>지역 맞춤 파트너</span>
                         </div>
                         <h2 className={styles.title}>
-                            사장님 동네를 잘 아는 <br className={common.mobileBreak} />
-                            <b>이웃 전문가</b>가 <br className={common.mobileBreak} />
-                            우선 배정됩니다
+                            사장님 동네를 잘 아는{" "}
+                            <br className={common.mobileBreak} />
+                            <b>이웃 전문가</b>가 우선 배정됩니다
                         </h2>
-                        <div className={`${styles.description} ${styles.desktopText}`}>
-                            <p>
-                                철거 비용과 속도는 현장 인근의 장비 가동 능력과 지역 폐기물 처리
-                                규정을 얼마나 잘 아느냐에 달려 있습니다.
-                            </p>
-                            <p>
-                                모두의철거는 전국 지역 거점 파트너 시스템을 통해, 사장님
-                                현장에서 가장 가깝고 숙련된 베테랑 소장님을 매칭하여
-                            </p>
-                            <p>불필요한 이동 비용은 줄이고 시공의 정확도는 높였습니다.</p>
+                        <p className={styles.description}>
+                            철거 비용과 속도는 현장 인근 장비와 지역 폐기물 규정에
+                            달립니다. 모두의철거는 거점 파트너로{" "}
+                            <strong>가장 가까운 베테랑</strong>을 매칭해 이동비는 줄이고
+                            시공 정확도는 높입니다.
+                        </p>
+                    </div>
+                </FadeIn>
+
+                <FadeIn>
+                    <div className={styles.photoStrip} aria-hidden={false}>
+                        <div className={styles.photoStripItem}>
+                            <img src="/images/1_천안상가.jpg" alt="천안 상가 철거 현장" />
                         </div>
-                        <div className={`${styles.description} ${styles.mobileText}`}>
-                            <p>
-                                철거 비용과 속도는 현장 인근의 장비 가동 능력과
-                                지역 폐기물 처리 규정을 얼마나 잘 아느냐에
-                                달려 있습니다.
-                            </p>
-                            <br />
-                            <p>
-                                모두의철거는 전국 지역 거점 파트너 시스템을 통해,
-                                사장님 현장에서 가장 가깝고 숙련된 베테랑 소장님을
-                                매칭하여 불필요한 이동 비용은 줄이고
-                                시공의 정확도는 높였습니다.
-                            </p>
+                        <div className={styles.photoStripItem}>
+                            <img src="/images/3_사당상가.jpg" alt="사당 상가 철거 현장" />
+                        </div>
+                        <div className={styles.photoStripItem}>
+                            <img src="/images/2_수원상가.jpg" alt="수원 상가 철거 현장" />
                         </div>
                     </div>
                 </FadeIn>
@@ -178,7 +172,7 @@ export default function RegionPartnerSection() {
                                                         className={styles.avatarIcon}
                                                         fill={item.author.color}
                                                         viewBox="0 0 24 24"
-                                                        xmlns="http://www.w3.org/2-0/svg"
+                                                        xmlns="http://www.w3.org/2000/svg"
                                                     >
                                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
                                                     </svg>

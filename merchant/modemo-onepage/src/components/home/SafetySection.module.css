@@ -1,155 +1,157 @@
-/* ===== Safety Section (8 안전장치) ===== */
 .safetySection {
-    background: #fff;
-    text-align: center;
-    padding: 287px 0 258px;
+  background: #f6f5f2;
+  text-align: left;
+  padding: 96px 64px 88px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.safetyBadge {
-    display: inline-block;
-    padding: 5px 18px;
-    border: 1px solid rgba(0, 0, 0, 0.38);
-    border-radius: 20px;
-    font-size: 16px;
-    color: #676767;
-    margin: 26px 0;
-    line-height: 1.45;
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 48px;
+  width: 100%;
 }
 
 .safetyTitle {
-    margin: 18px 0 85px;
-    font-size: 48px;
-    line-height: 1.31;
-    color: #000;
-    font-weight: 400;
-    letter-spacing: -0.48px;
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.28;
+  color: #12141a;
+  font-weight: 700;
+  letter-spacing: -0.4px;
 }
 
 .safetyTitle b {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 .safetyList {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.safetyRow {
+  width: 100%;
 }
 
 .safetyCard {
-    display: flex;
-    align-items: center;
-    padding: 60px 30px;
-    text-align: left;
-    margin: 32px 0;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 32px;
+  align-items: center;
+  padding: 28px 8px;
+  text-align: left;
 }
 
-.safetyCardIcon {
-    width: 100px;
-    height: 100px;
-    flex-shrink: 0;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.safetyMedia {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #1a1c22;
 }
 
-.safetyCardIcon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.safetyMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.safetyNum {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  min-width: 40px;
+  height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(14, 16, 20, 0.82);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
 }
 
 .safetyCardText {
-    flex: 1;
-    padding-left: 42px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .safetyCardTitle {
-    font-size: 24px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.9);
-    letter-spacing: -0.12px;
-    line-height: 1.2;
-    margin: 0;
-    white-space: pre-wrap;
+  font-size: 24px;
+  font-weight: 700;
+  color: #12141a;
+  letter-spacing: -0.3px;
+  line-height: 1.25;
+  margin: 0;
 }
 
 .safetyCardDesc {
-    font-size: 20px;
-    font-weight: 400;
-    color: rgba(0, 0, 0, 0.7);
-    letter-spacing: -0.1px;
-    line-height: 1.5;
-    margin: 0;
-    white-space: pre-wrap;
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(18, 20, 26, 0.62);
+  letter-spacing: -0.1px;
+  line-height: 1.55;
+  margin: 0;
+  word-break: keep-all;
 }
 
 .safetyDivider {
-    width: 100%;
-    height: 1px;
-    background: #d9d9d9;
+  width: 100%;
+  height: 1px;
+  background: rgba(18, 20, 26, 0.1);
 }
 
-/* Media Queries */
 @media (max-width: 768px) {
+  .safetySection {
+    padding: 72px 20px 64px;
+  }
 
-    .safetySection {
-        padding: 228px 0;
-    }
+  .header {
+    margin-bottom: 32px;
+    gap: 10px;
+  }
 
-    .safetyTitle {
-        margin-bottom: 94px;
-        font-size: 32px;
-        line-height: 150%;
-        letter-spacing: -0.64px;
-    }
+  .safetyTitle {
+    font-size: 30px;
+    line-height: 1.35;
+  }
 
-    .safetyList {
-        margin-top: 0;
-        padding: 0;
-        gap: 32px;
-    }
+  .safetyCard {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px 0;
+  }
 
-    .safetyCard {
-        padding: 52px 16px 64px;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 40px;
-        margin: 0;
-    }
+  .safetyMedia {
+    max-width: 100%;
+  }
 
-    .safetyCardIcon {
-        width: 120px;
-        height: 120px;
-    }
+  .safetyCardTitle {
+    font-size: 20px;
+  }
 
-    .safetyCardText {
-        padding-left: 0;
-        align-items: center;
-        gap: 20px;
-    }
+  .safetyCardDesc {
+    font-size: 15px;
+  }
 
-    .safetyCardTitle {
-        font-size: 20px;
-        line-height: 120%;
-        letter-spacing: -0.1px;
-    }
-
-    .safetyCardDesc {
-        font-size: 16px;
-        word-break: keep-all;
-        line-height: 1.45;
-        color: rgba(0, 0, 0, 0.70);
-        letter-spacing: -0.24px;
-    }
-
-    .safetyDivider {
-        display: none;
-    }
+  .safetyDivider {
+    display: none;
+  }
 }

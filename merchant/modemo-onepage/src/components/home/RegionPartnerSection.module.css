@@ -1,25 +1,25 @@
 .regionPartnerSection {
     background-color: #fff;
-    padding-top: 100px;
-    padding-bottom: 388px;
+    padding-top: 88px;
+    padding-bottom: 96px;
 }
 
 .header {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 86px;
+    gap: 14px;
+    margin-bottom: 36px;
     width: 100%;
 }
 
 .title {
-    font-size: 48px;
-    font-weight: 400;
-    line-height: 1.2;
-    letter-spacing: -0.96px;
-    color: #000;
-    margin-top: 18px;
-    margin-bottom: 36px;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.28;
+    letter-spacing: -0.4px;
+    color: #12141a;
+    margin: 0;
 }
 
 .title b {
@@ -27,11 +27,42 @@
 }
 
 .description {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 400;
-    line-height: 1.45;
+    line-height: 1.55;
     letter-spacing: -0.1px;
-    color: rgba(0, 0, 0, 0.55);
+    color: rgba(18, 20, 26, 0.58);
+    margin: 0;
+    max-width: 720px;
+    word-break: keep-all;
+}
+
+.description strong {
+    font-weight: 700;
+    color: #12141a;
+}
+
+.photoStrip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+.photoStripItem {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #1a1c22;
+}
+
+.photoStripItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .gallery {
@@ -51,24 +82,25 @@
 
 .card {
     background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 16px;
-    padding: 32px 30px;
-    box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.02), 0px 12px 32px 0px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(18, 20, 26, 0.1);
+    border-radius: 14px;
+    padding: 24px 22px;
+    box-shadow: none;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
     text-align: left;
 }
 
 .cardText {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 400;
-    line-height: 1.45;
+    line-height: 1.55;
     letter-spacing: -0.08px;
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(18, 20, 26, 0.78);
     margin: 0;
     white-space: pre-wrap;
+    word-break: keep-all;
 }
 
 .author {
@@ -173,56 +205,44 @@
 
 @media (max-width: 768px) {
     .regionPartnerSection {
-        padding-top: 40px;
-        padding-bottom: 207px;
+        padding-top: 56px;
+        padding-bottom: 72px;
         padding-left: 20px;
         padding-right: 20px;
     }
 
     .header {
-        margin-bottom: 86px;
-    }
-
-    .badge {
-        font-size: 14px;
-        color: rgba(103, 103, 103, 0.8);
-        border-color: rgba(0, 0, 0, 0.2);
+        margin-bottom: 24px;
+        gap: 10px;
     }
 
     .title {
-        margin: 12px 0 36px;
-        font-size: 32px;
-        letter-spacing: -0.64px;
-        line-height: 1.4;
+        font-size: 30px;
+        letter-spacing: -0.4px;
+        line-height: 1.35;
     }
 
     .description {
-        font-size: 16px;
-        letter-spacing: -0.08px;
+        font-size: 15px;
     }
 
+    .photoStrip {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 28px;
+    }
 
-
-    .desktopText {
+    .photoStripItem:last-child {
         display: none;
-    }
-
-    .mobileText {
-        display: block;
     }
 
     .actionButton {
         padding: 13px 24px 13px 32px;
     }
-
 }
 
 @media (min-width: 769px) {
     .mobileBr {
-        display: none;
-    }
-
-    .mobileText {
         display: none;
     }
 }
