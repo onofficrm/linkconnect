@@ -209,6 +209,28 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                 </section>
               ) : null}
 
+              {(guide.validDbRules?.length ?? 0) > 0 ? (
+                <section>
+                  <h4 className="text-sm font-bold text-slate-900 mb-2">유효 DB 기준</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                    {guide.validDbRules!.map((item) => (
+                      <li key={item} className="break-words">{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
+              {(guide.invalidDbRules?.length ?? 0) > 0 ? (
+                <section>
+                  <h4 className="text-sm font-bold text-slate-900 mb-2">무효 DB 기준</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                    {guide.invalidDbRules!.map((item) => (
+                      <li key={item} className="break-words">{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
+
               {guide.approvalType ? (
                 <section className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
                   {promoGuideApprovalLabel(guide.approvalType)}

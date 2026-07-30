@@ -1322,6 +1322,12 @@ export function merchantAdApplyAssetUrl(relative: string) {
   return `${MERCHANT_API_BASE}/${relative}`;
 }
 
+export function adminAdApplyAssetUrl(relative: string) {
+  if (!relative) return '';
+  if (relative.startsWith('http') || relative.startsWith('/')) return relative;
+  return `${ADMIN_API_BASE}/${relative}`;
+}
+
 export function fetchAdminAdApplyList(filters?: { status?: string; page?: number; limit?: number }) {
   return adminApiGet<{
     items: MerchantAdApplication[];
