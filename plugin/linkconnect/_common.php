@@ -107,6 +107,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/campaign_dasibom.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php')) {
     require_once LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/campaign_modemo.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/campaign_modemo.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
     require_once LC_PLUGIN_PATH . '/inc/settlement.php';
 }

@@ -1,0 +1,177 @@
+/* ===== Verified Section (Safety Device) ===== */
+.verifiedSection {
+    background: #fff;
+    padding: 120px 0 298px;
+    overflow: hidden;
+}
+
+.verifiedHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 100px;
+    width: 100%;
+    padding: 26px 0;
+}
+
+.verifiedTitle {
+    font-weight: 500;
+    font-size: 48px;
+    line-height: 1.31;
+    letter-spacing: -0.24px;
+    color: #000;
+}
+
+.verifiedTitle strong {
+    font-weight: 700;
+}
+
+.verifiedSubtitle {
+    font-size: 20px;
+    line-height: 1.45;
+    color: #676767;
+    letter-spacing: -0.1px;
+}
+
+.verifiedSubtitle strong {
+    font-weight: 700;
+    color: #676767;
+}
+
+/* Grid Layout */
+.verifiedGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    width: 100%;
+}
+
+.verifiedCard {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 44px 12px;
+    gap: 32px;
+    width: 100%;
+    border-radius: 12px;
+    /* Optional: Add hover effect or subtle transition if desired */
+}
+
+.verifiedCardIcon {
+    width: 100%;
+    height: 180px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.verifiedCardIcon img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    position: relative;
+    left: -40px;
+}
+
+.verifiedCardContent {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+}
+
+.verifiedCardTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000;
+    letter-spacing: -0.24px;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.verifiedCardDesc {
+    font-size: 20px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.verifiedCardDesc strong {
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+
+@media (max-width: 768px) {
+
+    .verifiedSection {
+        padding: 60px 20px 120px;
+    }
+
+    .verifiedHeader {
+        align-items: flex-start;
+        /* Changed from center to flex-start based on design */
+        text-align: left;
+        /* Changed from center to left based on design */
+        margin-bottom: 120px;
+        gap: 0;
+    }
+
+    .verifiedTitle {
+        margin-top: 18px;
+
+        font-size: 28px;
+        letter-spacing: -0.28px;
+        word-break: keep-all;
+        margin-bottom: 40px;
+    }
+
+    .titleGap {
+        height: 20px;
+    }
+
+    .verifiedSubtitle {
+        font-size: 16px;
+        word-break: keep-all;
+    }
+
+    .verifiedGrid {
+        grid-template-columns: 1fr;
+        gap: 60px;
+    }
+
+    .verifiedCard {
+        align-items: center;
+        text-align: center;
+        padding: 12px;
+    }
+
+    .verifiedCardIcon {
+        height: 120px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .verifiedCardIcon img {
+        left: 0;
+        height: 100%;
+        width: auto;
+    }
+
+    .verifiedCardContent {
+        gap: 20px;
+        padding: 0 10px;
+    }
+
+    .verifiedCardTitle {
+        font-size: 20px;
+    }
+
+    .verifiedCardDesc {
+        font-size: 16px;
+        line-height: 1.5;
+    }
+}

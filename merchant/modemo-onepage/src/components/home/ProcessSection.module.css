@@ -1,0 +1,360 @@
+/* ===== Process Section (5 프로세스) ===== */
+.processSection {
+    background: #fff;
+    padding-top: 122px;
+    padding-bottom: 340px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.processInner {
+    max-width: 1280px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 123px;
+    padding: 0;
+    /* basic side padding */
+}
+
+/* Header */
+.processHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Left aligned as per Figma text alignment in the group (or check if it should be center) - Figma node 0:313 has items-start */
+    width: 100%;
+    gap: 18px;
+}
+
+.processTitle {
+    font-size: 48px;
+    line-height: 1.31;
+    color: #000;
+    letter-spacing: -0.24px;
+    font-weight: 500;
+    /* Regular by default */
+}
+
+.lightText {
+    font-weight: 400;
+}
+
+.boldText {
+    font-weight: 700;
+}
+
+.processSubtitle {
+    font-size: 20px;
+    line-height: 1.45;
+    color: #676767;
+    letter-spacing: -0.1px;
+    margin-top: 8px;
+}
+
+.processSubtitle p {
+    margin: 0;
+}
+
+/* Grid / Timeline */
+.processGridContainer {
+    width: 100%;
+    position: relative;
+    display: flex;
+    column-gap: 31px;
+}
+
+.timelineLine {
+    width: 17px;
+}
+
+.processGrid {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.processItem {
+    display: flex;
+    padding: 66px 47px 43px 47px;
+    align-items: flex-start;
+    column-gap: 114px;
+
+}
+
+/* Alternate Layout: Even items (2) reversed */
+/* Alternate Layout Removed as per Figma Design */
+
+/* Image Wrapper */
+.processImageWrapper {
+    flex: 0 0 auto;
+    width: 360px;
+    height: 260px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.compositeImageArea {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.compImg {
+    position: absolute;
+    object-fit: contain;
+}
+
+/* Item 1: Folder + Phone */
+.img1Base {
+    /* Folder */
+    width: 160px;
+    left: 41px;
+    top: 50px;
+    z-index: 1;
+}
+
+.img1Overlay {
+    /* Phone */
+    width: 179px;
+    left: 150px;
+    top: 45px;
+    z-index: 2;
+    transform: rotate(26.55deg);
+}
+
+/* Item 2: Calendar + Pin */
+.img2Base {
+    /* Calendar */
+    width: 170px;
+    left: 28px;
+    top: 57px;
+    z-index: 2;
+    /* Calendar is in front */
+}
+
+.img2Overlay {
+    /* Pin Map */
+    width: 250px;
+    left: 116px;
+    top: 10px;
+    z-index: 1;
+    /* Pin is behind */
+}
+
+/* Item 3: Document + Hand */
+.img3Base {
+    /* Document/Clipboard */
+    width: 137px;
+    left: 43px;
+    top: 57px;
+    z-index: 1;
+}
+
+.img3Overlay {
+    /* Hand w/ Pencil */
+    width: 191px;
+    left: 148px;
+    top: 33px;
+    z-index: 2;
+    transform: rotate(-4.69deg);
+}
+
+/* Process Content Styles (Desktop) */
+.processContentWrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 30px;
+}
+
+.processStepHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.stepNumber {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #FE7743;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+}
+
+.stepTitle {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.stepDesc {
+    font-size: 20px;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.57;
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+
+.stepDesc p {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .processSection {
+        padding-top: 100px;
+        padding-bottom: 100px;
+        align-items: flex-start;
+    }
+
+    .processInner {
+        gap: 0;
+        padding: 0 20px;
+        align-items: flex-start;
+    }
+
+    .processHeader {
+        align-items: flex-start;
+        text-align: left;
+        padding: 26px 0;
+        row-gap: 0;
+        margin-bottom: 97px;
+    }
+
+    .processTitle {
+        margin-top: 19px;
+        font-size: 24px;
+        line-height: 1.3;
+        letter-spacing: -0.12px;
+        white-space: pre-wrap;
+    }
+
+    .processTitle p:first-child {
+        margin-bottom: 10px;
+    }
+
+    .processSubtitle {
+        font-size: 16px;
+        line-height: 1.45;
+        letter-spacing: -0.08px;
+        margin-top: 28px;
+        white-space: pre-wrap;
+    }
+
+    /* Grid Container & Timeline */
+    .processGridContainer {
+        flex-direction: row;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .mobileTimelineContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 4px;
+        padding-top: 44px;
+        padding-bottom: 39px;
+        flex-shrink: 0;
+    }
+
+    .timelineLine {
+        display: block;
+        width: 4px;
+        height: 100%;
+        position: static;
+        transform: none;
+    }
+
+    .processGrid {
+        row-gap: 27px;
+        padding: 0 12px 0 20px;
+    }
+
+    .processItem {
+        flex-direction: column !important;
+        gap: 16px;
+        padding: 36px 0 43px;
+        background-color: transparent;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+
+    /* Hide Images on Mobile */
+    .processImageWrapper {
+        display: none;
+    }
+
+    .processContentWrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+        padding-top: 30px;
+        /* Top spacing for each item */
+    }
+
+    .processStepHeader {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+        width: 100%;
+    }
+
+    /* Step Number (Orange Circle) */
+    .stepNumber {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background-color: #FE7743;
+        border: 1px solid #FE7743;
+        border-radius: 20px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.57;
+    }
+
+    .stepTitle {
+        font-size: 20px;
+        font-weight: 500;
+        line-height: 1.45;
+        color: #000;
+        margin: 0;
+    }
+
+    .stepDesc {
+        font-size: 16px;
+        line-height: 1.57;
+        color: rgba(0, 0, 0, 0.7);
+        /* Slightly transparent black */
+        white-space: pre-wrap;
+        width: 100%;
+    }
+
+    /* Specific overrides for first item if needed */
+    .processItem:first-child .processContentWrapper {
+        padding-top: 12px;
+    }
+}

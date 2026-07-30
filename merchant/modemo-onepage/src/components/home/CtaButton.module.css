@@ -1,0 +1,40 @@
+.ctaButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 60px;
+    padding: 12px 26px 12px 28px;
+    background: #fff;
+    border-radius: 30px;
+    color: #000;
+    font-size: 18px;
+    font-weight: 500;
+    text-decoration: none;
+    letter-spacing: -0.08px;
+    line-height: 1.45;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: fit-content;
+}
+
+.ctaButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(231, 231, 231, 0.35);
+    background: #f5f5f5;
+    color: #000;
+}
+
+.ctaArrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 1200px) {
+    .ctaButton {
+        padding: 16px 26px 16px 27px;
+        font-weight: 400;
+        font-size: 16px;
+    }
+}

@@ -1,0 +1,252 @@
+/* ===== System Section (4 안심시스템) ===== */
+.systemSection {
+    background: #fff;
+    padding: 360px 0 214px 0;
+}
+
+.systemHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 152px;
+}
+
+.sectionTitle {
+    margin-bottom: 8px;
+}
+
+.sectionSubtitle {
+    color: #676767;
+    font-family: Pretendard;
+    font-size: var(--Section-subtitle-mobile, 16px);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 145%;
+    /* 23.2px */
+    letter-spacing: -0.08px;
+}
+
+.systemGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 152px;
+    margin-bottom: 210px;
+}
+
+.systemCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 60px;
+    padding: 0 60px;
+}
+
+.systemCardImage {
+    width: 250px;
+    height: 250px;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.systemCardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 12px 13px;
+}
+
+.systemProgressBar {
+    width: 60px;
+    height: 8px;
+    background: var(--accent-2-color, #fe7743);
+    border-radius: 4px;
+    margin-bottom: 40px;
+}
+
+.systemCardTitle {
+    font-size: 25px;
+    font-weight: 500;
+    color: #000;
+    line-height: 1.45;
+    letter-spacing: -0.125px;
+}
+
+.systemCardTitle span {
+    font-weight: 700;
+}
+
+.systemCardDesc {
+    font-size: 20px;
+    color: #676767;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    word-break: keep-all;
+}
+
+.systemCardDesc p {
+    margin: 0;
+}
+
+.systemCardDescHighlight {
+    display: block;
+}
+
+.systemBottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding-top: 200px;
+    padding-bottom: 111px;
+    gap: 50px;
+    background: #F8F9FA;
+}
+
+.systemBottomText {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 13px;
+    color: #000;
+    text-align: center;
+}
+
+.systemBottomTitle {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.systemBottomDesc {
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.systemBottomImageWrapper {
+    width: 474px;
+    height: 282px;
+    position: relative;
+}
+
+
+
+.mobileBreak {
+    display: none;
+}
+
+/* Media Queries */
+@media (max-width: 1200px) {
+    .systemCard {
+        gap: 32px;
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobileBreak {
+        display: inline;
+    }
+
+    .systemSection {
+        padding: 100px 0 0 0;
+    }
+
+    .systemInner {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .systemHeader {
+        align-items: flex-start;
+        text-align: left;
+        margin-bottom: 58px;
+        gap: 12px;
+    }
+
+    .systemHeader .sectionTitle {
+        font-size: 24px;
+        letter-spacing: -0.24px;
+        white-space: pre-wrap;
+        margin-bottom: 0;
+    }
+
+    .systemHeader .sectionSubtitle {
+        font-size: 16px;
+        letter-spacing: -0.08px;
+        margin-top: 20px;
+        margin-bottom: 0;
+    }
+
+    .systemGrid {
+        gap: 152px;
+        padding-top: 62px;
+        margin-bottom: 120px;
+    }
+
+    .systemCard {
+        flex-direction: column;
+        align-items: center;
+        padding: 0 4px;
+        gap: 16px;
+    }
+
+    .systemCardImage {
+        width: 250px;
+        height: 250px;
+    }
+
+    .systemCardContent {
+        align-items: flex-start;
+        text-align: left;
+        padding: 12px 0;
+        gap: 32px;
+        width: 100%;
+    }
+
+    .systemProgressBar {
+        margin: 0;
+        margin-bottom: 40px;
+        width: 44px;
+        height: 4px;
+    }
+
+    .systemCardTitle {
+        font-size: 20px;
+        letter-spacing: -0.1px;
+    }
+
+    .systemCardDesc {
+        font-size: 16px;
+        gap: 12px;
+    }
+
+    .systemBottom {
+        padding-top: 120px;
+        padding-bottom: 80px;
+        gap: 50px;
+    }
+
+    .systemBottomTitle {
+        font-size: 32px;
+        letter-spacing: -0.18px;
+        line-height: 1.2;
+    }
+
+    .systemBottomDesc {
+        font-size: 16px;
+        letter-spacing: -0.08px;
+    }
+
+    .systemBottomImageWrapper {
+        width: 287px;
+        height: 171px;
+    }
+}
+
+@media (max-width: 500px) {
+    /* No additional changes needed if 768px block covers it well, keeping it clean */
+}

@@ -1,0 +1,271 @@
+/* ===== Final CTA (11 종결) ===== */
+.finalCta {
+    /* Removed padding from here as it seems handled by page layout or inner container in Figma */
+    /* Figma shows "11 종결" section has px-[142px] */
+    padding: 0 142px;
+    background: #fff;
+    width: 100%;
+    margin-bottom: 20px;
+    /* Some spacing at the very bottom */
+}
+
+.finalCtaContainer {
+    background: #000;
+    border-radius: 50px;
+    /* All corners 50px as per "rounded-tl-[50px]..." and "rounded-bl-[50px]..." */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Top content part */
+.contentWrapper {
+    padding-top: 180px;
+    padding-bottom: 112px;
+    padding-left: 64px;
+    padding-right: 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 99px;
+    /* Gap between text and buttons */
+    width: 100%;
+}
+
+.textGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+}
+
+.title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.4;
+    margin: 0;
+    letter-spacing: -0.48px;
+}
+
+.desc {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.buttonGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+}
+
+.primaryButton {
+    height: 76px;
+    padding: 12px 52px 12px 66px;
+    /* Adjusted padding */
+    border-radius: 38px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.primaryButton:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.secondaryButton {
+    height: 76px;
+    width: 266px;
+    padding: 12px 16px;
+    border-radius: 38px;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dedede;
+    font-size: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.secondaryButton:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.logo {
+    margin-right: 39px;
+}
+
+/* Image Grid Part */
+.imageGrid {
+    width: 100%;
+    overflow: hidden;
+    height: 416px;
+}
+
+.imageTrack {
+    display: flex;
+    gap: 16px;
+    width: max-content;
+    animation: scrollTrack 60s linear infinite;
+}
+
+@keyframes scrollTrack {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(calc(-50% - 8px));
+    }
+}
+
+.imageItem {
+    overflow: hidden;
+    position: relative;
+    width: 305px;
+    height: 416px;
+    flex-shrink: 0;
+}
+
+.imageItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 16px 16px 0 0;
+}
+
+.imageItem .imageOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+
+
+/* Mobile Line Break default hidden */
+.mobileBreak {
+    display: none;
+}
+
+/* Responsive */
+@media (max-width: 1280px) {
+    .finalCta {
+        padding: 0 40px;
+    }
+
+    .title {
+        font-size: 36px;
+    }
+
+    .primaryButton,
+    .secondaryButton {
+        height: 64px;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .finalCta {
+        padding: 0;
+        margin-bottom: 0;
+    }
+
+    .finalCtaContainer {
+        border-radius: 20px 20px 0 0;
+    }
+
+    .contentWrapper {
+        padding: 120px 33px 90px 33px;
+        gap: 68px;
+    }
+
+    .textGroup {
+        gap: 24px;
+    }
+
+    .title {
+        font-size: 36px;
+        line-height: 1.4;
+        letter-spacing: -0.36px;
+    }
+
+    .desc {
+        font-size: 16px;
+        line-height: 1.45;
+    }
+
+    .mobileBreak {
+        display: block;
+    }
+
+    .buttonGroup {
+        width: 100%;
+        gap: 16px;
+    }
+
+    .primaryButton {
+        height: auto;
+        padding: 16px 38px 16px 48px;
+        font-size: 16px;
+        border-radius: 38px;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .secondaryButton {
+        height: auto;
+        max-width: 221px;
+        padding: 16px;
+        font-size: 16px;
+        border-radius: 38px;
+    }
+
+    .logoWrapper {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .logo {
+        width: 161px;
+        height: 37px;
+        display: block;
+        margin-right: 27px;
+    }
+
+    .imageGrid {
+        height: 230px;
+    }
+
+    .imageItem {
+        width: 160px;
+        height: 230px;
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "modemo",
+  "name": "모두의철거 CPA 랜딩",
+  "path": "modemo",
+  "entry": "index.html",
+  "enabled": true,
+  "needs_build": false,
+  "mode": "standalone",
+  "seo_title": "모두의철거 | 상가·주택 철거 비교견적",
+  "seo_description": "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",
+  "import_path": "/plugin/onoff-builder-bridge/imports/modemo",
+  "created_at": "2026-07-30 00:00:00",
+  "memo": "CPA 캠페인 cp_landing_url 예: /merchant/modemo/?lkCode={code} (ADV-0008)"
+}

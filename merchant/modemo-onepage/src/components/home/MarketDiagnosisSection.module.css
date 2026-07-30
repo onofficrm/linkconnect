@@ -1,0 +1,354 @@
+/* ===== Truth Section (3 시장진단) ===== */
+.truthSection {
+    background: #000;
+    text-align: left;
+    color: #fff;
+    padding-top: 463px;
+}
+
+.truthTitle {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 300;
+
+}
+
+.truthSubtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 20px;
+    margin-top: 19px;
+}
+
+.truthGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+    margin-top: 169px;
+    margin-bottom: 371px;
+}
+
+.truthCard {
+    display: flex;
+    align-items: flex-start;
+    gap: 84px;
+    padding: 40px 0;
+}
+
+.truthCardImage {
+    width: 603px;
+    height: 432px;
+    border-radius: 16px;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.truthCardImage img {
+    position: absolute;
+}
+
+.row1IconWrapper {
+    position: absolute;
+    left: 133px;
+    top: 91px;
+    width: 169px;
+    height: 169px;
+    z-index: 1;
+}
+
+.row1Icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.row1ForkWrapper {
+    position: absolute;
+    left: 263px;
+    top: 60px;
+    width: 231px;
+    height: 231px;
+    z-index: 2;
+    transform: rotate(-16.36deg);
+}
+
+.row1Fork {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Row 2 specific positioning */
+.row2Icon1Wrapper {
+    position: absolute;
+    left: 106px;
+    top: 47px;
+    width: 226px;
+    height: 243px;
+    z-index: 1;
+}
+
+.row2Icon2Wrapper {
+    position: absolute;
+    left: 283px;
+    top: 53px;
+    width: 206.379px;
+    height: 195.32px;
+    transform: rotate(15.47deg);
+    z-index: 2;
+}
+
+/* Row 3 specific positioning */
+.row3IconWrapper {
+    position: absolute;
+    left: 206px;
+    top: 25px;
+    width: 227px;
+    height: 220px;
+}
+
+.truthCardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 20px 0;
+    height: 432px;
+}
+
+.truthNumberWrapper {
+    margin-bottom: 16px;
+
+}
+
+.truthNumber {
+    display: inline-block;
+    padding: 5px 9px 4px 10px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.20);
+
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 100;
+    line-height: 120%;
+    letter-spacing: -0.07px;
+}
+
+.truthCardTitle {
+    margin-bottom: 36px;
+
+    font-size: 32px;
+    font-weight: 400;
+    color: #fff;
+    line-height: 1.2;
+    letter-spacing: -0.64px;
+}
+
+.truthCardTitle strong {
+    font-weight: 700;
+}
+
+.truthCardDesc {
+    font-size: 20px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 300;
+}
+
+.truthCardDescHighlight {
+    margin-bottom: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    display: block;
+}
+
+.truthBottom {
+    text-align: center;
+    color: #fff;
+    padding-bottom: 287px;
+}
+
+.truthBottomTitle {
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.45;
+    color: #fff;
+    margin-bottom: 38px;
+}
+
+.truthBottomDesc {
+    font-size: 24px;
+    line-height: 1.45;
+    color: #fff;
+    font-weight: 100;
+}
+
+.truthBottomDesc strong {
+    font-weight: 600;
+}
+
+@media (max-width: 1792px) {
+
+    .truthCardImage {
+        width: 480px;
+        height: 432px;
+
+    }
+}
+
+@media (max-width: 768px) {
+    .truthSection {
+        padding: 147px 20px 83px;
+    }
+
+    .truthTitle {
+        font-size: 30px;
+        line-height: 1.3;
+        letter-spacing: -0.9px;
+        margin-bottom: 0;
+    }
+
+    .truthSubtitle {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 32px;
+        line-height: 1.45;
+        letter-spacing: -0.08px;
+        margin-bottom: 0;
+    }
+
+    .truthGrid {
+        width: 100%;
+        gap: 160px;
+        margin-top: 96px;
+        margin-bottom: 130px;
+        padding-top: 0;
+    }
+
+    .truthCard {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 20px 4px;
+        width: 100%;
+    }
+
+    .truthCard:nth-child(2),
+    .truthCard:nth-child(3) {
+        gap: 40px;
+    }
+
+    .truthCardImage {
+        width: 327px;
+        height: 200px;
+        max-width: 100%;
+        position: relative;
+    }
+
+    /* Row 1 Icons Mobile */
+    .row1IconWrapper {
+        left: 70px;
+        top: 60px;
+        width: 92px;
+        height: 98px;
+        transform: none;
+        margin-left: 0;
+    }
+
+    .row1ForkWrapper {
+        left: 150px;
+        top: 47px;
+        width: 101px;
+        height: 123px;
+        transform: none;
+        margin-left: 0;
+    }
+
+    .row1ForkWrapper img {
+        transform: rotate(-11.21deg);
+    }
+
+    /* Row 2 Icons Mobile */
+    .row2Icon1Wrapper {
+        left: 30px;
+        top: 36px;
+        width: 136px;
+        height: 128px;
+        transform: none;
+        margin-left: 0;
+    }
+
+    .row2Icon2Wrapper {
+        left: 142px;
+        top: 45px;
+        width: 110px;
+        height: 122px;
+        transform: none;
+        margin-left: 0;
+    }
+
+    .row2Icon2Wrapper img {
+        transform: rotate(16.56deg);
+    }
+
+    /* Row 3 Icons Mobile */
+    .row3IconWrapper {
+        left: 99px;
+        top: 63px;
+        width: 111px;
+        height: 100px;
+        transform: none;
+    }
+
+    .truthCardContent {
+        height: auto;
+        padding: 0 8px;
+        text-align: left;
+        width: 100%;
+    }
+
+    .truthNumberWrapper {
+        margin-bottom: 4px;
+    }
+
+    .truthNumber {
+        font-size: 12px;
+        padding: 5px 0 4px;
+        letter-spacing: -0.06px;
+        background: none;
+    }
+
+    .truthCardTitle {
+        font-size: 24px;
+        margin-bottom: 36px;
+        letter-spacing: -0.12px;
+    }
+
+    .truthCardDesc {
+        font-size: 16px;
+        line-height: 1.45;
+    }
+
+    .truthCardDescHighlight {
+        margin-bottom: 24px;
+    }
+
+    .truthBottom {
+        padding-top: 117px;
+        padding-bottom: 117px;
+    }
+
+    .truthBottomTitle {
+        font-size: 24px;
+        line-height: 1.5;
+        margin-bottom: 54px;
+        font-weight: 500;
+    }
+
+    .truthBottomDesc {
+        font-size: 18px;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+}

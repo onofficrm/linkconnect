@@ -1,0 +1,17 @@
+:root {
+    /* Layout */
+    --desktop-max-width: 1280px;
+    --mobile-max-width: 500px;
+    --mobile-breakpoint: 768px;
+
+    /* Colors - Light Theme Only (Ignore System Dark Mode) */
+    --color-primary: #FF6B35;
+    --color-primary-bg: rgba(255, 107, 53, 0.1);
+    --color-text-main: #1A1A2E;
+    --color-text-sub: rgba(0, 0, 0, 0.55);
+    --color-bg-light: #F8F9FA;
+    --color-bg-white: #ffffff;
+    --color-border: #EBEBEB;
+
+    --Section-subtitle-mobile: 16px;
+}

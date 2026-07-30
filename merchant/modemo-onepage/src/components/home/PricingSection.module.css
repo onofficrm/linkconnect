@@ -1,0 +1,371 @@
+.container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 261px 64px;
+    background-color: #fff;
+}
+
+.sectionInner {
+    width: 100%;
+    max-width: 1280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Title Section */
+.titleWrapper {
+    margin-bottom: 85px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+
+
+.title {
+    margin: 14px 0 28px;
+    font-size: 48px;
+    line-height: 1.3;
+    letter-spacing: -0.24px;
+    color: #000;
+    font-weight: 400;
+}
+
+.title strong {
+    font-weight: 700;
+}
+
+.description {
+    font-size: 20px;
+    line-height: 1.48;
+    letter-spacing: -0.1px;
+    color: #676767;
+    margin: 0;
+}
+
+.description p {
+    margin: 0;
+}
+
+.description strong {
+    font-weight: 700;
+    color: inherit;
+}
+
+/* Cards Section */
+.cardGrid {
+    display: grid;
+    width: 100%;
+    height: 500px;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 32px;
+    padding: 0 20px;
+}
+
+.cardWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    padding: 40px 32px;
+    overflow: hidden;
+    gap: 44px;
+}
+
+.cardHeader {
+    height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.imageContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.calculatorImage {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    margin-top: 21px;
+}
+
+.megaphoneImage {
+    position: relative;
+    width: 137px;
+    height: 137px;
+    margin: 0 auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.helmetContainer {
+    position: relative;
+    width: 250px;
+    height: 100%;
+}
+
+.helmet1 {
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    top: 41px;
+    left: 0;
+    z-index: 1;
+}
+
+.helmet2 {
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    top: 0;
+    left: 80px;
+    z-index: 2;
+}
+
+.helmet3 {
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    top: 52px;
+    left: 144px;
+    z-index: 3;
+}
+
+.divider {
+    width: 100%;
+    height: 5px;
+    background-color: #000;
+    flex-shrink: 0;
+}
+
+.cardBody {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 0 12px;
+}
+
+.cardTitle {
+    font-size: 28px;
+    font-weight: 600;
+    color: #000;
+    line-height: 120%;
+    letter-spacing: -0.56px;
+    margin: 0;
+}
+
+.cardText {
+    font-size: 20px;
+    color: rgba(0, 0, 0, 0.8);
+    line-height: 1.45;
+}
+
+.cardText p {
+    margin: 0;
+}
+
+.cardText strong {
+    font-weight: 700;
+    color: #000;
+}
+
+/* CTA Button */
+.ctaWrapper {
+    margin-top: 132px;
+    /* High gap */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.ctaButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px 12px 25px;
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.7);
+    border-radius: 38px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    height: 76px;
+    width: 388px;
+    max-width: 100%;
+    transition: all 0.2s;
+}
+
+.ctaButton:hover {
+    transform: translateY(-4px);
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.ctaText {
+    font-size: 24px;
+    color: #676767;
+    font-weight: 500;
+    letter-spacing: -0.12px;
+    line-height: 1.45;
+}
+
+.ctaIcon {
+    position: relative;
+    width: 32px;
+    height: 32px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 120px 20px 60px;
+    }
+
+
+
+    .titleWrapper {
+        margin-bottom: 81px;
+    }
+
+    .title {
+        margin: 14px 0 36px;
+        font-size: 32px;
+    }
+
+    .description {
+        font-size: 16px;
+    }
+
+    .cardGrid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        height: auto;
+        padding: 0;
+    }
+
+    .card {
+        padding: 0 24px;
+        gap: 16px;
+    }
+
+
+    .cardHeader {
+        height: 120px;
+    }
+
+    .imageContainer {
+        width: auto;
+        justify-content: flex-start;
+    }
+
+
+    .calculatorImage {
+        width: 100px;
+        height: 100px;
+        margin-top: 21px;
+    }
+
+    .megaphoneImage {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        top: 50%;
+    }
+
+    .helmetContainer {
+        position: relative;
+        width: 120px;
+        height: 100%;
+    }
+
+    .helmet1 {
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        top: 41px;
+        left: 0;
+        z-index: 1;
+    }
+
+    .helmet2 {
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        top: 0;
+        left: 35px;
+        z-index: 2;
+    }
+
+    .helmet3 {
+        position: absolute;
+        width: 75px;
+        height: 75px;
+        top: 41px;
+        left: 70px;
+        z-index: 3;
+    }
+
+
+    .divider {
+        width: 80px;
+        height: 4px;
+        border-radius: 4px;
+        margin-left: 16px;
+    }
+
+    .cardBody {
+        padding: 25px 12px 60px 18px;
+        gap: 24px;
+    }
+
+    .cardTitle {
+        font-size: 24px;
+    }
+
+    .cardText {
+        font-size: 16px;
+        line-height: 1.45;
+    }
+
+    .ctaWrapper {
+        margin-top: 60px;
+    }
+
+    .ctaButton {
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        display: flex;
+        padding: 13px 28px 12px 35px;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+
+    }
+
+    .ctaText {
+        font-size: 18px;
+        line-height: 145%;
+        /* 26.1px */
+        letter-spacing: -0.09px;
+    }
+
+    .ctaButton {
+        height: 60px;
+    }
+
+    .ctaIcon {
+        width: 24px;
+        height: 24px;
+    }
+}

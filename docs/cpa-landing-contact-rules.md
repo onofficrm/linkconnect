@@ -38,6 +38,6 @@ LinkConnect CPA 플랫폼에 올리는 **모든** 머천트 랜딩(`/merchant/*`
 
 ## 관련 경로 예시
 
-- `merchant/hasugu_cpa/`, `merchant/bunkrupt/`, `merchant/bankrupt_dasibom/`
+- `merchant/hasugu_cpa/`, `merchant/bunkrupt/`, `merchant/bankrupt_dasibom/`, `merchant/modemo-onepage/` (`/merchant/modemo/`)
 - `plugin/onoff-builder-bridge/imports/*`
 - `plugin/linkconnect/inc/landing.php`
