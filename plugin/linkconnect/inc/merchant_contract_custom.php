@@ -475,7 +475,7 @@ if (!function_exists('lc_merchant_contract_admin_apply_custom_document')) {
             'sourceFile'   => $docx_abs !== '' ? basename($docx_abs) : 'moduicheolge-html',
         );
 
-        $special_note = '원본 첨부 파일: ' . $meta['label'] . ' — 관리자가 서면 계약을 시스템에 적용함. (단가 30,000원 / 영업일 10일 검수)';
+        $special_note = '원본 첨부 파일: ' . $meta['label'] . ' — 관리자가 서면 계약을 시스템에 적용함. (단가 43,000원 / 영업일 10일 검수)';
 
         $table = lc_merchant_contract_table();
         $old_status = (string) ($row['mc_status'] ?? '');
@@ -561,7 +561,7 @@ if (!function_exists('lc_merchant_contract_custom_snapshot_matches')) {
             return false;
         }
 
-        return strpos($html, '30,000원') !== false
+        return strpos($html, '43,000원') !== false
             && strpos($html, '영업일 기준 10일') !== false
             && strpos($html, '영업일 기준 11일') !== false
             && (strpos($html, '모두의철거 x 링크커넥트') !== false || strpos($html, '관리자 적용') !== false);
