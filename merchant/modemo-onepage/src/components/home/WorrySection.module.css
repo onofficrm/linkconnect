@@ -1,42 +1,63 @@
-/* ===== Worry Section (Section 2) ===== */
+/* ===== Worry Section — sleepless-night atmosphere ===== */
+
+.worrySection {
+    background: #f4f1ec;
+    position: relative;
+    overflow: hidden;
+}
 
 .worrySectionInner {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.00) 44.75%, #000 72.91%), #FFF;
     display: flex;
-    padding: 303px 0 163px 0;
+    padding: 160px 0 0;
     flex-direction: column;
     align-items: center;
     align-self: stretch;
     text-align: center;
+    background:
+        radial-gradient(ellipse 80% 45% at 50% -10%, rgba(255, 107, 53, 0.08), transparent 60%),
+        linear-gradient(180deg, #f7f4ef 0%, #efeae2 42%, #1a1c22 78%, #0e1014 100%);
 }
 
 .worryHeader {
-    margin-bottom: 60px;
+    margin-bottom: 48px;
+}
+
+.worryEyebrow {
+    display: inline-block;
+    margin-bottom: 18px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #c24e1f;
+    background: rgba(255, 107, 53, 0.12);
 }
 
 .worryHeaderTitle {
     font-size: 48px;
     font-weight: 600;
-    line-height: 1.45;
-    color: #1A1A2E;
+    line-height: 1.35;
+    color: #1a1a2e;
     letter-spacing: -0.24px;
     margin-bottom: 24px;
 }
 
 .worryHeaderSubtitle {
     font-size: 20px;
-    line-height: 1.45;
-    color: rgba(0, 0, 0, 0.55);
+    line-height: 1.5;
+    color: rgba(26, 26, 46, 0.62);
     letter-spacing: -0.1px;
-    margin-bottom: 122px;
+    margin-bottom: 72px;
 }
 
 .worryGrid {
     display: flex;
     flex-direction: column;
-    gap: 38px;
+    gap: 28px;
     max-width: 1290px;
-    margin: 0 auto;
+    margin: 0 auto 80px;
+    width: 100%;
 }
 
 .worryRow {
@@ -44,7 +65,7 @@
     align-items: stretch;
     justify-content: center;
     max-width: 1290px;
-    gap: 64px;
+    gap: 48px;
     padding: 0 64px;
 }
 
@@ -52,175 +73,296 @@
     flex-direction: row-reverse;
 }
 
-.empty {
-    width: 420px;
-    min-height: 200px;
+.indexCol {
+    width: 280px;
     flex-shrink: 0;
-    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+.indexNum {
+    font-size: clamp(72px, 10vw, 120px);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: transparent;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.14) 0%, rgba(26, 26, 46, 0.04) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    user-select: none;
+}
 
 .worryCardContent {
+    flex: 1;
+    max-width: 640px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 60px 52px;
+    padding: 40px 44px;
     text-align: left;
-    border-radius: 24px;
-    background: rgba(239, 239, 239, 0.50);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 40px -28px rgba(26, 26, 46, 0.35);
+    backdrop-filter: blur(8px);
+    position: relative;
+    overflow: hidden;
+}
+
+.worryCardContent::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(180deg, #ff6b35 0%, rgba(255, 107, 53, 0.25) 100%);
 }
 
 .worryRow:nth-child(odd) .worryCardContent {
     text-align: right;
 }
 
+.worryRow:nth-child(odd) .worryCardContent::before {
+    inset: 0 0 0 auto;
+}
+
 .worryCardTitle {
-    font-size: 32px;
-    font-weight: 600;
-    color: #222;
-    margin-bottom: 12px;
-    line-height: 120%;
-    letter-spacing: -0.64px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
 }
 
 .worryCardDesc {
-    font-size: 24px;
-    color: #676767;
+    font-size: 20px;
+    color: rgba(26, 26, 46, 0.62);
     font-weight: 400;
-    line-height: 140%;
+    line-height: 1.5;
     letter-spacing: -0.12px;
 }
 
+/* Bottom: night scene with real site photo */
 .worryBottom {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding-top: 960px;
+    min-height: min(88vh, 820px);
+    padding: 140px 24px 160px;
     text-align: center;
-    min-height: 1200px;
-    height: 100vh;
     align-items: center;
+    justify-content: center;
+    isolation: isolate;
+}
+
+.worryBottomMedia {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.worryBottomPhoto {
+    position: absolute;
+    inset: -4%;
+    background:
+        url("/images/2_여의도사무실.jpg") center 42% / cover no-repeat;
+    filter: saturate(0.55) brightness(0.42);
+    transform: scale(1.04);
+    animation: worryDrift 28s ease-in-out infinite alternate;
+}
+
+.worryBottomWash {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(14, 16, 20, 0.15) 0%, rgba(14, 16, 20, 0.55) 38%, rgba(14, 16, 20, 0.82) 100%),
+        linear-gradient(90deg, rgba(14, 16, 20, 0.45) 0%, transparent 35%, transparent 65%, rgba(14, 16, 20, 0.45) 100%);
+}
+
+.worryBottomGlow {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    width: min(42rem, 90vw);
+    height: 18rem;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse at center, rgba(255, 140, 70, 0.28) 0%, rgba(255, 107, 53, 0.08) 42%, transparent 72%);
+    filter: blur(8px);
+    animation: worryPulse 6.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.worryBottomGrain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.18;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.worryBottomCopy {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+}
+
+.worryBottomLabel {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #ffd3b8;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 211, 184, 0.28);
+    backdrop-filter: blur(6px);
 }
 
 .worryBottomTitle {
-    color: rgba(255, 255, 255, 0.70);
+    color: #fff;
     font-size: 48px;
     font-weight: 700;
-    line-height: 100%;
-    letter-spacing: 0.96px;
-    margin-bottom: 42px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    text-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
 }
 
 .worryBottomDesc {
-    color: rgba(255, 255, 255, 0.70);
-    font-size: 28px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 24px;
     font-weight: 400;
-    line-height: 145%;
-    letter-spacing: -0.14px;
+    line-height: 1.5;
+    letter-spacing: -0.02em;
 }
 
-/* Media Queries */
-@media (max-width: 768px) {
-    .worrySection {
-        background: #f8f9fa;
+@keyframes worryDrift {
+    from {
+        transform: scale(1.04) translate3d(0, 0, 0);
     }
+    to {
+        transform: scale(1.08) translate3d(0, -1.5%, 0);
+    }
+}
 
+@keyframes worryPulse {
+    0%,
+    100% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+}
+
+@media (max-width: 768px) {
     .worrySectionInner {
         padding: 100px 12px 0;
         border-radius: 20px 20px 0 0;
+        background:
+            radial-gradient(ellipse 90% 35% at 50% 0%, rgba(255, 107, 53, 0.1), transparent 55%),
+            linear-gradient(180deg, #f7f4ef 0%, #efeae2 48%, #16181d 82%, #0e1014 100%);
     }
 
     .worryHeader {
-        margin-bottom: 40px;
+        margin-bottom: 28px;
     }
 
+    .worryEyebrow {
+        margin-bottom: 14px;
+        font-size: 12px;
+    }
 
     .worryHeaderTitle {
-        margin-bottom: 32px;
-        color: #000;
+        margin-bottom: 20px;
         font-size: 28px;
-        font-weight: 600;
-        line-height: 130%;
+        line-height: 1.3;
         letter-spacing: -0.5px;
-        text-align: center;
     }
 
     .worryHeaderSubtitle {
-        margin-bottom: 60px;
-        color: #676767;
-        text-align: center;
+        margin-bottom: 40px;
         font-size: var(--Section-subtitle-mobile, 16px);
         font-weight: 300;
-        line-height: 150%;
-        letter-spacing: -0.08px;
-    }
-
-
-    .worryRow {
-        gap: 0;
-        padding: 0;
-        align-items: center;
-        text-align: center;
+        line-height: 1.5;
     }
 
     .worryGrid {
-        gap: 24px;
+        gap: 16px;
+        margin-bottom: 40px;
     }
 
-    .empty {
-        width: 100px;
-        min-height: auto;
-        height: auto;
+    .worryRow {
+        gap: 10px;
+        padding: 0 4px;
+        align-items: center;
+    }
+
+    .indexCol {
+        width: 56px;
+    }
+
+    .indexNum {
+        font-size: 36px;
     }
 
     .worryCardContent {
-        padding: 20px 12px;
-        border-radius: 16px;
+        padding: 18px 16px 18px 18px;
+        border-radius: 14px;
+        max-width: none;
     }
 
+    .worryRow:nth-child(odd) .worryCardContent,
     .worryRow:nth-child(even) .worryCardContent {
-        padding: 20px 12px 20px 20px;
+        text-align: left;
+        padding: 18px 16px 18px 18px;
     }
 
-    .worryRow:nth-child(odd) .worryCardContent {
-        padding: 20px 20px 20px 12px;
+    .worryRow:nth-child(odd) .worryCardContent::before,
+    .worryRow:nth-child(even) .worryCardContent::before {
+        inset: 0 auto 0 0;
     }
 
     .worryCardTitle {
         font-size: 16px;
+        margin-bottom: 6px;
     }
 
     .worryCardDesc {
         font-weight: 300;
         font-size: 13px;
+        line-height: 1.45;
     }
 
     .worryBottom {
-        min-height: 800px;
-        padding: 395px 0 267px;
-
+        min-height: 560px;
+        padding: 96px 20px 120px;
     }
 
     .worryBottomTitle {
-        margin-bottom: 25px;
-        color: rgba(255, 255, 255, 0.70);
-        text-align: center;
-
-        font-size: 36px;
-        font-weight: 700;
-        line-height: 145%;
-        letter-spacing: 0.72px;
+        margin-bottom: 18px;
+        font-size: 32px;
+        line-height: 1.3;
     }
 
     .worryBottomDesc {
-        color: rgba(255, 255, 255, 0.70);
-        text-align: center;
-        font-size: 20px;
+        font-size: 17px;
         font-weight: 300;
-        line-height: 145%;
-        letter-spacing: -0.1px;
+        line-height: 1.5;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .worryBottomPhoto,
+    .worryBottomGlow {
+        animation: none;
     }
 }
