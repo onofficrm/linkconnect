@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { applyMerchant } from '../lib/api';
 import { canAccessAdvertiserCenter, getLcAuth } from '../lib/auth';
-import { g5LoginUrl, spaReturnUrl } from '../lib/urls';
+import { currentSpaReturnUrl, g5LoginUrl } from '../lib/urls';
 
 export function AdvertiserRouteGuard() {
   const auth = getLcAuth();
@@ -14,7 +14,7 @@ export function AdvertiserRouteGuard() {
   useEffect(() => {
     if (!auth.loggedIn) {
       setRedirecting(true);
-      window.location.replace(g5LoginUrl(spaReturnUrl('/')));
+      window.location.replace(g5LoginUrl(currentSpaReturnUrl('/advertiser')));
     }
   }, [auth.loggedIn]);
 

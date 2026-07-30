@@ -927,23 +927,42 @@ if (!function_exists('onoff_builder_render_import_page')) {
 
         if ($id === 'linkconnect') {
             $lc_plugin = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect' : '';
+            $lc_common = $lc_plugin !== '' ? $lc_plugin . '/_common.php' : '';
             $lc_config = $lc_plugin !== '' ? $lc_plugin . '/config.php' : '';
             $lc_auth = $lc_plugin !== '' ? $lc_plugin . '/inc/auth_bootstrap.php' : '';
-            if ($lc_config !== '' && is_file($lc_config)) {
-                include_once $lc_config;
-            }
-            if ($lc_plugin !== '') {
-                foreach (array('db.php', 'partner.php', 'merchant.php', 'wallet.php', 'conversion.php', 'admin.php') as $lc_inc_file) {
-                    $lc_inc_path = $lc_plugin . '/inc/' . $lc_inc_file;
-                    if (is_file($lc_inc_path)) {
-                        include_once $lc_inc_path;
+
+            // API와 동일한 부트스트랩으로 로그인·파트너·광고주 세션을 안정적으로 주입
+            if ($lc_common !== '' && is_file($lc_common)) {
+                include_once $lc_common;
+            } else {
+                if ($lc_config !== '' && is_file($lc_config)) {
+                    include_once $lc_config;
+                }
+                if ($lc_plugin !== '') {
+                    foreach (array(
+                        'db.php',
+                        'partner.php',
+                        'merchant.php',
+                        'merchant_contract_config.php',
+                        'merchant_contract.php',
+                        'merchant_contract_access.php',
+                        'wallet.php',
+                        'conversion.php',
+                        'admin.php',
+                        'impersonate.php',
+                    ) as $lc_inc_file) {
+                        $lc_inc_path = $lc_plugin . '/inc/' . $lc_inc_file;
+                        if (is_file($lc_inc_path)) {
+                            include_once $lc_inc_path;
+                        }
                     }
                 }
             }
+
             if ($lc_auth !== '' && is_file($lc_auth)) {
                 include_once $lc_auth;
             }
-            if ($lc_auth !== '' && is_file($lc_auth) && function_exists('lc_inject_auth_bootstrap')) {
+            if (function_exists('lc_inject_auth_bootstrap')) {
                 $html = lc_inject_auth_bootstrap($html);
             }
 

@@ -100,6 +100,12 @@ if (!function_exists('lc_inject_auth_bootstrap')) {
     function lc_inject_auth_bootstrap($html)
     {
         $script = lc_auth_bootstrap_script();
+
+        // module 스크립트보다 앞에 넣어 로그인 상태가 항상 먼저 준비되게 함
+        if (preg_match('/<script[^>]+type=["\']module["\']/i', $html)) {
+            return preg_replace('/<script[^>]+type=["\']module["\'][^>]*>/i', $script . '$0', $html, 1);
+        }
+
         if (stripos($html, '</head>') !== false) {
             return preg_replace('/<\/head>/i', $script . '</head>', $html, 1);
         }
