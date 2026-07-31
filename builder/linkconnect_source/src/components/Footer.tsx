@@ -92,6 +92,9 @@ export function Footer() {
               최고의 전환율과 투명한 정산 시스템을 제공합니다.
             </p>
             <div className="space-y-1.5 text-sm text-slate-500">
+              <p>상호명 : 비마이피스</p>
+              <p>대표자 : 박민우</p>
+              <p>사업장 주소 : 경기도 용인시 수지구 포은대로59번길 37, 시그니처광교 10층</p>
               <p>이메일: support2580_@linkconnect.co.kr</p>
               <p>고객센터: 070-8098-6824 (평일 10:00 ~ 17:00)</p>
             </div>

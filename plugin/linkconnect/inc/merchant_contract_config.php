@@ -61,7 +61,7 @@ if (!function_exists('lc_merchant_contract_config')) {
                 'company_name'        => '비마이피스',
                 'representative_name' => '박민우',
                 'business_number'     => '831-51-00825',
-                'company_address'     => '경기도 용인시 수지구 포은대로 59번길 37, 1009호',
+                'company_address'     => '경기도 용인시 수지구 포은대로59번길 37, 시그니처광교 10층',
                 'company_phone'       => '010-9765-4073',
             ),
             'statuses' => array(
