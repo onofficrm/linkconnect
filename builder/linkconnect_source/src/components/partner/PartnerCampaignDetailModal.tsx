@@ -159,8 +159,9 @@ export function PartnerCampaignDetailModal({
 
   const tabs: Array<{ id: DetailTab; label: string; show: boolean }> = [
     { id: 'intro', label: '상품소개', show: true },
-    { id: 'guide', label: '홍보 가이드', show: hasGuide },
-    { id: 'assets', label: '홍보자료', show: hasGuide },
+    // 미공개여도 탭을 보여 기능 누락으로 오인되지 않게 한다 (내용은 공개 후에만 로드)
+    { id: 'guide', label: '홍보 가이드', show: true },
+    { id: 'assets', label: '홍보자료', show: true },
   ];
 
   return (
@@ -207,7 +208,15 @@ export function PartnerCampaignDetailModal({
 
           {(tab === 'guide' || tab === 'assets') && (
             <>
-              {loading ? (
+              {!hasGuide ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center space-y-2">
+                  <p className="text-sm font-bold text-slate-800">홍보 가이드 준비 중</p>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    광고주가 작성하고 관리자가 <span className="font-semibold text-slate-700">파트너 공개</span>한 뒤에
+                    이 탭에서 홍보 포인트·키워드·소재를 확인할 수 있습니다.
+                  </p>
+                </div>
+              ) : loading ? (
                 <div className="flex items-center justify-center py-16 text-slate-500 gap-2">
                   <Loader2 className="animate-spin" size={20} /> 불러오는 중...
                 </div>

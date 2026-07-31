@@ -324,57 +324,59 @@ export function CpaCampaignDetail() {
               />
             </article>
 
-            {campaign.hasPublishedGuide ? (
-              <article className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">홍보 가이드</h2>
-                    <p className="text-xs text-slate-500 mt-1">광고 전 반드시 확인해야 하는 홍보 유의사항입니다.</p>
-                  </div>
-                  {confirmation?.confirmed ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg">
-                      <CheckCircle2 size={14} />
-                      확인 완료
-                    </span>
+            <article className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">홍보 가이드</h2>
+                  <p className="text-xs text-slate-500 mt-1">광고 전 반드시 확인해야 하는 홍보 유의사항입니다.</p>
+                </div>
+                {campaign.hasPublishedGuide && confirmation?.confirmed ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-lg">
+                    <CheckCircle2 size={14} />
+                    확인 완료
+                  </span>
+                ) : null}
+              </div>
+
+              {!campaign.hasPublishedGuide ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600 leading-relaxed">
+                  아직 공개된 홍보 가이드가 없습니다. 광고주 작성 후 관리자가 파트너 공개하면 이곳에 표시됩니다.
+                </div>
+              ) : !loggedIn || !isActivePartner ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex gap-2">
+                  <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                  <p>파트너 로그인 후 상세 홍보 가이드(금지 문구·유효 DB 기준 등)를 확인하고 링크를 발급받을 수 있습니다.</p>
+                </div>
+              ) : guideLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500 py-6 justify-center">
+                  <Loader2 size={16} className="animate-spin" />
+                  가이드 불러오는 중…
+                </div>
+              ) : guide ? (
+                <div className="space-y-3">
+                  <GuideList title="홍보 포인트" items={guide.promotionPoints} />
+                  <GuideList title="추천 키워드" items={guide.recommendedKeywords} />
+                  <GuideList title="금지 문구" items={guide.forbiddenWords} tone="rose" />
+                  <GuideImages images={guide.images ?? []} />
+                  <GuideList title="주의사항" items={guide.precautions} tone="amber" />
+                  <GuideList title="유효 DB 기준" items={guide.validDbRules} />
+                  <GuideList title="무효 DB 기준" items={guide.invalidDbRules} tone="rose" />
+                  {!confirmation?.confirmed ? (
+                    <button
+                      type="button"
+                      disabled={confirming}
+                      onClick={handleConfirmGuide}
+                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      {confirming ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                      홍보 가이드를 확인했습니다
+                    </button>
                   ) : null}
                 </div>
-
-                {!loggedIn || !isActivePartner ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex gap-2">
-                    <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                    <p>파트너 로그인 후 상세 홍보 가이드(금지 문구·유효 DB 기준 등)를 확인하고 링크를 발급받을 수 있습니다.</p>
-                  </div>
-                ) : guideLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500 py-6 justify-center">
-                    <Loader2 size={16} className="animate-spin" />
-                    가이드 불러오는 중…
-                  </div>
-                ) : guide ? (
-                  <div className="space-y-3">
-                    <GuideList title="홍보 포인트" items={guide.promotionPoints} />
-                    <GuideList title="추천 키워드" items={guide.recommendedKeywords} />
-                    <GuideList title="금지 문구" items={guide.forbiddenWords} tone="rose" />
-                    <GuideImages images={guide.images ?? []} />
-                    <GuideList title="주의사항" items={guide.precautions} tone="amber" />
-                    <GuideList title="유효 DB 기준" items={guide.validDbRules} />
-                    <GuideList title="무효 DB 기준" items={guide.invalidDbRules} tone="rose" />
-                    {!confirmation?.confirmed ? (
-                      <button
-                        type="button"
-                        disabled={confirming}
-                        onClick={handleConfirmGuide}
-                        className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
-                      >
-                        {confirming ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                        홍보 가이드를 확인했습니다
-                      </button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">공개된 홍보 가이드를 불러오지 못했습니다.</p>
-                )}
-              </article>
-            ) : null}
+              ) : (
+                <p className="text-sm text-slate-500">공개된 홍보 가이드를 불러오지 못했습니다.</p>
+              )}
+            </article>
 
             {displayLanding ? (
               <button
