@@ -83,20 +83,8 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
             lc_sql_query(" UPDATE `{$table}` SET
                 mt_id = '{$next_mt}',
                 cp_code = '{$code_esc}',
-                cp_name = '" . lc_sql_escape((string) $def['title']) . "',
-                cp_category = '" . lc_sql_escape((string) $def['category']) . "',
-                cp_type = 'cpa',
-                cp_price = '" . (int) $def['price'] . "',
-                cp_approval_rate = '" . lc_sql_escape((string) $def['approval_rate']) . "',
-                cp_avg_time = '" . lc_sql_escape((string) $def['avg_time']) . "',
-                cp_allowed_channels = '" . lc_sql_escape((string) $def['allowed_channels']) . "',
-                cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
-                cp_description = '" . lc_sql_escape((string) $def['description']) . "',
                 cp_landing_url = '" . lc_sql_escape($landing) . "',
                 cp_tracking_base_url = '" . lc_sql_escape($tracking_base) . "',
-                cp_status = '" . lc_sql_escape((string) $def['status']) . "',
-                cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
-                cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
                 cp_updated_at = NOW()
                 WHERE cp_id = '{$cp_id}' ", false);
 

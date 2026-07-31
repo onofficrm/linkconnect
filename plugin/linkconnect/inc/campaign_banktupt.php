@@ -95,19 +95,7 @@ if (!function_exists('lc_campaign_apply_banktupt_only')) {
             lc_sql_query(" UPDATE `{$table}` SET
                 mt_id = '" . ($mt_id > 0 ? $mt_id : (int) $keep['mt_id']) . "',
                 cp_code = '" . lc_sql_escape((string) $def['code']) . "',
-                cp_name = '" . lc_sql_escape((string) $def['title']) . "',
-                cp_category = '" . lc_sql_escape((string) $def['category']) . "',
-                cp_type = 'cpa',
-                cp_price = '" . (int) $def['price'] . "',
-                cp_approval_rate = '" . lc_sql_escape((string) $def['approval_rate']) . "',
-                cp_avg_time = '" . lc_sql_escape((string) $def['avg_time']) . "',
-                cp_allowed_channels = '" . lc_sql_escape((string) $def['allowed_channels']) . "',
-                cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
-                cp_description = '" . lc_sql_escape((string) $def['description']) . "',
                 cp_landing_url = '" . lc_sql_escape($landing) . "',
-                cp_status = '" . lc_sql_escape((string) $def['status']) . "',
-                cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
-                cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',
                 cp_sort = 1,
                 cp_updated_at = NOW()
                 WHERE cp_id = '{$cp_id}' ", false);
