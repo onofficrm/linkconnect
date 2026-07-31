@@ -132,6 +132,7 @@ export function AdminCampaigns() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -282,6 +283,7 @@ export function AdminCampaigns() {
 
     setSaving(true);
     setError('');
+    setSuccessMessage('');
     try {
       const result = await saveAdminCampaign({
         cpId: editForm.id || undefined,
@@ -304,6 +306,11 @@ export function AdminCampaigns() {
       if (result.campaign) {
         setSelectedCampaign(result.campaign);
         setEditForm(toEditForm(result.campaign));
+        setSuccessMessage(
+          `${result.message || '저장되었습니다.'} 메인/CPA 목록 노출 단가(파트너): ${result.campaign.partnerPrice.toLocaleString()}원 · 광고주 차감: ${result.campaign.advertiserPrice.toLocaleString()}원`
+        );
+      } else {
+        setSuccessMessage(result.message || '저장되었습니다.');
       }
       setIsEditMode(false);
       await loadCampaigns();
@@ -417,6 +424,12 @@ export function AdminCampaigns() {
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {successMessage}
         </div>
       )}
 
@@ -838,7 +851,7 @@ export function AdminCampaigns() {
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">원</span>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-1">파트너에게 실제 지급될 금액</p>
+                        <p className="text-[11px] text-slate-400 mt-1">메인·CPA 목록에 표시되는 DB당 수익금 / 파트너 지급액</p>
                       </div>
                     </div>
                     

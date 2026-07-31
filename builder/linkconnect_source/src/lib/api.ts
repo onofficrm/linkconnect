@@ -1449,6 +1449,7 @@ async function publicApiGet<T>(endpoint: string, query?: Record<string, string>)
   const response = await fetch(url.toString(), {
     method: 'GET',
     credentials: 'include',
+    cache: 'no-store',
     headers: { Accept: 'application/json' },
   });
 
