@@ -35,6 +35,9 @@ export default {
     headers.set('Host', originHost);
     headers.set('X-Forwarded-Host', publicHost);
     headers.set('X-LC-Public-Host', publicHost);
+    // Cafe24 핫링크(외부 Referer) 403 방지 — 이미지가 깨지지 않도록
+    headers.delete('Origin');
+    headers.set('Referer', `https://${originHost}/`);
 
     const init = {
       method: request.method,

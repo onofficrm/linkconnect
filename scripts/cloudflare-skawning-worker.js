@@ -43,7 +43,9 @@ export default {
     headers.set('Host', ORIGIN_HOST);
     headers.set('X-Forwarded-Host', publicHost);
     headers.set('X-LC-Public-Host', publicHost);
-    // cf-connecting-ip 등 유지, accept-encoding 은 원본 그대로
+    // Cafe24 핫링크(외부 Referer) 403 방지 — 이미지가 깨지지 않도록
+    headers.delete('Origin');
+    headers.set('Referer', `https://${ORIGIN_HOST}/`);
 
     const init = {
       method: request.method,
@@ -95,20 +97,20 @@ export default {
 
 /**
  * HTML 재작성:
- * - /plugin/* 정적 에셋·API 절대 URL은 오리진(linkconnect) 유지/강제 (깨짐 방지)
+ * - /plugin/* 정적 에셋·API 는 공개 도메인(Worker) 경유 (Cafe24 외부 Referer 403 회피)
  * - 그 외 linkconnect 절대 URL은 공개 도메인으로 치환
  */
 function rewriteHtml(html, publicHost) {
-  const origin = `https://${ORIGIN_HOST}`;
-  const keep = '___LC_KEEP_ORIGIN___';
+  const publicOrigin = `https://${publicHost}`;
+  const keep = '___LC_KEEP_PUBLIC___';
 
-  // 1) 이미 절대경로인 /plugin/* 는 오리진 고정
+  // 1) 이미 절대경로인 /plugin/* 는 공개 도메인으로
   html = html.replace(
     /https:\/\/(?:www\.)?linkconnect\.co\.kr(\/plugin\/[^"'\\\s>]*)/gi,
     (_, path) => `${keep}${path}`
   );
 
-  // 2) 상대 /plugin/* → 오리진 절대경로 (JS/CSS/이미지/API)
+  // 2) 상대 /plugin/* → 공개 도메인 절대경로
   html = html
     .replaceAll('src="/plugin/', `src="${keep}/plugin/`)
     .replaceAll("src='/plugin/", `src='${keep}/plugin/`)
@@ -121,8 +123,8 @@ function rewriteHtml(html, publicHost) {
   // 3) 공개 도메인으로 나머지 치환
   html = rewritePublicHost(html, publicHost);
 
-  // 4) keep 토큰 → 오리진 복원
-  html = html.split(keep).join(origin);
+  // 4) keep 토큰 → 공개 도메인 복원
+  html = html.split(keep).join(publicOrigin);
 
   return html;
 }

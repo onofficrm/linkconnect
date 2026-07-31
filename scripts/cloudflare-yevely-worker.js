@@ -1,21 +1,21 @@
 /**
- * Cloudflare Worker — yevely.jp → linkconnect modemo(철거) + tracking paths
+ * Cloudflare Worker — yevely.kr → linkconnect modemo(철거) + tracking paths
  *
- * 브라우저 주소는 항상 https://yevely.jp 로 유지하고,
+ * 브라우저 주소는 항상 https://yevely.kr 로 유지하고,
  * 실제 콘텐츠/트래킹은 https://linkconnect.co.kr 에서 가져옵니다.
  *
- * Cloudflare 설정 (air911 / skawning 과 동일):
- * 1. Workers & Pages → yevely Worker → 코드 편집 → 이 파일 전체 붙여넣기 → Deploy
- * 2. Domains & Routes
- *    A) Routes (권장): yevely.jp/* , www.yevely.jp/*
- *    B) Custom domain: yevely.jp / www.yevely.jp
- * 3. SSL/TLS → Full (strict), Universal SSL = Active
+ * Cloudflare 설정 (air911-dasibom 과 동일):
+ * 1. Workers & Pages → Create → 이 파일 내용 붙여넣기 → 이름 예: yevely-modemo → Deploy
+ * 2. Worker → Settings → Domains & Routes
+ *    - Custom domain: yevely.kr
+ *    - Custom domain: www.yevely.kr
+ * 3. SSL/TLS → Overview → Full (또는 Full strict)
  *
- * 이미지 깨짐 방지: HTML의 /plugin/* 정적 경로를 linkconnect 절대 URL로 고정.
- * (독립도메인에 파일이 없고, 상대경로 프록시·한글파일명 인코딩 이슈를 우회)
+ * 중요: Cafe24 오리진은 외부 Referer 로 정적 파일에 403 을 줍니다.
+ * 따라서 Worker 가 업스트림 요청 시 Referer/Origin 을 제거해야 이미지가 보입니다.
  */
 const ORIGIN_HOST = 'linkconnect.co.kr';
-const MODEMO_IMPORT = '/plugin/onoff-builder-bridge/imports/modemo';
+const MODEMO_BASE = '/plugin/onoff-builder-bridge/imports/modemo';
 
 export default {
   async fetch(request) {
@@ -33,40 +33,29 @@ export default {
 
     // 레거시 /images/* → modemo import 경로
     if (target.pathname === '/images' || target.pathname.startsWith('/images/')) {
-      target.pathname = `${MODEMO_IMPORT}${target.pathname}`;
-    }
-
-    // 잘못된 루트 /assets/* → import 경로
-    if (target.pathname === '/assets' || target.pathname.startsWith('/assets/')) {
-      target.pathname = `${MODEMO_IMPORT}${target.pathname}`;
+      target.pathname = `${MODEMO_BASE}${target.pathname}`;
     }
 
     const headers = new Headers(request.headers);
     headers.set('Host', ORIGIN_HOST);
     headers.set('X-Forwarded-Host', publicHost);
     headers.set('X-LC-Public-Host', publicHost);
+    // Cafe24 핫링크(외부 Referer) 403 방지
+    headers.delete('Referer');
+    headers.delete('Origin');
+    headers.set('Referer', `https://${ORIGIN_HOST}/`);
 
     const init = {
       method: request.method,
       headers,
       redirect: 'manual',
-      cf: { cacheTtl: 0 },
     };
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       init.body = request.body;
     }
 
-    let upstream;
-    try {
-      upstream = await fetch(target.toString(), init);
-    } catch (err) {
-      return new Response('Upstream fetch failed: ' + String(err), { status: 502 });
-    }
-
+    const upstream = await fetch(target.toString(), init);
     const outHeaders = new Headers(upstream.headers);
-    if (!outHeaders.has('Access-Control-Allow-Origin')) {
-      outHeaders.set('Access-Control-Allow-Origin', '*');
-    }
 
     const location = outHeaders.get('Location');
     if (location) {
@@ -76,7 +65,19 @@ export default {
     const contentType = (outHeaders.get('Content-Type') || '').toLowerCase();
     if (contentType.includes('text/html')) {
       let html = await upstream.text();
-      html = rewriteHtml(html, publicHost);
+      // /plugin 정적 에셋은 공개 도메인(Worker) 경유 — 오리진 직접 요청 시 Referer 403
+      html = html.replace(
+        /https:\/\/(?:www\.)?linkconnect\.co\.kr(\/plugin\/[^"'\\\s>]*)/gi,
+        (_, path) => `https://${publicHost}${path}`
+      );
+      html = rewritePublicHost(html, publicHost);
+      // 남은 상대 /images/ 도 보정
+      html = html
+        .replaceAll('src="/images/', `src="${MODEMO_BASE}/images/`)
+        .replaceAll("src='/images/", `src='${MODEMO_BASE}/images/`)
+        .replaceAll('url("/images/', `url("${MODEMO_BASE}/images/`)
+        .replaceAll("url('/images/", `url('${MODEMO_BASE}/images/`)
+        .replaceAll('url(/images/', `url(${MODEMO_BASE}/images/`);
       outHeaders.delete('Content-Length');
       return new Response(html, {
         status: upstream.status,
@@ -92,51 +93,6 @@ export default {
     });
   },
 };
-
-/**
- * HTML 재작성:
- * - /plugin/* 정적 에셋·API → 오리진(linkconnect) 절대경로 고정
- * - /images/* → modemo import 경로로 보정 후 오리진 고정
- * - 그 외 linkconnect 절대 URL은 공개 도메인으로 치환
- */
-function rewriteHtml(html, publicHost) {
-  const origin = `https://${ORIGIN_HOST}`;
-  const keep = '___LC_KEEP_ORIGIN___';
-
-  // 0) 레거시 /images → import 경로
-  html = html
-    .replaceAll('src="/images/', `src="${MODEMO_IMPORT}/images/`)
-    .replaceAll("src='/images/", `src='${MODEMO_IMPORT}/images/`)
-    .replaceAll('url("/images/', `url("${MODEMO_IMPORT}/images/`)
-    .replaceAll("url('/images/", `url('${MODEMO_IMPORT}/images/`)
-    .replaceAll('url(/images/', `url(${MODEMO_IMPORT}/images/`);
-
-  // 1) 이미 절대경로인 /plugin/* 는 오리진 고정
-  html = html.replace(
-    /https:\/\/(?:www\.)?linkconnect\.co\.kr(\/plugin\/[^"'\\\s>]*)/gi,
-    (_, path) => `${keep}${path}`
-  );
-
-  // 2) 상대 /plugin/* → 오리진 절대경로 (JS/CSS/이미지/폰트/API)
-  html = html
-    .replaceAll('src="/plugin/', `src="${keep}/plugin/`)
-    .replaceAll("src='/plugin/", `src='${keep}/plugin/`)
-    .replaceAll('href="/plugin/', `href="${keep}/plugin/`)
-    .replaceAll("href='/plugin/", `href='${keep}/plugin/`)
-    .replaceAll('url(/plugin/', `url(${keep}/plugin/`)
-    .replaceAll('url("/plugin/', `url("${keep}/plugin/`)
-    .replaceAll("url('/plugin/", `url('${keep}/plugin/`)
-    .replaceAll('srcset="/plugin/', `srcset="${keep}/plugin/`)
-    .replaceAll("srcset='/plugin/", `srcset='${keep}/plugin/`);
-
-  // 3) 공개 도메인으로 나머지 치환
-  html = rewritePublicHost(html, publicHost);
-
-  // 4) keep 토큰 → 오리진 복원
-  html = html.split(keep).join(origin);
-
-  return html;
-}
 
 function rewritePublicHost(text, publicHost) {
   return text
