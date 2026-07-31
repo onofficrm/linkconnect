@@ -169,7 +169,7 @@ jobs:
           cp s/index.php "$ROOT/s/"
           cp api/external/linkprice/postback.php "$ROOT/api/external/linkprice/"
           cp plugin/linkconnect/_common.php "$ROOT/plugin/linkconnect/"
-          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/apply_hasugu_cpa_campaign.php plugin/linkconnect/install/apply_modemo_campaign.php plugin/linkconnect/install/apply_yevely_modemo_domain.php plugin/linkconnect/install/apply_skawning_hasugu_domain.php plugin/linkconnect/install/apply_adv0008_contract.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql plugin/linkconnect/install/test_email_notify.php "$ROOT/plugin/linkconnect/install/"
+          cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/apply_hasugu_cpa_campaign.php plugin/linkconnect/install/apply_modemo_campaign.php plugin/linkconnect/install/apply_yevely_modemo_domain.php plugin/linkconnect/install/apply_skawning_hasugu_domain.php plugin/linkconnect/install/inspect_promo_guide.php plugin/linkconnect/install/apply_adv0008_contract.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql plugin/linkconnect/install/test_email_notify.php "$ROOT/plugin/linkconnect/install/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           if [[ -d plugin/linkconnect/assets/contracts/custom ]]; then
