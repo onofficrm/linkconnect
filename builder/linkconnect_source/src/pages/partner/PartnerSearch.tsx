@@ -14,6 +14,7 @@ import {
 } from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
+import { cpaCardImageUrl, cpaTinyImageUrl } from '../../lib/optimizedImage';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
@@ -659,10 +660,11 @@ function CampaignListTable({
                       {campaign.thumbnailUrl ? (
                         <div className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
                           <img
-                            src={campaign.thumbnailUrl}
+                            src={isCps ? campaign.thumbnailUrl : cpaTinyImageUrl(campaign.thumbnailUrl)}
                             alt=""
                             className={isCps ? 'w-full h-full object-contain p-1' : 'w-full h-full object-cover'}
                             loading="lazy"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                           />
                         </div>
@@ -822,10 +824,11 @@ function CampaignCard({
       {campaign.thumbnailUrl ? (
         <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100 flex items-center justify-center`}>
           <img
-            src={campaign.thumbnailUrl}
+            src={isCps ? campaign.thumbnailUrl : cpaCardImageUrl(campaign.thumbnailUrl)}
             alt={campaign.title}
             className={isCps ? 'w-full h-full object-contain p-4' : 'w-full h-full object-cover'}
             loading="lazy"
+            decoding="async"
             referrerPolicy="no-referrer"
           />
         </div>

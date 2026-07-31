@@ -27,6 +27,7 @@ import {
   type AiImageGenerateOptions,
 } from '../../components/ai/AiImageGenerateModal';
 import { CPA_THUMBNAIL_ASPECT_CLASS, CPA_THUMBNAIL_SPEC, cpaThumbnailHint } from '../../lib/cpaThumbnail';
+import { optimizedImageUrl } from '../../lib/optimizedImage';
 
 const categoryOptions = ['금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -638,7 +639,7 @@ export function AdminCampaigns() {
                         >
                           <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
                           {editForm.thumbnailUrl ? (
-                            <img src={editForm.thumbnailUrl} alt="썸네일" className="w-full h-full object-cover" />
+                            <img src={optimizedImageUrl(editForm.thumbnailUrl, { w: 640, h: 480, fit: 'cover', fmt: 'webp' })} alt="썸네일" className="w-full h-full object-cover" decoding="async" />
                           ) : (
                             <div className="text-center px-2">
                               <Image className="w-7 h-7 text-slate-300 mx-auto mb-1" />

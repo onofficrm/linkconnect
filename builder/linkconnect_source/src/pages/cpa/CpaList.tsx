@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { openLandingPage } from '../../lib/utils';
 import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
+import { cpaCardImageUrl } from '../../lib/optimizedImage';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 
@@ -209,10 +210,11 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
       <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100`}>
         {item.thumbnailUrl ? (
           <img
-            src={item.thumbnailUrl}
+            src={cpaCardImageUrl(item.thumbnailUrl)}
             alt={item.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm font-medium bg-gradient-to-br from-slate-50 to-slate-100">

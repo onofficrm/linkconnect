@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
 
-const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.png`;
+const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.webp`;
 
 function sectionLinkClick(
   e: MouseEvent<HTMLAnchorElement>,
@@ -72,6 +72,8 @@ export function Hero() {
                 src={heroDashboardImage}
                 alt="LinkConnect Dashboard Preview"
                 className="w-full h-auto object-cover"
+                decoding="async"
+                fetchPriority="high"
               />
             </div>
           </div>

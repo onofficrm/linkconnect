@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-const ctaBackgroundImage = `${import.meta.env.BASE_URL}about/about_partners_activity.png`;
+const ctaBackgroundImage = `${import.meta.env.BASE_URL}about/about_partners_activity.webp`;
 
 export function FinalCTA() {
   return (
@@ -10,6 +10,8 @@ export function FinalCTA() {
         alt=""
         aria-hidden
         className="absolute inset-0 w-full h-full object-cover scale-105 opacity-90"
+        loading="lazy"
+        decoding="async"
       />
       {/* Soft brand wash — keep partner activity visible; deepen only for text contrast */}
       <div

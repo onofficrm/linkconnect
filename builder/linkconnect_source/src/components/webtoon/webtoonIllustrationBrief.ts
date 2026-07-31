@@ -35,7 +35,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '고민 · 공감',
     colorPalette: 'amber, orange, warm beige',
     notes: '말풍선 영역 상단 40% 비워둘 것. 텍스트 없이 그림만.',
-    imagePath: 'webtoon/ep1-p1.png',
+    imagePath: 'webtoon/ep1-p1.webp',
   },
   {
     id: 'ep1-p2',
@@ -48,7 +48,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '희망 · 안내',
     colorPalette: 'indigo, violet, cyan sparkle',
     notes: '브랜드 마스코트 느낌. SF지만 친근하게.',
-    imagePath: 'webtoon/ep1-p2.png',
+    imagePath: 'webtoon/ep1-p2.webp',
   },
   {
     id: 'ep1-p3',
@@ -61,7 +61,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '설명 · 연결',
     colorPalette: 'emerald, teal, white',
     notes: '3자 관계가 한눈에 보이게. 화살표는 그림 요소로만.',
-    imagePath: 'webtoon/ep1-p3.png',
+    imagePath: 'webtoon/ep1-p3.webp',
   },
   {
     id: 'ep2-p1',
@@ -74,7 +74,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '시작 · 기대',
     colorPalette: 'emerald, green, cream',
     notes: 'CPA는 행동(신청) 강조. 링크 아이콘 작게.',
-    imagePath: 'webtoon/ep2-p1.png',
+    imagePath: 'webtoon/ep2-p1.webp',
   },
   {
     id: 'ep2-p2',
@@ -87,7 +87,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '행동 완료',
     colorPalette: 'sky blue, white',
     notes: '체크마크/완료 느낌. CPA 핵심 컷.',
-    imagePath: 'webtoon/ep2-p2.png',
+    imagePath: 'webtoon/ep2-p2.webp',
   },
   {
     id: 'ep2-p3',
@@ -100,7 +100,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '수익 · 성취',
     colorPalette: 'emerald, gold accent',
     notes: '숫자는 그리지 말고 코인/₩ 심볼만.',
-    imagePath: 'webtoon/ep2-p3.png',
+    imagePath: 'webtoon/ep2-p3.webp',
   },
   {
     id: 'ep3-p1',
@@ -113,7 +113,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '홍보 · 리뷰',
     colorPalette: 'cyan, sky blue',
     notes: 'CPS는 구매 연결 강조.',
-    imagePath: 'webtoon/ep3-p1.png',
+    imagePath: 'webtoon/ep3-p1.webp',
   },
   {
     id: 'ep3-p2',
@@ -126,7 +126,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '구매 완료',
     colorPalette: 'violet, purple, warm',
     notes: '결제/쇼핑 카트 아이콘.',
-    imagePath: 'webtoon/ep3-p2.png',
+    imagePath: 'webtoon/ep3-p2.webp',
   },
   {
     id: 'ep3-p3',
@@ -139,7 +139,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '수수료 · 설명',
     colorPalette: 'cyan, indigo, gold',
     notes: 'CPS = 판매금액 비율.',
-    imagePath: 'webtoon/ep3-p3.png',
+    imagePath: 'webtoon/ep3-p3.webp',
   },
   {
     id: 'ep4-p1',
@@ -152,7 +152,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '비교 시작',
     colorPalette: 'slate, white',
     notes: '다음 컷으로 이어지는 복선.',
-    imagePath: 'webtoon/ep4-p1.png',
+    imagePath: 'webtoon/ep4-p1.webp',
   },
   {
     id: 'ep4-p2',
@@ -165,7 +165,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '한눈에 비교',
     colorPalette: 'emerald left, cyan right',
     notes: '가장 중요한 비교 컷. 대칭 구도.',
-    imagePath: 'webtoon/ep4-p2.png',
+    imagePath: 'webtoon/ep4-p2.webp',
   },
   {
     id: 'ep5-p1',
@@ -178,7 +178,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '불안 · 공감',
     colorPalette: 'amber, orange',
     notes: '광고비 낭비 공포.',
-    imagePath: 'webtoon/ep5-p1.png',
+    imagePath: 'webtoon/ep5-p1.webp',
   },
   {
     id: 'ep5-p2',
@@ -191,7 +191,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '안심 · Win',
     colorPalette: 'cyan, emerald',
     notes: 'ROI/효율 느낌.',
-    imagePath: 'webtoon/ep5-p2.png',
+    imagePath: 'webtoon/ep5-p2.webp',
   },
   {
     id: 'ep6-p1',
@@ -204,7 +204,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: '놀람 · 기쁨',
     colorPalette: 'emerald, teal',
     notes: '파트너 관점 클라이맥스.',
-    imagePath: 'webtoon/ep6-p1.png',
+    imagePath: 'webtoon/ep6-p1.webp',
   },
   {
     id: 'ep6-p2',
@@ -217,7 +217,7 @@ export const illustrationBriefs: IllustrationBrief[] = [
     mood: 'Happy Ending',
     colorPalette: 'indigo, emerald, gold confetti',
     notes: '시리즈 마지막 컷. 포스터 퀄리티.',
-    imagePath: 'webtoon/ep6-p2.png',
+    imagePath: 'webtoon/ep6-p2.webp',
   },
 ];
 
