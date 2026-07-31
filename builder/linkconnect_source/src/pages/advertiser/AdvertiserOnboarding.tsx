@@ -119,33 +119,24 @@ export function AdvertiserOnboarding() {
           active={currentPhase === 2}
           locked={!contractDone}
           icon={<Package size={20} />}
-          title="2. 광고등록 신청"
+          title="2. 광고상품 확인"
           body={
             !contractDone
-              ? '계약 체결 후 캠페인 광고등록 신청서를 작성할 수 있습니다.'
+              ? '계약 체결 후 운영할 광고상품을 확인할 수 있습니다.'
               : loading
                 ? '광고상품을 불러오는 중...'
                 : campaignDone
                   ? `${campaigns.length}개의 광고상품이 준비되어 있습니다. 홍보 가이드를 작성해 주세요.`
-                  : '광고등록 신청서를 제출하면 관리자가 캠페인을 등록·오픈합니다.'
+                  : '광고상품 등록은 이메일 또는 별도 서식으로 접수합니다. 등록이 완료되면 여기에 표시됩니다.'
           }
           action={
             contractDone && !loading ? (
-              campaignDone ? (
-                <Link
-                  to="/advertiser/campaigns"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-cyan-700"
-                >
-                  광고상품 목록
-                </Link>
-              ) : (
-                <Link
-                  to="/advertiser/ad-apply"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold"
-                >
-                  광고 등록 신청하기 <ArrowRight size={16} />
-                </Link>
-              )
+              <Link
+                to="/advertiser/campaigns"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-cyan-700"
+              >
+                광고상품 목록 {campaignDone ? null : <ArrowRight size={16} />}
+              </Link>
             ) : loading ? (
               <span className="inline-flex items-center gap-2 text-sm text-slate-500">
                 <Loader2 size={16} className="animate-spin" /> 확인 중

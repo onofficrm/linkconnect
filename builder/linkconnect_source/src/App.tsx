@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
@@ -35,7 +35,6 @@ import { PartnerLiveEarnings } from './pages/partner/PartnerLiveEarnings';
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
 import { AdvertiserOnboarding } from './pages/advertiser/AdvertiserOnboarding';
-import { AdvertiserAdApply } from './pages/advertiser/AdvertiserAdApply';
 import { AdvertiserDb } from './pages/advertiser/AdvertiserDb';
 import { AdvertiserCall } from './pages/advertiser/AdvertiserCall';
 import { AdvertiserBilling } from './pages/advertiser/AdvertiserBilling';
@@ -147,7 +146,7 @@ export default function App() {
           <Route element={<AdvertiserContractAccessGuard />}>
             <Route path="advertiser" element={<AdvertiserDashboard />} />
             <Route path="advertiser/onboarding" element={<AdvertiserOnboarding />} />
-            <Route path="advertiser/ad-apply" element={<AdvertiserAdApply />} />
+            <Route path="advertiser/ad-apply" element={<Navigate to="/advertiser/campaigns" replace />} />
             <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
             <Route path="advertiser/campaigns/:cpId/guide" element={<AdvertiserCampaignGuide />} />
             <Route path="advertiser/db" element={<AdvertiserDb />} />
