@@ -57,12 +57,30 @@ export const metadata: Metadata = {
     }
   },
   icons: {
+    // basePath 밖 절대 경로 — yevely 루트 Cafe24 기본 favicon.ico 를 피하고 modemo 브랜드 아이콘 사용
     icon: [
-      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      {
+        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon.ico",
+        sizes: "48x48",
+        type: "image/x-icon",
+      },
+      {
+        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon.svg",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      {
+        url: "/plugin/onoff-builder-bridge/imports/modemo/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   },
   openGraph: {
     title: "모두의철거 | 상가·주택 철거 비교견적",
