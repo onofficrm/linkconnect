@@ -1,0 +1,44 @@
+# Cursor 인덱싱/검색 부하 차단 (외장디스크 + 거대 node_modules 대응)
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+dist/
+**/dist/
+.deploy/
+**/.deploy/
+.turbo/
+**/.turbo/
+.vite/
+**/.vite/
+
+# macOS junk
+._*
+**/._*
+.DS_Store
+
+# 빌드·캐시·로그
+*.log
+data/cache/
+data/session/
+data/tmp/
+data/log/
+data/file/
+
+# 대용량 정적 산출물 (소스 아닌 import 번들)
+plugin/onoff-builder-bridge/imports/**/_next/
+plugin/onoff-builder-bridge/imports/**/assets/
+plugin/onoff-builder-bridge/imports/**/images/
+plugin/onoff-builder-bridge/imports/**/business_logos/
+
+# lock / 압축·백업
+package-lock.json
+**/package-lock.json
+bun.lock
+**/bun.lock
+*.zip
+*.tar
+*.tar.gz
+*.sql.gz
