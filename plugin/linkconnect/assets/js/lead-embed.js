@@ -9,7 +9,6 @@
   'use strict';
 
   var STYLE_ID = 'lc-lead-embed-style';
-  var booted = false;
 
   function qs(sel, root) {
     return (root || document).querySelector(sel);
@@ -292,6 +291,8 @@
     var script = isScript ? scriptOrMount : currentScript();
     var mount = isScript ? resolveMount(script) : scriptOrMount;
     if (!mount) return;
+    if (mount.getAttribute('data-lc-ready') === '1') return;
+    mount.setAttribute('data-lc-ready', '1');
 
     var lkCode = resolveLkCode(script, mount);
     var channel = attr(script, 'data-channel') || attr(mount, 'data-channel') || '';
@@ -335,15 +336,13 @@
       });
   }
 
-  function boot() {
-    if (booted) return;
-    booted = true;
-    var script = currentScript();
-    if (script && attr(script, 'data-lk-code')) {
+  function boot(scriptHint) {
+    var script = scriptHint || currentScript();
+    if (script && (attr(script, 'data-lk-code') || attr(script, 'data-target'))) {
       bootOne(script);
       return;
     }
-    var nodes = document.querySelectorAll('[data-lc-lead]');
+    var nodes = document.querySelectorAll('[data-lc-lead]:not([data-lc-ready="1"])');
     if (nodes.length) {
       for (var i = 0; i < nodes.length; i++) {
         bootOne(nodes[i]);
@@ -355,11 +354,16 @@
     }
   }
 
+  // 스크립트 태그마다 실행되므로 다중 폼도 각각 부팅
+  var thisScript = currentScript();
+  function start() {
+    boot(thisScript);
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    boot();
+    start();
   }
 
-  window.LinkConnectLeadEmbed = { boot: boot };
+  window.LinkConnectLeadEmbed = { boot: boot, bootOne: bootOne };
 })();

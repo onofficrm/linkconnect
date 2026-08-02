@@ -1,24 +1,9 @@
-import { Copy, X } from 'lucide-react';
-import { buildLeadEmbedSnippet } from '../../lib/partnerEmbed';
-
-const STEPS = [
-  {
-    title: '홍보 링크 준비',
-    body: '광고상품 찾기 또는 내 홍보 링크에서 CPA 홍보 링크를 생성합니다. 이미 만든 링크라면 목록의 WP 폼 버튼으로 바로 복사할 수 있습니다.',
-  },
-  {
-    title: '설치 코드 복사',
-    body: '「설치 코드 복사」또는「WP 폼」을 누르면 파트너코드(lkCode)가 포함된 HTML이 클립보드에 복사됩니다.',
-  },
-  {
-    title: '워드프레스에 붙여넣기',
-    body: '워드프레스 편집 화면에서 커스텀 HTML(또는 HTML) 블록을 추가한 뒤, 복사한 코드를 그대로 붙여넣고 페이지를 저장·게시합니다.',
-  },
-  {
-    title: '동작 확인',
-    body: '게시된 페이지에서 상담 폼이 보이면 테스트 접수를 해 보세요. 접수된 DB는 해당 홍보 링크 실적으로 파트너센터에 반영됩니다.',
-  },
-] as const;
+import { Copy, Download, X } from 'lucide-react';
+import {
+  buildLeadEmbedShortcode,
+  buildLeadEmbedSnippet,
+  leadEmbedPluginDownloadUrl,
+} from '../../lib/partnerEmbed';
 
 type Props = {
   open: boolean;
@@ -33,6 +18,8 @@ export function PartnerWpEmbedGuideModal({ open, onClose, lkCode, onCopySnippet 
 
   const sampleCode = (lkCode || 'YOUR_LK_CODE').trim();
   const snippet = buildLeadEmbedSnippet(sampleCode);
+  const shortcode = buildLeadEmbedShortcode(sampleCode === 'YOUR_LK_CODE' ? '' : sampleCode);
+  const pluginUrl = leadEmbedPluginDownloadUrl();
 
   return (
     <div
@@ -52,7 +39,7 @@ export function PartnerWpEmbedGuideModal({ open, onClose, lkCode, onCopySnippet 
             <h3 id="wp-embed-guide-title" className="text-lg font-bold text-slate-900">
               워드프레스 상담폼 사용방법
             </h3>
-            <p className="text-sm text-slate-500 mt-0.5">홈페이지에 파트너코드 연결 상담신청 폼 설치</p>
+            <p className="text-sm text-slate-500 mt-0.5">플러그인 설치 또는 HTML 코드로 홈페이지에 연결</p>
           </div>
           <button
             type="button"
@@ -65,40 +52,76 @@ export function PartnerWpEmbedGuideModal({ open, onClose, lkCode, onCopySnippet 
         </div>
 
         <div className="p-6 space-y-5 overflow-y-auto">
-          <ol className="space-y-4">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="flex gap-3">
-                <span className="shrink-0 w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center">
-                  {index + 1}
-                </span>
-                <div>
-                  <div className="text-sm font-bold text-slate-900 mb-1">{step.title}</div>
-                  <p className="text-sm text-slate-600 leading-relaxed">{step.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-            <div className="text-xs font-bold text-slate-500">설치 코드 예시</div>
-            <pre className="text-[11px] break-all whitespace-pre-wrap bg-slate-900 text-slate-100 rounded-xl p-3 font-mono max-h-36 overflow-y-auto">
-              {snippet}
-            </pre>
-            {onCopySnippet && lkCode ? (
-              <button
-                type="button"
-                onClick={() => onCopySnippet(snippet)}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold"
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-3">
+            <div className="text-sm font-bold text-emerald-900">추천: 워드프레스 플러그인</div>
+            <ol className="list-decimal pl-5 space-y-1.5 text-sm text-emerald-950/90 leading-relaxed">
+              <li>아래 zip을 받아 워드프레스 → 플러그인 → 새로 추가 → 업로드</li>
+              <li>설정 → LinkConnect 상담폼 에서 홍보코드 저장</li>
+              <li>페이지에 블록 「LinkConnect 상담폼」 또는 숏코드 삽입</li>
+            </ol>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <a
+                href={pluginUrl}
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500"
+                download
               >
-                <Copy size={16} />
-                내 설치 코드 복사
-              </button>
-            ) : null}
-          </div>
+                <Download size={16} />
+                플러그인 zip 다운로드
+              </a>
+              {onCopySnippet ? (
+                <button
+                  type="button"
+                  onClick={() => onCopySnippet(shortcode)}
+                  className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-emerald-300 bg-white text-emerald-800 text-sm font-bold"
+                >
+                  <Copy size={16} />
+                  숏코드 복사
+                </button>
+              ) : null}
+            </div>
+            <pre className="text-[11px] break-all whitespace-pre-wrap bg-white/80 text-emerald-950 rounded-xl p-3 font-mono border border-emerald-100">
+              {shortcode}
+            </pre>
+          </section>
+
+          <section className="space-y-3">
+            <div className="text-sm font-bold text-slate-900">또는 HTML 코드 직접 삽입</div>
+            <ol className="space-y-3">
+              {[
+                '파트너센터에서 홍보 링크를 준비합니다.',
+                '설치 코드를 복사합니다.',
+                '워드프레스 커스텀 HTML 블록에 붙여넣고 게시합니다.',
+                '테스트 접수 후 파트너센터 실적을 확인합니다.',
+              ].map((body, index) => (
+                <li key={body} className="flex gap-3">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center">
+                    {index + 1}
+                  </span>
+                  <p className="text-sm text-slate-600 leading-relaxed pt-1">{body}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+              <div className="text-xs font-bold text-slate-500">설치 코드 예시</div>
+              <pre className="text-[11px] break-all whitespace-pre-wrap bg-slate-900 text-slate-100 rounded-xl p-3 font-mono max-h-36 overflow-y-auto">
+                {snippet}
+              </pre>
+              {onCopySnippet && lkCode ? (
+                <button
+                  type="button"
+                  onClick={() => onCopySnippet(snippet)}
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold"
+                >
+                  <Copy size={16} />
+                  HTML 설치 코드 복사
+                </button>
+              ) : null}
+            </div>
+          </section>
 
           <ul className="text-xs text-slate-500 space-y-1.5 leading-relaxed list-disc pl-4">
             <li>페이지 URL에 <code className="text-slate-700">?lkCode=</code>가 있으면 그 값이 우선 적용됩니다.</li>
-            <li>스크립트 주소는 링크커넥트 도메인이어야 합니다. (다른 서버에 파일을 복사하지 마세요)</li>
+            <li>스크립트·플러그인은 링크커넥트 도메인의 폼 API를 호출합니다.</li>
             <li>테마·캐시 플러그인 때문에 안 보이면 캐시를 비운 뒤 다시 확인해 주세요.</li>
           </ul>
         </div>

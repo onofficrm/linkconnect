@@ -27,6 +27,12 @@ jobs:
           cache: npm
           cache-dependency-path: builder/linkconnect_source/package-lock.json
 
+      - name: Build WordPress lead plugin zip
+        run: |
+          chmod +x scripts/build-wp-lead-plugin.sh
+          ./scripts/build-wp-lead-plugin.sh
+          test -f plugin/linkconnect/assets/wordpress/linkconnect-lead.zip
+
       - name: Build LinkConnect SPA
         run: |
           cd builder/linkconnect_source
@@ -86,7 +92,7 @@ jobs:
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,advertiser-apply,terms,privacy,inc,merchant/banktupt,merchant/dasibom,merchant/hasugu_cpa,merchant/modemo,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/onoff-builder-bridge/imports/dasibom,plugin/onoff-builder-bridge/imports/hasugu_cpa,plugin/onoff-builder-bridge/imports/modemo,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/assets/js,plugin/linkconnect/assets/contracts/custom,plugin/linkconnect/api,plugin/linkconnect/api/v1/merchant,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,advertiser-apply,terms,privacy,inc,merchant/banktupt,merchant/dasibom,merchant/hasugu_cpa,merchant/modemo,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/onoff-builder-bridge/imports/dasibom,plugin/onoff-builder-bridge/imports/hasugu_cpa,plugin/onoff-builder-bridge/imports/modemo,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/assets/js,plugin/linkconnect/assets/wordpress,plugin/linkconnect/assets/contracts/custom,plugin/linkconnect/api,plugin/linkconnect/api/v1/merchant,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -173,6 +179,7 @@ jobs:
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
           cp plugin/linkconnect/assets/js/linkconnect.js plugin/linkconnect/assets/js/lead-embed.js "$ROOT/plugin/linkconnect/assets/js/"
+          cp plugin/linkconnect/assets/wordpress/linkconnect-lead.zip "$ROOT/plugin/linkconnect/assets/wordpress/"
           cp plugin/linkconnect/inc/embed.php "$ROOT/plugin/linkconnect/inc/"
           if [[ -d plugin/linkconnect/assets/contracts/custom ]]; then
             mkdir -p "$ROOT/plugin/linkconnect/assets/contracts/custom"

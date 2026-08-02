@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp } from 'lucide-react';
+import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp, Download } from 'lucide-react';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { PartnerWpEmbedGuideModal } from '../../components/partner/PartnerWpEmbedGuideModal';
@@ -11,7 +11,7 @@ import {
   fetchPartnerLinks,
   PartnerLink,
 } from '../../lib/api';
-import { buildLeadEmbedSnippet } from '../../lib/partnerEmbed';
+import { buildLeadEmbedSnippet, leadEmbedPluginDownloadUrl } from '../../lib/partnerEmbed';
 
 export function PartnerLinks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,6 +110,13 @@ export function PartnerLinks() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 -mt-2">
         <p className="text-slate-500">생성한 홍보 링크를 관리하고, 채널별 성과를 확인하세요.</p>
         <div className="flex flex-wrap gap-2">
+          <a
+            href={leadEmbedPluginDownloadUrl()}
+            download
+            className="px-4 py-2.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-800 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
+          >
+            <Download size={18} /> WP 플러그인
+          </a>
           <button
             type="button"
             onClick={() => {
@@ -173,71 +180,75 @@ export function PartnerLinks() {
                         </td>
                         <td className="px-4 py-4 font-medium text-slate-600">{link.subId || '-'}</td>
                         <td className="px-4 py-4">
-                          <div className="flex flex-col gap-2 min-w-[220px]">
-                            <div className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg font-mono text-xs border border-slate-200 max-w-[260px] truncate" title={displayUrl}>
-                              {displayUrl}
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              <button
-                                type="button"
-                                disabled={busyId === link.id}
-                                onClick={async () => {
-                                  setBusyId(link.id);
-                                  try {
-                                    const res = await buildPartnerCpaShortlink({ linkId: link.id });
-                                    setShortUrls((prev) => ({ ...prev, [link.id]: res.shortUrl }));
-                                    notify('숏링크로 변환되었습니다.');
-                                  } catch (e) {
-                                    notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
-                                  } finally {
-                                    setBusyId(null);
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-800 text-xs font-bold disabled:opacity-50"
-                              >
-                                <LinkIcon size={14} />
-                                {busyId === link.id ? '변환 중…' : '숏링크 변환'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => copyUrl(displayUrl, link.id)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
-                                title="링크 복사"
-                              >
-                                {copiedId === link.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
-                                복사
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void copyUrl(
-                                    buildLeadEmbedSnippet(link.code),
-                                    link.id,
-                                    '워드프레스 설치 코드가 복사되었습니다.',
-                                  );
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold"
-                                title="워드프레스 상담폼 설치 코드 복사"
-                              >
-                                <Code2 size={14} />
-                                WP 폼
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setWpGuideLkCode(link.code);
-                                  setWpGuideOpen(true);
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50"
-                                title="워드프레스 상담폼 사용방법"
-                              >
-                                <CircleHelp size={14} />
-                                안내
-                              </button>
-                              <a href={displayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50" title="새 창으로 열기">
-                                <ExternalLink size={14} />
-                              </a>
-                            </div>
+                          <div className="flex flex-wrap items-center gap-1.5 min-w-[220px] max-w-[360px]">
+                            <button
+                              type="button"
+                              onClick={() => copyUrl(displayUrl, link.id)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 max-w-full"
+                              title={`${displayUrl} (클릭하여 복사)`}
+                            >
+                              <LinkIcon size={14} className="shrink-0 text-slate-400" />
+                              <span className="truncate">{displayUrl}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === link.id}
+                              onClick={async () => {
+                                setBusyId(link.id);
+                                try {
+                                  const res = await buildPartnerCpaShortlink({ linkId: link.id });
+                                  setShortUrls((prev) => ({ ...prev, [link.id]: res.shortUrl }));
+                                  notify('숏링크로 변환되었습니다.');
+                                } catch (e) {
+                                  notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                                } finally {
+                                  setBusyId(null);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-800 text-xs font-bold disabled:opacity-50"
+                            >
+                              <LinkIcon size={14} />
+                              {busyId === link.id ? '변환 중…' : '숏링크 변환'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => copyUrl(displayUrl, link.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+                              title="링크 복사"
+                            >
+                              {copiedId === link.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                              복사
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void copyUrl(
+                                  buildLeadEmbedSnippet(link.code),
+                                  link.id,
+                                  '워드프레스 설치 코드가 복사되었습니다.',
+                                );
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold"
+                              title="워드프레스 상담폼 설치 코드 복사"
+                            >
+                              <Code2 size={14} />
+                              WP 폼
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setWpGuideLkCode(link.code);
+                                setWpGuideOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50"
+                              title="워드프레스 상담폼 사용방법"
+                            >
+                              <CircleHelp size={14} />
+                              안내
+                            </button>
+                            <a href={displayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50" title="새 창으로 열기">
+                              <ExternalLink size={14} />
+                            </a>
                           </div>
                         </td>
                         <td className="px-4 py-4 text-right font-bold text-slate-700">{link.clicks.toLocaleString()}</td>
@@ -285,7 +296,7 @@ export function PartnerLinks() {
                 숏링크 변환으로 <code className="text-cyan-300">/s/</code> 짧은 주소를 만든 뒤 복사해 채널에 게시하세요. 클릭은 기존 추적 링크로 연결됩니다.
               </p>
               <p className="text-slate-400 text-xs leading-relaxed">
-                <strong className="text-emerald-400 font-semibold">WP 폼</strong> 버튼으로 워드프레스 홈페이지에 붙일 상담신청 설치 코드를 복사할 수 있습니다. 파트너코드가 자동 연결됩니다.
+                <strong className="text-emerald-400 font-semibold">WP 플러그인</strong> zip을 설치하거나, <strong className="text-emerald-400 font-semibold">WP 폼</strong> HTML 코드를 붙여 홈페이지에 상담폼을 넣을 수 있습니다.
               </p>
               <button
                 type="button"

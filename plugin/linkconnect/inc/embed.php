@@ -98,6 +98,7 @@ if (!function_exists('lc_embed_config_for_lk_code')) {
             'configUrl'     => $config_url,
             'privacyUrl'    => $privacy_url,
             'scriptUrl'     => lc_embed_script_url(),
+            'pluginDownloadUrl' => lc_site_absolute_url('/plugin/linkconnect/assets/wordpress/linkconnect-lead.zip'),
             'channel'       => 'wordpress',
             'title'         => '상담 신청',
             'subtitle'      => $campaign_title !== '' ? $campaign_title : '빠른 상담을 남겨 주세요.',
