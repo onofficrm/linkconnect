@@ -56,6 +56,14 @@ export const metadata: Metadata = {
       "naver-site-verification": process.env.NAVER_SITE_VERIFICATION || '',
     }
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   openGraph: {
     title: "모두의철거 | 상가·주택 철거 비교견적",
     description: "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",

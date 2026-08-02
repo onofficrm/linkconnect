@@ -31,6 +31,20 @@ export default {
       target.pathname = '/merchant/modemo/';
     }
 
+    // 브라우저 기본 파비콘 요청 → modemo 브랜드 아이콘
+    // (Worker 는 Host 를 오리진으로 바꾸므로 PHP 독립도메인 게이트가 못 잡음)
+    const iconName = ({
+      '/favicon.ico': '/favicon.ico',
+      '/favicon.svg': '/favicon.svg',
+      '/favicon-32x32.png': '/favicon-32x32.png',
+      '/apple-touch-icon.png': '/apple-touch-icon.png',
+      '/apple-touch-icon-precomposed.png': '/apple-touch-icon.png',
+      '/icon.png': '/icon.png',
+    })[target.pathname];
+    if (iconName) {
+      target.pathname = `${MODEMO_BASE}${iconName}`;
+    }
+
     // 레거시 /images/* → modemo import 경로
     if (target.pathname === '/images' || target.pathname.startsWith('/images/')) {
       target.pathname = `${MODEMO_BASE}${target.pathname}`;

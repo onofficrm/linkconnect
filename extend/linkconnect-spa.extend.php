@@ -185,8 +185,26 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
         if (is_string($g5_host) && $g5_host !== '') {
             $main_hosts[] = strtolower($g5_host);
         }
+        // Cloudflare Worker 프록시: Host 는 메인, 공개 호스트는 X-LC-Public-Host
+        $public_host = '';
+        if (!empty($_SERVER['HTTP_X_LC_PUBLIC_HOST'])) {
+            $public_host = strtolower(preg_replace('/:\d+$/', '', (string) $_SERVER['HTTP_X_LC_PUBLIC_HOST']));
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+            $xfh = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_HOST']);
+            $public_host = strtolower(preg_replace('/:\d+$/', '', trim($xfh[0])));
+        }
         if (in_array($host, array_values(array_unique($main_hosts)), true)) {
-            return;
+            // 메인 호스트라도 공개 독립도메인의 파비콘 요청이면 게이트 계속
+            $uri_probe = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+            $path_probe = parse_url($uri_probe, PHP_URL_PATH);
+            $is_icon = is_string($path_probe) && preg_match(
+                '#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png|icon\.png)$#',
+                $path_probe
+            );
+            if (!($is_icon && $public_host !== '' && !in_array($public_host, $main_hosts, true))) {
+                return;
+            }
+            $host = $public_host;
         }
 
         $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
@@ -214,7 +232,7 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
             return;
         }
         // 독립 도메인: 브라우저 기본 요청 /favicon.ico 등
-        if (preg_match('#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png|lawyer-portrait\.jpg)$#', $path, $fm)) {
+        if (preg_match('#^/(favicon\.ico|favicon\.svg|favicon-32x32\.png|apple-touch-icon(?:-precomposed)?\.png|icon\.png|lawyer-portrait\.jpg)$#', $path, $fm)) {
             $landing_file = linkconnect_tracking_home_landing_file($host);
             $import_id = 'dasibom';
             if ($landing_file !== '' && preg_match('#/merchant/([A-Za-z0-9_-]+)/#', str_replace('\\', '/', $landing_file), $mm)) {
@@ -234,6 +252,7 @@ if (!function_exists('linkconnect_tracking_domain_spa_gate')) {
                     'favicon.svg' => 'image/svg+xml',
                     'favicon-32x32.png' => 'image/png',
                     'apple-touch-icon.png' => 'image/png',
+                    'icon.png' => 'image/png',
                     'lawyer-portrait.jpg' => 'image/jpeg',
                 );
                 if (!headers_sent()) {
