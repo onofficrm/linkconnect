@@ -991,6 +991,11 @@ if (!function_exists('onoff_builder_render_import_page')) {
             }
             if (function_exists('lc_landing_context_for_api')) {
                 $params = $_GET;
+                if ($id === 'dasibom' || $id === 'banktupt') {
+                    if (empty($params['cid']) && empty($params['campaign_id'])) {
+                        $params['cid'] = 'CPA-DASIBOM';
+                    }
+                }
                 if ($id === 'hasugu_cpa') {
                     if (empty($params['cid']) && empty($params['campaign_id'])) {
                         $params['cid'] = 'CPA-HASUGU';

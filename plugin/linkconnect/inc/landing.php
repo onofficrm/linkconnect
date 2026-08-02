@@ -227,7 +227,8 @@ if (!function_exists('lc_landing_context_for_api')) {
             'business_number'     => $ctx['businessNumber'],
             'business_address'    => $ctx['businessAddress'],
             'privacy_policy_url'  => '/privacy',
-            'lead_submit_url'     => (defined('G5_URL') ? rtrim((string) G5_URL, '/') : '') . '/plugin/linkconnect/api/receive.php',
+            // 독립도메인(Worker)에서도 동일 출처로 접수되도록 상대경로 고정
+            'lead_submit_url'     => '/plugin/linkconnect/api/receive.php',
             'utm_source'          => $ctx['utmSource'],
             'utm_medium'          => $ctx['utmMedium'],
             'utm_campaign'        => $ctx['utmCampaign'],

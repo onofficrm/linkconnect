@@ -8,17 +8,7 @@ if (!$body && $_POST) {
     $body = $_POST;
 }
 
-$lk_code = isset($body['lkCode']) ? trim((string) $body['lkCode']) : (isset($body['lk_code']) ? trim((string) $body['lk_code']) : '');
-if ($lk_code === '') {
-    lc_api_error('홍보 링크 코드가 필요합니다.', 'INVALID_LINK', 400);
-}
-
-$link = lc_link_get_with_campaign($lk_code);
-if (!$link || $link['lk_status'] !== 'active' || $link['cp_status'] !== LC_STATUS_ACTIVE) {
-    lc_api_error('유효하지 않은 홍보 링크입니다.', 'INVALID_LINK', 404);
-}
-
-$result = lc_conversion_create_from_link($link, array(
+$payload = array(
     'name'    => isset($body['name']) ? (string) $body['name'] : '',
     'phone'   => isset($body['phone']) ? (string) $body['phone'] : '',
     'email'   => isset($body['email']) ? (string) $body['email'] : '',
@@ -26,8 +16,93 @@ $result = lc_conversion_create_from_link($link, array(
     'inquiry' => isset($body['inquiry']) ? (string) $body['inquiry'] : '',
     'channel' => isset($body['channel']) ? (string) $body['channel'] : (isset($body['utm_source']) ? (string) $body['utm_source'] : ''),
     'sub_id'  => isset($body['sub_id']) ? (string) $body['sub_id'] : (isset($body['utm_campaign']) ? (string) $body['utm_campaign'] : ''),
-));
+);
 
+$lk_code = isset($body['lkCode']) ? trim((string) $body['lkCode']) : (isset($body['lk_code']) ? trim((string) $body['lk_code']) : '');
+
+// 1) 파트너 홍보 링크가 있으면 기존 흐름 (채널은 링크/요청값 유지)
+if ($lk_code !== '') {
+    $link = lc_link_get_with_campaign($lk_code);
+    if (!$link || $link['lk_status'] !== 'active' || $link['cp_status'] !== LC_STATUS_ACTIVE) {
+        lc_api_error('유효하지 않은 홍보 링크입니다.', 'INVALID_LINK', 404);
+    }
+
+    $result = lc_conversion_create_from_link($link, $payload);
+    if (!$result['ok']) {
+        $err_code = isset($result['code']) ? (string) $result['code'] : 'CREATE_FAILED';
+        if ($err_code === 'DUPLICATE_RECENT') {
+            lc_api_success(array(
+                'message'   => $result['message'],
+                'duplicate' => true,
+            ));
+        }
+        lc_api_error($result['message'], $err_code, 400);
+    }
+
+    lc_api_success(array(
+        'message'    => $result['message'],
+        'code'       => is_array($result['conversion']) ? (string) $result['conversion']['cv_code'] : '',
+        'conversion' => is_array($result['conversion']) ? lc_conversion_to_api_merchant(
+            array_merge($result['conversion'], array('cp_name' => $link['cp_name'], 'pt_code' => '')),
+            false
+        ) : null,
+    ));
+}
+
+// 2) 독립도메인 직접 유입 → 캠페인 매칭 후 유입경로 SEO
+$campaign = null;
+$public_host = function_exists('lc_request_public_host') ? lc_request_public_host() : '';
+if ($public_host !== '' && function_exists('lc_campaign_find_active_by_tracking_host')) {
+    $campaign = lc_campaign_find_active_by_tracking_host($public_host);
+}
+
+if (!$campaign) {
+    $campaign_ref = '';
+    foreach (array('campaignId', 'campaign_id', 'cid', 'campaign_code', 'cpCode', 'cp_code') as $key) {
+        if (isset($body[$key]) && trim((string) $body[$key]) !== '') {
+            $campaign_ref = trim((string) $body[$key]);
+            break;
+        }
+    }
+    if ($campaign_ref !== '' && lc_db_installed()) {
+        $cp_table = lc_table('campaigns');
+        if (ctype_digit($campaign_ref)) {
+            $campaign = lc_sql_fetch(
+                " SELECT * FROM `{$cp_table}`
+                  WHERE cp_id = '" . (int) $campaign_ref . "'
+                    AND cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "'
+                  LIMIT 1 "
+            );
+        } else {
+            $campaign = lc_sql_fetch(
+                " SELECT * FROM `{$cp_table}`
+                  WHERE cp_code = '" . lc_sql_escape($campaign_ref) . "'
+                    AND cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "'
+                  LIMIT 1 "
+            );
+        }
+        // 캠페인 코드로 찾은 경우에도 독립도메인(또는 trackingBaseUrl 설정) 상품만 SEO 허용
+        if (is_array($campaign)) {
+            $tracking_base = trim((string) ($campaign['cp_tracking_base_url'] ?? ''));
+            $is_tracking_host = $public_host !== ''
+                && function_exists('lc_link_configured_tracking_hosts')
+                && in_array($public_host, lc_link_configured_tracking_hosts(), true);
+            if ($tracking_base === '' && !$is_tracking_host) {
+                $campaign = null;
+            }
+        }
+    }
+}
+
+if (!is_array($campaign)) {
+    lc_api_error(
+        '독립도메인 또는 홍보 링크가 필요합니다. 파트너 링크(/r/코드)로 접속하거나 광고상품 독립도메인으로 신청해 주세요.',
+        'INVALID_LINK',
+        400
+    );
+}
+
+$result = lc_conversion_create_from_seo_campaign($campaign, $payload);
 if (!$result['ok']) {
     $err_code = isset($result['code']) ? (string) $result['code'] : 'CREATE_FAILED';
     if ($err_code === 'DUPLICATE_RECENT') {
@@ -43,7 +118,13 @@ lc_api_success(array(
     'message'    => $result['message'],
     'code'       => is_array($result['conversion']) ? (string) $result['conversion']['cv_code'] : '',
     'conversion' => is_array($result['conversion']) ? lc_conversion_to_api_merchant(
-        array_merge($result['conversion'], array('cp_name' => $link['cp_name'], 'pt_code' => '')),
+        array_merge(
+            $result['conversion'],
+            array(
+                'cp_name' => (string) ($campaign['cp_name'] ?? ''),
+                'pt_code' => 'SEO',
+            )
+        ),
         false
     ) : null,
 ));

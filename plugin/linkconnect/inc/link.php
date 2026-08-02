@@ -55,6 +55,105 @@ if (!function_exists('lc_link_request_host')) {
     }
 }
 
+if (!function_exists('lc_request_public_host')) {
+    /**
+     * 브라우저 공개 호스트 (Cloudflare Worker → X-LC-Public-Host 우선).
+     * 독립도메인 SEO DB 접수 시 캠페인 매칭에 사용.
+     */
+    function lc_request_public_host()
+    {
+        $candidates = array();
+        if (!empty($_SERVER['HTTP_X_LC_PUBLIC_HOST'])) {
+            $candidates[] = (string) $_SERVER['HTTP_X_LC_PUBLIC_HOST'];
+        }
+        if (!empty($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+            $xfh = explode(',', (string) $_SERVER['HTTP_X_FORWARDED_HOST']);
+            $candidates[] = trim($xfh[0]);
+        }
+        if (!empty($_SERVER['HTTP_ORIGIN'])) {
+            $origin_host = parse_url((string) $_SERVER['HTTP_ORIGIN'], PHP_URL_HOST);
+            if (is_string($origin_host) && $origin_host !== '') {
+                $candidates[] = $origin_host;
+            }
+        }
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $ref_host = parse_url((string) $_SERVER['HTTP_REFERER'], PHP_URL_HOST);
+            if (is_string($ref_host) && $ref_host !== '') {
+                $candidates[] = $ref_host;
+            }
+        }
+        $candidates[] = lc_link_request_host();
+
+        foreach ($candidates as $raw) {
+            $host = strtolower(preg_replace('/:\d+$/', '', trim((string) $raw)));
+            if ($host !== '') {
+                return $host;
+            }
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('lc_campaign_find_active_by_tracking_host')) {
+    /**
+     * 독립도메인(cp_tracking_base_url)에 연결된 운영중 CPA 캠페인 조회.
+     * 신규 광고상품도 trackingBaseUrl 만 설정하면 SEO 접수에 자동 매칭된다.
+     *
+     * @return array|null
+     */
+    function lc_campaign_find_active_by_tracking_host($host)
+    {
+        $host = strtolower(preg_replace('/:\d+$/', '', trim((string) $host)));
+        if ($host === '' || !lc_db_installed()) {
+            return null;
+        }
+
+        $aliases = function_exists('lc_link_host_with_www_aliases')
+            ? lc_link_host_with_www_aliases($host)
+            : array($host);
+        if ($aliases === array()) {
+            return null;
+        }
+
+        $table = lc_table('campaigns');
+        if (!function_exists('lc_db_column_exists') || !lc_db_column_exists($table, 'cp_tracking_base_url')) {
+            return null;
+        }
+
+        $status = defined('LC_STATUS_ACTIVE') ? LC_STATUS_ACTIVE : 'active';
+        $result = lc_sql_query(
+            " SELECT * FROM `{$table}`
+              WHERE cp_status = '" . lc_sql_escape($status) . "'
+                AND cp_tracking_base_url <> ''
+              ORDER BY cp_id DESC ",
+            false
+        );
+        if (!$result) {
+            return null;
+        }
+
+        while ($row = sql_fetch_array($result)) {
+            $base_host = function_exists('lc_link_host_from_base_url')
+                ? lc_link_host_from_base_url((string) ($row['cp_tracking_base_url'] ?? ''))
+                : '';
+            if ($base_host === '') {
+                continue;
+            }
+            $base_aliases = function_exists('lc_link_host_with_www_aliases')
+                ? lc_link_host_with_www_aliases($base_host)
+                : array($base_host);
+            foreach ($aliases as $alias) {
+                if (in_array($alias, $base_aliases, true)) {
+                    return $row;
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('lc_link_is_main_request_host')) {
     function lc_link_is_main_request_host()
     {

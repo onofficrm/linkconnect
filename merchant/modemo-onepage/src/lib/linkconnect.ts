@@ -27,9 +27,18 @@ export function resolveLkCode(): string {
   return typeof injected === 'string' ? injected : '';
 }
 
+export function resolveCampaignId(): string {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery =
+    params.get('cid') || params.get('campaign_id') || params.get('campaignId') || '';
+  if (fromQuery) return fromQuery;
+  const injected = window.LC_LANDING_CONTEXT?.campaign_id;
+  return typeof injected === 'string' ? injected : 'CPA-MODEMO';
+}
+
 export function receiveApiUrl(): string {
   const injected = window.LC_LANDING_CONTEXT?.lead_submit_url;
-  if (typeof injected === 'string' && injected && !injected.includes('{{')) {
+  if (typeof injected === 'string' && injected && !injected.includes('{{') && injected.startsWith('/')) {
     return injected;
   }
   return '/plugin/linkconnect/api/receive.php';
@@ -83,21 +92,23 @@ export async function submitConsultation(
   tracking: ConsultationTracking = {},
 ): Promise<ConsultationResult> {
   const lkCode = tracking.lkCode || resolveLkCode();
-  if (!lkCode) {
-    return {
-      ok: false,
-      message: '유효한 홍보 링크가 필요합니다. 파트너 링크(/r/코드)로 접속해 주세요.',
-    };
-  }
+  const campaignId = tracking.campaign_id || resolveCampaignId();
 
   const body: Record<string, string> = {
-    lkCode,
     name: payload.name.trim(),
     phone: payload.phone.trim(),
     inquiry: trimInquiry(payload.inquiry),
   };
 
-  if (tracking.channel) body.channel = tracking.channel;
+  if (lkCode) {
+    body.lkCode = lkCode;
+    if (tracking.channel) body.channel = tracking.channel;
+  } else {
+    // 독립도메인 직접 유입 → 서버에서 호스트/캠페인 매칭 후 유입경로 SEO
+    if (campaignId) body.campaignId = campaignId;
+    body.channel = 'SEO';
+  }
+
   if (tracking.sub_id) body.sub_id = tracking.sub_id;
   if (tracking.utm_source) body.utm_source = tracking.utm_source;
   if (tracking.utm_medium) body.utm_medium = tracking.utm_medium;

@@ -261,6 +261,12 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             $landing_url = lc_landing_public_url($lk_code, (string) ($row['cp_tracking_base_url'] ?? ''));
         }
 
+        $pt_code = trim((string) ($row['pt_code'] ?? ''));
+        $channel = trim((string) ($row['cv_channel'] ?? ''));
+        if ($pt_code === '' && strtoupper($channel) === 'SEO') {
+            $pt_code = 'SEO';
+        }
+
         return array(
             'id'          => (string) $row['cv_code'],
             'cvId'        => (int) $row['cv_id'],
@@ -271,13 +277,13 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             'email'       => (string) ($row['cv_email'] ?? ''),
             'region'      => (string) ($row['cv_region'] ?? ''),
             'inquiry'     => (string) ($row['cv_inquiry'] ?? ''),
-            'partner'     => (string) ($row['pt_code'] ?? '-'),
+            'partner'     => $pt_code !== '' ? $pt_code : '-',
             'status'      => lc_conversion_status_label($status),
             'statusCode'  => $status,
             'price'       => (int) $row['cv_price'],
             'comment'     => (string) $row['cv_comment'],
             'needsAction' => lc_conversion_needs_action($status),
-            'channel'     => (string) $row['cv_channel'],
+            'channel'     => $channel,
             'subId'       => (string) $row['cv_sub_id'],
             'qualityScore'=> (int) ($row['cv_quality_score'] ?? 0),
             'qualityTags' => lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? ''),
@@ -1186,7 +1192,8 @@ if (!function_exists('lc_conversion_create')) {
         $cv_code = lc_conversion_generate_code();
         $table = lc_table('conversions');
         $merchant_price = lc_campaign_resolve_merchant_price($campaign);
-        $partner_price = lc_campaign_resolve_partner_price($campaign);
+        // 파트너 링크 없는 SEO/자체 유입은 파트너 정산단가 0
+        $partner_price = $pt_id > 0 ? lc_campaign_resolve_partner_price($campaign) : 0;
 
         lc_sql_query(" INSERT INTO `{$table}` SET
             cv_code = '" . lc_sql_escape($cv_code) . "',
@@ -1257,6 +1264,23 @@ if (!function_exists('lc_conversion_create_from_link')) {
         if (empty($payload['sub_id'])) {
             $payload['sub_id'] = (string) ($link['lk_sub_id'] ?? '');
         }
+
+        return lc_conversion_create($payload);
+    }
+}
+
+if (!function_exists('lc_conversion_create_from_seo_campaign')) {
+    /**
+     * 독립도메인 직접 유입(파트너 링크 없음) → 유입경로 SEO.
+     *
+     * @return array{ok:bool,message:string,conversion:array|null,code?:string}
+     */
+    function lc_conversion_create_from_seo_campaign(array $campaign, array $payload)
+    {
+        $payload['pt_id'] = 0;
+        $payload['cp_id'] = (int) ($campaign['cp_id'] ?? 0);
+        $payload['lk_id'] = 0;
+        $payload['channel'] = 'SEO';
 
         return lc_conversion_create($payload);
     }
