@@ -181,7 +181,7 @@
     position: absolute;
     inset: -4%;
     background:
-        url("/plugin/onoff-builder-bridge/imports/modemo/images/2_여의도사무실.jpg") center 42% / cover no-repeat;
+        url("/plugin/linkconnect/api/merchant-static.php?m=modemo&p=images%2F2_%EC%97%AC%EC%9D%98%EB%8F%84%EC%82%AC%EB%AC%B4%EC%8B%A4.jpg") center 42% / cover no-repeat;
     filter: saturate(0.55) brightness(0.42);
     transform: scale(1.04);
     animation: worryDrift 28s ease-in-out infinite alternate;

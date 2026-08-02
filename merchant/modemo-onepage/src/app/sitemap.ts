@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 
 export const dynamic = "force-static";
 
-const BASE_URL = 'https://linkconnect.co.kr/merchant/modemo';
+const BASE_URL = 'https://yevely.kr';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     return [

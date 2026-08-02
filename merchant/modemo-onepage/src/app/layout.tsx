@@ -47,7 +47,7 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://linkconnect.co.kr"),
+  metadataBase: new URL("https://yevely.kr"),
   title: "모두의철거 | 상가·주택 철거 비교견적",
   description: "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",
   verification: {

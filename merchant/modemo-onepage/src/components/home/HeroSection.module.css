@@ -460,7 +460,7 @@
         padding: 0 12px;
         background:
             linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, #0e1014 42%),
-            url("/plugin/onoff-builder-bridge/imports/modemo/images/1_일산카페.jpg") lightgray 50% / cover no-repeat,
+            url("/plugin/linkconnect/api/merchant-static.php?m=modemo&p=images%2F1_%EC%9D%BC%EC%82%B0%EC%B9%B4%ED%8E%98.jpg") lightgray 50% / cover no-repeat,
             #0e1014;
         background-position: 50% 40%;
     }

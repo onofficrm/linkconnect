@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Next.js unoptimized Image/img가 basePath를 /images 경로에 붙이지 않는 경우를 보정.
- * out/ 내 html·js·css에서 "/images/..." → "{BASE}/images/..."
+ * Next.js unoptimized Image/img 및 CSS background 이미지 경로 보정.
+ * Cafe24 핫링크 회피: /images → PHP merchant-static 프록시.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'merchant/modemo-onepage/out');
 const BASE = '/plugin/onoff-builder-bridge/imports/modemo';
+const PROXY_PREFIX = '/plugin/linkconnect/api/merchant-static.php?m=modemo&p=';
 
 function walk(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
@@ -22,18 +23,33 @@ function walk(dir, files = []) {
   return files;
 }
 
+function toProxy(imageRel) {
+  const rel = String(imageRel).replace(/^\/+/, '');
+  return `${PROXY_PREFIX}${encodeURIComponent(rel)}`;
+}
+
 function rewrite(content) {
-  // 이미 보정된 경로는 유지
-  const placeholder = '__MODEMO_BASE__';
-  let s = content.split(`${BASE}/images/`).join(`${placeholder}/images/`);
-  s = s
-    .replaceAll('"/images/', `"${BASE}/images/`)
-    .replaceAll("'/images/", `'${BASE}/images/`)
-    .replaceAll('url(/images/', `url(${BASE}/images/`)
-    .replaceAll("url('/images/", `url('${BASE}/images/`)
-    .replaceAll('url("/images/', `url("${BASE}/images/`)
-    .replaceAll(`url(/images/`, `url(${BASE}/images/`);
-  s = s.split(`${placeholder}/images/`).join(`${BASE}/images/`);
+  let s = content;
+
+  // 잘못된 레거시 도메인
+  s = s.replaceAll('https://yevely.jp', 'https://yevely.kr');
+  s = s.replaceAll('http://yevely.jp', 'https://yevely.kr');
+  s = s.replaceAll('https://www.yevely.jp', 'https://yevely.kr');
+  s = s.replaceAll('http://www.yevely.jp', 'https://yevely.kr');
+
+  // /plugin/.../imports/modemo/images/... → proxy
+  const baseEsc = BASE.replace(/\//g, '\\/');
+  s = s.replace(new RegExp(`${baseEsc}\\/images\\/([^"'\\s?#)]+)`, 'g'), (_, file) =>
+    toProxy(`images/${file}`),
+  );
+
+  // root-relative /images/...
+  s = s.replace(/"\/images\/([^"]+)"/g, (_, file) => `"${toProxy(`images/${file}`)}"`);
+  s = s.replace(/'\/images\/([^']+)'/g, (_, file) => `'${toProxy(`images/${file}`)}'`);
+  s = s.replace(/url\(\/images\/([^)]+)\)/g, (_, file) => `url(${toProxy(`images/${file}`)})`);
+  s = s.replace(/url\("\/images\/([^"]+)"\)/g, (_, file) => `url("${toProxy(`images/${file}`)}")`);
+  s = s.replace(/url\('\/images\/([^']+)'\)/g, (_, file) => `url('${toProxy(`images/${file}`)}')`);
+
   return s;
 }
 
@@ -52,4 +68,4 @@ for (const file of walk(OUT)) {
   }
 }
 
-console.log(`Fixed modemo asset paths in ${changed} files (base=${BASE})`);
+console.log(`Fixed modemo asset paths in ${changed} files (proxy=${PROXY_PREFIX})`);

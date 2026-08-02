@@ -99,5 +99,10 @@ function rewritePublicHost(text, publicHost) {
     .replaceAll('https://linkconnect.co.kr', `https://${publicHost}`)
     .replaceAll('http://linkconnect.co.kr', `https://${publicHost}`)
     .replaceAll('https://www.linkconnect.co.kr', `https://${publicHost}`)
-    .replaceAll('http://www.linkconnect.co.kr', `https://${publicHost}`);
+    .replaceAll('http://www.linkconnect.co.kr', `https://${publicHost}`)
+    // 과거 오타 도메인 → 실제 독립도메인
+    .replaceAll('https://yevely.jp', `https://${publicHost}`)
+    .replaceAll('http://yevely.jp', `https://${publicHost}`)
+    .replaceAll('https://www.yevely.jp', `https://${publicHost}`)
+    .replaceAll('http://www.yevely.jp', `https://${publicHost}`);
 }
