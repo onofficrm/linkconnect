@@ -176,7 +176,7 @@ jobs:
             mkdir -p "$ROOT/plugin/linkconnect/assets/contracts/custom"
             cp plugin/linkconnect/assets/contracts/custom/* "$ROOT/plugin/linkconnect/assets/contracts/custom/" 2>/dev/null || true
           fi
-          cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.png" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
+          cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.webp" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           cp -R "$SRC/assets" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           if [[ -d plugin/onoff-builder-bridge/imports/banktupt ]]; then
             cp plugin/onoff-builder-bridge/imports/banktupt/index.html "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
