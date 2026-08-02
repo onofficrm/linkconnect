@@ -31,18 +31,19 @@ export default {
       target.pathname = '/merchant/modemo/';
     }
 
-    // 브라우저 기본 파비콘 요청 → modemo 브랜드 아이콘
-    // (Worker 는 Host 를 오리진으로 바꾸므로 PHP 독립도메인 게이트가 못 잡음)
-    const iconName = ({
-      '/favicon.ico': '/favicon.ico',
-      '/favicon.svg': '/favicon.svg',
-      '/favicon-32x32.png': '/favicon-32x32.png',
-      '/apple-touch-icon.png': '/apple-touch-icon.png',
-      '/apple-touch-icon-precomposed.png': '/apple-touch-icon.png',
-      '/icon.png': '/icon.png',
+    // 브라우저 기본 파비콘 요청 → merchant-static 프록시
+    // Cafe24 핫링크(Referer) 403 을 피하고, Host rewrite 로 PHP 게이트가 못 잡는 것도 보완
+    const iconFile = ({
+      '/favicon.ico': 'favicon.ico',
+      '/favicon.svg': 'favicon.svg',
+      '/favicon-32x32.png': 'favicon-32x32.png',
+      '/apple-touch-icon.png': 'apple-touch-icon.png',
+      '/apple-touch-icon-precomposed.png': 'apple-touch-icon.png',
+      '/icon.png': 'icon.png',
     })[target.pathname];
-    if (iconName) {
-      target.pathname = `${MODEMO_BASE}${iconName}`;
+    if (iconFile) {
+      target.pathname = '/plugin/linkconnect/api/merchant-static.php';
+      target.search = `?m=modemo&p=${encodeURIComponent(iconFile)}`;
     }
 
     // 레거시 /images/* → modemo import 경로

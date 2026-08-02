@@ -27,7 +27,17 @@ if ($merchant === '' || !isset($allowed[$merchant]) || $rel === '') {
 
 $rel = str_replace('\\', '/', $rel);
 $rel = ltrim($rel, '/');
-if ($rel === '' || strpos($rel, '..') !== false || !preg_match('#^images/#', $rel)) {
+$allowed_root_icons = array(
+    'favicon.ico',
+    'favicon.svg',
+    'favicon-32x32.png',
+    'apple-touch-icon.png',
+    'apple-icon.png',
+    'icon.png',
+);
+$is_image = (strpos($rel, 'images/') === 0);
+$is_icon = in_array($rel, $allowed_root_icons, true);
+if ($rel === '' || strpos($rel, '..') !== false || !($is_image || $is_icon)) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Invalid path';

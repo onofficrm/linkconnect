@@ -57,26 +57,26 @@ export const metadata: Metadata = {
     }
   },
   icons: {
-    // basePath 밖 절대 경로 — yevely 루트 Cafe24 기본 favicon.ico 를 피하고 modemo 브랜드 아이콘 사용
+    // Cafe24 핫링크 회피: merchant-static 프록시 (yevely Referer 403 방지)
     icon: [
       {
-        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon.ico",
+        url: "/plugin/linkconnect/api/merchant-static.php?m=modemo&p=favicon.ico",
         sizes: "48x48",
         type: "image/x-icon",
       },
       {
-        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon.svg",
+        url: "/plugin/linkconnect/api/merchant-static.php?m=modemo&p=favicon.svg",
         type: "image/svg+xml",
       },
       {
-        url: "/plugin/onoff-builder-bridge/imports/modemo/favicon-32x32.png",
+        url: "/plugin/linkconnect/api/merchant-static.php?m=modemo&p=favicon-32x32.png",
         sizes: "32x32",
         type: "image/png",
       },
     ],
     apple: [
       {
-        url: "/plugin/onoff-builder-bridge/imports/modemo/apple-touch-icon.png",
+        url: "/plugin/linkconnect/api/merchant-static.php?m=modemo&p=apple-touch-icon.png",
         sizes: "180x180",
         type: "image/png",
       },
