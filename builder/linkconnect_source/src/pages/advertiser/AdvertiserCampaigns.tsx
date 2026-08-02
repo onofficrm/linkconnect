@@ -1,7 +1,7 @@
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
-import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, FileText } from 'lucide-react';
+import { Target, CheckCircle2, PlayCircle, PauseCircle, BarChart3, Edit3, Pause, FileText, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchMerchantCampaigns, MerchantCampaign, PartnerApiError } from '../../lib/api';
