@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { openLandingPage } from '../../lib/utils';
-import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
+import { CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
 import { cpaCardImageUrl } from '../../lib/optimizedImage';
 
 const fallbackCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
@@ -207,20 +207,22 @@ function CampaignCard({ item }: { item: CampaignCardItem }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-emerald-300 transition-all flex flex-col">
-      <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100`}>
-        {item.thumbnailUrl ? (
-          <img
-            src={cpaCardImageUrl(item.thumbnailUrl)}
-            alt={item.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm font-medium bg-gradient-to-br from-slate-50 to-slate-100">
-            No Image
-          </div>
-        )}
+      <div className="bg-slate-50 pt-3 px-3 pb-0">
+        <div className={`${CPA_THUMBNAIL_LIST_MEDIA_CLASS} bg-slate-100`}>
+          {item.thumbnailUrl ? (
+            <img
+              src={cpaCardImageUrl(item.thumbnailUrl)}
+              alt={item.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm font-medium bg-gradient-to-br from-slate-50 to-slate-100">
+              No Image
+            </div>
+          )}
+        </div>
       </div>
       <div className="p-6 flex-1">
         <div className="flex justify-between items-start mb-4">

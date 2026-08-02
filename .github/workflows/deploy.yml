@@ -86,7 +86,7 @@ jobs:
           rm -rf .deploy/bundle
           ROOT=".deploy/bundle"
           SRC="plugin/onoff-builder-bridge/imports/linkconnect"
-          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,advertiser-apply,terms,privacy,inc,merchant/banktupt,merchant/dasibom,merchant/hasugu_cpa,merchant/modemo,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/onoff-builder-bridge/imports/dasibom,plugin/onoff-builder-bridge/imports/hasugu_cpa,plugin/onoff-builder-bridge/imports/modemo,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/assets/contracts/custom,plugin/linkconnect/api,plugin/linkconnect/api/v1/merchant,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
+          mkdir -p "$ROOT"/{css,extend,skin/member,mobile/skin/member,about,affiliate,notice,community,inquiry,advertiser-apply,terms,privacy,inc,merchant/banktupt,merchant/dasibom,merchant/hasugu_cpa,merchant/modemo,cron,go/lp,r,c,s,api/external/linkprice,plugin/onoff-builder-bridge/imports/linkconnect,plugin/onoff-builder-bridge/imports/banktupt,plugin/onoff-builder-bridge/imports/dasibom,plugin/onoff-builder-bridge/imports/hasugu_cpa,plugin/onoff-builder-bridge/imports/modemo,plugin/linkconnect/inc,plugin/linkconnect/layout,plugin/linkconnect/assets/css,plugin/linkconnect/assets/js,plugin/linkconnect/assets/contracts/custom,plugin/linkconnect/api,plugin/linkconnect/api/v1/merchant,plugin/linkconnect/admin/api,plugin/linkconnect/cron,plugin/linkconnect/install,plugin/linkconnect/partner/api}
           cp css/onoff-platform.css "$ROOT/css/"
           cp extend/linkconnect-member.extend.php extend/linkconnect-spa.extend.php "$ROOT/extend/"
           cp -R skin/_inc "$ROOT/skin/"
@@ -172,6 +172,8 @@ jobs:
           cp plugin/linkconnect/install/apply_banktupt_campaign.php plugin/linkconnect/install/apply_hasugu_cpa_campaign.php plugin/linkconnect/install/apply_modemo_campaign.php plugin/linkconnect/install/apply_yevely_modemo_domain.php plugin/linkconnect/install/apply_skawning_hasugu_domain.php plugin/linkconnect/install/inspect_promo_guide.php plugin/linkconnect/install/apply_adv0008_contract.php plugin/linkconnect/install/linkprice_cps_schema.sql plugin/linkconnect/install/merchant_contract_schema.sql plugin/linkconnect/install/test_email_notify.php "$ROOT/plugin/linkconnect/install/"
           cp plugin/linkconnect/layout/header.php "$ROOT/plugin/linkconnect/layout/"
           cp plugin/linkconnect/assets/css/linkconnect.css "$ROOT/plugin/linkconnect/assets/css/"
+          cp plugin/linkconnect/assets/js/linkconnect.js plugin/linkconnect/assets/js/lead-embed.js "$ROOT/plugin/linkconnect/assets/js/"
+          cp plugin/linkconnect/inc/embed.php "$ROOT/plugin/linkconnect/inc/"
           if [[ -d plugin/linkconnect/assets/contracts/custom ]]; then
             mkdir -p "$ROOT/plugin/linkconnect/assets/contracts/custom"
             cp plugin/linkconnect/assets/contracts/custom/* "$ROOT/plugin/linkconnect/assets/contracts/custom/" 2>/dev/null || true

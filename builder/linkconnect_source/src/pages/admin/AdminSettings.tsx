@@ -476,7 +476,7 @@ export function AdminSettings() {
                 이미지 프롬프트 템플릿 변수: {'{title}'}, {'{category}'}, {'{width}'}, {'{height}'}, {'{aspect}'}, {'{mood}'}, {'{text_instruction}'}, {'{extra}'}. 비워두면 기본 템플릿을 사용합니다.
               </p>
               <TextAreaField
-                label="상품 썸네일 프롬프트 템플릿 (1200×750)"
+                label="상품 썸네일 프롬프트 템플릿 (800×600)"
                 value={raw.aiImagePromptThumbnail || ''}
                 onChange={(v) => update('aiImagePromptThumbnail', v)}
               />

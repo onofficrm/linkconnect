@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from 'react-router-dom';
-import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, DollarSign, ExternalLink, BookOpen, ShoppingBag, Copy } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, Filter, CheckCircle2, AlertTriangle, TrendingUp, Briefcase, PlusCircle, DollarSign, ExternalLink, BookOpen, ShoppingBag, Copy, CircleHelp } from 'lucide-react';
 import { SummaryCard } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import {
@@ -13,13 +13,15 @@ import {
   PartnerLink,
 } from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
-import { CPA_THUMBNAIL_ASPECT_CLASS } from '../../lib/cpaThumbnail';
+import { PartnerWpEmbedGuideModal } from '../../components/partner/PartnerWpEmbedGuideModal';
+import { CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
 import { cpaCardImageUrl, cpaTinyImageUrl } from '../../lib/optimizedImage';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
 import { CpsChannelGuide, parseChannelItems } from '../../components/cps/CpsChannelGuide';
 import { formatCpsCommissionRate } from '../../components/cps/CpsShared';
+import { buildLeadEmbedSnippet } from '../../lib/partnerEmbed';
 
 const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 const fallbackCpsCategories = ['전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타'];
@@ -53,6 +55,7 @@ export function PartnerSearch() {
   const [detailModal, setDetailModal] = useState<{ campaign: PartnerCampaign; tab: DetailTab } | null>(null);
   const [guideConfirmed, setGuideConfirmed] = useState<Record<number, boolean>>({});
   const [linkGuideWarning, setLinkGuideWarning] = useState(false);
+  const [wpGuideOpen, setWpGuideOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -469,6 +472,35 @@ export function PartnerSearch() {
                       {shortUrl ? (
                         <p className="text-[11px] text-slate-400 break-all">원본: {createdCpaLink.url}</p>
                       ) : null}
+                      {createdCpaLink.code ? (
+                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-xs font-bold text-slate-500">워드프레스 상담폼 설치 코드</div>
+                            <button
+                              type="button"
+                              onClick={() => setWpGuideOpen(true)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800"
+                            >
+                              <CircleHelp size={14} />
+                              사용방법 안내
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-relaxed">
+                            홈페이지 HTML/커스텀 HTML 블록에 붙여 넣으면 파트너코드가 연결된 상담신청 폼이 표시됩니다.
+                          </p>
+                          <pre className="text-[11px] break-all whitespace-pre-wrap bg-slate-900 text-slate-100 rounded-xl p-3 font-mono border border-slate-800 max-h-40 overflow-y-auto">
+                            {buildLeadEmbedSnippet(createdCpaLink.code)}
+                          </pre>
+                          <button
+                            type="button"
+                            onClick={() => copyUrl(buildLeadEmbedSnippet(createdCpaLink.code))}
+                            className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm font-bold"
+                          >
+                            <Copy size={16} />
+                            설치 코드 복사
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </>
@@ -509,6 +541,20 @@ export function PartnerSearch() {
           </div>
         </div>
       )}
+
+      <PartnerWpEmbedGuideModal
+        open={wpGuideOpen}
+        onClose={() => setWpGuideOpen(false)}
+        lkCode={createdCpaLink?.code || undefined}
+        onCopySnippet={
+          createdCpaLink?.code
+            ? (snippet) => {
+                void copyUrl(snippet);
+                setWpGuideOpen(false);
+              }
+            : undefined
+        }
+      />
 
     </PartnerLayout>
   );
@@ -658,7 +704,7 @@ function CampaignListTable({
                   <td className="px-3 py-3.5 align-middle">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {campaign.thumbnailUrl ? (
-                        <div className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
+                        <div className="w-12 h-9 shrink-0 rounded-lg border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
                           <img
                             src={isCps ? campaign.thumbnailUrl : cpaTinyImageUrl(campaign.thumbnailUrl)}
                             alt=""
@@ -669,7 +715,7 @@ function CampaignListTable({
                           />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 shrink-0 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center">
+                        <div className="w-12 h-9 shrink-0 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center">
                           <Briefcase className="w-4 h-4 text-slate-400" />
                         </div>
                       )}
@@ -822,15 +868,17 @@ function CampaignCard({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       {campaign.thumbnailUrl ? (
-        <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative bg-slate-100 flex items-center justify-center`}>
-          <img
-            src={isCps ? campaign.thumbnailUrl : cpaCardImageUrl(campaign.thumbnailUrl)}
-            alt={campaign.title}
-            className={isCps ? 'w-full h-full object-contain p-4' : 'w-full h-full object-cover'}
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-          />
+        <div className="bg-slate-50 pt-3 px-3 pb-0">
+          <div className={`${CPA_THUMBNAIL_LIST_MEDIA_CLASS} bg-slate-100 flex items-center justify-center`}>
+            <img
+              src={isCps ? campaign.thumbnailUrl : cpaCardImageUrl(campaign.thumbnailUrl)}
+              alt={campaign.title}
+              className={isCps ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+          </div>
         </div>
       ) : null}
       <div className="p-6 flex-1">

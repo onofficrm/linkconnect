@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import {
@@ -19,6 +20,9 @@ const emptyReport: MerchantReportResponse = {
 };
 
 export function AdvertiserReports() {
+  const [searchParams] = useSearchParams();
+  const focusCpId = Number(searchParams.get('cpId') || 0);
+  const focusRowRef = useRef<HTMLTableRowElement | null>(null);
   const [report, setReport] = useState<MerchantReportResponse>(emptyReport);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,6 +43,13 @@ export function AdvertiserReports() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (loading || !focusCpId || !focusRowRef.current) {
+      return;
+    }
+    focusRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [loading, focusCpId, report.campaigns]);
 
   const dbTrendData = report.dbChart7d.map((row) => ({
     date: row.date,
@@ -182,7 +193,11 @@ export function AdvertiserReports() {
                   {report.campaigns.length === 0 ? (
                     <tr><td colSpan={7} className="px-6 py-8 text-center text-slate-500">캠페인 데이터가 없습니다.</td></tr>
                   ) : report.campaigns.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50">
+                    <tr
+                      key={row.id}
+                      ref={focusCpId > 0 && row.id === focusCpId ? focusRowRef : undefined}
+                      className={focusCpId > 0 && row.id === focusCpId ? 'bg-cyan-50 ring-1 ring-inset ring-cyan-200' : 'hover:bg-slate-50'}
+                    >
                       <td className="px-6 py-4 font-bold text-slate-900">{row.name}</td>
                       <td className="px-6 py-4 text-center">{row.total}</td>
                       <td className="px-6 py-4 text-center text-cyan-600 font-bold">{row.approved}</td>

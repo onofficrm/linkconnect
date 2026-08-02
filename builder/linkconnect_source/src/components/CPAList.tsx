@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { fetchPublicCampaigns, PublicCampaign } from '../lib/api';
 import { cn, openLandingPage } from '../lib/utils';
-import { CPA_THUMBNAIL_ASPECT_CLASS } from '../lib/cpaThumbnail';
+import { CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../lib/cpaThumbnail';
 import { cpaCardImageUrl } from '../lib/optimizedImage';
 import { HomeSectionAnchor } from './HomeSectionAnchor';
 
@@ -74,32 +74,34 @@ export function CPAList() {
             <div className="col-span-full py-16 text-center text-slate-500">현재 진행 중인 CPA 상품이 없습니다.</div>
           ) : items.map((item) => (
             <div key={item.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-emerald-300 hover:shadow-xl transition-all group relative flex flex-col shadow-sm">
-              <div className={`${CPA_THUMBNAIL_ASPECT_CLASS} overflow-hidden relative group bg-gradient-to-br from-emerald-500/10 to-cyan-500/10`}>
-                {item.thumbnailUrl ? (
-                  <img
-                    src={cpaCardImageUrl(item.thumbnailUrl)}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : null}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-                <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-white/90 backdrop-blur-sm text-slate-700 shadow-sm">
-                    {item.category}
-                  </span>
-                  {item.badge && (
-                    <span className={cn(
-                      'text-xs font-bold px-2.5 py-1 rounded-md shadow-sm backdrop-blur-sm',
-                      item.badge === '고수익' ? 'bg-yellow-100/90 text-yellow-800' :
-                      item.badge === '신규' ? 'bg-cyan-100/90 text-cyan-800' :
-                      item.badge === '승인율 높음' ? 'bg-emerald-100/90 text-emerald-800' :
-                      'bg-white/90 text-slate-700',
-                    )}>
-                      {item.badge}
+              <div className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 pt-3 px-3 pb-0">
+                <div className={`${CPA_THUMBNAIL_LIST_MEDIA_CLASS} group bg-slate-100`}>
+                  {item.thumbnailUrl ? (
+                    <img
+                      src={cpaCardImageUrl(item.thumbnailUrl)}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
+                  <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-white/90 backdrop-blur-sm text-slate-700 shadow-sm">
+                      {item.category}
                     </span>
-                  )}
+                    {item.badge && (
+                      <span className={cn(
+                        'text-xs font-bold px-2.5 py-1 rounded-md shadow-sm backdrop-blur-sm',
+                        item.badge === '고수익' ? 'bg-yellow-100/90 text-yellow-800' :
+                        item.badge === '신규' ? 'bg-cyan-100/90 text-cyan-800' :
+                        item.badge === '승인율 높음' ? 'bg-emerald-100/90 text-emerald-800' :
+                        'bg-white/90 text-slate-700',
+                      )}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="p-5 flex-1 flex flex-col">

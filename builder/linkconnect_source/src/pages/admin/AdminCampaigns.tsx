@@ -634,12 +634,12 @@ export function AdminCampaigns() {
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">썸네일 이미지 (가로형)</label>
                       <div className="flex items-start gap-4">
                         <div
-                          className={`w-44 ${CPA_THUMBNAIL_ASPECT_CLASS} rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group ${isEditMode && editForm.id ? 'cursor-pointer' : ''}`}
+                          className={`w-36 ${CPA_THUMBNAIL_ASPECT_CLASS} rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 relative group ${isEditMode && editForm.id ? 'cursor-pointer' : ''}`}
                           onClick={handleThumbnailClick}
                         >
                           <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
                           {editForm.thumbnailUrl ? (
-                            <img src={optimizedImageUrl(editForm.thumbnailUrl, { w: 640, h: 480, fit: 'cover', fmt: 'webp' })} alt="썸네일" className="w-full h-full object-cover" decoding="async" />
+                            <img src={optimizedImageUrl(editForm.thumbnailUrl, { w: 480, h: 360, fit: 'cover', fmt: 'webp' })} alt="썸네일" className="w-full h-full object-cover" decoding="async" />
                           ) : (
                             <div className="text-center px-2">
                               <Image className="w-7 h-7 text-slate-300 mx-auto mb-1" />

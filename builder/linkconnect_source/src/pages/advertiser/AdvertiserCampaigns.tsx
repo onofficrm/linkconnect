@@ -148,9 +148,13 @@ export function AdvertiserCampaigns() {
                         <BookOpen size={14} />
                         홍보 가이드 관리
                       </Link>
-                      <button className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="리포트">
+                      <Link
+                        to={`/advertiser/reports?cpId=${camp.id}`}
+                        className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors inline-flex"
+                        title="성과 리포트"
+                      >
                         <BarChart3 size={18} />
-                      </button>
+                      </Link>
                       <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="수정">
                         <Edit3 size={18} />
                       </button>

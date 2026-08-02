@@ -145,7 +145,7 @@ if (!function_exists('lc_campaign_thumbnail_save_binary')) {
 
         // 목록/메인 표시용 표준 해상도로 정규화 (화질 유지 JPEG q88)
         if (function_exists('lc_image_resize_cover')) {
-            $normalized = lc_image_resize_cover($binary, 1200, 900, 'image/jpeg');
+            $normalized = lc_image_resize_cover($binary, 800, 600, 'image/jpeg');
             if (!empty($normalized['ok']) && !empty($normalized['binary'])) {
                 $binary = $normalized['binary'];
                 $mime = (string) $normalized['mime'];

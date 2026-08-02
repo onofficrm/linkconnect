@@ -44,11 +44,11 @@ export const PROMO_ASSET_SIZE_PRESETS: PromoAssetSizePreset[] = [
   {
     id: 'cpa-product-thumb',
     title: '상품 리스트 썸네일',
-    width: 1200,
-    height: 750,
+    width: 800,
+    height: 600,
     platform: 'web',
     group: 'popular',
-    hint: '링크커넥트 CPA 목록·파트너 카드에 표시되는 권장 비율(16:10)입니다.',
+    hint: '링크커넥트 CPA 목록·파트너 카드에 표시되는 권장 비율(4:3)입니다.',
   },
   {
     id: 'free-format',
