@@ -80,9 +80,9 @@ export function optimizedImageUrl(
   }
 }
 
-/** CPA 목록/메인 카드 (~표시 폭 200~280 → 480 그리드, 4:3) */
+/** CPA 목록/메인 카드 (카드 전체 폭 · 4:3 → 640 그리드) */
 export function cpaCardImageUrl(url?: string | null): string {
-  return optimizedImageUrl(url, { w: 480, h: 360, fit: 'cover', fmt: 'webp' });
+  return optimizedImageUrl(url, { w: 640, h: 480, fit: 'cover', fmt: 'webp' });
 }
 
 /** 파트너 검색 소형 아이콘 (4:3) */

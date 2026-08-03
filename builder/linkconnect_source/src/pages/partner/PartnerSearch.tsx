@@ -14,7 +14,7 @@ import {
 } from '../../lib/api';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import { PartnerWpEmbedGuideModal } from '../../components/partner/PartnerWpEmbedGuideModal';
-import { CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
+import { CPA_THUMBNAIL_LIST_IMG_CLASS, CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
 import { cpaCardImageUrl, cpaTinyImageUrl } from '../../lib/optimizedImage';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
@@ -868,17 +868,15 @@ function CampaignCard({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg hover:border-emerald-300 transition-all flex flex-col">
       {campaign.thumbnailUrl ? (
-        <div className="bg-slate-50 pt-3 px-3 pb-0">
-          <div className={`${CPA_THUMBNAIL_LIST_MEDIA_CLASS} bg-slate-100 flex items-center justify-center`}>
-            <img
-              src={isCps ? campaign.thumbnailUrl : cpaCardImageUrl(campaign.thumbnailUrl)}
-              alt={campaign.title}
-              className={isCps ? 'w-full h-full object-contain p-3' : 'w-full h-full object-cover'}
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+        <div className={`${CPA_THUMBNAIL_LIST_MEDIA_CLASS} bg-slate-100`}>
+          <img
+            src={isCps ? campaign.thumbnailUrl : cpaCardImageUrl(campaign.thumbnailUrl)}
+            alt={campaign.title}
+            className={isCps ? 'absolute inset-0 w-full h-full object-contain p-3' : CPA_THUMBNAIL_LIST_IMG_CLASS}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+          />
         </div>
       ) : null}
       <div className="p-6 flex-1">
