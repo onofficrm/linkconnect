@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
-import { PhoneCall, PhoneIncoming, Copy, Check, Info } from 'lucide-react';
+import { PhoneCall, PhoneIncoming, Copy, Check, Info, RefreshCw } from 'lucide-react';
 import {
   CallLog,
   CallRequest,
+  PartnerAvailableCallNumber,
   PartnerCampaign,
+  claimPartnerCallNumber,
+  fetchPartnerAvailableCallNumbers,
   fetchPartnerCallLogs,
   fetchPartnerCallRequests,
   fetchPartnerCampaigns,
-  requestPartnerCallNumber,
   requestPartnerCallRecording,
 } from '../../lib/api';
 import { CallRecordingCell } from '../../components/call/CallRecordingCell';
@@ -33,11 +35,20 @@ function formatDuration(sec: number) {
   return `${m}분 ${s}초`;
 }
 
+function formatPhone(num: string) {
+  const d = num.replace(/\D/g, '');
+  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+  if (d.length === 12) return `${d.slice(0, 4)}-${d.slice(4, 8)}-${d.slice(8)}`;
+  return num;
+}
+
 export function PartnerCall() {
   const [requests, setRequests] = useState<CallRequest[]>([]);
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [campaigns, setCampaigns] = useState<PartnerCampaign[]>([]);
+  const [availableNumbers, setAvailableNumbers] = useState<PartnerAvailableCallNumber[]>([]);
   const [selectedCp, setSelectedCp] = useState('');
+  const [selectedCn, setSelectedCn] = useState('');
   const [memo, setMemo] = useState('');
   const [logCpFilter, setLogCpFilter] = useState('');
   const [logNumberFilter, setLogNumberFilter] = useState('');
@@ -54,6 +65,12 @@ export function PartnerCall() {
     fetchPartnerCallRequests().then((d) => setRequests(d.items)).catch(() => setRequests([]));
   }, []);
 
+  const loadAvailable = useCallback(() => {
+    fetchPartnerAvailableCallNumbers()
+      .then((d) => setAvailableNumbers(d.items))
+      .catch(() => setAvailableNumbers([]));
+  }, []);
+
   const loadLogs = useCallback(() => {
     fetchPartnerCallLogs({
       cpId: logCpFilter ? Number(logCpFilter) : undefined,
@@ -65,28 +82,40 @@ export function PartnerCall() {
 
   useEffect(() => {
     loadRequests();
+    loadAvailable();
     fetchPartnerCampaigns().then((d) => setCampaigns(d.items)).catch(() => setCampaigns([]));
-  }, [loadRequests]);
+  }, [loadRequests, loadAvailable]);
 
   useEffect(() => {
     loadLogs();
   }, [loadLogs]);
 
-  const handleRequest = async () => {
+  const handleClaim = async () => {
     if (!selectedCp) {
       setMessage('캠페인을 선택하세요.');
+      return;
+    }
+    if (!selectedCn) {
+      setMessage('사용할 가상번호를 선택하세요.');
       return;
     }
     setSubmitting(true);
     setMessage('');
     try {
-      const res = await requestPartnerCallNumber({ cpId: Number(selectedCp), memo });
+      const res = await claimPartnerCallNumber({
+        cpId: Number(selectedCp),
+        cnId: Number(selectedCn),
+        memo,
+      });
       setMessage(res.message);
       setSelectedCp('');
+      setSelectedCn('');
       setMemo('');
       loadRequests();
+      loadAvailable();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : '신청에 실패했습니다.');
+      setMessage(e instanceof Error ? e.message : '번호 선택에 실패했습니다.');
+      loadAvailable();
     } finally {
       setSubmitting(false);
     }
@@ -117,8 +146,8 @@ export function PartnerCall() {
             <div>
               <p className="font-bold mb-1">콜디비 이용 방법</p>
               <ol className="list-decimal pl-5 space-y-1 text-violet-900/90">
-                <li>캠페인을 선택하고 <b>가상번호 신청</b></li>
-                <li>관리자가 번호 배정 후 홍보 채널에 노출</li>
+                <li>캠페인을 고른 뒤, 사용 가능한 가상번호 중 <b>원하는 번호를 선택</b></li>
+                <li>선택 즉시 배정되며, 홍보 채널에 해당 번호를 노출</li>
                 <li>관리자가 통화내역 엑셀 업로드 시, <b>내 담당 번호</b> 통화만 아래에 표시</li>
                 <li>녹음이 필요한 통화는 <b>녹음 요청</b> → 관리자 등록 후 재생 가능</li>
               </ol>
@@ -127,14 +156,24 @@ export function PartnerCall() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center gap-2 font-bold text-slate-800 mb-1">
-            <PhoneCall size={18} className="text-emerald-500" />
-            가상번호 신청
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <div className="flex items-center gap-2 font-bold text-slate-800">
+              <PhoneCall size={18} className="text-emerald-500" />
+              가상번호 선택
+            </div>
+            <button
+              type="button"
+              onClick={loadAvailable}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100"
+            >
+              <RefreshCw size={13} /> 번호 새로고침
+            </button>
           </div>
           <p className="text-sm text-slate-500 mb-4">
-            캠페인별 전용 0503 가상번호를 신청하세요. 관리자가 수동으로 번호를 배정합니다.
+            관리자가 등록해 둔 사용 가능 번호 중에서 골라 바로 배정받으세요. 선택과 동시에 선점되어 다른 파트너와 중복되지 않습니다.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <select
               value={selectedCp}
               onChange={(e) => setSelectedCp(e.target.value)}
@@ -154,13 +193,43 @@ export function PartnerCall() {
             />
             <button
               type="button"
-              onClick={handleRequest}
-              disabled={submitting}
+              onClick={handleClaim}
+              disabled={submitting || !selectedCp || !selectedCn}
               className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm disabled:opacity-50 whitespace-nowrap"
             >
-              번호 신청
+              이 번호로 배정
             </button>
           </div>
+
+          {availableNumbers.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-400">
+              선택 가능한 번호가 없습니다. 관리자가 가상번호 풀에 번호를 등록하면 여기에 표시됩니다.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {availableNumbers.map((n) => {
+                const active = selectedCn === String(n.cnId);
+                return (
+                  <button
+                    key={n.cnId}
+                    type="button"
+                    onClick={() => setSelectedCn(String(n.cnId))}
+                    className={`text-left rounded-xl border px-3 py-3 transition ${
+                      active
+                        ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
+                        : 'border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-white'
+                    }`}
+                  >
+                    <div className={`font-mono font-bold text-sm ${active ? 'text-emerald-700' : 'text-slate-800'}`}>
+                      {formatPhone(n.number)}
+                    </div>
+                    {n.memo ? <div className="mt-1 text-[11px] text-slate-500 truncate">{n.memo}</div> : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {message && <p className="mt-3 text-sm text-emerald-600">{message}</p>}
         </div>
 

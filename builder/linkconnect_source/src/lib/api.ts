@@ -2812,6 +2812,13 @@ export function createAdminCallNumber(payload: { number: string; provider?: stri
   return adminApiPost<{ message: string; cnId?: number }>('call.php', { action: 'create_number', ...payload });
 }
 
+export function createAdminCallNumbersBulk(payload: { numbers: string; memo?: string }) {
+  return adminApiPost<{ message: string; created?: number; skipped?: number; errors?: string[] }>('call.php', {
+    action: 'create_numbers_bulk',
+    ...payload,
+  });
+}
+
 export function updateAdminCallNumber(payload: { cnId: number; status?: string; memo?: string }) {
   return adminApiPost<{ message: string }>('call.php', { action: 'update_number', ...payload });
 }
@@ -3487,6 +3494,18 @@ export function fetchPartnerCallRequests() {
   return partnerApiGet<{ items: CallRequest[]; dbReady: boolean }>('call.php', { view: 'requests' });
 }
 
+export type PartnerAvailableCallNumber = {
+  cnId: number;
+  number: string;
+  memo: string;
+};
+
+export function fetchPartnerAvailableCallNumbers() {
+  return partnerApiGet<{ items: PartnerAvailableCallNumber[]; dbReady: boolean }>('call.php', {
+    view: 'available_numbers',
+  });
+}
+
 export function fetchPartnerCallLogs(filters?: { cpId?: number; virtualNumber?: string }) {
   return partnerApiGet<{ items: CallLog[]; dbReady: boolean }>('call.php', {
     view: 'logs',
@@ -3495,8 +3514,18 @@ export function fetchPartnerCallLogs(filters?: { cpId?: number; virtualNumber?: 
   });
 }
 
-export function requestPartnerCallNumber(payload: { cpId: number; memo?: string }) {
-  return partnerApiPost<{ message: string; carId?: number }>('call.php', { action: 'request', ...payload });
+export function requestPartnerCallNumber(payload: { cpId: number; cnId?: number; memo?: string }) {
+  return partnerApiPost<{ message: string; carId?: number; number?: string }>('call.php', {
+    action: payload.cnId ? 'claim' : 'request',
+    ...payload,
+  });
+}
+
+export function claimPartnerCallNumber(payload: { cpId: number; cnId: number; memo?: string }) {
+  return partnerApiPost<{ message: string; carId?: number; number?: string }>('call.php', {
+    action: 'claim',
+    ...payload,
+  });
 }
 
 export function requestPartnerCallRecording(payload: { clogId: number; memo?: string }) {
