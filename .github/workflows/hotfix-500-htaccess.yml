@@ -1,0 +1,103 @@
+name: Hotfix 500 — restore .htaccess
+
+# linkconnect.co.kr 전역 500 긴급 복구.
+# FTP로 루트 .htaccess 진단·교체, 정적 probe 업로드 후 HTTP 확인.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: linkconnect-ftp-deploy
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Diagnose + restore via FTP
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          set -euo pipefail
+          ROOT=".deploy/hotfix500"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT" \
+            "$ROOT/plugin/onoff-builder-bridge/imports" \
+            "$ROOT/plugin/linkconnect/data/ad_applications"
+
+          cp .htaccess "$ROOT/.htaccess"
+          cp plugin/onoff-builder-bridge/imports/.htaccess \
+            "$ROOT/plugin/onoff-builder-bridge/imports/.htaccess"
+
+          # Apache 2.2/2.4 모두 안전 (heredoc 본문은 들여쓰기 금지)
+          cat > "$ROOT/plugin/linkconnect/data/ad_applications/.htaccess" <<'EOF'
+<IfModule mod_authz_core.c>
+Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+Order allow,deny
+Deny from all
+</IfModule>
+EOF
+
+          # 정적 파일 서빙 여부 확인용
+          printf 'ok %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$ROOT/lc-health.txt"
+
+          echo "=== FTP LIST /public_html (top) ==="
+          curl -sS --list-only --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+            "ftp://${FTP_SERVER}:${FTP_PORT}/public_html/" | head -80 || true
+
+          echo "=== FTP RETR current .htaccess (first 40 lines) ==="
+          curl -sS --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+            "ftp://${FTP_SERVER}:${FTP_PORT}/public_html/.htaccess" \
+            -o /tmp/server-htaccess || echo "(could not download .htaccess)"
+          if [[ -f /tmp/server-htaccess ]]; then
+            wc -c /tmp/server-htaccess
+            head -40 /tmp/server-htaccess || true
+            echo "---"
+            grep -nE 'Options |Require |php_value|php_flag' /tmp/server-htaccess || echo "(no Options/Require/php_*)"
+          fi
+
+          echo "=== FTP RETR common.php / index.php presence ==="
+          for f in common.php index.php favicon.png data/dbconfig.php; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --user "${FTP_USERNAME}:${FTP_PASSWORD}" \
+              "ftp://${FTP_SERVER}:${FTP_PORT}/public_html/$f" || echo ERR)
+            echo "$code  $f"
+          done
+
+      - name: Upload safe htaccess + health probe
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          protocol: ftp
+          local-dir: .deploy/hotfix500/
+          server-dir: /public_html/
+          state-name: linkconnect-hotfix-500-v1
+          log-level: standard
+          timeout: 300000
+
+      - name: Verify HTTP
+        run: |
+          set -euo pipefail
+          sleep 3
+          for path in /lc-health.txt /favicon.png / /index.php; do
+            code=$(curl -sS -o /tmp/probe.out -w '%{http_code}' --connect-timeout 15 \
+              "https://linkconnect.co.kr$path" || echo ERR)
+            bytes=$(wc -c < /tmp/probe.out | tr -d ' ')
+            echo "$code  bytes=$bytes  $path"
+            head -c 120 /tmp/probe.out; echo; echo '---'
+          done
+          code=$(curl -sS -o /dev/null -w '%{http_code}' "https://linkconnect.co.kr/lc-health.txt" || true)
+          if [[ "$code" != "200" ]]; then
+            echo "::error::Site still not serving static probe (HTTP $code)"
+            exit 1
+          fi
