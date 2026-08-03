@@ -156,16 +156,8 @@ jobs:
           cp plugin/linkconnect/data/contract_signatures/.htaccess "$ROOT/plugin/linkconnect/data/contract_signatures/" 2>/dev/null || true
           cp plugin/linkconnect/data/campaign_promo_assets/.htaccess "$ROOT/plugin/linkconnect/data/campaign_promo_assets/" 2>/dev/null || true
           cp plugin/linkconnect/data/campaign_thumbnails/.htaccess "$ROOT/plugin/linkconnect/data/campaign_thumbnails/" 2>/dev/null || true
-          # Cafe24: bare Require 는 Apache 버전에 따라 디렉터리 500을 유발할 수 있음
-          cat > "$ROOT/plugin/linkconnect/data/ad_applications/.htaccess" <<'EOF'
-          <IfModule mod_authz_core.c>
-          Require all denied
-          </IfModule>
-          <IfModule !mod_authz_core.c>
-          Order allow,deny
-          Deny from all
-          </IfModule>
-          EOF
+          # Cafe24 호환: Apache 2.2 Deny from all (Require 미사용)
+          cp plugin/linkconnect/data/ad_applications/.htaccess "$ROOT/plugin/linkconnect/data/ad_applications/"
           if [[ -d plugin/linkconnect/merchant/api ]]; then
             cp plugin/linkconnect/merchant/api/*.php "$ROOT/plugin/linkconnect/merchant/api/" 2>/dev/null || true
           fi
