@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Calculator, ChevronRight, Loader2 } from 'lucide-react';
+import { Calculator, ChevronRight, Loader2, Phone } from 'lucide-react';
 import { useConsultationDraft } from '../context/ConsultationDraftContext';
+import { usePartnerContext } from '../context/PartnerContext';
+import { phoneTelHref } from '../lib/partnerData';
 import { scrollToConsultForm } from '../lib/consultationForm';
 import { trackLandingEvent } from '../lib/analytics';
 
 export default function AICalculator() {
   const { applyCalculatorPrefill } = useConsultationDraft();
+  const { hasPhone, data: partnerData } = usePartnerContext();
   const [debt, setDebt] = useState('');
   const [income, setIncome] = useState('');
   const [dependents, setDependents] = useState('1');
@@ -190,6 +193,9 @@ export default function AICalculator() {
 
               <div className="text-center">
                 <p className="mb-4 text-xs text-gray-400">* 참고용 추정치이며, 실제 결과와 다를 수 있습니다.</p>
+                <div className="mb-4 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-900">
+                  입력 결과를 상담 신청에 자동 반영합니다. 비공개 1차 상담은 무료이며 진행을 강요하지 않습니다.
+                </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
@@ -206,6 +212,16 @@ export default function AICalculator() {
                     이 결과로 무료 상담 받기
                     <ChevronRight className="h-4 w-4" />
                   </button>
+                  {hasPhone && partnerData.partner_phone ? (
+                    <a
+                      href={phoneTelHref(partnerData.partner_phone)}
+                      onClick={() => trackLandingEvent('calculator_to_form', { route: 'phone' })}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-main px-6 py-3.5 text-[15px] font-bold text-white shadow-md"
+                    >
+                      <Phone className="h-4 w-4" />
+                      결과 바로 전화상담
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>

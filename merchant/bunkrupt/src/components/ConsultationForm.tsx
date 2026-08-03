@@ -300,7 +300,14 @@ export default function ConsultationForm() {
                 <li>개인회생 가능 여부 및 진행 방향 안내</li>
               </ol>
             </div>
-            <p className="mt-4 text-xs text-gray-500">긴급한 경우 전화 상담 버튼을 이용해 주세요.</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-gray-600">
+              <span className="rounded-lg bg-gray-50 px-2 py-2">가족·직장 비공개</span>
+              <span className="rounded-lg bg-gray-50 px-2 py-2">1차 상담 무료</span>
+              <span className="rounded-lg bg-gray-50 px-2 py-2">진행 강요 없음</span>
+            </div>
+            <p className="mt-4 text-xs text-gray-500">
+              모르는 번호 수신이 어려우시면 잠시 후 상담 전화를 받을 수 있도록 설정해 주세요.
+            </p>
             <button
               type="button"
               onClick={() => setSuccessModal(null)}

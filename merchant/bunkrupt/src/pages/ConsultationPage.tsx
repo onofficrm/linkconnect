@@ -12,6 +12,7 @@ import Trust from '../components/Trust';
 import ConsultationFAQ from '../components/ConsultationFAQ';
 import PhoneSection from '../components/PhoneSection';
 import ConsultationForm from '../components/ConsultationForm';
+import UrgencyRouter from '../components/UrgencyRouter';
 
 export default function ConsultationPage() {
   const location = useLocation();
@@ -28,6 +29,7 @@ export default function ConsultationPage() {
     <>
       <Hero />
       <TrustBadges />
+      <UrgencyRouter />
       <Empathy />
       <BeforeAfter />
       <Eligibility />

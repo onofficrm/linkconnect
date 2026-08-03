@@ -7,6 +7,7 @@ type LandingEvent =
   | 'calculator_start'
   | 'calculator_complete'
   | 'calculator_to_form'
+  | 'urgency_route_click'
   | 'floating_cta_click';
 
 export function trackLandingEvent(event: LandingEvent, detail?: Record<string, string | number | boolean>): void {
