@@ -1916,6 +1916,24 @@ export type MerchantNotifyPrefs = {
   lowBalance: boolean;
 };
 
+export type MerchantNotifySystemStatus = {
+  ready: boolean;
+  mailer: boolean;
+  emailUse: boolean;
+  fromConfigured: boolean;
+  fromEmail: string;
+  issues: string[];
+};
+
+export type MerchantNotifyPrefsResponse = {
+  prefs: MerchantNotifyPrefs;
+  meta: Record<string, NotifyPrefMeta>;
+  recipient?: { email: string; name: string };
+  system?: MerchantNotifySystemStatus;
+  dbReady: boolean;
+  message?: string;
+};
+
 export function fetchPartnerNotifyPrefs() {
   return partnerApiGet<{ prefs: PartnerNotifyPrefs; meta: Record<string, NotifyPrefMeta>; dbReady: boolean }>('notification_prefs.php');
 }
@@ -1925,11 +1943,15 @@ export function savePartnerNotifyPrefs(prefs: Partial<PartnerNotifyPrefs>) {
 }
 
 export function fetchMerchantNotifyPrefs() {
-  return merchantApiGet<{ prefs: MerchantNotifyPrefs; meta: Record<string, NotifyPrefMeta>; dbReady: boolean }>('notification_prefs.php');
+  return merchantApiGet<MerchantNotifyPrefsResponse>('notification_prefs.php');
 }
 
 export function saveMerchantNotifyPrefs(prefs: Partial<MerchantNotifyPrefs>) {
-  return merchantApiPost<{ message: string; prefs: MerchantNotifyPrefs; meta: Record<string, NotifyPrefMeta> }>('notification_prefs.php', { prefs });
+  return merchantApiPost<MerchantNotifyPrefsResponse>('notification_prefs.php', { prefs });
+}
+
+export function sendMerchantNotifyTest() {
+  return merchantApiPost<MerchantNotifyPrefsResponse>('notification_prefs.php', { action: 'test' });
 }
 
 export type AdminSettingsData = {
