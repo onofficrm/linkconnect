@@ -15,6 +15,7 @@ import {
   resolveHashSectionId,
   scrollToSectionWhenReady,
 } from '../lib/navigation';
+import { EVENTS_MENU_ENABLED } from '../lib/publicNav';
 
 export function Home() {
   const location = useLocation();
@@ -37,7 +38,7 @@ export function Home() {
       <Features />
       <PartnerIntro />
       <AdvertiserIntro />
-      <EventBoard />
+      {EVENTS_MENU_ENABLED ? <EventBoard /> : null}
       <FinalCTA />
     </main>
   );

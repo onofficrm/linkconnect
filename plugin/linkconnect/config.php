@@ -409,7 +409,8 @@ if (!function_exists('lc_nav_items_public')) {
             return array(
                 array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_spa_url('/cpa-list'), 'tone' => ''),
                 array('id' => 'cps', 'label' => 'CPS', 'url' => lc_spa_url('/cps'), 'tone' => ''),
-                array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_spa_url('/events'), 'tone' => ''),
+                // 복원: 이벤트/프로모션 공개 메뉴
+                // array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_spa_url('/events'), 'tone' => ''),
                 array('id' => 'partner', 'label' => '파트너센터', 'url' => lc_spa_url('/partner'), 'tone' => 'partner'),
                 array('id' => 'merchant', 'label' => '광고주센터', 'url' => lc_spa_url('/advertiser'), 'tone' => 'merchant'),
             );
@@ -418,7 +419,8 @@ if (!function_exists('lc_nav_items_public')) {
         return array(
             array('id' => 'cpa', 'label' => 'CPA', 'url' => lc_url('pages/cpa.php'), 'tone' => ''),
             array('id' => 'cps', 'label' => 'CPS', 'url' => lc_url('pages/cps.php'), 'tone' => ''),
-            array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_url('pages/events.php'), 'tone' => ''),
+            // 복원: 이벤트/프로모션 공개 메뉴
+            // array('id' => 'events', 'label' => '이벤트/프로모션', 'url' => lc_url('pages/events.php'), 'tone' => ''),
             array('id' => 'partner', 'label' => '파트너센터', 'url' => lc_url('partner/dashboard.php'), 'tone' => 'partner'),
             array('id' => 'merchant', 'label' => '광고주센터', 'url' => lc_url('merchant/dashboard.php'), 'tone' => 'merchant'),
         );

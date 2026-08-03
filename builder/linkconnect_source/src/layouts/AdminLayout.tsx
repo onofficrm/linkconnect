@@ -84,7 +84,8 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/cpa-list" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPA</Link>
             <Link to="/cps" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPS</Link>
-            <Link to="/events" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link>
+            {/* 복원: 이벤트/프로모션 메뉴 */}
+            {/* <Link to="/events" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link> */}
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/partner" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">파트너센터</Link>
             <Link to="/advertiser" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">광고주센터</Link>

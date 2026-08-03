@@ -27,7 +27,8 @@ const navLinks = [
   { to: '/', label: '홈페이지' },
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
-  { to: '/events', label: '이벤트/프로모션' },
+  // 복원: 이벤트/프로모션 메뉴
+  // { to: '/events', label: '이벤트/프로모션' },
   { to: '/notice', label: '공지사항' },
   { to: '/partner', label: '파트너센터', center: 'partner' as const },
   { to: '/advertiser', label: '광고주센터', center: 'advertiser' as const },

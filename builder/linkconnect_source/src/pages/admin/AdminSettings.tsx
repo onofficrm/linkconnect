@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Settings, Save, RotateCcw, Check, Sparkles, Link2 } from 'lucide-react';
-import { fetchAdminSettings, resetAdminSettings, saveAdminGeminiApiKey, saveAdminOpenAiApiKey, saveAdminSettings } from '../../lib/api';
+import { Settings, Save, RotateCcw, Check, Sparkles, Link2, Mail, Send } from 'lucide-react';
+import {
+  fetchAdminSettings,
+  resetAdminSettings,
+  saveAdminGeminiApiKey,
+  saveAdminOpenAiApiKey,
+  saveAdminSettings,
+  sendAdminTestEmail,
+} from '../../lib/api';
 import type { AdminSettingsResponse } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -12,6 +19,14 @@ const defaultRaw: RawSettings = {
   adminEmail: 'admin@linkconnect.com',
   supportEmail: 'support2580_@linkconnect.co.kr',
   supportPhone: '070-8098-6824',
+  mailEmailUse: '0',
+  mailFromEmail: '',
+  mailFromName: '',
+  mailSmtpHost: '',
+  mailSmtpPort: '',
+  mailReady: '0',
+  mailMailer: '0',
+  mailIssues: '',
   duplicateDays: '30',
   merchantProcessDays: '7',
   minChargeAmount: '500000',
@@ -76,6 +91,17 @@ function mapAdminSettingsRaw(data: AdminSettingsResponse['raw'] | Record<string,
   if (raw.openaiApiKeySet === 'true' || raw.openaiApiKeySet === true) {
     raw.openaiApiKeySet = '1';
   }
+  const mail = settings?.mail;
+  if (mail) {
+    raw.mailEmailUse = mail.emailUse ? '1' : '0';
+    raw.mailFromEmail = mail.fromEmail || '';
+    raw.mailFromName = mail.fromName || '';
+    raw.mailSmtpHost = mail.smtpHost || '';
+    raw.mailSmtpPort = mail.smtpPort || '';
+    raw.mailReady = mail.ready ? '1' : '0';
+    raw.mailMailer = mail.mailer ? '1' : '0';
+    raw.mailIssues = Array.isArray(mail.issues) ? mail.issues.join('\n') : '';
+  }
   return raw;
 }
 
@@ -90,6 +116,8 @@ export function AdminSettings() {
   const [openaiKeyInput, setOpenaiKeyInput] = useState('');
   const [openaiKeyStatus, setOpenaiKeyStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [testMailStatus, setTestMailStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [testMailMessage, setTestMailMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -166,6 +194,11 @@ export function AdminSettings() {
           supportEmail: raw.supportEmail,
           supportPhone: raw.supportPhone,
           timezone: raw.timezone || 'Asia/Seoul',
+        },
+        mail: {
+          emailUse: boolVal(raw, 'mailEmailUse'),
+          fromEmail: raw.mailFromEmail || '',
+          fromName: raw.mailFromName || '',
         },
         cpa: {
           duplicateDays: Number(raw.duplicateDays || 30),
@@ -252,6 +285,22 @@ export function AdminSettings() {
     }
   };
 
+  const handleTestMail = async () => {
+    setTestMailStatus('sending');
+    setTestMailMessage('');
+    setError('');
+    try {
+      const data = await sendAdminTestEmail(raw.mailFromEmail || raw.adminEmail || '');
+      applySettingsResponse(data);
+      setTestMailMessage(data.message || '테스트 메일을 발송했습니다.');
+      setTestMailStatus('sent');
+      setTimeout(() => setTestMailStatus('idle'), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '테스트 메일 발송에 실패했습니다.');
+      setTestMailStatus('idle');
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout activeMenu="settings" title="환경설정" description="링크커넥트의 운영 정책과 시스템 기본값을 설정하세요.">
@@ -276,6 +325,50 @@ export function AdminSettings() {
             <Field label="관리자 이메일" value={raw.adminEmail} onChange={(v) => update('adminEmail', v)} />
             <Field label="고객센터 이메일" value={raw.supportEmail} onChange={(v) => update('supportEmail', v)} />
             <Field label="고객센터 연락처" value={raw.supportPhone} onChange={(v) => update('supportPhone', v)} />
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-slate-500" />
+            <h3 className="font-bold text-slate-900">메일 발송 설정</h3>
+          </div>
+          <div className="p-6 space-y-5">
+            <p className="text-sm text-slate-500 leading-relaxed">
+              알림·인증·문의 회신 등에 사용하는 발신 메일 설정입니다. 아래 저장 시 바로 반영됩니다.
+            </p>
+            <div className={`rounded-xl border px-4 py-3 text-sm ${boolVal(raw, 'mailReady') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+              <div className="font-bold mb-1">{boolVal(raw, 'mailReady') ? '메일 발송 준비됨' : '메일 발송 점검 필요'}</div>
+              <ul className="text-xs space-y-0.5 opacity-90">
+                <li>메일 기능: {boolVal(raw, 'mailMailer') ? '정상' : '불가'}</li>
+                <li>메일발송 사용: {boolVal(raw, 'mailEmailUse') ? 'ON' : 'OFF'}</li>
+                <li>SMTP: {raw.mailSmtpHost ? `${raw.mailSmtpHost}${raw.mailSmtpPort ? `:${raw.mailSmtpPort}` : ''}` : '서버 기본(미설정)'}</li>
+              </ul>
+              {raw.mailIssues ? (
+                <p className="mt-2 text-xs whitespace-pre-line">{raw.mailIssues}</p>
+              ) : null}
+            </div>
+            <Toggle
+              label="메일발송 사용"
+              checked={boolVal(raw, 'mailEmailUse')}
+              onChange={(v) => setRaw((prev) => setBool(prev, 'mailEmailUse', v))}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="발신 이메일" value={raw.mailFromEmail} onChange={(v) => update('mailFromEmail', v)} />
+              <Field label="발신 이름" value={raw.mailFromName} onChange={(v) => update('mailFromName', v)} />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={testMailStatus === 'sending' || !raw.mailFromEmail}
+                onClick={handleTestMail}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+              >
+                <Send size={16} />
+                {testMailStatus === 'sending' ? '발송 중...' : testMailStatus === 'sent' ? '발송 완료' : '테스트 메일 보내기'}
+              </button>
+              {testMailMessage ? <span className="text-sm text-emerald-700">{testMailMessage}</span> : null}
+            </div>
           </div>
         </section>
 

@@ -6,6 +6,12 @@ export interface NavLinkItem {
   scrollTarget?: string;
 }
 
+/**
+ * 이벤트/프로모션 공개 메뉴 노출 여부.
+ * 나중에 복원: true 로 바꾸면 헤더·푸터 메뉴가 다시 표시됩니다.
+ */
+export const EVENTS_MENU_ENABLED = false;
+
 /** 회사소개 드롭다운 하위 메뉴 */
 export const companySubItems: NavLinkItem[] = [
   { to: '/about', label: '회사소개' },
@@ -21,7 +27,10 @@ export const companyNavItems = companySubItems;
 export const campaignNavItems: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA', scrollTarget: 'cpa' },
   { to: '/cps', label: 'CPS', scrollTarget: 'cps' },
-  { to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' },
+  // 복원: EVENTS_MENU_ENABLED = true
+  ...(EVENTS_MENU_ENABLED
+    ? [{ to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' } satisfies NavLinkItem]
+    : []),
 ];
 
 /** 커뮤니티 대메뉴 */
@@ -41,7 +50,10 @@ export const footerCampaignNavItems: NavLinkItem[] = [
 export const footerServiceNavItems: NavLinkItem[] = [
   { to: '/partner', label: '파트너센터', accent: 'emerald' },
   { to: '/advertiser', label: '광고주센터', accent: 'cyan' },
-  { to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' },
+  // 복원: EVENTS_MENU_ENABLED = true
+  ...(EVENTS_MENU_ENABLED
+    ? [{ to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' } satisfies NavLinkItem]
+    : []),
   communityNavItem,
 ];
 
