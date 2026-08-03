@@ -638,7 +638,7 @@ export function AdminCallDb() {
                               onClick={() => handleDeleteNumber(n)}
                               disabled={busy || n.status === 'assigned'}
                               title={n.status === 'assigned' ? '배정 중이라 삭제 불가' : '삭제'}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 disabled:opacity-40"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-rose-500 border border-rose-600 rounded-lg hover:bg-rose-600 disabled:opacity-40"
                             >
                               <Trash2 size={13} /> 삭제
                             </button>
