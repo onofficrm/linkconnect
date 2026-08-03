@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
-import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X, Upload, Info, Headphones } from 'lucide-react';
+import { Phone, PhoneCall, PhoneIncoming, Plus, Settings2, PlayCircle, Lock, Check, X, Upload, Info, Headphones, Trash2 } from 'lucide-react';
 import {
   CallLog,
   CallNumber,
@@ -12,6 +12,7 @@ import {
   assignAdminCallRequest,
   createAdminCallNumber,
   createAdminCallNumbersBulk,
+  deleteAdminCallNumber,
   fetchAdminCallLogs,
   fetchAdminCallNumbers,
   fetchAdminCallRecordingRequests,
@@ -20,6 +21,7 @@ import {
   fetchAdminCampaigns,
   fetchAdminPartners,
   finalizeAdminConversion,
+  formatCallPhone,
   importAdminCallLogs,
   rejectAdminCallRecordingRequest,
   rejectAdminCallRequest,
@@ -121,9 +123,15 @@ export function AdminCallDb() {
   }, [recStatusFilter]);
 
   const loadAll = useCallback(() => {
-    fetchAdminCallNumbers().then((d) => setNumbers(d.items)).catch(() => setNumbers([]));
-    fetchAdminCallRequests().then((d) => setRequests(d.items)).catch(() => setRequests([]));
-    fetchAdminCallLogs().then((d) => setLogs(d.items)).catch(() => setLogs([]));
+    fetchAdminCallNumbers()
+      .then((d) => setNumbers(d.items.map((n) => ({ ...n, number: formatCallPhone(n.number) }))))
+      .catch(() => setNumbers([]));
+    fetchAdminCallRequests()
+      .then((d) => setRequests(d.items.map((r) => ({ ...r, virtualNumber: formatCallPhone(r.virtualNumber) }))))
+      .catch(() => setRequests([]));
+    fetchAdminCallLogs()
+      .then((d) => setLogs(d.items.map((l) => ({ ...l, virtualNumber: formatCallPhone(l.virtualNumber) }))))
+      .catch(() => setLogs([]));
     loadRecordingRequests();
   }, [loadRecordingRequests]);
 
@@ -179,6 +187,24 @@ export function AdminCallDb() {
   const handleNumberStatus = async (cnId: number, status: string) => {
     await updateAdminCallNumber({ cnId, status });
     loadAll();
+  };
+
+  const handleDeleteNumber = async (n: CallNumber) => {
+    if (n.status === 'assigned') {
+      notify('배정 중인 번호는 삭제할 수 없습니다. 먼저 회수하세요.');
+      return;
+    }
+    if (!window.confirm(`${formatCallPhone(n.number)} 번호를 삭제할까요?`)) return;
+    setBusy(true);
+    try {
+      const res = await deleteAdminCallNumber({ cnId: n.cnId });
+      notify(res.message);
+      loadAll();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : '삭제 실패');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const openAssign = async (req: CallRequest) => {
@@ -558,7 +584,7 @@ export function AdminCallDb() {
               </select>
               <select value={directCn} onChange={(e) => setDirectCn(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono">
                 <option value="">가상번호 선택</option>
-                {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
+                {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{formatCallPhone(n.number)}</option>)}
               </select>
               <input
                 type="number"
@@ -596,16 +622,27 @@ export function AdminCallDb() {
                     const s = numberStatusLabel[n.status] ?? { label: n.status, cls: 'bg-slate-100 text-slate-500 border-slate-200' };
                     return (
                       <tr key={n.cnId} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-mono font-bold text-slate-800">{n.number}</td>
+                        <td className="px-4 py-3 font-mono font-bold text-slate-800">{formatCallPhone(n.number)}</td>
                         <td className="px-4 py-3 text-center"><span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${s.cls}`}>{s.label}</span></td>
                         <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{n.memo || '—'}</td>
                         <td className="px-4 py-3 text-center">
-                          <select value={n.status} onChange={(e) => handleNumberStatus(n.cnId, e.target.value)} className="px-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg" disabled={n.status === 'assigned'}>
-                            <option value="available">사용가능</option>
-                            <option value="paused">일시중지</option>
-                            <option value="released">해지</option>
-                            {n.status === 'assigned' && <option value="assigned">배정됨</option>}
-                          </select>
+                          <div className="inline-flex items-center gap-2">
+                            <select value={n.status} onChange={(e) => handleNumberStatus(n.cnId, e.target.value)} className="px-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg" disabled={n.status === 'assigned'}>
+                              <option value="available">사용가능</option>
+                              <option value="paused">일시중지</option>
+                              <option value="released">해지</option>
+                              {n.status === 'assigned' && <option value="assigned">배정됨</option>}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteNumber(n)}
+                              disabled={busy || n.status === 'assigned'}
+                              title={n.status === 'assigned' ? '배정 중이라 삭제 불가' : '삭제'}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100 disabled:opacity-40"
+                            >
+                              <Trash2 size={13} /> 삭제
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -909,7 +946,7 @@ export function AdminCallDb() {
             <label className="block text-xs font-bold text-slate-500 mb-1">사용 가능한 번호</label>
             <select value={assignCn} onChange={(e) => setAssignCn(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono mb-4">
               <option value="">번호 선택</option>
-              {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{n.number}</option>)}
+              {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{formatCallPhone(n.number)}</option>)}
             </select>
             <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
             <input
