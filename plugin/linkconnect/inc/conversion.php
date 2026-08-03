@@ -1171,6 +1171,10 @@ if (!function_exists('lc_conversion_create')) {
         if ($name === '' || $phone === '') {
             return array('ok' => false, 'message' => '이름과 연락처는 필수입니다.', 'conversion' => null);
         }
+        $phone_digits = preg_replace('/\D+/', '', $phone);
+        if (strlen($phone_digits) < 10 || strlen($phone_digits) > 11) {
+            return array('ok' => false, 'message' => '연락처 형식을 확인해 주세요.', 'code' => 'INVALID_PHONE', 'conversion' => null);
+        }
 
         $pt_id = (int) ($payload['pt_id'] ?? 0);
         $cp_id = (int) ($payload['cp_id'] ?? 0);

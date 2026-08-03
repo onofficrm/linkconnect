@@ -993,7 +993,7 @@ if (!function_exists('onoff_builder_render_import_page')) {
                 $params = $_GET;
                 if ($id === 'dasibom' || $id === 'banktupt') {
                     if (empty($params['cid']) && empty($params['campaign_id'])) {
-                        $params['cid'] = 'CPA-DASIBOM';
+                        $params['cid'] = $id === 'banktupt' ? 'CPA-BANKTUPT' : 'CPA-DASIBOM';
                     }
                 }
                 if ($id === 'hasugu_cpa') {

@@ -25,6 +25,49 @@ $payload = array(
     'sub_id'  => isset($body['sub_id']) ? (string) $body['sub_id'] : (isset($body['utm_campaign']) ? (string) $body['utm_campaign'] : ''),
 );
 
+if (!function_exists('lc_receive_campaign_matches_request')) {
+    /**
+     * 직접 유입 캠페인이 현재 독립도메인 또는 해당 캠페인의 랜딩에서 온 요청인지 확인.
+     */
+    function lc_receive_campaign_matches_request(array $campaign, $public_host)
+    {
+        $public_host = strtolower(preg_replace('/:\d+$/', '', trim((string) $public_host)));
+        if ($public_host === '') {
+            return false;
+        }
+
+        $tracking_host = function_exists('lc_link_host_from_base_url')
+            ? lc_link_host_from_base_url((string) ($campaign['cp_tracking_base_url'] ?? ''))
+            : strtolower((string) parse_url((string) ($campaign['cp_tracking_base_url'] ?? ''), PHP_URL_HOST));
+        if ($tracking_host !== '') {
+            $aliases = function_exists('lc_link_host_with_www_aliases')
+                ? lc_link_host_with_www_aliases($tracking_host)
+                : array($tracking_host, 'www.' . $tracking_host);
+            if (in_array($public_host, $aliases, true)) {
+                return true;
+            }
+        }
+
+        $landing_url = trim((string) ($campaign['cp_landing_url'] ?? ''));
+        $landing_host = strtolower((string) parse_url($landing_url, PHP_URL_HOST));
+        $referer = isset($_SERVER['HTTP_REFERER']) ? (string) $_SERVER['HTTP_REFERER'] : '';
+        $referer_host = strtolower((string) parse_url($referer, PHP_URL_HOST));
+        $referer_path = (string) parse_url($referer, PHP_URL_PATH);
+        $landing_path = (string) parse_url($landing_url, PHP_URL_PATH);
+
+        if ($landing_host !== '' && $landing_host !== $public_host) {
+            return false;
+        }
+        if ($referer_host !== '' && $referer_host !== $public_host) {
+            return false;
+        }
+
+        return $landing_path !== ''
+            && $referer_path !== ''
+            && strpos(rtrim($referer_path, '/') . '/', rtrim($landing_path, '/') . '/') === 0;
+    }
+}
+
 $lk_code = isset($body['lkCode']) ? trim((string) $body['lkCode']) : (isset($body['lk_code']) ? trim((string) $body['lk_code']) : '');
 
 // 1) 파트너 홍보 링크가 있으면 기존 흐름 (채널은 링크/요청값 유지)
@@ -88,15 +131,8 @@ if (!$campaign) {
                   LIMIT 1 "
             );
         }
-        // 캠페인 코드로 찾은 경우에도 독립도메인(또는 trackingBaseUrl 설정) 상품만 SEO 허용
-        if (is_array($campaign)) {
-            $tracking_base = trim((string) ($campaign['cp_tracking_base_url'] ?? ''));
-            $is_tracking_host = $public_host !== ''
-                && function_exists('lc_link_configured_tracking_hosts')
-                && in_array($public_host, lc_link_configured_tracking_hosts(), true);
-            if ($tracking_base === '' && !$is_tracking_host) {
-                $campaign = null;
-            }
+        if (is_array($campaign) && !lc_receive_campaign_matches_request($campaign, $public_host)) {
+            $campaign = null;
         }
     }
 }

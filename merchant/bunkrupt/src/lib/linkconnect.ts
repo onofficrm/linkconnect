@@ -83,7 +83,7 @@ export function resolveCampaignId(): string {
     params.get('cid') || params.get('campaign_id') || params.get('campaignId') || '';
   if (fromQuery) return fromQuery;
   const injected = window.LC_LANDING_CONTEXT?.campaign_id;
-  return typeof injected === 'string' ? injected : 'CPA-DASIBOM';
+  return typeof injected === 'string' ? injected : 'CPA-BANKTUPT';
 }
 
 export async function submitConsultation(
