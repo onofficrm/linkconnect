@@ -60,8 +60,64 @@ if ($base === false || !is_dir($base)) {
     exit;
 }
 
-$full = realpath($base . '/' . $rel);
-if ($full === false || strpos($full, $base) !== 0 || !is_file($full)) {
+/**
+ * macOS(NFD) ↔ Linux/Cafe24(NFC) 파일명 정규화 차이로 404 나는 경우를 보완.
+ */
+function lc_merchant_static_resolve_file($base, $rel) {
+    $candidates = array($rel);
+    if (class_exists('Normalizer')) {
+        $nfc = Normalizer::normalize($rel, Normalizer::FORM_C);
+        $nfd = Normalizer::normalize($rel, Normalizer::FORM_D);
+        if (is_string($nfc) && $nfc !== '') {
+            $candidates[] = $nfc;
+        }
+        if (is_string($nfd) && $nfd !== '') {
+            $candidates[] = $nfd;
+        }
+    }
+    $candidates = array_values(array_unique($candidates));
+
+    foreach ($candidates as $try) {
+        $full = realpath($base . '/' . $try);
+        if ($full !== false && strpos($full, $base) === 0 && is_file($full)) {
+            return $full;
+        }
+    }
+
+    // realpath 실패 시(정규화만 다른 경우) 디렉터리 스캔으로 매칭
+    $dir_rel = str_replace('\\', '/', dirname($rel));
+    $name = basename($rel);
+    $dir_abs = ($dir_rel === '.' || $dir_rel === '') ? $base : realpath($base . '/' . $dir_rel);
+    if ($dir_abs === false || strpos($dir_abs, $base) !== 0 || !is_dir($dir_abs)) {
+        return false;
+    }
+
+    $name_nfc = class_exists('Normalizer') ? Normalizer::normalize($name, Normalizer::FORM_C) : $name;
+    $name_nfd = class_exists('Normalizer') ? Normalizer::normalize($name, Normalizer::FORM_D) : $name;
+    $dh = opendir($dir_abs);
+    if ($dh === false) {
+        return false;
+    }
+    while (($entry = readdir($dh)) !== false) {
+        if ($entry === '.' || $entry === '..') {
+            continue;
+        }
+        $entry_nfc = class_exists('Normalizer') ? Normalizer::normalize($entry, Normalizer::FORM_C) : $entry;
+        $entry_nfd = class_exists('Normalizer') ? Normalizer::normalize($entry, Normalizer::FORM_D) : $entry;
+        if ($entry === $name || $entry_nfc === $name_nfc || $entry_nfd === $name_nfd) {
+            $full = $dir_abs . '/' . $entry;
+            if (is_file($full)) {
+                closedir($dh);
+                return $full;
+            }
+        }
+    }
+    closedir($dh);
+    return false;
+}
+
+$full = lc_merchant_static_resolve_file($base, $rel);
+if ($full === false) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Not found';
