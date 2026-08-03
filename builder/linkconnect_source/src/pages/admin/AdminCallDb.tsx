@@ -90,7 +90,8 @@ export function AdminCallDb() {
   // 배정 모달
   const [assignTarget, setAssignTarget] = useState<CallRequest | null>(null);
   const [assignCn, setAssignCn] = useState('');
-  const [assignPrice, setAssignPrice] = useState('');
+  const [assignPartnerPrice, setAssignPartnerPrice] = useState('');
+  const [assignAdvertiserPrice, setAssignAdvertiserPrice] = useState('');
 
   // 직접 배정
   const [partners, setPartners] = useState<AdminPartner[]>([]);
@@ -99,7 +100,9 @@ export function AdminCallDb() {
   const [directCp, setDirectCp] = useState('');
   const [directCn, setDirectCn] = useState('');
   const [directMemo, setDirectMemo] = useState('');
-  const [directPrice, setDirectPrice] = useState('');
+  const [directPartnerPrice, setDirectPartnerPrice] = useState('');
+  const [directAdvertiserPrice, setDirectAdvertiserPrice] = useState('');
+  const [memoDrafts, setMemoDrafts] = useState<Record<number, string>>({});
 
   // 통화 엑셀 업로드
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -137,9 +140,19 @@ export function AdminCallDb() {
 
   useEffect(() => {
     loadAll();
-    fetchAdminPartners({ status: 'active' }).then((d) => setPartners(d.items)).catch(() => setPartners([]));
+    fetchAdminPartners().then((d) => setPartners(d.items)).catch(() => setPartners([]));
     fetchAdminCampaigns({ status: 'active' }).then((d) => setCampaigns(d.items)).catch(() => setCampaigns([]));
   }, [loadAll]);
+
+  useEffect(() => {
+    setMemoDrafts((prev) => {
+      const next: Record<number, string> = { ...prev };
+      numbers.forEach((n) => {
+        if (next[n.cnId] === undefined) next[n.cnId] = n.memo || '';
+      });
+      return next;
+    });
+  }, [numbers]);
 
   useEffect(() => {
     if (tab === 'recordings') {
@@ -210,11 +223,15 @@ export function AdminCallDb() {
   const openAssign = async (req: CallRequest) => {
     setAssignTarget(req);
     setAssignCn('');
-    setAssignPrice('');
+    setAssignPartnerPrice('');
+    setAssignAdvertiserPrice('');
     try {
       const res = await fetchAdminCallSettings(req.cpId);
-      const price = Number(res.settings?.cs_price ?? 0);
-      if (price > 0) setAssignPrice(String(price));
+      const partner = Number(res.settings?.cs_price ?? 0);
+      const advertiser = Number(res.settings?.cs_merchant_price ?? 0);
+      if (partner > 0) setAssignPartnerPrice(String(partner));
+      if (advertiser > 0) setAssignAdvertiserPrice(String(advertiser));
+      else if (partner > 0) setAssignAdvertiserPrice(String(partner));
     } catch {
       // ignore
     }
@@ -222,9 +239,14 @@ export function AdminCallDb() {
 
   const handleAssign = async () => {
     if (!assignTarget || !assignCn) return;
-    const price = Number(assignPrice);
-    if (!Number.isFinite(price) || price <= 0) {
-      notify('콜당 디비 단가를 입력하세요.');
+    const partnerPrice = Number(assignPartnerPrice);
+    const advertiserPrice = Number(assignAdvertiserPrice || assignPartnerPrice);
+    if (!Number.isFinite(partnerPrice) || partnerPrice <= 0) {
+      notify('파트너 단가를 입력하세요.');
+      return;
+    }
+    if (!Number.isFinite(advertiserPrice) || advertiserPrice < partnerPrice) {
+      notify('광고주 단가는 파트너 단가 이상이어야 합니다.');
       return;
     }
     setBusy(true);
@@ -232,7 +254,8 @@ export function AdminCallDb() {
       const res = await assignAdminCallRequest({
         carId: assignTarget.carId,
         cnId: Number(assignCn),
-        price,
+        partnerPrice,
+        advertiserPrice,
       });
       notify(res.message);
       setAssignTarget(null);
@@ -256,9 +279,14 @@ export function AdminCallDb() {
 
   const handleDirectAssign = async () => {
     if (!directPt || !directCp || !directCn) return;
-    const price = Number(directPrice);
-    if (!Number.isFinite(price) || price <= 0) {
-      notify('콜당 디비 단가를 입력하세요.');
+    const partnerPrice = Number(directPartnerPrice);
+    const advertiserPrice = Number(directAdvertiserPrice || directPartnerPrice);
+    if (!Number.isFinite(partnerPrice) || partnerPrice <= 0) {
+      notify('파트너 단가를 입력하세요.');
+      return;
+    }
+    if (!Number.isFinite(advertiserPrice) || advertiserPrice < partnerPrice) {
+      notify('광고주 단가는 파트너 단가 이상이어야 합니다.');
       return;
     }
     setBusy(true);
@@ -268,19 +296,55 @@ export function AdminCallDb() {
         cpId: Number(directCp),
         cnId: Number(directCn),
         adminMemo: directMemo,
-        price,
+        partnerPrice,
+        advertiserPrice,
       });
       notify(res.message);
       setDirectPt('');
       setDirectCp('');
       setDirectCn('');
       setDirectMemo('');
-      setDirectPrice('');
+      setDirectPartnerPrice('');
+      setDirectAdvertiserPrice('');
       loadAll();
     } catch (e) {
       notify(e instanceof Error ? e.message : '직접 배정 실패');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleMemoSave = async (n: CallNumber) => {
+    const memo = (memoDrafts[n.cnId] ?? n.memo ?? '').trim();
+    if (memo === (n.memo || '')) return;
+    setBusy(true);
+    try {
+      const res = await updateAdminCallNumber({ cnId: n.cnId, memo });
+      notify(res.message || '메모를 저장했습니다.');
+      loadAll();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : '메모 저장 실패');
+      setMemoDrafts((prev) => ({ ...prev, [n.cnId]: n.memo || '' }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const fillPricesFromCampaign = async (cpId: string) => {
+    setDirectCp(cpId);
+    if (!cpId) return;
+    const campaign = campaigns.find((c) => String(c.id) === cpId);
+    if (campaign?.partnerPrice) setDirectPartnerPrice(String(campaign.partnerPrice));
+    if (campaign?.advertiserPrice) setDirectAdvertiserPrice(String(campaign.advertiserPrice));
+    try {
+      const res = await fetchAdminCallSettings(Number(cpId));
+      const partner = Number(res.settings?.cs_price ?? 0);
+      const advertiser = Number(res.settings?.cs_merchant_price ?? 0);
+      if (partner > 0) setDirectPartnerPrice(String(partner));
+      if (advertiser > 0) setDirectAdvertiserPrice(String(advertiser));
+      else if (partner > 0) setDirectAdvertiserPrice(String(partner));
+    } catch {
+      // ignore
     }
   };
 
@@ -346,9 +410,14 @@ export function AdminCallDb() {
 
   const handleSaveSettings = async () => {
     if (!settingsCp) return;
-    const price = Number(settingsDraft.cs_price ?? 0);
-    if (!Number.isFinite(price) || price <= 0) {
-      notify('콜당 디비 단가를 입력하세요.');
+    const partnerPrice = Number(settingsDraft.cs_price ?? 0);
+    const advertiserPrice = Number(settingsDraft.cs_merchant_price ?? settingsDraft.cs_price ?? 0);
+    if (!Number.isFinite(partnerPrice) || partnerPrice <= 0) {
+      notify('파트너 단가를 입력하세요.');
+      return;
+    }
+    if (!Number.isFinite(advertiserPrice) || advertiserPrice < partnerPrice) {
+      notify('광고주 단가는 파트너 단가 이상이어야 합니다.');
       return;
     }
     setBusy(true);
@@ -365,7 +434,9 @@ export function AdminCallDb() {
         businessEnd: String(settingsDraft.cs_business_end ?? '23:59'),
         holidayWeeks: String(settingsDraft.cs_holiday_weeks ?? ''),
         holidayDays: String(settingsDraft.cs_holiday_days ?? ''),
-        price: Number(settingsDraft.cs_price ?? 0),
+        price: partnerPrice,
+        partnerPrice,
+        advertiserPrice,
         minDuration: Number(settingsDraft.cs_min_duration ?? 0),
         memo: String(settingsDraft.cs_memo ?? ''),
       });
@@ -572,13 +643,13 @@ export function AdminCallDb() {
 
           <div className="bg-white rounded-2xl border border-cyan-200 shadow-sm p-5">
             <div className="font-bold text-slate-800 mb-1">파트너·캠페인 직접 배정</div>
-            <p className="text-xs text-slate-500 mb-3">파트너 신청 없이 관리자가 가상번호를 바로 배정할 수 있습니다.</p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <p className="text-xs text-slate-500 mb-3">파트너 신청 없이 관리자가 가상번호를 바로 배정할 수 있습니다. 이미 배정된 경우 번호가 교체됩니다.</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <select value={directPt} onChange={(e) => setDirectPt(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                 <option value="">파트너 선택</option>
                 {partners.map((p) => <option key={p.id} value={p.id}>{p.name || p.code}</option>)}
               </select>
-              <select value={directCp} onChange={(e) => setDirectCp(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+              <select value={directCp} onChange={(e) => fillPricesFromCampaign(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                 <option value="">캠페인 선택</option>
                 {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -589,12 +660,20 @@ export function AdminCallDb() {
               <input
                 type="number"
                 min={1}
-                value={directPrice}
-                onChange={(e) => setDirectPrice(e.target.value)}
-                placeholder="콜당 디비 단가 (원) *"
+                value={directPartnerPrice}
+                onChange={(e) => setDirectPartnerPrice(e.target.value)}
+                placeholder="파트너 단가 (원) *"
                 className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
               />
-              <button type="button" onClick={handleDirectAssign} disabled={busy || !directPt || !directCp || !directCn || !directPrice}
+              <input
+                type="number"
+                min={1}
+                value={directAdvertiserPrice}
+                onChange={(e) => setDirectAdvertiserPrice(e.target.value)}
+                placeholder="광고주 단가 (원) *"
+                className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+              />
+              <button type="button" onClick={handleDirectAssign} disabled={busy || !directPt || !directCp || !directCn || !directPartnerPrice}
                 className="px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">
                 직접 배정
               </button>
@@ -611,20 +690,55 @@ export function AdminCallDb() {
                   <tr>
                     <th className="px-4 py-3">번호</th>
                     <th className="px-4 py-3 text-center">상태</th>
+                    <th className="px-4 py-3">배정된 사람</th>
+                    <th className="px-4 py-3">설정 단가</th>
                     <th className="px-4 py-3">메모</th>
                     <th className="px-4 py-3 text-center">관리</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {numbers.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-12 text-center text-slate-400">등록된 가상번호가 없습니다.</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400">등록된 가상번호가 없습니다.</td></tr>
                   ) : numbers.map((n) => {
                     const s = numberStatusLabel[n.status] ?? { label: n.status, cls: 'bg-slate-100 text-slate-500 border-slate-200' };
+                    const assignee = n.assignedPartner || n.assignee || '';
+                    const partnerPrice = Number(n.partnerPrice || 0);
+                    const advertiserPrice = Number(n.advertiserPrice || 0);
                     return (
                       <tr key={n.cnId} className="hover:bg-slate-50">
                         <td className="px-4 py-3 font-mono font-bold text-slate-800">{formatCallPhone(n.number)}</td>
                         <td className="px-4 py-3 text-center"><span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${s.cls}`}>{s.label}</span></td>
-                        <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{n.memo || '—'}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {assignee ? (
+                            <div>
+                              <div className="font-medium">{assignee}</div>
+                              {n.assignedCampaign ? <div className="text-xs text-slate-400 mt-0.5">{n.assignedCampaign}</div> : null}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                          {partnerPrice > 0 || advertiserPrice > 0 ? (
+                            <div className="text-xs leading-5">
+                              <div>파트너 {partnerPrice.toLocaleString()}원</div>
+                              <div className="text-slate-400">광고주 {(advertiserPrice || partnerPrice).toLocaleString()}원</div>
+                            </div>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="text"
+                            value={memoDrafts[n.cnId] ?? n.memo ?? ''}
+                            onChange={(e) => setMemoDrafts((prev) => ({ ...prev, [n.cnId]: e.target.value }))}
+                            onBlur={() => handleMemoSave(n)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                              }
+                            }}
+                            placeholder="메모 입력"
+                            className="w-full min-w-[140px] px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center gap-2">
                             <select value={n.status} onChange={(e) => handleNumberStatus(n.cnId, e.target.value)} className="px-2 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg" disabled={n.status === 'assigned'}>
@@ -948,19 +1062,28 @@ export function AdminCallDb() {
               <option value="">번호 선택</option>
               {availableNumbers.map((n) => <option key={n.cnId} value={n.cnId}>{formatCallPhone(n.number)}</option>)}
             </select>
-            <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
+            <label className="block text-xs font-bold text-slate-500 mb-1">파트너 단가 (원) *</label>
             <input
               type="number"
               min={1}
-              value={assignPrice}
-              onChange={(e) => setAssignPrice(e.target.value)}
-              placeholder="예: 15000"
+              value={assignPartnerPrice}
+              onChange={(e) => setAssignPartnerPrice(e.target.value)}
+              placeholder="예: 40000"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3"
+            />
+            <label className="block text-xs font-bold text-slate-500 mb-1">광고주 단가 (원) *</label>
+            <input
+              type="number"
+              min={1}
+              value={assignAdvertiserPrice}
+              onChange={(e) => setAssignAdvertiserPrice(e.target.value)}
+              placeholder="예: 65000"
               className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-4"
             />
             {availableNumbers.length === 0 && <p className="text-xs text-rose-500 mb-3">사용 가능한 번호가 없습니다. 가상번호 풀에서 먼저 등록하세요.</p>}
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={() => setAssignTarget(null)} className="px-4 py-2 text-sm font-bold text-slate-500">취소</button>
-              <button type="button" onClick={handleAssign} disabled={busy || !assignCn || !assignPrice} className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">배정하기</button>
+              <button type="button" onClick={handleAssign} disabled={busy || !assignCn || !assignPartnerPrice} className="px-5 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-bold rounded-xl text-sm disabled:opacity-50">배정하기</button>
             </div>
           </div>
         </div>
@@ -997,9 +1120,15 @@ export function AdminCallDb() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">콜당 디비 단가 (원) *</label>
-                <input type="number" min={1} value={Number(settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">파트너 단가 (원) *</label>
+                  <input type="number" min={1} value={Number(settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">광고주 단가 (원) *</label>
+                  <input type="number" min={1} value={Number(settingsDraft.cs_merchant_price ?? settingsDraft.cs_price ?? 0)} onChange={(e) => setDraft('cs_merchant_price', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
