@@ -515,7 +515,7 @@ export function AdminCallDb() {
             <div className="font-bold text-slate-800 mb-1">가상번호 수동 등록</div>
             <p className="text-xs text-slate-500 mb-3">콜업체에서 발급받은 050 가상번호를 관리자가 직접 풀에 등록합니다. 등록된 사용가능 번호를 파트너가 선택합니다.</p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <input type="text" value={newNumber} onChange={(e) => setNewNumber(e.target.value)} placeholder="가상번호 (예: 050369820000)"
+              <input type="text" value={newNumber} onChange={(e) => setNewNumber(e.target.value)} placeholder="가상번호 (예: 0503-6982-1000)"
                 className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
               <input type="text" value={newMemo} onChange={(e) => setNewMemo(e.target.value)} placeholder="메모 (선택)"
                 className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
@@ -525,12 +525,12 @@ export function AdminCallDb() {
             </div>
             <div className="mt-4 pt-4 border-t border-slate-100">
               <div className="text-sm font-bold text-slate-700 mb-1">일괄 등록</div>
-              <p className="text-xs text-slate-500 mb-2">한 줄에 하나씩, 또는 콤마/공백으로 구분해 여러 번호를 붙여넣으세요.</p>
+              <p className="text-xs text-slate-500 mb-2">한 줄에 하나씩, 또는 콤마/공백으로 구분해 여러 번호를 붙여넣으세요. 앞자리 0과 하이픈은 자동 처리됩니다.</p>
               <textarea
                 value={bulkNumbers}
                 onChange={(e) => setBulkNumbers(e.target.value)}
                 rows={4}
-                placeholder={"050312340001\n050312340002\n050312340003"}
+                placeholder={"0503-6982-1001\n0503-6982-1002\n0503-6982-1003"}
                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono mb-2"
               />
               <div className="flex flex-col sm:flex-row gap-3">
