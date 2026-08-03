@@ -16,6 +16,7 @@ import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components
 import { PartnerWpEmbedGuideModal } from '../../components/partner/PartnerWpEmbedGuideModal';
 import { CPA_THUMBNAIL_LIST_IMG_CLASS, CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
 import { cpaCardImageUrl, cpaTinyImageUrl } from '../../lib/optimizedImage';
+import { CallDbBadge, CallDbStatsHint } from '../../components/CallDbBadge';
 import { PartnerCampaignDetailModal } from '../../components/partner/PartnerCampaignDetailModal';
 import { openLandingPage } from '../../lib/utils';
 import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../components/center-ui';
@@ -909,8 +910,17 @@ function CampaignCard({
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900 mb-1">{campaign.title}</h3>
+        <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-1.5 min-w-0">
+          <span className="min-w-0 truncate">{campaign.title}</span>
+          {!isCps && campaign.callEnabled ? <CallDbBadge /> : null}
+        </h3>
         <p className="text-sm text-slate-500 mb-5 line-clamp-1">{campaign.description}</p>
+
+        {!isCps && campaign.callEnabled ? (
+          <div className="mb-4 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2">
+            <CallDbStatsHint className="border-0 pb-0" />
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3 mb-5">
           {isCps ? (
