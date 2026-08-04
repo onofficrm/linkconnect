@@ -2,6 +2,9 @@ import React from 'react';
 import { usePartnerContext } from '../context/PartnerContext';
 import { COMPANY_DETAILS } from '../data/initialData';
 
+const LOGO_SRC = `${import.meta.env.BASE_URL}logo.png`;
+const LOGO_ALT = '신독환경 - 보이지 않는 곳에서 성실하게';
+
 interface FooterProps {
   onOpenPrivacyModal: () => void;
 }
@@ -22,8 +25,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyModal }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-slate-900 pb-8">
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1 bg-slate-800 text-white rounded font-black text-xs tracking-wider border border-slate-700">
-              {companyName}
+            <div className="rounded-lg bg-[#F9F8F6] px-2.5 py-2">
+              <img
+                src={LOGO_SRC}
+                alt={LOGO_ALT}
+                width={365}
+                height={184}
+                className="h-10 w-auto max-w-[160px] object-contain"
+                decoding="async"
+              />
             </div>
           </div>
 

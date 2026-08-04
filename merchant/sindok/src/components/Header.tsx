@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Phone, CheckCircle2 } from 'lucide-react';
 import { usePartnerContext } from '../context/PartnerContext';
 import CallButton from './CallButton';
+
+const LOGO_SRC = `${import.meta.env.BASE_URL}logo.png`;
+const LOGO_ALT = '신독환경 - 보이지 않는 곳에서 성실하게';
 
 export const Header: React.FC = () => {
   const { data, hasPhone } = usePartnerContext();
@@ -44,12 +47,20 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-3 sm:gap-6">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="flex items-center gap-1.5 min-w-[130px] sm:min-w-[150px] h-[42px] sm:h-[46px] px-3">
-              <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 aspect-square" />
-              <span className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight">
-                {brand}
-              </span>
-            </div>
+            <a
+              href="#section-hero"
+              className="flex items-center shrink-0 rounded-lg bg-[#F9F8F6] px-1.5 py-1"
+              aria-label={brand}
+            >
+              <img
+                src={LOGO_SRC}
+                alt={LOGO_ALT}
+                width={365}
+                height={184}
+                className="h-9 sm:h-11 w-auto max-w-[150px] sm:max-w-[180px] object-contain"
+                decoding="async"
+              />
+            </a>
 
             <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
