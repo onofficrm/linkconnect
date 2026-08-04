@@ -31,6 +31,9 @@ export interface ReviewImageItem {
   date: string;
   content: string;
   placeholderText: string; // "review-image-01"
+  /** public/ 기준 파일명 */
+  imageSrc: string;
+  tags?: string[];
 }
 
 export interface FaqItem {
