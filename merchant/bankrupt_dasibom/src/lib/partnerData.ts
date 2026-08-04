@@ -122,6 +122,9 @@ export function hasPartnerPhone(partnerData: Pick<PartnerData, 'partner_phone'>)
 
 export function formatPhoneDisplay(phone: string): string {
   const digits = phone.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('050')) {
+    return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8)}`;
+  }
   if (digits.length === 11) {
     return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
   }
