@@ -188,6 +188,9 @@ jobs:
           fi
           cp "$SRC/index.html" "$SRC/favicon.png" "$SRC/favicon-32.png" "$SRC/apple-touch-icon.png" "$SRC/hero_dashboard_mockup.webp" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
           cp -R "$SRC/assets" "$ROOT/plugin/onoff-builder-bridge/imports/linkconnect/"
+          if [[ -f plugin/onoff-builder-bridge/imports/.htaccess ]]; then
+            cp plugin/onoff-builder-bridge/imports/.htaccess "$ROOT/plugin/onoff-builder-bridge/imports/.htaccess"
+          fi
           if [[ -d plugin/onoff-builder-bridge/imports/banktupt ]]; then
             cp plugin/onoff-builder-bridge/imports/banktupt/index.html "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"
             cp -R plugin/onoff-builder-bridge/imports/banktupt/assets "$ROOT/plugin/onoff-builder-bridge/imports/banktupt/"

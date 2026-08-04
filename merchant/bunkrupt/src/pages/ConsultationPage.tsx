@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Hero from '../components/Hero';
 import TrustBadges from '../components/TrustBadges';
+import UrgencyRouter from '../components/UrgencyRouter';
+import DeferredMount from '../components/DeferredMount';
 import Empathy from '../components/Empathy';
 import BeforeAfter from '../components/BeforeAfter';
 import Eligibility from '../components/Eligibility';
@@ -12,7 +14,6 @@ import Trust from '../components/Trust';
 import ConsultationFAQ from '../components/ConsultationFAQ';
 import PhoneSection from '../components/PhoneSection';
 import ConsultationForm from '../components/ConsultationForm';
-import UrgencyRouter from '../components/UrgencyRouter';
 
 export default function ConsultationPage() {
   const location = useLocation();
@@ -27,19 +28,30 @@ export default function ConsultationPage() {
 
   return (
     <>
+      {/* 첫 뷰포트: 히어로·신뢰·긴급 분기만 즉시 */}
       <Hero />
       <TrustBadges />
       <UrgencyRouter />
-      <Empathy />
-      <BeforeAfter />
-      <Eligibility />
-      <AICalculator />
-      <SocialProof />
-      <Process />
-      <Trust />
-      <ConsultationFAQ />
-      <ConsultationForm />
-      <PhoneSection />
+
+      {/* 하단 섹션은 뷰포트 근접/idle 후 마운트 */}
+      <DeferredMount minHeight={160}>
+        <Empathy />
+        <BeforeAfter />
+        <Eligibility />
+      </DeferredMount>
+
+      <DeferredMount minHeight={200}>
+        <AICalculator />
+        <SocialProof />
+        <Process />
+        <Trust />
+        <ConsultationFAQ />
+      </DeferredMount>
+
+      <DeferredMount minHeight={240} idleFallbackMs={400}>
+        <ConsultationForm />
+        <PhoneSection />
+      </DeferredMount>
     </>
   );
 }

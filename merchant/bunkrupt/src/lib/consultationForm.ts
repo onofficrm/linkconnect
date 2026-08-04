@@ -85,9 +85,17 @@ export function incomeManwonToSelectValue(manwon: number): IncomeValue {
 }
 
 export function scrollToConsultForm(behavior: ScrollBehavior = 'smooth'): void {
-  window.setTimeout(() => {
-    document.getElementById('consult-form')?.scrollIntoView({ behavior, block: 'center' });
-  }, 100);
+  const tryScroll = (attempt: number) => {
+    const el = document.getElementById('consult-form');
+    if (el) {
+      el.scrollIntoView({ behavior, block: 'center' });
+      return;
+    }
+    if (attempt < 12) {
+      window.setTimeout(() => tryScroll(attempt + 1), 120);
+    }
+  };
+  window.setTimeout(() => tryScroll(0), 50);
 }
 
 export function scrollToCalculator(): void {

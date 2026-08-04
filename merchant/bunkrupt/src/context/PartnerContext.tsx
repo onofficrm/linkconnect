@@ -32,8 +32,12 @@ export function PartnerProvider({ children }: { children: ReactNode }) {
       persistTrackingParams();
       resolveLkCode();
 
+      // page.php 가 이미 LC_LANDING_CONTEXT 를 주입하면 추가 API 호출 생략
+      const injected = window.LC_LANDING_CONTEXT;
+      const serverInjected = typeof injected?.has_partner_phone === 'boolean';
+
       let next = getPartnerData();
-      if (!hasPartnerPhone(next)) {
+      if (!serverInjected) {
         await fetchLandingContext();
         next = getPartnerData();
       }
