@@ -128,7 +128,7 @@ if (!function_exists('linkconnect_tracking_home_landing_file')) {
             }
         }
 
-        // 기본: air911 → 다시봄, yevely.kr → 모두의철거, skawning.co.kr → 하수구
+        // 기본: air911 → 다시봄, yevely.kr → 모두의철거, skawning → 하수구, agrio → 신독환경
         if ($landing_path === '' && ($host === 'air911.co.kr' || $host === 'www.air911.co.kr')) {
             $landing_path = '/merchant/dasibom/';
         }
@@ -137,6 +137,9 @@ if (!function_exists('linkconnect_tracking_home_landing_file')) {
         }
         if ($landing_path === '' && ($host === 'skawning.co.kr' || $host === 'www.skawning.co.kr')) {
             $landing_path = '/merchant/hasugu_cpa/';
+        }
+        if ($landing_path === '' && ($host === 'agrio.co.kr' || $host === 'www.agrio.co.kr')) {
+            $landing_path = '/merchant/sindok/';
         }
 
         if ($landing_path === '') {

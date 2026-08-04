@@ -16,6 +16,7 @@ $allowed = array(
     'dasibom'    => 'dasibom',
     'hasugu_cpa' => 'hasugu_cpa',
     'hasugu'     => 'hasugu_cpa',
+    'sindok'     => 'sindok',
 );
 
 if ($merchant === '' || !isset($allowed[$merchant]) || $rel === '') {
@@ -37,7 +38,9 @@ $allowed_root_icons = array(
 );
 $is_image = (strpos($rel, 'images/') === 0);
 $is_icon = in_array($rel, $allowed_root_icons, true);
-if ($rel === '' || strpos($rel, '..') !== false || !($is_image || $is_icon)) {
+// 신독환경 등: import 루트에 둔 작업사진·로고 (images/ 하위 아님)
+$is_root_image = (bool) preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]*\.(jpe?g|png|gif|webp|svg|ico)$/i', $rel);
+if ($rel === '' || strpos($rel, '..') !== false || !($is_image || $is_icon || $is_root_image)) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=utf-8');
     echo 'Invalid path';
