@@ -31,7 +31,7 @@ export interface PartnerData extends PartnerTracking, LandingVars {
 declare global {
   interface Window {
     PARTNER_PHONE?: string;
-    LC_LANDING_CONTEXT?: Partial<PartnerData>;
+    LC_LANDING_CONTEXT?: Partial<PartnerData & { has_partner_phone?: boolean }>;
   }
 }
 

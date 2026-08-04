@@ -8,6 +8,7 @@ import {
   type PartnerData,
 } from '../lib/partnerData';
 import { resolveLkCode } from '../lib/linkconnect';
+import { shouldSkipLandingContextFetch } from '../../../_landing-perf/skipLandingContextFetch';
 
 interface PartnerContextValue {
   data: PartnerData;
@@ -33,7 +34,7 @@ export function PartnerProvider({ children }: { children: ReactNode }) {
       resolveLkCode();
 
       let next = getPartnerData();
-      if (!hasPartnerPhone(next)) {
+      if (!shouldSkipLandingContextFetch()) {
         await fetchLandingContext();
         next = getPartnerData();
       }

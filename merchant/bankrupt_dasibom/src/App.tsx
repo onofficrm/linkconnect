@@ -1,8 +1,10 @@
 import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, Briefcase, FileText, Calculator, Wallet, Compass, Building2, Sprout, ShieldCheck, User, MessageSquare, Smartphone, Info, ThumbsUp, AlertTriangle, ChevronDown, Scale, BadgeCheck } from 'lucide-react';
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import DeferredMount from './components/DeferredMount';
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
+import { scrollToId } from '../../_landing-perf/scrollToId';
 // ?inline → data URL로 번들 (외부 URL 404/캐시로 사진이 깨지는 문제 방지)
 import lawyerPortraitInline from './assets/lawyer-lee-jeongyong-hero.jpg?inline';
 
@@ -87,7 +89,7 @@ export default function App() {
     if (type) {
       setFormData((prev) => ({ ...prev, type }));
     }
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToId('consultation-form', { block: 'start' });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -351,8 +353,9 @@ export default function App() {
           </div>
         </section>
 
+        <DeferredMount minHeight={280} className="lg:col-span-12 space-y-4 md:space-y-6">
         {/* Lawyer Profile — 검사출신 약력 */}
-        <section id="lawyer" className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 scroll-mt-24">
+        <section id="lawyer" className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 scroll-mt-24">
           <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
             <div className="lg:col-span-5 space-y-5">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold border border-teal-100">
@@ -407,7 +410,7 @@ export default function App() {
         </section>
 
         {/* Comparison Section */}
-        <section id="rehab" className="lg:col-span-12 mt-4 md:mt-8">
+        <section id="rehab" className="mt-4 md:mt-8">
           <div className="grid md:grid-cols-2 gap-4 md:gap-6">
             
             {/* Individual Rehabilitation Card */}
@@ -493,9 +496,11 @@ export default function App() {
             </p>
           </div>
         </section>
+        </DeferredMount>
 
+        <DeferredMount minHeight={240} className="lg:col-span-12 space-y-4 md:space-y-6">
         {/* Roadmap Section */}
-        <section id="process" className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
+        <section id="process" className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">상담부터 재정회복까지, 이렇게 진행됩니다</h2>
           </div>
@@ -529,7 +534,7 @@ export default function App() {
           </div>
         </section>
 
-        <div className="lg:col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-8">
           {/* Pre-consultation Checklist */}
           <section className="bg-slate-900 rounded-3xl p-8 lg:p-10 shadow-xl text-white flex flex-col">
             <h3 className="text-2xl font-extrabold mb-6 tracking-tight">상담 전에 확인하면 좋은 내용</h3>
@@ -574,7 +579,7 @@ export default function App() {
         </div>
 
         {/* Delay Risks */}
-        <section className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+        <section className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           <div className="flex-1 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
               <AlertTriangle className="w-4 h-4" />
@@ -610,9 +615,11 @@ export default function App() {
             </a>
           </div>
         </section>
+        </DeferredMount>
 
+        <DeferredMount minHeight={320} idleFallbackMs={400} className="lg:col-span-12">
         {/* Consultation Form Section */}
-        <section id="consultation-form" className="lg:col-span-12 bg-slate-900 rounded-3xl p-6 md:p-12 shadow-xl mt-4 md:mt-8 relative overflow-hidden">
+        <section id="consultation-form" className="bg-slate-900 rounded-3xl p-6 md:p-12 shadow-xl mt-4 md:mt-8 relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
           
@@ -830,9 +837,11 @@ export default function App() {
             </div>
           </div>
         </section>
+        </DeferredMount>
 
+        <DeferredMount minHeight={240} className="lg:col-span-12 space-y-4 md:space-y-6">
         {/* Phone Consultation CTA */}
-        <section className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col md:flex-row items-center gap-8 lg:gap-12 text-center md:text-left phone-only partner-phone-section">
+        <section className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col md:flex-row items-center gap-8 lg:gap-12 text-center md:text-left phone-only partner-phone-section">
           <div className="w-16 h-16 md:w-20 md:h-20 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center shrink-0">
             <Phone className="w-8 h-8 md:w-10 md:h-10" />
           </div>
@@ -869,7 +878,7 @@ export default function App() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="lg:col-span-12 bg-white border border-slate-200 rounded-3xl p-6 md:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
+        <section id="faq" className="bg-white border border-slate-200 rounded-3xl p-6 md:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
           <div className="text-center mb-8 md:mb-10">
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">자주 묻는 질문</h2>
           </div>
@@ -905,7 +914,7 @@ export default function App() {
         </section>
 
         {/* Final CTA Section */}
-        <section className="lg:col-span-12 bg-slate-900 rounded-3xl p-8 md:p-16 text-center shadow-2xl mt-4 md:mt-8 relative overflow-hidden">
+        <section className="bg-slate-900 rounded-3xl p-8 md:p-16 text-center shadow-2xl mt-4 md:mt-8 relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-2xl bg-teal-500/10 blur-[100px] rounded-full"></div>
           
           <div className="relative z-10 space-y-6">
@@ -928,6 +937,7 @@ export default function App() {
             </div>
           </div>
         </section>
+        </DeferredMount>
       </main>
 
       {/* Footer */}

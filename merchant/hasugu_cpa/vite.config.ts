@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
+import { landingManualChunks } from '../_landing-perf/viteManualChunks';
 
 const IMPORT_BASE = '/plugin/onoff-builder-bridge/imports/hasugu_cpa/';
 
@@ -17,6 +18,12 @@ export default defineConfig(() => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      cssCodeSplit: true,
+      rollupOptions: {
+        output: {
+          manualChunks: landingManualChunks,
+        },
+      },
     },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',

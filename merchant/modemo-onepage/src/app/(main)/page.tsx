@@ -1,18 +1,9 @@
 import common from "@/components/home/home.module.css";
 import HeroSection from "@/components/home/HeroSection";
 import EvidenceStrip from "@/components/home/EvidenceStrip";
-import WorrySection from "@/components/home/WorrySection";
-import MarketDiagnosisSection from "@/components/home/MarketDiagnosisSection";
-import SystemSection from "@/components/home/SystemSection";
-import ProcessSection from "@/components/home/ProcessSection";
-import VerifiedSection from "@/components/home/VerifiedSection";
-import PricingSection from "@/components/home/PricingSection";
-import SafetySection from "@/components/home/SafetySection";
 import StatsSection from "@/components/home/StatsSection";
 import CustomerLogosSection from "@/components/home/CustomerLogosSection";
-import RegionPartnerSection from "@/components/home/RegionPartnerSection";
-import FooterCtaSection from "@/components/home/FooterCtaSection";
-import SimpleQuoteSection from "@/components/home/SimpleQuoteSection";
+import DeferredLandingSections from "@/components/home/DeferredLandingSections";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -47,19 +38,7 @@ export default function Home() {
       <EvidenceStrip />
       <StatsSection />
       <CustomerLogosSection />
-      <WorrySection />
-      <MarketDiagnosisSection />
-      <SystemSection />
-      <ProcessSection />
-      <VerifiedSection />
-      <PricingSection />
-      <SafetySection />
-
-      <RegionPartnerSection />
-
-      <SimpleQuoteSection />
-
-      <FooterCtaSection />
+      <DeferredLandingSections />
     </div>
   );
 }

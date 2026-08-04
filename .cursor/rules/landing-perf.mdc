@@ -1,0 +1,26 @@
+---
+description: 광고 머천트 랜딩 성능 — DeferredMount, lazy, vendor chunks, landing_context skip
+globs: merchant/**/*,plugin/onoff-builder-bridge/imports/**/*
+alwaysApply: false
+---
+
+# 광고 랜딩 성능
+
+상세: [merchant/_landing-perf/README.md](merchant/_landing-perf/README.md)
+
+신규·개편 랜딩은 **디자인을 가볍게 만들지 말고**, 아래 로드 전략을 적용한다.
+
+## 필수
+
+- 첫 뷰포트(히어로·핵심 CTA)만 즉시 마운트.
+- 하단 섹션: `merchant/_landing-perf/DeferredMount.tsx` 를 랜딩 `src/components/` 에 복사해 사용.
+- 라우트/대형 섹션: Vite `React.lazy` / Next `next/dynamic`.
+- Vite: `landingManualChunks` (`merchant/_landing-perf/viteManualChunks.ts`).
+- `window.LC_LANDING_CONTEXT.has_partner_phone` 이 boolean 이면 `landing_context` API 생략.
+- 지연 폼 앵커: `scrollToId` 재시도.
+- 배포 후 해시 에셋 캐시·gzip 은 `imports/.htaccess` 공통.
+
+## 하지 말 것
+
+- 속도를 이유로 히어로 비주얼·브랜드 톤을 빈약하게 단순화.
+- 상담 폼을 제거하거나 CPA 연락 규칙(`cpa-landing-contact`)을 깨는 변경.

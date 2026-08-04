@@ -11,6 +11,11 @@ import {
 } from '../lib/partnerData';
 import { resolveLkCode } from '../lib/linkconnect';
 
+function shouldSkipLandingContextFetch(): boolean {
+  const injected = window.LC_LANDING_CONTEXT;
+  return typeof injected?.has_partner_phone === 'boolean';
+}
+
 const EMPTY_DATA: PartnerData = {
   partner_id: '',
   campaign_id: '',
@@ -58,7 +63,7 @@ export function PartnerProvider({ children }: { children: ReactNode }) {
       resolveLkCode();
 
       let next = getPartnerData();
-      if (!hasPartnerPhone(next)) {
+      if (!shouldSkipLandingContextFetch()) {
         await fetchLandingContext();
         next = getPartnerData();
       }
