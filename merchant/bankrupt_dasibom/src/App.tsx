@@ -1,6 +1,10 @@
-import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, Briefcase, FileText, Calculator, Wallet, Compass, Building2, Sprout, ShieldCheck, User, MessageSquare, Smartphone, Info, ThumbsUp, AlertTriangle, ChevronDown, Scale, BadgeCheck } from 'lucide-react';
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, MessageSquare, Scale, BadgeCheck } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import DeferredMount from './components/DeferredMount';
+
+const DeferredLawyerRehab = lazy(() => import('./sections/DeferredLawyerRehab'));
+const DeferredProcessMid = lazy(() => import('./sections/DeferredProcessMid'));
+const DeferredFaqCta = lazy(() => import('./sections/DeferredFaqCta'));
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
@@ -353,267 +357,15 @@ export default function App() {
         </section>
 
         <DeferredMount minHeight={280} className="lg:col-span-12 space-y-4 md:space-y-6">
-        {/* Lawyer Profile — 검사출신 약력 */}
-        <section id="lawyer" className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 scroll-mt-24">
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            <div className="lg:col-span-5 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold border border-teal-100">
-                <Scale className="w-4 h-4" />
-                검사출신 변호사 약력
-              </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                {LAWYER_PROFILE.name} {LAWYER_PROFILE.title}<br />
-                <span className="text-teal-600">실무를 아는 상담</span>이 다릅니다
-              </h2>
-              <p className="text-slate-600 font-medium leading-relaxed">
-                검사로 사건 구조를 파악하고, 부장검사로 복잡한 쟁점을 조율해 온 경험을
-                개인회생·개인파산 상담에 그대로 적용합니다.
-              </p>
-              <ol className="space-y-3">
-                {LAWYER_PROFILE.career.map((item, idx) => (
-                  <li key={item} className="flex items-start gap-3 text-slate-800 font-medium">
-                    <span className="w-7 h-7 rounded-full bg-slate-900 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 1}
-                    </span>
-                    <span className="leading-snug pt-1">{item}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-
-            <div className="lg:col-span-7 space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <BadgeCheck className="w-5 h-5 text-teal-600" />
-                검사출신 변호사의 장점
-              </h3>
-              <div className="grid sm:grid-cols-1 gap-4">
-                {LAWYER_PROFILE.strengths.map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:border-teal-200 hover:bg-teal-50/40 transition-colors"
-                  >
-                    <p className="font-bold text-slate-900 mb-1.5">{item.title}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-              <a
-                href="#consultation-form"
-                className="mt-2 inline-flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold px-6 py-3.5 rounded-xl transition-colors"
-              >
-                검사출신 변호사에게 상담 신청
-                <ArrowRight className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* Comparison Section */}
-        <section id="rehab" className="mt-4 md:mt-8">
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-            
-            {/* Individual Rehabilitation Card */}
-            <div id="bankruptcy-anchor-skip" className="bg-white border border-slate-200 rounded-3xl p-8 shadow-lg shadow-slate-200/50 flex flex-col h-full hover:border-teal-300 transition-colors">
-              <div className="w-14 h-14 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center mb-6">
-                <Briefcase className="w-7 h-7" />
-              </div>
-              <h3 className="text-2xl font-extrabold text-slate-900 mb-4 tracking-tight">소득은 있지만 채무상환이 어려운 경우</h3>
-              <p className="text-slate-600 font-medium mb-6 leading-relaxed">
-                개인회생은 일정한 소득이 있는 채무자가 법원이 정한 기간 동안 일부 채무를 변제하고 남은 채무의 조정을 받을 수 있는 제도입니다.
-              </p>
-              
-              <div className="bg-slate-50 rounded-2xl p-5 mb-8 flex-1 border border-slate-100">
-                <p className="text-sm font-bold text-slate-900 mb-3">추천 대상</p>
-                <ul className="space-y-2.5">
-                  {[
-                    "급여소득자",
-                    "자영업자",
-                    "프리랜서",
-                    "일정한 수입이 있는 사람",
-                    "정상적인 채무상환이 어려운 사람"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-teal-500" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <button
-                type="button"
-                onClick={() => scrollToForm('개인회생')}
-                className="w-full bg-teal-50 text-teal-700 hover:bg-teal-500 hover:text-white border border-teal-100 px-6 py-4 rounded-xl text-base font-bold transition-all flex items-center justify-center gap-2"
-              >
-                개인회생 상담받기
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Individual Bankruptcy Card */}
-            <div id="bankruptcy" className="bg-white border border-slate-200 rounded-3xl p-8 shadow-lg shadow-slate-200/50 flex flex-col h-full hover:border-orange-300 transition-colors">
-              <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mb-6">
-                <FileText className="w-7 h-7" />
-              </div>
-              <h3 className="text-2xl font-extrabold text-slate-900 mb-4 tracking-tight">소득과 재산으로 채무상환이 어려운 경우</h3>
-              <p className="text-slate-600 font-medium mb-6 leading-relaxed">
-                개인파산은 현재의 소득과 재산으로 채무를 감당하기 어려운 경우 법원의 심사를 통해 채무 문제를 정리하는 제도입니다.
-              </p>
-              
-              <div className="bg-slate-50 rounded-2xl p-5 mb-8 flex-1 border border-slate-100">
-                <p className="text-sm font-bold text-slate-900 mb-3">추천 대상</p>
-                <ul className="space-y-2.5">
-                  {[
-                    "현재 소득이 거의 없는 사람",
-                    "고령 또는 건강상의 사유로 소득활동이 어려운 사람",
-                    "재산보다 채무가 많은 사람",
-                    "장기간 채무상환이 어려운 사람"
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-slate-700 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-orange-500" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <button
-                type="button"
-                onClick={() => scrollToForm('개인파산')}
-                className="w-full bg-orange-50 text-orange-700 hover:bg-orange-500 hover:text-white border border-orange-100 px-6 py-4 rounded-xl text-base font-bold transition-all flex items-center justify-center gap-2"
-              >
-                개인파산 상담받기
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-            
-          </div>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm font-medium text-slate-500 bg-slate-100 inline-block px-4 py-2 rounded-lg">
-              * 개인별 소득, 재산, 채무 발생 원인에 따라 신청 가능 여부가 달라질 수 있습니다.
-            </p>
-          </div>
-        </section>
+          <Suspense fallback={null}>
+            <DeferredLawyerRehab onScrollToForm={scrollToForm} />
+          </Suspense>
         </DeferredMount>
 
         <DeferredMount minHeight={240} className="lg:col-span-12 space-y-4 md:space-y-6">
-        {/* Roadmap Section */}
-        <section id="process" className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">상담부터 재정회복까지, 이렇게 진행됩니다</h2>
-          </div>
-          
-          <div className="relative">
-            {/* Desktop Line */}
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 z-0"></div>
-            {/* Mobile Line */}
-            <div className="md:hidden absolute top-0 left-6 h-full w-0.5 bg-slate-100 z-0"></div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-6 relative z-10">
-              {[
-                { title: '현재 채무상황 확인', icon: Calculator },
-                { title: '소득·재산·부양가족 확인', icon: Wallet },
-                { title: '개인회생 또는 개인파산 방향 안내', icon: Compass },
-                { title: '필요서류 준비', icon: FileText },
-                { title: '신청 및 관련 절차 진행', icon: Building2 },
-                { title: '채무조정 후 새로운 생활 준비', icon: Sprout },
-              ].map((step, idx) => (
-                <div key={idx} className="flex md:flex-col items-center gap-4 md:gap-3 text-left md:text-center relative">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0 relative">
-                    <step.icon className="w-6 h-6" />
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 text-white rounded-full flex items-center justify-center text-[11px] font-bold">
-                      {idx + 1}
-                    </div>
-                  </div>
-                  <p className="text-sm font-bold text-slate-800 leading-snug">{step.title}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-8">
-          {/* Pre-consultation Checklist */}
-          <section className="bg-slate-900 rounded-3xl p-8 lg:p-10 shadow-xl text-white flex flex-col">
-            <h3 className="text-2xl font-extrabold mb-6 tracking-tight">상담 전에 확인하면 좋은 내용</h3>
-            <div className="flex flex-wrap gap-3 mb-8">
-              {[
-                "월평균 소득", "전체 채무금액", "보유 재산", "부양가족 수", 
-                "채무 발생 원인", "현재 연체 여부", "압류 또는 독촉 여부"
-              ].map((item, idx) => (
-                <div key={idx} className="bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-200">
-                  {item}
-                </div>
-              ))}
-            </div>
-            <div className="mt-auto bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-              <p className="text-sm font-bold text-teal-400 flex items-center gap-2">
-                <Info className="w-4 h-4 shrink-0" />
-                정확한 금액을 모르더라도 대략적인 내용만으로 상담을 시작할 수 있습니다.
-              </p>
-            </div>
-          </section>
-
-          {/* Trust Elements */}
-          <section className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 shadow-xl shadow-slate-200/50">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full content-center">
-              {[
-                { title: '상담내용 비공개', icon: ShieldCheck, color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
-                { title: '개인별 상황에 맞춘 상담', icon: User, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
-                { title: '복잡한 절차를 쉽게 설명', icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-                { title: '전화 및 온라인 상담 가능', icon: Smartphone, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
-                { title: '진행 전 충분한 안내', icon: Info, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-                { title: '무리한 신청 권유 없음', icon: ThumbsUp, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' },
-              ].map((trust, idx) => (
-                <div key={idx} className="flex flex-row items-center gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100 text-left hover:border-slate-300 transition-colors">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${trust.bg} ${trust.color} border ${trust.border}`}>
-                    <trust.icon className="w-5 h-5" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-800">{trust.title}</p>
-                </div>
-              ))}
-             </div>
-          </section>
-        </div>
-
-        {/* Delay Risks */}
-        <section className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 text-xs font-bold border border-orange-100">
-              <AlertTriangle className="w-4 h-4" />
-              주의사항
-            </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              채무 문제는 시간이 지나면<br/>더 복잡해질 수 있습니다
-            </h2>
-            <ul className="space-y-3">
-              {[
-                "연체이자와 지연손해금이 늘어날 수 있습니다.",
-                "독촉 연락이 계속될 수 있습니다.",
-                "급여, 통장 또는 재산에 대한 절차가 진행될 수 있습니다.",
-                "돌려막기로 전체 채무가 증가할 수 있습니다.",
-                "가족과 일상생활에 부담이 커질 수 있습니다."
-              ].map((item, idx) => (
-                <li key={idx} className="flex items-start gap-2.5 text-slate-700 font-medium">
-                  <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5 text-slate-400 text-xs font-bold">{idx + 1}</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div className="flex-1 bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center w-full">
-            <p className="text-lg font-extrabold text-slate-900 leading-relaxed mb-6">
-              지금 당장 결정하지 않아도 됩니다.<br/>
-              <span className="text-teal-600">먼저 현재 상황에서 가능한 방법이 있는지 확인해 보세요.</span>
-            </p>
-            <a href="#consultation-form" className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-8 py-4 rounded-xl text-base transition-all shadow-lg inline-flex items-center gap-2 w-full justify-center">
-              해결 방법 확인하기
-              <ArrowRight className="w-5 h-5" />
-            </a>
-          </div>
-        </section>
+          <Suspense fallback={null}>
+            <DeferredProcessMid />
+          </Suspense>
         </DeferredMount>
 
         <DeferredMount minHeight={320} idleFallbackMs={400} className="lg:col-span-12">
@@ -839,103 +591,14 @@ export default function App() {
         </DeferredMount>
 
         <DeferredMount minHeight={240} className="lg:col-span-12 space-y-4 md:space-y-6">
-        {/* Phone Consultation CTA */}
-        <section className="bg-white border border-slate-200 rounded-3xl p-8 lg:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8 flex flex-col md:flex-row items-center gap-8 lg:gap-12 text-center md:text-left phone-only partner-phone-section">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center shrink-0">
-            <Phone className="w-8 h-8 md:w-10 md:h-10" />
-          </div>
-          <div className="flex-1 space-y-3">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-              글 작성이 어렵다면 전화로 상담하세요
-            </h2>
-            <p className="text-base text-slate-600 font-medium">
-              현재 상황을 간단히 말씀해 주시면 필요한 내용을 순서대로 안내해 드립니다.
-            </p>
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8 pt-2 text-sm text-slate-500 font-medium justify-center md:justify-start">
-              <div className="flex items-center gap-2 justify-center md:justify-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                평일 오전 9시부터 오후 6시
-              </div>
-              <div className="flex items-center gap-2 justify-center md:justify-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                토요일 상담 가능
-              </div>
-              <div className="flex items-center gap-2 justify-center md:justify-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                일요일 및 공휴일 휴무
-              </div>
-            </div>
-          </div>
-          <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-2">
-            <p className="text-sm font-bold text-orange-600">상담 전화번호</p>
-            <p className="text-3xl font-black text-slate-900 partner-phone-text">{partnerPhoneDisplay}</p>
-            <a href={partnerTel || undefined} className="mt-2 w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 py-4 rounded-xl text-base transition-all shadow-lg shadow-orange-500/20 inline-flex justify-center items-center gap-2 partner-phone-link">
-              <Phone className="w-5 h-5" />
-              지금 전화하기
-            </a>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section id="faq" className="bg-white border border-slate-200 rounded-3xl p-6 md:p-12 shadow-xl shadow-slate-200/50 mt-4 md:mt-8">
-          <div className="text-center mb-8 md:mb-10">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">자주 묻는 질문</h2>
-          </div>
-          <div className="max-w-4xl mx-auto space-y-3">
-            {[
-              { q: '개인회생과 개인파산은 어떻게 다른가요?', a: '개인회생은 일정한 소득이 있을 때 일부 채무를 갚고 나머지를 조정받는 제도이며, 개인파산은 소득과 재산으로 채무를 감당하기 어려울 때 법원 심사를 통해 채무를 정리하는 제도입니다. 개인별 상황에 따라 적합한 제도가 다를 수 있습니다.' },
-              { q: '연체 전에도 상담할 수 있나요?', a: '네, 가능합니다. 연체가 시작되기 전이라도 채무 상환이 어렵다고 판단된다면 미리 상담을 통해 해결 방향을 확인하는 것이 좋습니다.' },
-              { q: '직장에 알려질 수 있나요?', a: '상담 내용과 신청 사실은 원칙적으로 비공개로 진행되며, 신청 절차 중 직장에 직접 통보되는 일은 없습니다. 단, 개인별 특수한 상황에 따라 차이가 있을 수 있으므로 자세한 내용은 상담 시 확인해 드립니다.' },
-              { q: '배우자나 가족의 재산도 확인하나요?', a: '신청자의 상황과 관할 법원의 기준에 따라 배우자의 재산이 일부 반영될 수 있습니다. 정확한 내용은 상담을 통해 상황별 맞춤 안내를 받으시는 것이 정확합니다.' },
-              { q: '개인회생을 신청하면 모든 채무가 없어지나요?', a: '개인회생은 신청자의 소득과 재산을 바탕으로 법원이 정한 기간 동안 일부 채무를 변제한 후 남은 채무를 조정받는 제도입니다. 조건에 따라 변제율이 다르며, 모든 채무가 일괄 소멸되는 것은 아닙니다.' },
-              { q: '채무금액을 정확하게 몰라도 상담할 수 있나요?', a: '네, 대략적인 금액과 상황만으로도 1차적인 상담이 가능합니다. 이후 정식 절차 진행 시 정확한 채무 현황을 파악하도록 도와드립니다.' },
-              { q: '자영업자나 프리랜서도 개인회생이 가능한가요?', a: '네, 가능합니다. 급여소득자뿐만 아니라 자영업자, 프리랜서, 일용직 등 일정한 수입을 증명할 수 있다면 신청이 가능합니다.' },
-              { q: '상담신청을 하면 바로 신청해야 하나요?', a: '아닙니다. 상담은 현재 상황을 진단하고 가능한 방법을 확인하는 과정입니다. 충분한 안내를 받으신 후 신청 여부를 천천히 결정하셔도 됩니다.' },
-              { q: '전화상담과 온라인 상담 중 어떤 것이 좋나요?', a: '빠른 답변을 원하시면 전화상담을, 글로 편하게 상황을 정리해 남기고 싶으시다면 온라인 상담 접수를 권장해 드립니다. 원하시는 방법으로 편하게 이용해 주세요.' },
-              { q: '신청 절차는 얼마나 걸리나요?', a: '개인별 상황과 관할 법원의 일정에 따라 다소 차이가 있습니다. 상담을 통해 신청자의 상황에 맞는 대략적인 소요 기간을 안내해 드립니다.' }
-            ].map((faq, idx) => (
-              <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 transition-all">
-                <button
-                  className="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors text-left"
-                  onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
-                >
-                  <span className="font-bold text-slate-800 pr-4">{faq.q}</span>
-                  <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-300 ${openFaqIndex === idx ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaqIndex === idx && (
-                  <div className="px-6 py-4 border-t border-slate-100 text-sm text-slate-600 leading-relaxed bg-slate-50">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Final CTA Section */}
-        <section className="bg-slate-900 rounded-3xl p-8 md:p-16 text-center shadow-2xl mt-4 md:mt-8 relative overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-2xl bg-teal-500/10 blur-[100px] rounded-full"></div>
-          
-          <div className="relative z-10 space-y-6">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              채무 문제로 멈춰 있기보다<br />
-              <span className="text-teal-400">가능한 해결 방법부터 확인해 보세요</span>
-            </h2>
-            <p className="text-lg text-slate-300 font-medium max-w-xl mx-auto">
-              현재 상황을 정확하게 파악하는 것이 재정회복의 첫 단계입니다.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-              <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-8 py-4 rounded-xl text-lg font-bold transition-all shadow-lg flex justify-center items-center gap-2">
-                무료 상담 신청하기
-                <ArrowRight className="w-5 h-5" />
-              </a>
-              <a href={partnerTel || undefined} className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-8 py-4 rounded-xl text-lg font-bold transition-all flex items-center justify-center gap-2 phone-only partner-phone-link">
-                <Phone className="w-5 h-5" />
-                전화로 바로 상담하기
-              </a>
-            </div>
-          </div>
-        </section>
+          <Suspense fallback={null}>
+            <DeferredFaqCta
+              partnerPhoneDisplay={partnerPhoneDisplay}
+              partnerTel={partnerTel}
+              openFaqIndex={openFaqIndex}
+              setOpenFaqIndex={setOpenFaqIndex}
+            />
+          </Suspense>
         </DeferredMount>
       </main>
 

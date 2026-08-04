@@ -1,4 +1,5 @@
 import { Info, ArrowRight } from 'lucide-react';
+import PublicPicture from './PublicPicture';
 
 export default function BeforeAfter() {
   return (
@@ -17,12 +18,12 @@ export default function BeforeAfter() {
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6 items-center mb-10">
           <div className="relative rounded-[2rem] overflow-hidden group shadow-sm border border-slate-200 w-full md:flex-1">
             <div className="aspect-[4/3] bg-slate-200 relative">
-              <img
-                src={`${import.meta.env.BASE_URL}pipe-before.png`}
+              <PublicPicture
+                name="pipe-before"
                 alt="배관 내시경으로 확인한 작업 전 내부 원본"
                 loading="lazy"
-                width="800"
-                height="600"
+                width={800}
+                height={600}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-slate-900/10" />
@@ -39,12 +40,12 @@ export default function BeforeAfter() {
 
           <div className="relative rounded-[2rem] overflow-hidden group shadow-md border border-slate-200 w-full md:flex-1">
             <div className="aspect-[4/3] bg-slate-200 relative">
-              <img
-                src={`${import.meta.env.BASE_URL}pipe-inspect.png`}
+              <PublicPicture
+                name="pipe-inspect"
                 alt="배관 내시경 점검·작업 과정 내부 원본"
                 loading="lazy"
-                width="800"
-                height="600"
+                width={800}
+                height={600}
                 className="w-full h-full object-cover"
               />
             </div>

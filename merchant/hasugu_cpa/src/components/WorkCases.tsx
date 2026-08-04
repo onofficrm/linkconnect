@@ -1,33 +1,34 @@
 import { Camera } from 'lucide-react';
 import { motion } from 'motion/react';
+import PublicPicture from './PublicPicture';
 
 const CASES = [
   {
     id: 1,
     title: '식당 주방 하수구 역류',
     desc: '오랜 기름때로 막힌 메인 배관 고압세척',
-    imageUrl: `${import.meta.env.BASE_URL}work-restaurant.png`,
+    image: 'work-restaurant',
     category: '고압세척',
   },
   {
     id: 2,
     title: '아파트 싱크대 막힘',
     desc: '음식물 찌꺼기로 막힌 하부장 배관 스케일링',
-    imageUrl: `${import.meta.env.BASE_URL}work-sink.png`,
+    image: 'work-sink',
     category: '싱크대',
   },
   {
     id: 3,
     title: '상가 공용 화장실 역류',
     desc: '내시경 카메라 진단 후 변기 탈거 및 배관 소통',
-    imageUrl: `${import.meta.env.BASE_URL}work-toilet.png`,
+    image: 'work-toilet',
     category: '변기·화장실',
   },
   {
     id: 4,
     title: '건물 외부 오수관 막힘',
     desc: '토사물 및 나무뿌리 침투로 인한 막힘 해결',
-    imageUrl: `${import.meta.env.BASE_URL}work-drain.png`,
+    image: 'work-drain',
     category: '외부배관',
   },
 ];
@@ -57,12 +58,12 @@ export default function WorkCases() {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className="group relative overflow-hidden rounded-[2rem] bg-slate-800 aspect-[4/5] shadow-lg"
             >
-              <img
-                src={item.imageUrl}
+              <PublicPicture
+                name={item.image}
                 alt={item.title}
                 loading="lazy"
-                width="400"
-                height="500"
+                width={400}
+                height={500}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />

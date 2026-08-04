@@ -1,21 +1,23 @@
+import PublicPicture from './PublicPicture';
+
 const EQUIPMENTS = [
   {
     id: 'endoscope',
     name: '배관 내시경',
     desc: '배관 안쪽의 막힘 위치와 오염 상태 확인',
-    imageUrl: `${import.meta.env.BASE_URL}equip-endoscope.png`,
+    image: 'equip-endoscope',
   },
   {
     id: 'cleaner',
     name: '배관 청소 장비',
     desc: '배관 구조와 막힘 상태에 맞춰 작업',
-    imageUrl: `${import.meta.env.BASE_URL}equip-cleaner.png`,
+    image: 'equip-cleaner',
   },
   {
     id: 'washer',
     name: '고압세척 장비',
     desc: '배관 내부에 축적된 오염물질 세척',
-    imageUrl: `${import.meta.env.BASE_URL}equip-washer.png`,
+    image: 'equip-washer',
   },
 ];
 
@@ -37,12 +39,12 @@ export default function Equipment() {
               className="group rounded-[2rem] bg-slate-50 border border-slate-100 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300"
             >
               <div className="aspect-[4/3] w-full overflow-hidden bg-slate-200 relative">
-                <img
-                  src={eq.imageUrl}
+                <PublicPicture
+                  name={eq.image}
                   alt={eq.name}
                   loading="lazy"
-                  width="400"
-                  height="300"
+                  width={400}
+                  height={300}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import CallButton from './CallButton';
+import PublicPicture from './PublicPicture';
 import { usePartnerContext } from '../context/PartnerContext';
 import { resolveLkCode, submitConsultation } from '../lib/linkconnect';
 
@@ -262,14 +263,14 @@ export default function Hero() {
             className="relative mx-auto w-full max-w-md lg:max-w-none hidden sm:block"
           >
             <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white">
-              <img
-                src={`${import.meta.env.BASE_URL}hero-technician.png`}
+              <PublicPicture
+                name="hero-technician"
                 alt="하수구·배관 전문 기사가 안심 상담을 안내하는 모습"
                 className="w-full h-full object-cover object-top"
                 loading="eager"
                 fetchPriority="high"
-                width="600"
-                height="800"
+                width={600}
+                height={800}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent" />
             </div>
