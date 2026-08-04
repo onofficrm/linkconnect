@@ -1,8 +1,6 @@
 import common from "@/components/home/home.module.css";
 import HeroSection from "@/components/home/HeroSection";
 import EvidenceStrip from "@/components/home/EvidenceStrip";
-import StatsSection from "@/components/home/StatsSection";
-import CustomerLogosSection from "@/components/home/CustomerLogosSection";
 import DeferredLandingSections from "@/components/home/DeferredLandingSections";
 import { Metadata } from "next";
 
@@ -36,8 +34,6 @@ export default function Home() {
       />
       <HeroSection />
       <EvidenceStrip />
-      <StatsSection />
-      <CustomerLogosSection />
       <DeferredLandingSections />
     </div>
   );

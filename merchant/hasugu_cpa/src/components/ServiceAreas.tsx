@@ -1,5 +1,6 @@
 import { MapPin, Navigation, Clock, CheckCircle, Phone, ChevronRight, AlertTriangle } from 'lucide-react';
 import CallButton from './CallButton';
+import { scrollToId } from '../lib/scrollToId';
 
 const AREA_GROUPS = [
   {
@@ -18,7 +19,7 @@ const AREA_GROUPS = [
 
 export default function ServiceAreas() {
   const scrollToForm = () => {
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

@@ -1,5 +1,6 @@
 import { Bath, Utensils, Droplet, Building2, Search, Wrench, Wind, Waves, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { scrollToId } from '../lib/scrollToId';
 
 const SERVICES = [
   { id: 'drain', name: '하수구막힘', desc: '욕실, 베란다, 세탁실 등 배수가 느리거나 막힌 경우', icon: Bath, color: 'text-blue-500', bg: 'bg-blue-50' },
@@ -15,10 +16,7 @@ const SERVICES = [
 export default function Services() {
   const handleConsult = (serviceName: string) => {
     // In the future, this will auto-select the symptom in the form
-    const formSection = document.getElementById('consultation-form');
-    if (formSection) {
-      formSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

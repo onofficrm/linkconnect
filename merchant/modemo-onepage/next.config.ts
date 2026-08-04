@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   assetPrefix: IMPORT_BASE,
   trailingSlash: true,
   reactCompiler: true,
+  productionBrowserSourceMaps: false,
   images: {
     unoptimized: true,
   },

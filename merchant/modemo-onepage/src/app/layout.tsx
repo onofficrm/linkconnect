@@ -8,16 +8,6 @@ import Script from "next/script";
 const pretendard = localFont({
   src: [
     {
-      path: "./fonts/Pretendard-Thin.woff2",
-      weight: "100",
-      style: "normal",
-    },
-    {
-      path: "./fonts/Pretendard-Light.woff2",
-      weight: "300",
-      style: "normal",
-    },
-    {
       path: "./fonts/Pretendard-Regular.woff2",
       weight: "400",
       style: "normal",
@@ -37,13 +27,10 @@ const pretendard = localFont({
       weight: "700",
       style: "normal",
     },
-    {
-      path: "./fonts/Pretendard-Black.woff2",
-      weight: "900",
-      style: "normal",
-    },
   ],
   variable: "--font-pretendard",
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {

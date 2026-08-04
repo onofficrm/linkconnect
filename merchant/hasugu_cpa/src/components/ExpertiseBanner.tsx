@@ -1,12 +1,10 @@
 import { Phone, ChevronRight } from 'lucide-react';
 import CallButton from './CallButton';
+import { scrollToId } from '../lib/scrollToId';
 
 export default function ExpertiseBanner() {
   const scrollToForm = () => {
-    const formSection = document.getElementById('consultation-form');
-    if (formSection) {
-      formSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

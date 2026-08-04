@@ -1,12 +1,13 @@
 import { Phone, ChevronRight, Clock } from 'lucide-react';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
+import { scrollToId } from '../lib/scrollToId';
 
 export default function FinalCTA() {
   const { hasPhone } = usePartnerContext();
 
   const scrollToForm = () => {
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

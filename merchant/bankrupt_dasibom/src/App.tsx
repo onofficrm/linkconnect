@@ -5,8 +5,7 @@ import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
 import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
 import { scrollToId } from '../../_landing-perf/scrollToId';
-// ?inline → data URL로 번들 (외부 URL 404/캐시로 사진이 깨지는 문제 방지)
-import lawyerPortraitInline from './assets/lawyer-lee-jeongyong-hero.jpg?inline';
+import lawyerPortrait from './assets/lawyer-lee-jeongyong-hero.jpg';
 
 const CONTACT_INFO = {
   companyName: '다시봄 개인회생센터',
@@ -275,7 +274,7 @@ export default function App() {
                   role="img"
                   aria-label={`${LAWYER_PROFILE.name} ${LAWYER_PROFILE.title}`}
                   className="aspect-[3/4] w-full rounded-[1.75rem] overflow-hidden relative border border-slate-600/80 bg-slate-800 bg-cover bg-no-repeat bg-[center_12%] shadow-xl shadow-black/40"
-                  style={{ backgroundImage: `url(${lawyerPortraitInline})` }}
+                  style={{ backgroundImage: `url(${lawyerPortrait})` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none" aria-hidden />
                   

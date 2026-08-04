@@ -1,8 +1,9 @@
 import { Building2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { scrollToId } from '../lib/scrollToId';
 
 export default function CommonPipeGuide() {
   const scrollToForm = () => {
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToId('consultation-form', { behavior: 'smooth' });
     window.dispatchEvent(
       new CustomEvent('hasugu:prefill-symptom', {
         detail: {

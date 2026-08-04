@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowDownToLine, Wind, Waves, Volume2, Repeat, Bath } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { scrollToId } from '../lib/scrollToId';
 
 const SYMPTOMS = [
   {
@@ -63,7 +64,7 @@ export default function Symptoms() {
         detail: { serviceType, message: `증상 선택: ${text}` },
       }),
     );
-    document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

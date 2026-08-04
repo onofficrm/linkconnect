@@ -18,7 +18,6 @@ export default defineConfig(() => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
-      assetsInlineLimit: 160000,
       cssCodeSplit: true,
       rollupOptions: {
         output: {

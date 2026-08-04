@@ -3,13 +3,14 @@
 import { FiPhone, FiEdit3 } from 'react-icons/fi';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
+import { scrollToId } from '@/lib/scrollToId';
 import styles from './StickyCallBar.module.css';
 
 export default function StickyCallBar() {
   const { hasPhone } = usePartnerContext();
 
   const scrollToForm = () => {
-    document.getElementById('quote-request')?.scrollIntoView({ behavior: 'smooth' });
+    scrollToId('quote-request', { behavior: 'smooth' });
   };
 
   return (

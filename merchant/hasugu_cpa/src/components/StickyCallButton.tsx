@@ -1,15 +1,13 @@
 import { Phone, Edit } from 'lucide-react';
 import CallButton from './CallButton';
 import { usePartnerContext } from '../context/PartnerContext';
+import { scrollToId } from '../lib/scrollToId';
 
 export default function StickyCallButton() {
   const { hasPhone } = usePartnerContext();
 
   const scrollToForm = () => {
-    const formSection = document.getElementById('consultation-form');
-    if (formSection) {
-      formSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToId('consultation-form', { behavior: 'smooth' });
   };
 
   return (

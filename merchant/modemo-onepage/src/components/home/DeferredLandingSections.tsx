@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import DeferredMount from '@/components/DeferredMount';
 
+const StatsSection = dynamic(() => import('@/components/home/StatsSection'));
+const CustomerLogosSection = dynamic(() => import('@/components/home/CustomerLogosSection'));
 const WorrySection = dynamic(() => import('@/components/home/WorrySection'));
 const MarketDiagnosisSection = dynamic(() => import('@/components/home/MarketDiagnosisSection'));
 const SystemSection = dynamic(() => import('@/components/home/SystemSection'));
@@ -17,6 +19,11 @@ const FooterCtaSection = dynamic(() => import('@/components/home/FooterCtaSectio
 export default function DeferredLandingSections() {
   return (
     <>
+      <DeferredMount minHeight={160}>
+        <StatsSection />
+        <CustomerLogosSection />
+      </DeferredMount>
+
       <DeferredMount minHeight={200}>
         <WorrySection />
         <MarketDiagnosisSection />

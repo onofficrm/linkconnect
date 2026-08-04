@@ -9,6 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { FiArrowRight } from "react-icons/fi";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { scrollToId } from "@/lib/scrollToId";
 
 const images = [
     modemoAsset("/images/3_동탄상가.jpg"),
@@ -42,7 +43,7 @@ export default function FooterCtaSection() {
                     <div className={styles.buttonGroup}>
                         <FadeIn>
                             <button 
-                                onClick={() => document.getElementById('quote-request')?.scrollIntoView({ behavior: 'smooth' })} 
+                                onClick={() => scrollToId('quote-request', { behavior: 'smooth' })} 
                                 className={styles.primaryButton}
                                 style={{ border: 'none', cursor: 'pointer' }}
                             >

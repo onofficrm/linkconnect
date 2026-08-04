@@ -14,6 +14,7 @@ import { FiPhone } from "react-icons/fi";
 import { createPortal } from "react-dom";
 import CallButton from "./CallButton";
 import { usePartnerContext } from "@/context/PartnerContext";
+import { scrollToId } from "@/lib/scrollToId";
 
 function HeaderCallButton({ isBlack }: { isBlack: boolean }) {
     const { hasPhone, data } = usePartnerContext();
@@ -111,7 +112,7 @@ export default function Header() {
                         <HeaderCallButton isBlack={isBlack} />
                         <button 
                             className={styles.ctaButton}
-                            onClick={() => document.getElementById('quote-request')?.scrollIntoView({ behavior: 'smooth' })}
+                            onClick={() => scrollToId('quote-request', { behavior: 'smooth' })}
                         >
                             무료 견적 신청
                         </button>
@@ -157,7 +158,7 @@ export default function Header() {
                                             className={styles.mobileCtaButton}
                                             onClick={() => {
                                                 setIsMenuOpen(false);
-                                                document.getElementById('quote-request')?.scrollIntoView({ behavior: 'smooth' });
+                                                scrollToId('quote-request', { behavior: 'smooth' });
                                             }}
                                         >
                                             무료 견적 신청

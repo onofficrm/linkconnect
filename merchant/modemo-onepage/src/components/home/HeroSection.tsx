@@ -42,24 +42,24 @@ export default function HeroSection() {
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image width={667} height={500} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" priority />
+                            <Image width={667} height={500} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>수원 상가</div>
                         </div>
                     </div>
                     <div className={styles.heroImageCol}>
                         <div className={styles.heroImageCard}>
-                            <Image width={331} height={500} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" priority />
+                            <Image width={331} height={500} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>성북구 상가</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image width={667} height={500} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" priority />
+                            <Image width={667} height={500} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>여의도 사무실</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image width={844} height={500} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" priority />
+                            <Image width={844} height={500} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>신림 상가</div>
                         </div>
@@ -116,70 +116,70 @@ export default function HeroSection() {
                     <div className={styles.heroImagesMarquee}>
                         {/* First set of images */}
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>용인 주택</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>천안 상가</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>수원 상가</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>성북구 상가</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>여의도 사무실</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>신림 상가</div>
                         </div>
 
                         {/* Duplicated set for seamless loop */}
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>용인 주택</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>천안 상가</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_수원상가.jpg")} alt="수원 지역 대형 상가 공간을 신속하고 정확하게 철거한 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>수원 상가</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_성북구상가.jpg")} alt="성북구 지역 상가의 복잡한 내부 철거를 성공적으로 마친 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>성북구 상가</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/2_여의도사무실.jpg")} alt="여의도 지역 사무실의 철거 공사가 안전하게 진행되고 있는 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>여의도 사무실</div>
                         </div>
                         <div className={styles.heroImageCard}>
-                            <Image priority width={123} height={188} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_신림상가.jpg")} alt="신림 지역 상가를 안전하고 깔끔하게 완료한 원상복구 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>신림 상가</div>
                         </div>

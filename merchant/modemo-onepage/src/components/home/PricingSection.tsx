@@ -7,6 +7,7 @@ import common from "./home.module.css";
 import FadeIn, { FadeInStagger } from "../animations/FadeIn";
 import { FiArrowRight } from "react-icons/fi";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { scrollToId } from "@/lib/scrollToId";
 
 const CARDS = [
   {
@@ -103,9 +104,7 @@ export default function PricingSection() {
             <button
               className={styles.ctaButton}
               onClick={() => {
-                document
-                  .getElementById("quote-request")
-                  ?.scrollIntoView({ behavior: "smooth" });
+                scrollToId("quote-request", { behavior: "smooth" });
               }}
             >
               <span className={styles.ctaText}>3초만에 견적 신청하기</span>
