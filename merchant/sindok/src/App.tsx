@@ -10,7 +10,7 @@ import { ConsultationForm } from './components/ConsultationForm';
 import { FinalCta } from './components/FinalCta';
 import { Footer } from './components/Footer';
 import { MobileStickyBar } from './components/MobileStickyBar';
-import { LiveLeadNotification } from './components/LiveLeadNotification';
+import FloatingCallButton from './components/FloatingCallButton';
 import { PrivacyModal } from './components/PrivacyModal';
 import DeferredMount from './components/DeferredMount';
 
@@ -91,7 +91,7 @@ export default function App() {
 
       <Footer onOpenPrivacyModal={() => setIsPrivacyOpen(true)} />
       <MobileStickyBar />
-      <LiveLeadNotification />
+      <FloatingCallButton />
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
     </div>
   );

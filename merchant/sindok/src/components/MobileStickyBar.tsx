@@ -22,7 +22,7 @@ export const MobileStickyBar: React.FC = () => {
             className="flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm rounded-xl shadow-md transition-all active:scale-95"
           >
             <Phone className="w-4 h-4 aspect-square" />
-            <span>전화 상담</span>
+            <span>전화걸기</span>
           </CallButton>
         )}
 
