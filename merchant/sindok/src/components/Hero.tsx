@@ -17,6 +17,7 @@ import { buildInquiryText, submitConsultation } from "../lib/linkconnect";
 import { usePartnerContext } from "../context/PartnerContext";
 import CallButton from "./CallButton";
 import { trackGenerateLead } from "../lib/analytics";
+import { publicAsset } from "../lib/assets";
 
 const RECENT_REQUESTS = [
   "방금 전 [서울 강남구] 김*진 고객님 당일 방문 견적 신청 완료",
@@ -27,8 +28,7 @@ const RECENT_REQUESTS = [
 ];
 
 // High quality representative work photo fallback
-const DEFAULT_HERO_BG =
-  "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=1600";
+const DEFAULT_HERO_BG = publicAsset("work-photo-07.jpg");
 
 export const Hero: React.FC = () => {
   const { data, hasPhone } = usePartnerContext();

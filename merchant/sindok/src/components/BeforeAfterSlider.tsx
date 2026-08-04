@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Sparkles, ArrowLeftRight, CheckCircle2, Clock } from "lucide-react";
+import { publicAsset } from "../lib/assets";
 
 interface ComparisonCase {
   id: string;
@@ -15,33 +16,33 @@ interface ComparisonCase {
 const COMPARISON_CASES: ComparisonCase[] = [
   {
     id: "case-1",
-    category: "주거 아파트",
-    title: "32평 아파트 전체 정리 수돈 & 가구 정돈",
-    beforeImg: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1200",
-    afterImg: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&q=80&w=1200",
-    duration: "약 4시간 소요",
-    location: "서울 강남구",
-    highlight: "수거 및 분류 100% 진행 · 쾌적 공간 창출",
+    category: "침실 정리",
+    title: "침실·생활용품 정리 및 공간 확보",
+    beforeImg: publicAsset("work-photo-01.jpg"),
+    afterImg: publicAsset("work-photo-02.jpg"),
+    duration: "당일 작업",
+    location: "주거 현장",
+    highlight: "분류·반출 후 동선 확보",
   },
   {
     id: "case-2",
-    category: "원룸 / 방 정리",
-    title: "방 공간 재배치 & 옷장 / 생활용품 체계적 분류",
-    beforeImg: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&q=80&w=1200",
-    afterImg: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&q=80&w=1200",
-    duration: "약 3시간 소요",
-    location: "경기 성남시",
-    highlight: "공간 활용도 200% 증가 · 완벽한 가구 배치",
+    category: "거실 정리",
+    title: "거실 적체 가구·짐 정리 및 개방감 회복",
+    beforeImg: publicAsset("work-photo-03.jpg"),
+    afterImg: publicAsset("work-photo-04.jpg"),
+    duration: "당일 작업",
+    location: "아파트 현장",
+    highlight: "가구·가전 정리 · 공간 확장",
   },
   {
     id: "case-3",
-    category: "사무실 / 상가",
-    title: "오피스 가구 및 집기 정리 & 정기 케어",
-    beforeImg: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80&w=1200",
-    afterImg: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200",
-    duration: "약 5시간 소요",
-    location: "서울 마포구",
-    highlight: "업무 효율 증대 · 안심 방역 소독 포함",
+    category: "폐기물·마감",
+    title: "폐기물 분류·반출 후 마감 정돈",
+    beforeImg: publicAsset("work-photo-05.jpg"),
+    afterImg: publicAsset("work-photo-06.jpg"),
+    duration: "당일 작업",
+    location: "주거 현장",
+    highlight: "폐기물 처리 · 깔끔 마감",
   },
 ];
 

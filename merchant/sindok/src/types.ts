@@ -18,6 +18,8 @@ export interface WorkPhotoItem {
   description: string;
   placeholderText: string; // "work-photo-01"
   defaultBadge: string;
+  /** public/ 기준 파일명 */
+  imageSrc: string;
 }
 
 export interface ReviewImageItem {
