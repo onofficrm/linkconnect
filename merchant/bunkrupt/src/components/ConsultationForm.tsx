@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { Phone } from 'lucide-react';
 import { buildInquiryText, submitConsultation } from '../lib/linkconnect';
-import { getTrackingForSubmit } from '../lib/partnerData';
+import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from '../lib/partnerData';
 import { usePartnerContext } from '../context/PartnerContext';
 import { useConsultationDraft } from '../context/ConsultationDraftContext';
 import {
@@ -17,9 +18,11 @@ import { trackLandingEvent } from '../lib/analytics';
 import ChipSelect from './ChipSelect';
 
 export default function ConsultationForm() {
-  const { data: partnerData } = usePartnerContext();
+  const { hasPhone, data: partnerData } = usePartnerContext();
   const { draft, setDraft, formStep, setFormStep, resetDraft } = useConsultationDraft();
   const tracking = getTrackingForSubmit();
+  const phoneDisplay = formatPhoneDisplay(partnerData.partner_phone_display || partnerData.partner_phone);
+  const tel = hasPhone ? phoneTelHref(partnerData.partner_phone) : '';
 
   const [privacy, setPrivacy] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -259,6 +262,17 @@ export default function ConsultationForm() {
                 >
                   상세 정보 없이 바로 신청하기
                 </button>
+                {hasPhone && tel ? (
+                  <a
+                    href={tel}
+                    onClick={() => trackLandingEvent('consult_form_phone_click')}
+                    className="phone-only partner-phone-link mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-point/40 bg-point/10 px-4 py-3.5 text-[15px] font-bold text-main"
+                  >
+                    <Phone className="h-4 w-4 text-point" />
+                    <span>또는 전화</span>
+                    <span className="partner-phone-text tabular-nums text-point">{phoneDisplay}</span>
+                  </a>
+                ) : null}
               </>
             )}
           </form>

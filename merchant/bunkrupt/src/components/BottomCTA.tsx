@@ -14,6 +14,7 @@ export default function BottomCTA() {
     }, 150);
   };
 
+  const phoneDisplay = formatPhoneDisplay(data.partner_phone_display || data.partner_phone);
   const tel = hasPhone ? phoneTelHref(data.partner_phone) : '';
 
   return (
@@ -21,11 +22,14 @@ export default function BottomCTA() {
       {hasPhone && tel ? (
         <a
           href={tel}
-          className="bottom-phone-btn phone-only partner-phone-link flex w-[40%] shrink-0 items-center justify-center gap-1.5 rounded-xl border border-point bg-point py-3.5 text-[15px] font-bold text-main shadow-md transition-transform active:scale-[0.98]"
+          className="bottom-phone-btn phone-only partner-phone-link flex w-[42%] shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-point bg-point px-2 py-2.5 text-main shadow-md transition-transform active:scale-[0.98]"
         >
-          <Phone className="h-4 w-4" />
-          <span className="partner-phone-text phone-label-only" data-phone-label="전화상담">
-            {formatPhoneDisplay(data.partner_phone_display || data.partner_phone) || '전화상담'}
+          <span className="inline-flex items-center gap-1 text-[13px] font-bold leading-none">
+            <Phone className="h-3.5 w-3.5" />
+            전화상담
+          </span>
+          <span className="partner-phone-text text-[11px] font-extrabold tabular-nums leading-tight">
+            {phoneDisplay}
           </span>
         </a>
       ) : null}

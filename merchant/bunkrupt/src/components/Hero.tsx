@@ -2,10 +2,15 @@ import { Phone } from 'lucide-react';
 import { resolveHeroCopy } from '../lib/heroCopy';
 import { scrollToCalculator, scrollToConsultForm } from '../lib/consultationForm';
 import { trackLandingEvent } from '../lib/analytics';
+import { usePartnerContext } from '../context/PartnerContext';
+import { formatPhoneDisplay, phoneTelHref } from '../lib/partnerData';
 import HeroMiniForm from './HeroMiniForm';
 
 export default function Hero() {
   const copy = resolveHeroCopy();
+  const { hasPhone, data } = usePartnerContext();
+  const phoneDisplay = formatPhoneDisplay(data.partner_phone_display || data.partner_phone);
+  const tel = hasPhone ? phoneTelHref(data.partner_phone) : '';
 
   return (
     <section className="relative overflow-hidden bg-main px-4 py-12 text-white sm:py-16 lg:py-20">
@@ -29,16 +34,7 @@ export default function Hero() {
             {copy.hint}
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
-            <a
-              href="tel:"
-              className="phone-only partner-phone-link flex w-full items-center justify-center gap-2 rounded-xl bg-point px-6 py-4 text-base font-bold text-main shadow-lg transition-transform active:scale-95 sm:w-auto"
-            >
-              <Phone className="h-5 w-5" />
-              <span className="partner-phone-text phone-label-only" data-phone-label={copy.secondaryCta}>
-                {copy.secondaryCta}
-              </span>
-            </a>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center lg:justify-start">
             <button
               type="button"
               onClick={() => {
@@ -49,6 +45,21 @@ export default function Hero() {
             >
               {copy.primaryCta}
             </button>
+            {hasPhone && tel ? (
+              <a
+                href={tel}
+                onClick={() => trackLandingEvent('hero_cta_click', { source: 'hero_phone' })}
+                className="phone-only partner-phone-link flex w-full items-center justify-center gap-2.5 rounded-xl bg-point px-6 py-4 text-base font-bold text-main shadow-lg transition-transform active:scale-95 sm:w-auto"
+              >
+                <Phone className="h-5 w-5 shrink-0" />
+                <span className="flex flex-col items-start leading-tight text-left">
+                  <span className="text-[11px] font-semibold opacity-80">지금 전화상담</span>
+                  <span className="partner-phone-text text-[15px] font-extrabold tabular-nums tracking-tight">
+                    {phoneDisplay}
+                  </span>
+                </span>
+              </a>
+            ) : null}
             <button
               type="button"
               onClick={() => {
@@ -60,6 +71,16 @@ export default function Hero() {
               1분 계산기
             </button>
           </div>
+
+          {hasPhone && phoneDisplay ? (
+            <p className="mt-4 text-sm font-semibold text-point/90 phone-only partner-phone-section">
+              급하시면{' '}
+              <a href={tel || undefined} className="underline decoration-point/40 underline-offset-2 partner-phone-link partner-phone-text">
+                {phoneDisplay}
+              </a>
+              {' '}으로 바로 연결하세요
+            </p>
+          ) : null}
         </div>
 
         <div className="mx-auto w-full max-w-md lg:max-w-none">

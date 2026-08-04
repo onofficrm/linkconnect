@@ -1,15 +1,21 @@
 import { Phone } from "lucide-react";
+import { usePartnerContext } from "../context/PartnerContext";
+import { formatPhoneDisplay, phoneTelHref } from "../lib/partnerData";
+import { trackLandingEvent } from "../lib/analytics";
 
 export default function PhoneSection() {
-  // Developer note: Toggle this section based on partner's phone number availability.
-  // Use the classes: 'partner-phone-section', 'phone-only', 'partner-phone-text', 'partner-phone-link'
-  
+  const { hasPhone, data } = usePartnerContext();
+  if (!hasPhone) return null;
+
+  const phoneDisplay = formatPhoneDisplay(data.partner_phone_display || data.partner_phone);
+  const tel = phoneTelHref(data.partner_phone);
+  if (!tel || !phoneDisplay) return null;
+
   return (
-    <section className="partner-phone-section bg-bg px-4 pt-16 sm:pt-20">
+    <section className="partner-phone-section phone-only bg-bg px-4 pt-16 sm:pt-20">
       <div className="mx-auto max-w-5xl">
-        <div className="phone-only overflow-hidden rounded-3xl bg-main shadow-xl">
+        <div className="overflow-hidden rounded-3xl bg-main shadow-xl">
           <div className="relative px-6 py-10 text-center sm:px-12 sm:py-14">
-            {/* Background pattern */}
             <div className="pointer-events-none absolute left-0 top-0 h-full w-full opacity-5">
               <div className="absolute -left-1/4 -top-1/2 h-full w-full rounded-full bg-white blur-3xl"></div>
               <div className="absolute -bottom-1/2 -right-1/4 h-full w-full rounded-full bg-point blur-3xl"></div>
@@ -28,13 +34,18 @@ export default function PhoneSection() {
               
               <div className="mb-8 flex flex-col items-center justify-center gap-2">
                 <span className="text-sm font-medium text-gray-400">빠른 전화상담</span>
-                <div className="text-4xl font-black tracking-tight text-point sm:text-5xl">
-                  <span className="partner-phone-text">&nbsp;</span>
-                </div>
+                <a
+                  href={tel}
+                  onClick={() => trackLandingEvent('phone_section_click')}
+                  className="partner-phone-link text-4xl font-black tracking-tight text-point sm:text-5xl tabular-nums hover:opacity-90"
+                >
+                  <span className="partner-phone-text">{phoneDisplay}</span>
+                </a>
               </div>
 
               <a 
-                href="tel:" 
+                href={tel}
+                onClick={() => trackLandingEvent('phone_section_click', { surface: 'cta' })}
                 className="partner-phone-link inline-flex w-full items-center justify-center gap-2 rounded-xl bg-point px-8 py-4 text-lg font-bold text-main shadow-lg transition-transform hover:bg-[#d4b47a] active:scale-[0.98] sm:w-auto"
               >
                 <Phone className="h-5 w-5" />

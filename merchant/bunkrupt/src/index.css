@@ -73,6 +73,31 @@
   pointer-events: none;
 }
 
+@keyframes banktupt-float-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.16);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.16);
+    opacity: 0;
+  }
+}
+
+.banktupt-float-call__pulse {
+  animation: banktupt-float-pulse 2.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banktupt-float-call__pulse {
+    animation: none;
+  }
+}
+
 /* 모바일 하단 고정 CTA 여백 */
 @media (max-width: 639px) {
   #banktupt-merchant-page.merchant-banktupt-page main {

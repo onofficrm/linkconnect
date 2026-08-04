@@ -153,13 +153,7 @@ export function applyPhoneVisibility(partnerPhone: string): void {
 
   root.querySelectorAll<HTMLElement>('.partner-phone-text').forEach((el) => {
     if (!show) return;
-    if (el.classList.contains('phone-label-only')) {
-      const label = el.dataset.phoneLabel || '전화상담';
-      if (!el.textContent?.trim() || el.textContent.includes('010-')) {
-        el.textContent = label;
-      }
-      return;
-    }
+    // 콜디비 실번호 노출 (라벨-only 금지 — CTR·신뢰)
     el.textContent = display || el.textContent;
   });
 

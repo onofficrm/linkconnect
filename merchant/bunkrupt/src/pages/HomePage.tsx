@@ -1,9 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Phone, ArrowRight, TrendingUp } from 'lucide-react';
 import { scrollToConsultForm } from '../lib/consultationForm';
+import { usePartnerContext } from '../context/PartnerContext';
+import { formatPhoneDisplay, phoneTelHref } from '../lib/partnerData';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { hasPhone, data } = usePartnerContext();
+  const phoneDisplay = formatPhoneDisplay(data.partner_phone_display || data.partner_phone);
+  const tel = hasPhone ? phoneTelHref(data.partner_phone) : '';
 
   const goConsultation = () => {
     navigate('/consultation');
@@ -32,16 +37,27 @@ export default function HomePage() {
             >
               30초 무료 확인
             </button>
-            <a
-              href="tel:"
-              className="phone-only partner-phone-link inline-flex items-center justify-center gap-2 rounded-xl bg-point px-8 py-5 text-[17px] font-bold text-main hover:bg-[#b59556] transition-colors"
-            >
-              <Phone className="w-5 h-5" />
-              <span className="partner-phone-text phone-label-only" data-phone-label="전화상담">
-                전화상담
-              </span>
-            </a>
+            {hasPhone && tel ? (
+              <a
+                href={tel}
+                className="phone-only partner-phone-link inline-flex items-center justify-center gap-2 rounded-xl bg-point px-8 py-5 text-[17px] font-bold text-main hover:bg-[#b59556] transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+                <span className="flex flex-col items-start leading-tight text-left">
+                  <span className="text-[11px] font-semibold opacity-80">지금 전화</span>
+                  <span className="partner-phone-text text-base font-extrabold tabular-nums">{phoneDisplay}</span>
+                </span>
+              </a>
+            ) : null}
           </div>
+          {hasPhone && phoneDisplay ? (
+            <p className="mt-5 text-sm font-semibold text-point/90 phone-only partner-phone-section">
+              상담전화{' '}
+              <a href={tel || undefined} className="underline underline-offset-2 partner-phone-link partner-phone-text">
+                {phoneDisplay}
+              </a>
+            </p>
+          ) : null}
         </div>
       </section>
 

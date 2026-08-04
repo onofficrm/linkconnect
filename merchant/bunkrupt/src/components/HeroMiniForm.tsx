@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Phone } from 'lucide-react';
 import { useConsultationDraft } from '../context/ConsultationDraftContext';
 import {
   DEBT_OPTIONS,
@@ -7,12 +8,17 @@ import {
   scrollToConsultForm,
 } from '../lib/consultationForm';
 import { trackLandingEvent } from '../lib/analytics';
+import { usePartnerContext } from '../context/PartnerContext';
+import { formatPhoneDisplay, phoneTelHref } from '../lib/partnerData';
 import ChipSelect from './ChipSelect';
 
 export default function HeroMiniForm() {
   const { draft, setDraft, setFormStep } = useConsultationDraft();
+  const { hasPhone, data } = usePartnerContext();
   const [quizStep, setQuizStep] = useState<1 | 2 | 3>(1);
   const [errors, setErrors] = useState<{ name?: string; phone?: string; debt?: string }>({});
+  const phoneDisplay = formatPhoneDisplay(data.partner_phone_display || data.partner_phone);
+  const tel = hasPhone ? phoneTelHref(data.partner_phone) : '';
 
   const handleDebtNext = () => {
     trackLandingEvent('hero_mini_form_start');
@@ -146,6 +152,17 @@ export default function HeroMiniForm() {
                 무료 상담 계속하기
               </button>
             </div>
+            {hasPhone && tel ? (
+              <a
+                href={tel}
+                onClick={() => trackLandingEvent('hero_mini_phone_click')}
+                className="phone-only partner-phone-link flex items-center justify-center gap-2 rounded-xl border border-point/40 bg-point/15 px-4 py-3 text-sm font-bold text-point"
+              >
+                <Phone className="h-4 w-4" />
+                <span>또는 전화</span>
+                <span className="partner-phone-text tabular-nums">{phoneDisplay}</span>
+              </a>
+            ) : null}
             <p className="text-center text-[11px] leading-relaxed text-gray-300">입력 정보는 자격진단 및 상담 연락 목적으로만 사용됩니다.</p>
           </>
         ) : null}
