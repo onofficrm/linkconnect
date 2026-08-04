@@ -49,11 +49,17 @@ if (!function_exists('lc_receive_campaign_matches_request')) {
         }
 
         $landing_url = trim((string) ($campaign['cp_landing_url'] ?? ''));
-        $landing_host = strtolower((string) parse_url($landing_url, PHP_URL_HOST));
+        // 상대경로(/merchant/…) 만 저장된 경우 parse_url PATH가 비지 않도록 보정
+        if ($landing_url !== '' && strpos($landing_url, '://') === false && strpos($landing_url, '/') === 0) {
+            $landing_host = '';
+            $landing_path = $landing_url;
+        } else {
+            $landing_host = strtolower((string) parse_url($landing_url, PHP_URL_HOST));
+            $landing_path = (string) parse_url($landing_url, PHP_URL_PATH);
+        }
         $referer = isset($_SERVER['HTTP_REFERER']) ? (string) $_SERVER['HTTP_REFERER'] : '';
         $referer_host = strtolower((string) parse_url($referer, PHP_URL_HOST));
         $referer_path = (string) parse_url($referer, PHP_URL_PATH);
-        $landing_path = (string) parse_url($landing_url, PHP_URL_PATH);
 
         if ($landing_host !== '' && $landing_host !== $public_host) {
             return false;
@@ -99,42 +105,56 @@ if ($lk_code !== '') {
     ));
 }
 
-// 2) 독립도메인 직접 유입 → 캠페인 매칭 후 유입경로 SEO
+// 2) 직접 유입 → 캠페인 매칭 후 유입경로 SEO
+//    명시적 campaignId가 있으면 동일 호스트의 다른 캠페인(tracking host)보다 우선한다.
 $campaign = null;
 $public_host = function_exists('lc_request_public_host') ? lc_request_public_host() : '';
-if ($public_host !== '' && function_exists('lc_campaign_find_active_by_tracking_host')) {
-    $campaign = lc_campaign_find_active_by_tracking_host($public_host);
+$campaign_ref = '';
+foreach (array('campaignId', 'campaign_id', 'cid', 'campaign_code', 'cpCode', 'cp_code') as $key) {
+    if (isset($body[$key]) && trim((string) $body[$key]) !== '') {
+        $campaign_ref = trim((string) $body[$key]);
+        break;
+    }
 }
 
-if (!$campaign) {
-    $campaign_ref = '';
-    foreach (array('campaignId', 'campaign_id', 'cid', 'campaign_code', 'cpCode', 'cp_code') as $key) {
-        if (isset($body[$key]) && trim((string) $body[$key]) !== '') {
-            $campaign_ref = trim((string) $body[$key]);
-            break;
-        }
+if ($campaign_ref !== '' && lc_db_installed()) {
+    $cp_table = lc_table('campaigns');
+    if (ctype_digit($campaign_ref)) {
+        $campaign_row = lc_sql_fetch(
+            " SELECT * FROM `{$cp_table}` WHERE cp_id = '" . (int) $campaign_ref . "' LIMIT 1 "
+        );
+    } else {
+        $campaign_row = lc_sql_fetch(
+            " SELECT * FROM `{$cp_table}` WHERE cp_code = '" . lc_sql_escape($campaign_ref) . "' LIMIT 1 "
+        );
     }
-    if ($campaign_ref !== '' && lc_db_installed()) {
-        $cp_table = lc_table('campaigns');
-        if (ctype_digit($campaign_ref)) {
-            $campaign = lc_sql_fetch(
-                " SELECT * FROM `{$cp_table}`
-                  WHERE cp_id = '" . (int) $campaign_ref . "'
-                    AND cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "'
-                  LIMIT 1 "
-            );
-        } else {
-            $campaign = lc_sql_fetch(
-                " SELECT * FROM `{$cp_table}`
-                  WHERE cp_code = '" . lc_sql_escape($campaign_ref) . "'
-                    AND cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "'
-                  LIMIT 1 "
-            );
-        }
-        if (is_array($campaign) && !lc_receive_campaign_matches_request($campaign, $public_host)) {
-            $campaign = null;
-        }
+
+    if (!is_array($campaign_row)) {
+        lc_api_error('광고상품(캠페인)을 찾을 수 없습니다: ' . $campaign_ref, 'CAMPAIGN_NOT_FOUND', 404);
     }
+
+    $cp_status = (string) ($campaign_row['cp_status'] ?? '');
+    if ($cp_status !== LC_STATUS_ACTIVE) {
+        lc_api_error(
+            '광고상품이 운영중(진행중) 상태가 아닙니다. 관리자에서 캠페인을 활성화해 주세요. (' . $campaign_ref . ')',
+            'CAMPAIGN_PAUSED',
+            400
+        );
+    }
+
+    if (!lc_receive_campaign_matches_request($campaign_row, $public_host)) {
+        lc_api_error(
+            '랜딩 페이지와 광고상품 연결이 맞지 않습니다. 캠페인 랜딩 URL(/merchant/…)과 접속 경로를 확인해 주세요.',
+            'LANDING_MISMATCH',
+            400
+        );
+    }
+
+    $campaign = $campaign_row;
+}
+
+if (!$campaign && $public_host !== '' && function_exists('lc_campaign_find_active_by_tracking_host')) {
+    $campaign = lc_campaign_find_active_by_tracking_host($public_host);
 }
 
 if (!is_array($campaign)) {
