@@ -98,7 +98,7 @@ if (!function_exists('onoff_builder_extract_body_content')) {
 if (!function_exists('onoff_builder_landing_context_script')) {
     function onoff_builder_landing_context_script($id)
     {
-        if (!in_array($id, array('banktupt', 'dasibom', 'hasugu_cpa', 'modemo'), true) || !function_exists('lc_landing_context_for_api')) {
+        if (!in_array($id, array('banktupt', 'dasibom', 'hasugu_cpa', 'modemo', 'sindok'), true) || !function_exists('lc_landing_context_for_api')) {
             return '';
         }
 
@@ -122,6 +122,11 @@ if (!function_exists('onoff_builder_landing_context_script')) {
             }
             if (empty($params['mid']) && empty($params['merchant_id'])) {
                 $params['mid'] = 'ADV-0008';
+            }
+        }
+        if ($id === 'sindok') {
+            if (empty($params['cid']) && empty($params['campaign_id'])) {
+                $params['cid'] = 'CPA-00014';
             }
         }
         $ctx = lc_landing_context_for_api($params);
