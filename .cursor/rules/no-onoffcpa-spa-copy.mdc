@@ -1,0 +1,17 @@
+---
+description: linkconnect SPA를 onoffcpa imports로 복사하지 말 것
+globs: plugin/onoff-builder-bridge/imports/linkconnect/**/*,builder/linkconnect_source/**/*,scripts/sync-linkconnect-builder.sh
+alwaysApply: true
+---
+
+# LinkConnect ↔ OnOff CPA SPA 분리
+
+이 저장소의 `imports/linkconnect` 는 **링크커넥트(linkconnect.co.kr)** 전용이다.
+
+## 금지
+
+- onoffcpa 저장소의 `plugin/onoff-builder-bridge/imports/linkconnect` 로 rsync/cp
+- 핫픽스·CallDB 수정 후 “양쪽 동일 반영”을 이유로 SPA 번들 통째 복사
+
+onoffcpa 브랜드/카피는 **onoffcpa/builder/linkconnect_source** 에서만 빌드·배포한다.
+폴더명이 같아도 브랜드가 다르다. 복사하면 onoffcpa.icrm.co.kr 이 링크커넥트로 덮인다.
