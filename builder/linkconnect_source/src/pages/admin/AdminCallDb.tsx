@@ -351,14 +351,20 @@ export function AdminCallDb() {
     }
   };
 
-  const handlePriceSave = async (n: CallNumber) => {
+  const handlePriceSave = async (
+    n: CallNumber,
+    override?: { partner?: string; advertiser?: string },
+  ) => {
     if (!n.cpId) {
       notify('배정된 번호만 단가를 수정할 수 있습니다.');
       return;
     }
-    const draft = priceDrafts[n.cnId] || {
-      partner: String(n.partnerPrice || ''),
-      advertiser: String(n.advertiserPrice || n.partnerPrice || ''),
+    const draft = {
+      partner: override?.partner ?? priceDrafts[n.cnId]?.partner ?? (n.partnerPrice ? String(n.partnerPrice) : ''),
+      advertiser:
+        override?.advertiser
+        ?? priceDrafts[n.cnId]?.advertiser
+        ?? (n.advertiserPrice ? String(n.advertiserPrice) : String(n.partnerPrice || '')),
     };
     const partnerPrice = Number(draft.partner);
     const advertiserPrice = Number(draft.advertiser || draft.partner);
@@ -833,7 +839,12 @@ export function AdminCallDb() {
                                     advertiser: prev[n.cnId]?.advertiser ?? String(n.advertiserPrice || n.partnerPrice || ''),
                                   },
                                 }))}
-                                onBlur={() => handlePriceSave(n)}
+                                onBlur={(e) => {
+                                  const partner = e.currentTarget.value;
+                                  const advertiser = priceDrafts[n.cnId]?.advertiser
+                                    ?? String(n.advertiserPrice || n.partnerPrice || '');
+                                  void handlePriceSave(n, { partner, advertiser });
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') e.currentTarget.blur();
                                 }}
@@ -852,7 +863,12 @@ export function AdminCallDb() {
                                     advertiser: e.target.value,
                                   },
                                 }))}
-                                onBlur={() => handlePriceSave(n)}
+                                onBlur={(e) => {
+                                  const advertiser = e.currentTarget.value;
+                                  const partner = priceDrafts[n.cnId]?.partner
+                                    ?? String(n.partnerPrice || '');
+                                  void handlePriceSave(n, { partner, advertiser });
+                                }}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') e.currentTarget.blur();
                                 }}
