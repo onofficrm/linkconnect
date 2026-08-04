@@ -1,13 +1,14 @@
 import { Phone, CheckCircle2, ArrowRight, AlertCircle, Check, MessageSquare, Scale, BadgeCheck } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import DeferredMount from './components/DeferredMount';
+import FloatingCallButton from './components/FloatingCallButton';
 
 const DeferredLawyerRehab = lazy(() => import('./sections/DeferredLawyerRehab'));
 const DeferredProcessMid = lazy(() => import('./sections/DeferredProcessMid'));
 const DeferredFaqCta = lazy(() => import('./sections/DeferredFaqCta'));
 import { usePartnerContext } from './context/PartnerContext';
 import { buildInquiryText, submitConsultation } from './lib/linkconnect';
-import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref } from './lib/partnerData';
+import { formatPhoneDisplay, getTrackingForSubmit, phoneTelHref, applyPhoneVisibility } from './lib/partnerData';
 import { scrollToId } from '../../_landing-perf/scrollToId';
 import lawyerPortrait from './assets/lawyer-lee-jeongyong-hero.jpg';
 
@@ -75,6 +76,11 @@ export default function App() {
   useEffect(() => {
     document.title = '개인회생무료상담 | 다시봄 개인회생센터 검사출신 변호사';
   }, []);
+
+  useEffect(() => {
+    // deferred 섹션 마운트 후에도 전화 노출 클래스/링크를 재적용
+    applyPhoneVisibility(partner.partner_phone);
+  }, [partner.partner_phone, hasPhone]);
 
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -190,14 +196,16 @@ export default function App() {
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block phone-only partner-phone-section">
               <p className="text-xs text-slate-400 leading-none mb-1">상담 전화번호</p>
-              <p className="text-lg font-bold text-slate-900 partner-phone-text">{partnerPhoneDisplay || '전화상담'}</p>
+              <a href={partnerTel || undefined} className="text-lg font-bold text-slate-900 partner-phone-text partner-phone-link hover:text-teal-600 transition-colors tabular-nums">
+                {partnerPhoneDisplay || '전화상담'}
+              </a>
             </div>
             <a
               href={partnerTel || undefined}
-              className="hidden md:flex items-center gap-2 bg-orange-500 text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-orange-600 transition-colors shadow-sm phone-only partner-phone-link"
+              className="hidden md:flex items-center gap-2 bg-teal-500 text-slate-900 px-5 py-2 rounded-full text-sm font-bold hover:bg-teal-400 transition-colors shadow-sm phone-only partner-phone-link"
             >
               <Phone className="w-4 h-4" />
-              지금 전화상담
+              <span className="partner-phone-text tabular-nums">{partnerPhoneDisplay || '지금 전화상담'}</span>
             </a>
             <a
               href={partnerTel || undefined}
@@ -256,16 +264,33 @@ export default function App() {
                 <a href="#consultation-form" className="bg-teal-500 hover:bg-teal-400 text-slate-900 px-6 py-3.5 rounded-xl text-[15px] font-bold transition-all flex justify-center items-center gap-2">
                   무료 상담 신청하기
                 </a>
-                <a
-                  href={partnerTel || undefined}
-                  className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-6 py-3.5 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2 transition-all phone-only partner-phone-link"
-                >
-                  <Phone className="w-5 h-5" />
-                  전화 상담
-                </a>
+                {hasPhone && partnerTel ? (
+                  <a
+                    href={partnerTel}
+                    className="bg-transparent border border-teal-500/50 hover:bg-teal-500/10 text-white px-6 py-3.5 rounded-xl text-[15px] font-bold flex items-center justify-center gap-2.5 transition-all phone-only partner-phone-link"
+                  >
+                    <Phone className="w-5 h-5 text-teal-400 shrink-0" />
+                    <span className="flex flex-col items-start leading-tight">
+                      <span className="text-[11px] font-semibold text-teal-300/90">지금 전화상담</span>
+                      <span className="partner-phone-text text-base font-extrabold tabular-nums tracking-tight">
+                        {partnerPhoneDisplay}
+                      </span>
+                    </span>
+                  </a>
+                ) : null}
               </div>
-              
-              <p className="text-xs text-slate-400 leading-relaxed">상담 신청만으로 비용이 발생하지 않습니다.</p>
+
+              {hasPhone && partnerPhoneDisplay ? (
+                <p className="text-sm text-teal-300/90 font-semibold phone-only partner-phone-section">
+                  급하시면{' '}
+                  <a href={partnerTel || undefined} className="underline decoration-teal-400/50 underline-offset-2 partner-phone-link partner-phone-text">
+                    {partnerPhoneDisplay}
+                  </a>
+                  {' '}으로 바로 연결하세요
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400 leading-relaxed">상담 신청만으로 비용이 발생하지 않습니다.</p>
+              )}
             </div>
             
             <div className="relative flex justify-center md:justify-end items-center">
@@ -387,6 +412,23 @@ export default function App() {
                 정확한 내용을 모두 작성하지 않아도 됩니다.<br/>
                 확인 가능한 범위까지만 입력해 주세요.
               </p>
+
+              {hasPhone && partnerTel ? (
+                <a
+                  href={partnerTel}
+                  className="mb-8 flex items-center gap-4 rounded-2xl border border-teal-500/30 bg-teal-500/10 px-5 py-4 hover:bg-teal-500/15 transition-colors phone-only partner-phone-link"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500 text-slate-900 shrink-0">
+                    <Phone className="w-6 h-6" />
+                  </span>
+                  <span className="min-w-0 text-left">
+                    <span className="block text-xs font-bold text-teal-300 mb-0.5">급하시면 전화로 바로</span>
+                    <span className="partner-phone-text block text-xl font-extrabold text-white tabular-nums tracking-tight">
+                      {partnerPhoneDisplay}
+                    </span>
+                  </span>
+                </a>
+              ) : null}
               
               <div className="hidden lg:flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-sm text-slate-300 font-medium">
@@ -634,15 +676,24 @@ export default function App() {
 
       {/* Mobile Bottom Fixed CTA */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 flex gap-3 z-50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)]">
-        <a href={partnerTel || undefined} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors bottom-phone-btn phone-only partner-phone-link">
-          <Phone className="w-4 h-4" />
-          전화상담
+        <a href={partnerTel || undefined} className="flex-1 bg-teal-500 hover:bg-teal-600 text-slate-900 font-bold py-3.5 rounded-xl text-sm flex flex-col items-center justify-center gap-0.5 transition-colors bottom-phone-btn phone-only partner-phone-link leading-tight">
+          <span className="inline-flex items-center gap-1.5">
+            <Phone className="w-4 h-4" />
+            전화상담
+          </span>
+          {partnerPhoneDisplay ? (
+            <span className="partner-phone-text text-[11px] font-extrabold tabular-nums opacity-90">{partnerPhoneDisplay}</span>
+          ) : null}
         </a>
-        <a href="#consultation-form" className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors bottom-form-btn">
+        <a href="#consultation-form" className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors bottom-form-btn">
           <MessageSquare className="w-4 h-4" />
           상담신청
         </a>
       </div>
+
+      {hasPhone && partnerTel ? (
+        <FloatingCallButton tel={partnerTel} display={partnerPhoneDisplay} />
+      ) : null}
     </div>
   );
 }

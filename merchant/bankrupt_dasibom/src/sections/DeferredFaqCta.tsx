@@ -105,11 +105,23 @@ export default function DeferredFaqCta({
                 무료 상담 신청하기
                 <ArrowRight className="w-5 h-5" />
               </a>
-              <a href={partnerTel || undefined} className="bg-transparent border border-slate-700 hover:bg-slate-800 text-white px-8 py-4 rounded-xl text-lg font-bold transition-all flex items-center justify-center gap-2 phone-only partner-phone-link">
-                <Phone className="w-5 h-5" />
-                전화로 바로 상담하기
-              </a>
+              {partnerTel ? (
+                <a href={partnerTel} className="bg-transparent border border-teal-500/40 hover:bg-teal-500/10 text-white px-8 py-4 rounded-xl text-lg font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 phone-only partner-phone-link">
+                  <span className="inline-flex items-center gap-2">
+                    <Phone className="w-5 h-5 text-teal-400" />
+                    전화로 바로 상담
+                  </span>
+                  {partnerPhoneDisplay ? (
+                    <span className="partner-phone-text text-teal-300 text-base font-extrabold tabular-nums">{partnerPhoneDisplay}</span>
+                  ) : null}
+                </a>
+              ) : null}
             </div>
+            {partnerPhoneDisplay ? (
+              <p className="text-sm text-slate-400 font-medium phone-only partner-phone-section pt-2">
+                상담전화 <span className="partner-phone-text text-teal-300 font-bold tabular-nums">{partnerPhoneDisplay}</span>
+              </p>
+            ) : null}
           </div>
         </section>
 
