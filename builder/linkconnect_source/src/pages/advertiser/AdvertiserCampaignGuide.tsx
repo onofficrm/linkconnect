@@ -107,8 +107,9 @@ export function AdvertiserCampaignGuide() {
     exists && guideMeta?.guideStatus ? guideMeta.guideStatus : exists ? 'draft' : 'none'
   ) as PromoGuideStatus | 'none';
   const revisionReason = guideMeta?.revisionReason ?? '';
-  const readOnly = guideStatus === 'review';
+  const readOnly = false;
   const isPublishedEdit = guideStatus === 'published';
+  const isReviewEdit = guideStatus === 'review';
 
   const syncStep = useCallback(
     (next: number, replaceUrl = true) => {
@@ -517,9 +518,9 @@ export function AdvertiserCampaignGuide() {
             </div>
           ) : null}
 
-          {readOnly ? (
+          {isReviewEdit ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              관리자 검토 중입니다. 검토가 완료될 때까지 내용을 수정할 수 없습니다.
+              관리자 검토 중입니다. 내용을 수정하면 검토가 취소되고 작성 중(초안) 상태로 돌아갑니다.
             </div>
           ) : null}
 

@@ -129,6 +129,52 @@ if ($method === 'POST') {
         lc_api_success($result);
     }
 
+    if ($action === 'purge_demo_data') {
+        if (!lc_is_super_admin()) {
+            lc_api_error('최고관리자만 실행할 수 있습니다.', 'FORBIDDEN', 403);
+        }
+        $confirm = isset($body['confirm']) ? trim((string) $body['confirm']) : '';
+        if ($confirm !== '삭제') {
+            lc_api_error('정리를 확인하려면 confirm에 "삭제"를 입력해주세요.', 'CONFIRM_REQUIRED', 400);
+        }
+        if (is_file(LC_PLUGIN_PATH . '/inc/demo_seed.php')) {
+            require_once LC_PLUGIN_PATH . '/inc/demo_seed.php';
+        }
+        if (!function_exists('lc_demo_purge_run')) {
+            lc_api_error('데모 정리 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
+        }
+        $result = lc_demo_purge_run(array(
+            'reset_conversions' => !empty($body['resetConversions']),
+            'purge_test_named'  => !isset($body['purgeTestNamed']) || !empty($body['purgeTestNamed']),
+            'allow_token'       => true,
+        ));
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'PURGE_FAILED', 400);
+        }
+        lc_api_success($result);
+    }
+
+    if ($action === 'reset_conversions') {
+        if (!lc_is_super_admin()) {
+            lc_api_error('최고관리자만 실행할 수 있습니다.', 'FORBIDDEN', 403);
+        }
+        $confirm = isset($body['confirm']) ? trim((string) $body['confirm']) : '';
+        if ($confirm !== '초기화') {
+            lc_api_error('초기화를 확인하려면 confirm에 "초기화"를 입력해주세요.', 'CONFIRM_REQUIRED', 400);
+        }
+        if (is_file(LC_PLUGIN_PATH . '/inc/demo_seed.php')) {
+            require_once LC_PLUGIN_PATH . '/inc/demo_seed.php';
+        }
+        if (!function_exists('lc_admin_conversions_reset_all')) {
+            lc_api_error('초기화 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
+        }
+        $result = lc_admin_conversions_reset_all();
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'RESET_FAILED', 400);
+        }
+        lc_api_success($result);
+    }
+
     lc_api_error('유효하지 않은 action입니다.', 'INVALID_ACTION', 400);
 }
 

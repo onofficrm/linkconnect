@@ -3,9 +3,9 @@ import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   Users, Activity, Database, CreditCard, Receipt, 
-  Search, Calendar, ChevronDown, Download, ShieldAlert, X, Eye
+  Search, Calendar, ChevronDown, Download, ShieldAlert, X, Eye, Trash2
 } from 'lucide-react';
-import { AdminPartner, bulkAdminPartners, fetchAdminPartners, updateAdminPartner, viewAsPartner } from '../../lib/api';
+import { AdminPartner, bulkAdminPartners, deleteAdminPartner, fetchAdminPartners, updateAdminPartner, viewAsPartner } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 import { AdminEntityMetaPanel } from '../../components/AdminEntityMetaPanel';
 
@@ -20,6 +20,9 @@ export function AdminPartners() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const isSuperAdmin = isLcSuperAdmin();
 
   const loadPartners = useCallback(() => {
@@ -94,6 +97,32 @@ export function AdminPartners() {
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const handleDelete = async (force = false) => {
+    if (!selectedPartner?.id) return;
+    if (deleteConfirmText !== '삭제') {
+      setActionError('삭제를 확인하려면 "삭제"를 입력해주세요.');
+      return;
+    }
+    setDeleting(true);
+    setActionError('');
+    try {
+      const result = await deleteAdminPartner({
+        ptId: selectedPartner.id,
+        confirm: '삭제',
+        force,
+      });
+      alert(result.message);
+      setShowDeleteModal(false);
+      setDeleteConfirmText('');
+      setSelectedPartner(null);
+      loadPartners();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -422,6 +451,21 @@ export function AdminPartners() {
                     {updating ? '처리 중...' : '정지 해제 (활성화)'}
                   </button>
                 )}
+                {isSuperAdmin && selectedPartner.id ? (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => {
+                      setDeleteConfirmText('');
+                      setActionError('');
+                      setShowDeleteModal(true);
+                    }}
+                    className="col-span-2 py-2.5 border border-red-200 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 disabled:opacity-60 transition-colors shadow-sm inline-flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    파트너 삭제
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -433,6 +477,56 @@ export function AdminPartners() {
           )}
         </div>
       </div>
+
+      {showDeleteModal && selectedPartner ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="font-bold text-lg text-slate-900">파트너 삭제</div>
+            <p className="text-sm text-slate-600">
+              <strong className="text-slate-800">{selectedPartner.name}</strong> 파트너를 삭제하시겠습니까?
+            </p>
+            {(selectedPartner.totalDb ?? 0) > 0 ? (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                접수 DB가 연결되어 있으면 강제 삭제 시 파트너 연결만 해제됩니다.
+              </p>
+            ) : null}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                계속하려면 <span className="text-red-600">삭제</span>를 입력하세요
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="삭제"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-400"
+              />
+            </div>
+            {actionError ? <p className="text-sm text-red-600">{actionError}</p> : null}
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-700"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={deleting || deleteConfirmText !== '삭제'}
+                onClick={() => void handleDelete((selectedPartner.totalDb ?? 0) > 0)}
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {deleting ? '삭제 중...' : (selectedPartner.totalDb ?? 0) > 0 ? '강제 삭제' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

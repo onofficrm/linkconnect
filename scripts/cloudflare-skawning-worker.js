@@ -24,6 +24,12 @@ export default {
   async fetch(request) {
     const incoming = new URL(request.url);
     const publicHost = incoming.hostname;
+    const cache = caches.default;
+
+    if (request.method === 'GET') {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+    }
 
     const target = new URL(request.url);
     target.protocol = 'https:';
@@ -47,11 +53,15 @@ export default {
     headers.delete('Origin');
     headers.set('Referer', `https://${ORIGIN_HOST}/`);
 
+    const cacheable = isCacheablePath(target.pathname);
     const init = {
       method: request.method,
       headers,
       redirect: 'manual',
-      cf: { cacheTtl: 0 },
+      cf: {
+        cacheTtl: cacheable ? 86400 : 0,
+        cacheEverything: cacheable,
+      },
     };
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       init.body = request.body;
@@ -80,6 +90,7 @@ export default {
       let html = await upstream.text();
       html = rewriteHtml(html, publicHost);
       outHeaders.delete('Content-Length');
+      outHeaders.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       return new Response(html, {
         status: upstream.status,
         statusText: upstream.statusText,
@@ -87,13 +98,36 @@ export default {
       });
     }
 
-    return new Response(upstream.body, {
+    if (cacheable) {
+      outHeaders.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    }
+
+    const response = new Response(upstream.body, {
       status: upstream.status,
       statusText: upstream.statusText,
       headers: outHeaders,
     });
+
+    if (request.method === 'GET' && cacheable && upstream.status === 200) {
+      try {
+        await cache.put(request, response.clone());
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    return response;
   },
 };
+
+function isCacheablePath(pathname) {
+  return (
+    pathname.includes('/assets/') ||
+    pathname.includes(HASUGU_IMPORT) ||
+    pathname.includes('merchant-static.php') ||
+    /\.(?:png|jpe?g|webp|gif|svg|ico|css|js|woff2?)$/i.test(pathname)
+  );
+}
 
 /**
  * HTML 재작성:

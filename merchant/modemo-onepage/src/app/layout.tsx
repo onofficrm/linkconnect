@@ -94,7 +94,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         {/* Google tag (gtag.js) */}
         {process.env.NEXT_PUBLIC_GA_ID && (

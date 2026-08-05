@@ -782,6 +782,13 @@ export function updateAdminPartner(payload: { action: 'activate' | 'suspend' | '
   );
 }
 
+export function deleteAdminPartner(payload: { ptId: number; confirm: string; force?: boolean }) {
+  return adminApiPost<{ message: string; conversionCount?: number }>('partners.php', {
+    action: 'delete',
+    ...payload,
+  });
+}
+
 export function fetchAdminMerchants(filters?: { status?: string; q?: string }) {
   return adminApiGet<{
     items: AdminMerchant[];
@@ -798,6 +805,13 @@ export function updateAdminMerchant(payload: { action: 'activate' | 'suspend' | 
     'merchants.php',
     payload,
   );
+}
+
+export function deleteAdminMerchant(payload: { mtId: number; confirm: string; force?: boolean }) {
+  return adminApiPost<{ message: string; deletedCampaigns?: number; deletedConversions?: number }>('merchants.php', {
+    action: 'delete',
+    ...payload,
+  });
 }
 
 export type ImpersonateState = {
@@ -947,6 +961,20 @@ export function fetchAdminConversions(filters?: { status?: string }) {
     dbReady: boolean;
   }>('conversions.php', {
     status: filters?.status ?? '',
+  });
+}
+
+export function resetAdminConversions(confirm: string) {
+  return adminApiPost<{ message: string; deleted: number; remaining: number }>('conversions.php', {
+    action: 'reset_all',
+    confirm,
+  });
+}
+
+export function purgeAdminDemoData(payload: { confirm: string; resetConversions?: boolean; purgeTestNamed?: boolean }) {
+  return adminApiPost<{ message: string; details?: Record<string, unknown> }>('ops.php', {
+    action: 'purge_demo_data',
+    ...payload,
   });
 }
 
@@ -1109,10 +1137,17 @@ export function fetchAdminPromoGuideLogs(guideId: number) {
 }
 
 export function adminPromoGuideAction(payload: {
-  action: 'publish' | 'hide' | 'review' | 'draft' | 'request_revision' | 'create';
+  action: 'publish' | 'hide' | 'review' | 'draft' | 'request_revision' | 'create' | 'save' | 'update';
   guideId?: number;
   cpId?: number;
   reason?: string;
+  promotionPoints?: string[];
+  recommendedKeywords?: string[];
+  forbiddenWords?: string[];
+  precautions?: string[];
+  validDbRules?: string[];
+  invalidDbRules?: string[];
+  approvalType?: 'free' | 'first_review' | 'all_review';
 }) {
   return adminApiPost<{ message: string; guide: AdminPromoGuideDetail | null; created?: boolean }>('campaign-guide.php', payload);
 }

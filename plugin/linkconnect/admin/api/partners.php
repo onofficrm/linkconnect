@@ -34,6 +34,25 @@ if ($method === 'POST') {
         lc_api_error('파트너 ID가 필요합니다.', 'INVALID_REQUEST', 400);
     }
 
+    if ($action === 'delete') {
+        if (!lc_is_super_admin()) {
+            lc_api_error('최고관리자만 파트너를 삭제할 수 있습니다.', 'FORBIDDEN', 403);
+        }
+        $confirm = isset($body['confirm']) ? trim((string) $body['confirm']) : '';
+        if ($confirm !== '삭제') {
+            lc_api_error('삭제를 확인하려면 confirm에 "삭제"를 입력해주세요.', 'CONFIRM_REQUIRED', 400);
+        }
+        $force = !empty($body['force']);
+        $result = lc_partner_delete($pt_id, $force);
+        if (empty($result['ok'])) {
+            lc_api_error($result['message'], 'DELETE_FAILED', 400);
+        }
+        lc_api_success(array(
+            'message'         => $result['message'],
+            'conversionCount' => (int) ($result['conversionCount'] ?? 0),
+        ));
+    }
+
     $status_map = array(
         'activate' => LC_PARTNER_STATUS_ACTIVE,
         'suspend'  => LC_PARTNER_STATUS_SUSPENDED,

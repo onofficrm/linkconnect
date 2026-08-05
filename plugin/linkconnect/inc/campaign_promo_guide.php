@@ -1681,9 +1681,7 @@ if (!function_exists('lc_campaign_promo_guide_save_content')) {
         $guide = $assert['guide'];
 
         $status = (string) ($guide['cpg_status'] ?? LC_CPG_STATUS_DRAFT);
-        if ($status === LC_CPG_STATUS_REVIEW) {
-            return array('ok' => false, 'message' => '검토 중인 가이드는 수정할 수 없습니다.');
-        }
+        // 검토 중에도 광고주가 수정하면 검토를 취소하고 초안으로 되돌린다.
         if ($status === LC_CPG_STATUS_PUBLISHED && !$force_draft) {
             return array('ok' => false, 'message' => '공개된 가이드는 임시저장 또는 검토 요청을 이용해 주세요.');
         }
@@ -1722,7 +1720,12 @@ if (!function_exists('lc_campaign_promo_guide_save_content')) {
 
         if ($status === LC_CPG_STATUS_PUBLISHED && $force_draft) {
             // 공개 상태 유지 (단순 수정)
-        } elseif ($force_draft || $status === LC_CPG_STATUS_HIDDEN || $status === LC_CPG_STATUS_REVISION) {
+        } elseif (
+            $force_draft
+            || $status === LC_CPG_STATUS_HIDDEN
+            || $status === LC_CPG_STATUS_REVISION
+            || $status === LC_CPG_STATUS_REVIEW
+        ) {
             $new_status = LC_CPG_STATUS_DRAFT;
             $sets[] = "cpg_status = '" . lc_sql_escape(LC_CPG_STATUS_DRAFT) . "'";
             $sets[] = "cpg_revision_reason = ''";

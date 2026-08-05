@@ -665,3 +665,199 @@ if (!function_exists('lc_demo_seed_run')) {
         );
     }
 }
+
+if (!function_exists('lc_admin_conversions_reset_all')) {
+    /**
+     * @return array{ok:bool,message:string,deleted:int,remaining:int}
+     */
+    function lc_admin_conversions_reset_all()
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'deleted' => 0, 'remaining' => 0);
+        }
+
+        if (!function_exists('lc_is_super_admin') || !lc_is_super_admin()) {
+            return array('ok' => false, 'message' => '최고관리자만 실행할 수 있습니다.', 'deleted' => 0, 'remaining' => 0);
+        }
+
+        $cv_table = lc_table('conversions');
+        $before = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` ");
+        $before_cnt = is_array($before) ? (int) ($before['cnt'] ?? 0) : 0;
+
+        lc_sql_query(" DELETE FROM `{$cv_table}` ", false);
+
+        $after = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` ");
+        $after_cnt = is_array($after) ? (int) ($after['cnt'] ?? 0) : 0;
+        $deleted = max(0, $before_cnt - $after_cnt);
+
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('conversions_reset', 'conversion', 0, '전체 디비 목록 초기화', array('deleted' => $deleted));
+        }
+
+        return array(
+            'ok'        => true,
+            'message'   => '전체 디비 목록을 초기화했습니다. (' . number_format($deleted) . '건 삭제)',
+            'deleted'   => $deleted,
+            'remaining' => $after_cnt,
+        );
+    }
+}
+
+if (!function_exists('lc_demo_purge_run')) {
+    /**
+     * 데모/테스트 광고주·파트너·샘플 광고상품 정리.
+     *
+     * @param array{advertiser_mb_id?:string,partner_mb_id?:string,purge_test_named?:bool,reset_conversions?:bool,allow_token?:bool} $options
+     * @return array{ok:bool,message:string,details:array}
+     */
+    function lc_demo_purge_run(array $options = array())
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'details' => array());
+        }
+
+        $is_super = function_exists('lc_is_super_admin') && lc_is_super_admin();
+        if (!$is_super && php_sapi_name() !== 'cli' && empty($options['allow_token'])) {
+            return array('ok' => false, 'message' => '최고관리자만 실행할 수 있습니다.', 'details' => array());
+        }
+
+        $advertiser_mb = isset($options['advertiser_mb_id'])
+            ? trim((string) $options['advertiser_mb_id'])
+            : lc_demo_default_advertiser_mb_id();
+        $partner_mb = isset($options['partner_mb_id'])
+            ? trim((string) $options['partner_mb_id'])
+            : lc_demo_default_partner_mb_id();
+        $purge_test_named = !array_key_exists('purge_test_named', $options) || !empty($options['purge_test_named']);
+        $reset_conversions = !empty($options['reset_conversions']);
+
+        $details = array(
+            'merchantsDeleted'   => 0,
+            'partnersDeleted'    => 0,
+            'campaignsDeleted'   => 0,
+            'conversionsDeleted' => 0,
+            'targets'            => array(),
+        );
+
+        if ($reset_conversions) {
+            $cv_table = lc_table('conversions');
+            $before = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` ");
+            $before_cnt = is_array($before) ? (int) ($before['cnt'] ?? 0) : 0;
+            lc_sql_query(" DELETE FROM `{$cv_table}` ", false);
+            $details['conversionsDeleted'] = $before_cnt;
+        }
+
+        $mt_table = lc_table('merchants');
+        $targets = array();
+
+        if ($advertiser_mb !== '') {
+            $m = lc_get_merchant_by_mb_id($advertiser_mb);
+            if (is_array($m)) {
+                $targets[(int) $m['mt_id']] = $m;
+            }
+        }
+
+        if ($purge_test_named) {
+            $result = lc_sql_query(
+                " SELECT * FROM `{$mt_table}`
+                  WHERE mt_company LIKE '%데모%'
+                     OR mt_company LIKE '%테스트%'
+                     OR mb_id LIKE 'lc_advertiser%'
+                     OR mb_id LIKE 'test_%' ",
+                false
+            );
+            if ($result) {
+                while ($row = sql_fetch_array($result)) {
+                    $targets[(int) $row['mt_id']] = $row;
+                }
+            }
+        }
+
+        foreach ($targets as $mt_id => $merchant) {
+            $details['targets'][] = array(
+                'mt_id'   => (int) $mt_id,
+                'mb_id'   => (string) ($merchant['mb_id'] ?? ''),
+                'company' => (string) ($merchant['mt_company'] ?? ''),
+            );
+
+            $cp_table = lc_table('campaigns');
+            $cv_table = lc_table('conversions');
+            $cp_ids = array();
+            $cp_res = lc_sql_query(" SELECT cp_id FROM `{$cp_table}` WHERE mt_id = '" . (int) $mt_id . "' ", false);
+            if ($cp_res) {
+                while ($cp = sql_fetch_array($cp_res)) {
+                    $cp_ids[] = (int) $cp['cp_id'];
+                }
+            }
+            if ($cp_ids) {
+                $id_list = implode(',', $cp_ids);
+                $cv_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE cp_id IN ({$id_list}) ");
+                $cv_cnt = is_array($cv_row) ? (int) ($cv_row['cnt'] ?? 0) : 0;
+                if ($cv_cnt > 0) {
+                    lc_sql_query(" DELETE FROM `{$cv_table}` WHERE cp_id IN ({$id_list}) ", false);
+                    $details['conversionsDeleted'] += $cv_cnt;
+                }
+                foreach ($cp_ids as $cp_id) {
+                    if ($is_super && function_exists('lc_campaign_delete')) {
+                        $del = lc_campaign_delete($cp_id);
+                        if (!empty($del['ok'])) {
+                            $details['campaignsDeleted']++;
+                            continue;
+                        }
+                    }
+                    $cl_table = lc_table('clicks');
+                    $lk_table = lc_table('links');
+                    lc_sql_query(" DELETE FROM `{$cl_table}` WHERE cp_id = '{$cp_id}' ", false);
+                    lc_sql_query(" DELETE FROM `{$lk_table}` WHERE cp_id = '{$cp_id}' ", false);
+                    if (function_exists('lc_campaign_thumbnail_delete')) {
+                        lc_campaign_thumbnail_delete($cp_id);
+                    }
+                    lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);
+                    $details['campaignsDeleted']++;
+                }
+            }
+
+            $wt_table = lc_table('wallet_transactions');
+            if (lc_db_table_exists($wt_table)) {
+                lc_sql_query(" DELETE FROM `{$wt_table}` WHERE mt_id = '" . (int) $mt_id . "' ", false);
+            }
+            if (function_exists('lc_campaign_promo_guide_table')) {
+                $guide_table = lc_campaign_promo_guide_table();
+                if (lc_db_table_exists($guide_table)) {
+                    lc_sql_query(" DELETE FROM `{$guide_table}` WHERE cpg_mt_id = '" . (int) $mt_id . "' ", false);
+                }
+            }
+            $contract_table = lc_table('merchant_contracts');
+            if (lc_db_table_exists($contract_table)) {
+                lc_sql_query(" DELETE FROM `{$contract_table}` WHERE mt_id = '" . (int) $mt_id . "' ", false);
+            }
+            lc_sql_query(" DELETE FROM `{$mt_table}` WHERE mt_id = '" . (int) $mt_id . "' LIMIT 1 ", false);
+            $details['merchantsDeleted']++;
+        }
+
+        if ($partner_mb !== '') {
+            $p = lc_get_partner_by_mb_id($partner_mb);
+            if (is_array($p)) {
+                $pt_id = (int) $p['pt_id'];
+                $cv_table = lc_table('conversions');
+                lc_sql_query(" UPDATE `{$cv_table}` SET pt_id = 0 WHERE pt_id = '{$pt_id}' ", false);
+                $lk_table = lc_table('links');
+                if (lc_db_table_exists($lk_table)) {
+                    lc_sql_query(" DELETE FROM `{$lk_table}` WHERE pt_id = '{$pt_id}' ", false);
+                }
+                $pt_table = lc_table('partners');
+                lc_sql_query(" DELETE FROM `{$pt_table}` WHERE pt_id = '{$pt_id}' LIMIT 1 ", false);
+                $details['partnersDeleted']++;
+            }
+        }
+
+        $message = sprintf(
+            '테스트/데모 정리 완료 — 광고주 %d, 파트너 %d, 광고상품 %d, 디비 %d건',
+            $details['merchantsDeleted'],
+            $details['partnersDeleted'],
+            $details['campaignsDeleted'],
+            $details['conversionsDeleted']
+        );
+
+        return array('ok' => true, 'message' => $message, 'details' => $details);
+    }
+}

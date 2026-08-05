@@ -194,6 +194,77 @@ if (!function_exists('lc_partner_update_status')) {
     }
 }
 
+if (!function_exists('lc_partner_delete')) {
+    /**
+     * 파트너 삭제. 접수 DB가 있으면 기본적으로 거부. $force=true 이면 전환 연결을 끊고 삭제.
+     *
+     * @return array{ok:bool,message:string,conversionCount?:int}
+     */
+    function lc_partner_delete($pt_id, $force = false)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        if (!function_exists('lc_is_super_admin') || !lc_is_super_admin()) {
+            return array('ok' => false, 'message' => '삭제 권한이 없습니다.');
+        }
+
+        $pt_id = (int) $pt_id;
+        if ($pt_id <= 0) {
+            return array('ok' => false, 'message' => '파트너 ID가 필요합니다.');
+        }
+
+        $partner = lc_get_partner_by_id($pt_id);
+        if (!is_array($partner)) {
+            return array('ok' => false, 'message' => '파트너를 찾을 수 없습니다.');
+        }
+
+        $cv_table = lc_table('conversions');
+        $cv_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE pt_id = '{$pt_id}' ");
+        $conversion_count = is_array($cv_row) ? (int) ($cv_row['cnt'] ?? 0) : 0;
+
+        if ($conversion_count > 0 && !$force) {
+            return array(
+                'ok'              => false,
+                'message'         => '접수 DB가 ' . number_format($conversion_count) . '건 있는 파트너는 삭제할 수 없습니다. 전체 디비 초기화 후 다시 시도하거나 강제 삭제를 사용하세요.',
+                'conversionCount' => $conversion_count,
+            );
+        }
+
+        if ($force && $conversion_count > 0) {
+            lc_sql_query(" UPDATE `{$cv_table}` SET pt_id = 0 WHERE pt_id = '{$pt_id}' ", false);
+        }
+
+        $lk_table = lc_table('links');
+        if (lc_db_table_exists($lk_table)) {
+            lc_sql_query(" DELETE FROM `{$lk_table}` WHERE pt_id = '{$pt_id}' ", false);
+        }
+
+        $st_table = lc_table('settlements');
+        if (lc_db_table_exists($st_table)) {
+            lc_sql_query(" DELETE FROM `{$st_table}` WHERE pt_id = '{$pt_id}' ", false);
+        }
+
+        $pt_table = lc_table('partners');
+        lc_sql_query(" DELETE FROM `{$pt_table}` WHERE pt_id = '{$pt_id}' LIMIT 1 ", false);
+
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('partner_delete', 'partner', $pt_id, '파트너 삭제: ' . (string) ($partner['pt_name'] ?? ''), array(
+                'mb_id'            => (string) ($partner['mb_id'] ?? ''),
+                'conversion_count' => $conversion_count,
+                'force'            => $force ? 1 : 0,
+            ));
+        }
+
+        return array(
+            'ok'              => true,
+            'message'         => '파트너가 삭제되었습니다.',
+            'conversionCount' => $conversion_count,
+        );
+    }
+}
+
 if (!function_exists('lc_require_partner_access')) {
     function lc_require_partner_access()
     {

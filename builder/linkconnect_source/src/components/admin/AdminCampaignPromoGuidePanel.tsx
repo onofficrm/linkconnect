@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AdminPromoGuideDetail,
   AdminPromoGuideLog,
@@ -7,12 +7,20 @@ import {
   fetchAdminPromoGuideLogs,
 } from '../../lib/api';
 import {
+  EMPTY_PROMO_GUIDE_FORM,
+  formFromPromoGuideApi,
+  buildPromoGuidePayload,
   promoGuideApprovalLabel,
   promoGuideStatusLabel,
   promoGuideStatusStyle,
+  PROMO_GUIDE_LIMITS_DEFAULT,
+  PromoGuideApprovalType,
+  PromoGuideFormState,
+  validatePromoGuideForm,
 } from '../../lib/campaignPromoGuide';
+import { SectionCard, StringListInput, TagInput } from '../advertiser/promoGuide/PromoGuideFields';
 import { promoPreviewImageUrl } from '../../lib/optimizedImage';
-import { Eye, History, Loader2, X } from 'lucide-react';
+import { Eye, History, Loader2, Pencil, Save, X } from 'lucide-react';
 
 type Props = {
   campaignId: number;
@@ -21,6 +29,8 @@ type Props = {
   onClose: () => void;
   onUpdated?: () => void;
 };
+
+const APPROVAL_OPTIONS: PromoGuideApprovalType[] = ['free', 'first_review', 'all_review'];
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -38,6 +48,11 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
   const [logs, setLogs] = useState<AdminPromoGuideLog[]>([]);
   const [showLogs, setShowLogs] = useState(false);
   const [revisionReason, setRevisionReason] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<PromoGuideFormState>(EMPTY_PROMO_GUIDE_FORM);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const limits = PROMO_GUIDE_LIMITS_DEFAULT;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +64,17 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
         exists: Boolean(data.exists) || Boolean(data.guideId),
       };
       setGuide(normalized);
+      setForm(
+        formFromPromoGuideApi({
+          promotionPoints: data.promotionPoints,
+          recommendedKeywords: data.recommendedKeywords,
+          forbiddenWords: data.forbiddenWords,
+          precautions: data.precautions,
+          validDbRules: data.validDbRules,
+          invalidDbRules: data.invalidDbRules,
+          approvalType: data.approvalType,
+        }),
+      );
       if (normalized.guideId) {
         const logData = await fetchAdminPromoGuideLogs(normalized.guideId);
         setLogs(logData.items);
@@ -113,6 +139,7 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
       setMessage(result.message);
       if (result.guide) {
         setGuide({ ...result.guide, exists: true, campaignName, campaignId });
+        setEditing(true);
         if (result.guide.guideId) {
           const logData = await fetchAdminPromoGuideLogs(result.guide.guideId);
           setLogs(logData.items);
@@ -128,7 +155,41 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
     }
   };
 
+  const saveContent = async () => {
+    if (!guide?.guideId) return;
+    const errors = validatePromoGuideForm(form, limits);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setError('필수 항목을 확인해 주세요.');
+      return;
+    }
+
+    setActing(true);
+    setError('');
+    setMessage('');
+    try {
+      const payload = buildPromoGuidePayload(form, limits);
+      const result = await adminPromoGuideAction({
+        action: 'save',
+        guideId: guide.guideId,
+        cpId: campaignId,
+        ...payload,
+      });
+      setMessage(result.message || '홍보 가이드가 저장되었습니다.');
+      if (result.guide) {
+        setGuide({ ...result.guide, exists: true, campaignName, campaignId });
+      }
+      setEditing(false);
+      onUpdated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '저장에 실패했습니다.');
+    } finally {
+      setActing(false);
+    }
+  };
+
   const status = guide?.guideStatus ?? 'draft';
+  const pointCount = useMemo(() => form.promotionPoints.filter((v) => v.trim()).length, [form.promotionPoints]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50">
@@ -154,9 +215,6 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
           ) : !guide?.exists && !(guide?.guideId) ? (
             <div className="py-8 text-center space-y-4">
               <p className="text-sm text-slate-500">등록된 홍보 가이드가 없습니다.</p>
-              <p className="text-xs text-slate-400">
-                광고주가 아직 저장하지 않았거나, 저장이 실패했을 수 있습니다. 가이드 껍데기를 만든 뒤 광고주 화면에서 내용을 다시 저장해 주세요.
-              </p>
               <button
                 type="button"
                 disabled={acting}
@@ -179,10 +237,21 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                     {guide!.guideStatusLabel || promoGuideStatusLabel(status)}
                   </span>
                 </div>
-                <div className="rounded-xl border border-slate-200 p-3">
-                  <p className="text-xs text-slate-500 mb-1">최종 수정 / 공개일</p>
-                  <p className="font-medium text-slate-800">{formatDate(guide!.updatedAt)}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">공개: {formatDate(guide!.publishedAt)}</p>
+                <div className="rounded-xl border border-slate-200 p-3 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">최종 수정 / 공개일</p>
+                    <p className="font-medium text-slate-800">{formatDate(guide!.updatedAt)}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">공개: {formatDate(guide!.publishedAt)}</p>
+                  </div>
+                  {!editing ? (
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-cyan-600 text-white text-xs font-bold"
+                    >
+                      <Pencil size={14} /> 내용 수정
+                    </button>
+                  ) : null}
                 </div>
               </div>
 
@@ -193,132 +262,242 @@ export function AdminCampaignPromoGuidePanel({ campaignId, campaignName, adverti
                 </div>
               ) : null}
 
-              {(guide!.promotionPoints?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">핵심 홍보 포인트</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide!.promotionPoints!.map((item) => (
-                      <li key={item} className="break-words">{item}</li>
-                    ))}
-                  </ul>
-                </section>
+              {editing ? (
+                <div className="space-y-4">
+                  <SectionCard
+                    title="핵심 홍보 포인트"
+                    count={pointCount}
+                    max={limits.promotion_points}
+                    error={fieldErrors.promotionPoints}
+                  >
+                    <StringListInput
+                      items={form.promotionPoints}
+                      max={limits.promotion_points}
+                      placeholder="홍보 포인트 입력"
+                      onChange={(items) => setForm((prev) => ({ ...prev, promotionPoints: items }))}
+                    />
+                  </SectionCard>
+                  <SectionCard title="추천키워드" count={form.recommendedKeywords.length} max={limits.recommended_keywords} error={fieldErrors.recommendedKeywords}>
+                    <TagInput
+                      tags={form.recommendedKeywords}
+                      max={limits.recommended_keywords}
+                      placeholder="키워드 입력 후 엔터"
+                      onChange={(tags) => setForm((prev) => ({ ...prev, recommendedKeywords: tags }))}
+                    />
+                  </SectionCard>
+                  <SectionCard title="금지어" count={form.forbiddenWords.length} max={limits.forbidden_words} error={fieldErrors.forbiddenWords}>
+                    <TagInput
+                      tags={form.forbiddenWords}
+                      max={limits.forbidden_words}
+                      placeholder="금지어 입력"
+                      onChange={(tags) => setForm((prev) => ({ ...prev, forbiddenWords: tags }))}
+                    />
+                  </SectionCard>
+                  <SectionCard title="유의사항" count={form.precautions.filter((v) => v.trim()).length} max={limits.precautions} error={fieldErrors.precautions}>
+                    <StringListInput
+                      items={form.precautions}
+                      max={limits.precautions}
+                      placeholder="유의사항 입력"
+                      onChange={(items) => setForm((prev) => ({ ...prev, precautions: items }))}
+                    />
+                  </SectionCard>
+                  <SectionCard title="DB 인정 기준" error={fieldErrors.validDbRules || fieldErrors.invalidDbRules}>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <StringListInput
+                        items={form.validDbRules}
+                        max={limits.valid_db_rules}
+                        placeholder="유효 DB 기준"
+                        onChange={(items) => setForm((prev) => ({ ...prev, validDbRules: items }))}
+                      />
+                      <StringListInput
+                        items={form.invalidDbRules}
+                        max={limits.invalid_db_rules}
+                        placeholder="무효 DB 기준"
+                        onChange={(items) => setForm((prev) => ({ ...prev, invalidDbRules: items }))}
+                      />
+                    </div>
+                  </SectionCard>
+                  <SectionCard title="광고물 승인 방식">
+                    <div className="space-y-2">
+                      {APPROVAL_OPTIONS.map((value) => (
+                        <label key={value} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="radio"
+                            name="adminApprovalType"
+                            checked={form.approvalType === value}
+                            onChange={() => setForm((prev) => ({ ...prev, approvalType: value }))}
+                          />
+                          {promoGuideApprovalLabel(value)}
+                        </label>
+                      ))}
+                    </div>
+                  </SectionCard>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      disabled={acting}
+                      onClick={() => {
+                        setEditing(false);
+                        setFieldErrors({});
+                        if (guide) {
+                          setForm(
+                            formFromPromoGuideApi({
+                              promotionPoints: guide.promotionPoints,
+                              recommendedKeywords: guide.recommendedKeywords,
+                              forbiddenWords: guide.forbiddenWords,
+                              precautions: guide.precautions,
+                              validDbRules: guide.validDbRules,
+                              invalidDbRules: guide.invalidDbRules,
+                              approvalType: guide.approvalType,
+                            }),
+                          );
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-700"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      disabled={acting}
+                      onClick={() => void saveContent()}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 text-white text-sm font-bold disabled:opacity-50"
+                    >
+                      {acting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                      저장
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
-                  핵심 홍보 포인트가 아직 입력되지 않았습니다.
-                </section>
+                <>
+                  {(guide!.promotionPoints?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">핵심 홍보 포인트</h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        {guide!.promotionPoints!.map((item) => (
+                          <li key={item} className="break-words">{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : (
+                    <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
+                      핵심 홍보 포인트가 아직 입력되지 않았습니다.
+                    </section>
+                  )}
+
+                  {(guide!.recommendedKeywords?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">추천키워드 ({guide!.recommendedKeywords!.length})</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {guide!.recommendedKeywords!.map((kw) => (
+                          <span key={kw} className="px-2 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700">{kw}</span>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {(guide!.forbiddenWords?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">금지어 ({guide!.forbiddenWords!.length})</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {guide!.forbiddenWords!.map((kw) => (
+                          <span key={kw} className="px-2 py-1 rounded-lg bg-rose-50 text-xs font-medium text-rose-700">{kw}</span>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {(guide!.images?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">이미지 ({guide!.images!.length})</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {guide!.images!.map((img) => (
+                          <a
+                            key={img.id}
+                            href={img.downloadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded-xl border border-slate-200 overflow-hidden bg-slate-50"
+                          >
+                            <img src={promoPreviewImageUrl(img.downloadUrl)} alt={img.imageTitle || img.originalFilename} className="w-full aspect-video object-contain bg-white" loading="lazy" decoding="async" />
+                            <p className="text-xs p-2 truncate text-slate-600">{img.imageTitle || img.originalFilename}</p>
+                          </a>
+                        ))}
+                      </div>
+                    </section>
+                  ) : (
+                    <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
+                      등록된 소재(이미지)가 없습니다.
+                    </section>
+                  )}
+
+                  {(guide!.precautions?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">유의사항</h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        {guide!.precautions!.map((item) => (
+                          <li key={item} className="break-words">{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  {(guide!.validDbRules?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">유효 DB 기준</h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        {guide!.validDbRules!.map((item) => (
+                          <li key={item} className="break-words">{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  {(guide!.invalidDbRules?.length ?? 0) > 0 ? (
+                    <section>
+                      <h4 className="text-sm font-bold text-slate-900 mb-2">무효 DB 기준</h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        {guide!.invalidDbRules!.map((item) => (
+                          <li key={item} className="break-words">{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  {guide!.approvalType ? (
+                    <section className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+                      {promoGuideApprovalLabel(guide!.approvalType)}
+                    </section>
+                  ) : null}
+                </>
               )}
 
-              {(guide!.recommendedKeywords?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">추천키워드 ({guide!.recommendedKeywords!.length})</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {guide!.recommendedKeywords!.map((kw) => (
-                      <span key={kw} className="px-2 py-1 rounded-lg bg-slate-100 text-xs font-medium text-slate-700">{kw}</span>
-                    ))}
+              {guide?.guideId && !editing ? (
+                <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                  <p className="text-sm font-bold text-slate-800">관리 작업</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={acting} onClick={() => runAction('publish')} className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold disabled:opacity-50">파트너 공개</button>
+                    <button type="button" disabled={acting} onClick={() => runAction('review')} className="px-3 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold disabled:opacity-50">검토 대기</button>
+                    <button type="button" disabled={acting} onClick={() => runAction('hide')} className="px-3 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold disabled:opacity-50">비공개</button>
+                    <button type="button" disabled={acting} onClick={() => setShowLogs((v) => !v)} className="px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center gap-1">
+                      <History size={14} /> 변경 이력
+                    </button>
                   </div>
-                </section>
-              ) : null}
-
-              {(guide!.forbiddenWords?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">금지어 ({guide!.forbiddenWords!.length})</h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {guide!.forbiddenWords!.map((kw) => (
-                      <span key={kw} className="px-2 py-1 rounded-lg bg-rose-50 text-xs font-medium text-rose-700">{kw}</span>
-                    ))}
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600 block mb-1">수정 요청 사유</label>
+                    <textarea
+                      value={revisionReason}
+                      onChange={(e) => setRevisionReason(e.target.value)}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="광고주에게 전달할 수정 요청 사유"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
+                    />
+                    <button type="button" disabled={acting} onClick={() => runAction('request_revision')} className="mt-2 px-3 py-2 rounded-lg bg-orange-500 text-white text-xs font-bold disabled:opacity-50">
+                      수정 요청
+                    </button>
                   </div>
-                </section>
-              ) : null}
-
-              {(guide!.images?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">이미지 ({guide!.images!.length})</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {guide!.images!.map((img) => (
-                      <a
-                        key={img.id}
-                        href={img.downloadUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block rounded-xl border border-slate-200 overflow-hidden bg-slate-50"
-                      >
-                        <img src={promoPreviewImageUrl(img.downloadUrl)} alt={img.imageTitle || img.originalFilename} className="w-full aspect-video object-contain bg-white" loading="lazy" decoding="async" />
-                        <p className="text-xs p-2 truncate text-slate-600">{img.imageTitle || img.originalFilename}</p>
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              ) : (
-                <section className="rounded-xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500">
-                  등록된 소재(이미지)가 없습니다.
-                </section>
-              )}
-
-              {(guide!.precautions?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">유의사항</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide!.precautions!.map((item) => (
-                      <li key={item} className="break-words">{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {(guide!.validDbRules?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">유효 DB 기준</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide!.validDbRules!.map((item) => (
-                      <li key={item} className="break-words">{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {(guide!.invalidDbRules?.length ?? 0) > 0 ? (
-                <section>
-                  <h4 className="text-sm font-bold text-slate-900 mb-2">무효 DB 기준</h4>
-                  <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700">
-                    {guide!.invalidDbRules!.map((item) => (
-                      <li key={item} className="break-words">{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {guide!.approvalType ? (
-                <section className="rounded-xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
-                  {promoGuideApprovalLabel(guide!.approvalType)}
-                </section>
-              ) : null}
-
-              {guide?.guideId ? (
-              <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                <p className="text-sm font-bold text-slate-800">관리 작업</p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" disabled={acting} onClick={() => runAction('publish')} className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold disabled:opacity-50">파트너 공개</button>
-                  <button type="button" disabled={acting} onClick={() => runAction('review')} className="px-3 py-2 rounded-lg bg-amber-500 text-white text-xs font-bold disabled:opacity-50">검토 대기</button>
-                  <button type="button" disabled={acting} onClick={() => runAction('hide')} className="px-3 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold disabled:opacity-50">비공개</button>
-                  <button type="button" disabled={acting} onClick={() => setShowLogs((v) => !v)} className="px-3 py-2 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold inline-flex items-center gap-1">
-                    <History size={14} /> 변경 이력
-                  </button>
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 block mb-1">수정 요청 사유</label>
-                  <textarea
-                    value={revisionReason}
-                    onChange={(e) => setRevisionReason(e.target.value)}
-                    rows={2}
-                    maxLength={500}
-                    placeholder="광고주에게 전달할 수정 요청 사유"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
-                  />
-                  <button type="button" disabled={acting} onClick={() => runAction('request_revision')} className="mt-2 px-3 py-2 rounded-lg bg-orange-500 text-white text-xs font-bold disabled:opacity-50">
-                    수정 요청
-                  </button>
-                </div>
-              </div>
               ) : null}
 
               {showLogs ? (

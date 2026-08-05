@@ -196,6 +196,141 @@ if (!function_exists('lc_merchant_update_status')) {
     }
 }
 
+if (!function_exists('lc_merchant_delete')) {
+    /**
+     * 광고주 삭제. 접수 DB가 있으면 기본적으로 거부. $force=true 이면 연관 캠페인·전환까지 삭제.
+     *
+     * @return array{ok:bool,message:string,deletedCampaigns?:int,deletedConversions?:int}
+     */
+    function lc_merchant_delete($mt_id, $force = false)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        if (!function_exists('lc_is_super_admin') || !lc_is_super_admin()) {
+            return array('ok' => false, 'message' => '삭제 권한이 없습니다.');
+        }
+
+        $mt_id = (int) $mt_id;
+        if ($mt_id <= 0) {
+            return array('ok' => false, 'message' => '광고주 ID가 필요합니다.');
+        }
+
+        $merchant = lc_get_merchant_by_id($mt_id);
+        if (!is_array($merchant)) {
+            return array('ok' => false, 'message' => '광고주를 찾을 수 없습니다.');
+        }
+
+        $cp_table = lc_table('campaigns');
+        $cv_table = lc_table('conversions');
+        $cp_ids = array();
+        $cp_result = lc_sql_query(" SELECT cp_id FROM `{$cp_table}` WHERE mt_id = '{$mt_id}' ", false);
+        if ($cp_result) {
+            while ($row = sql_fetch_array($cp_result)) {
+                $cp_ids[] = (int) $row['cp_id'];
+            }
+        }
+
+        $conversion_count = 0;
+        if ($cp_ids) {
+            $id_list = implode(',', array_map('intval', $cp_ids));
+            $cv_row = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cv_table}` WHERE cp_id IN ({$id_list}) ");
+            $conversion_count = is_array($cv_row) ? (int) ($cv_row['cnt'] ?? 0) : 0;
+        }
+
+        if ($conversion_count > 0 && !$force) {
+            return array(
+                'ok'      => false,
+                'message' => '접수 DB가 ' . number_format($conversion_count) . '건 있는 광고주는 삭제할 수 없습니다. 전체 디비 초기화 후 다시 시도하거나 강제 삭제를 사용하세요.',
+            );
+        }
+
+        $deleted_conversions = 0;
+        $deleted_campaigns = 0;
+
+        if ($cp_ids) {
+            if ($force && $conversion_count > 0) {
+                $id_list = implode(',', array_map('intval', $cp_ids));
+                lc_sql_query(" DELETE FROM `{$cv_table}` WHERE cp_id IN ({$id_list}) ", false);
+                $deleted_conversions = $conversion_count;
+            }
+
+            foreach ($cp_ids as $cp_id) {
+                if ($force || $conversion_count === 0) {
+                    if (function_exists('lc_campaign_delete')) {
+                        // 전환을 이미 지웠으므로 캠페인 삭제 가능
+                        $del = lc_campaign_delete($cp_id);
+                        if (!empty($del['ok'])) {
+                            $deleted_campaigns++;
+                        } elseif ($force) {
+                            // 캠페인 삭제 실패 시에도 강제 정리
+                            lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);
+                            $deleted_campaigns++;
+                        }
+                    } else {
+                        lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);
+                        $deleted_campaigns++;
+                    }
+                }
+            }
+        }
+
+        $remaining = lc_sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$cp_table}` WHERE mt_id = '{$mt_id}' ");
+        if (is_array($remaining) && (int) ($remaining['cnt'] ?? 0) > 0 && !$force) {
+            return array('ok' => false, 'message' => '연결된 광고상품을 먼저 삭제해 주세요.');
+        }
+        if ($force) {
+            lc_sql_query(" DELETE FROM `{$cp_table}` WHERE mt_id = '{$mt_id}' ", false);
+        }
+
+        $wt_table = lc_table('wallet_transactions');
+        if (lc_db_table_exists($wt_table)) {
+            lc_sql_query(" DELETE FROM `{$wt_table}` WHERE mt_id = '{$mt_id}' ", false);
+        }
+
+        if (function_exists('lc_campaign_promo_guide_table')) {
+            $guide_table = lc_campaign_promo_guide_table();
+            if (lc_db_table_exists($guide_table)) {
+                $guides = lc_sql_query(" SELECT cpg_id FROM `{$guide_table}` WHERE cpg_mt_id = '{$mt_id}' ", false);
+                if ($guides) {
+                    while ($g = sql_fetch_array($guides)) {
+                        $cpg_id = (int) ($g['cpg_id'] ?? 0);
+                        if ($cpg_id > 0 && function_exists('lc_campaign_promo_guide_admin_delete')) {
+                            // no-op if missing
+                        }
+                        lc_sql_query(" DELETE FROM `{$guide_table}` WHERE cpg_id = '{$cpg_id}' LIMIT 1 ", false);
+                    }
+                }
+            }
+        }
+
+        $contract_table = lc_table('merchant_contracts');
+        if (lc_db_table_exists($contract_table)) {
+            lc_sql_query(" DELETE FROM `{$contract_table}` WHERE mt_id = '{$mt_id}' ", false);
+        }
+
+        $mt_table = lc_table('merchants');
+        lc_sql_query(" DELETE FROM `{$mt_table}` WHERE mt_id = '{$mt_id}' LIMIT 1 ", false);
+
+        if (function_exists('lc_admin_log_write')) {
+            lc_admin_log_write('merchant_delete', 'merchant', $mt_id, '광고주 삭제: ' . (string) ($merchant['mt_company'] ?? ''), array(
+                'mb_id'               => (string) ($merchant['mb_id'] ?? ''),
+                'deleted_campaigns'   => $deleted_campaigns,
+                'deleted_conversions' => $deleted_conversions,
+                'force'               => $force ? 1 : 0,
+            ));
+        }
+
+        return array(
+            'ok'                 => true,
+            'message'            => '광고주가 삭제되었습니다.',
+            'deletedCampaigns'   => $deleted_campaigns,
+            'deletedConversions' => $deleted_conversions,
+        );
+    }
+}
+
 if (!function_exists('lc_merchant_assign_campaigns')) {
     function lc_merchant_assign_campaigns($mt_id)
     {

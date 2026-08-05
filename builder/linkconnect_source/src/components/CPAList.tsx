@@ -20,7 +20,7 @@ export function CPAList() {
     fetchPublicCampaigns({ type: 'cpa' })
       .then((data) => {
         if (!cancelled) {
-          setItems(data.items.slice(0, 4));
+          setItems(data.items.slice(0, 8));
         }
       })
       .catch(() => {

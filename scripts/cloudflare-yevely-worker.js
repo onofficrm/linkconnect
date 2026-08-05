@@ -24,6 +24,15 @@ export default {
     const incoming = new URL(request.url);
     const publicHost = incoming.hostname;
 
+    // 정적 이미지·JS·CSS 캐시 (동일 URL GET)
+    const cache = caches.default;
+    if (request.method === 'GET') {
+      const cached = await cache.match(request);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const target = new URL(request.url);
     target.protocol = 'https:';
     target.hostname = ORIGIN_HOST;
@@ -71,7 +80,11 @@ export default {
       method: request.method,
       headers,
       redirect: 'manual',
-      cf: { cacheTtl: 0 },
+      cf: {
+        // Next 정적 청크·이미지 프록시는 엣지 캐시
+        cacheTtl: isCacheablePath(target.pathname) ? 86400 : 0,
+        cacheEverything: isCacheablePath(target.pathname),
+      },
     };
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       init.body = request.body;
@@ -99,11 +112,31 @@ export default {
       let html = await upstream.text();
       html = rewriteHtml(html, publicHost);
       outHeaders.delete('Content-Length');
+      // HTML은 짧게 캐시 (배포 반영)
+      outHeaders.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       return new Response(html, {
         status: upstream.status,
         statusText: upstream.statusText,
         headers: outHeaders,
       });
+    }
+
+    if (isCacheablePath(target.pathname) || target.pathname.includes('merchant-static.php')) {
+      outHeaders.set('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+      const response = new Response(upstream.body, {
+        status: upstream.status,
+        statusText: upstream.statusText,
+        headers: outHeaders,
+      });
+      if (request.method === 'GET' && upstream.status === 200) {
+        // Cache API 에 저장 (비차단)
+        try {
+          await cache.put(request, response.clone());
+        } catch (_) {
+          /* ignore quota */
+        }
+      }
+      return response;
     }
 
     return new Response(upstream.body, {
@@ -113,6 +146,15 @@ export default {
     });
   },
 };
+
+function isCacheablePath(pathname) {
+  return (
+    pathname.includes('/_next/static/') ||
+    pathname.includes('merchant-static.php') ||
+    pathname.startsWith('/images/') ||
+    /\.(?:png|jpe?g|webp|gif|svg|ico|css|js|woff2?)$/i.test(pathname)
+  );
+}
 
 function routeToStaticProxy(target, relPath) {
   const rel = String(relPath).replace(/^\/+/, '');

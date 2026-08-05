@@ -141,7 +141,7 @@ $mime = isset($mime_map[$ext]) ? $mime_map[$ext] : 'application/octet-stream';
 
 header('Content-Type: ' . $mime);
 header('Content-Length: ' . (string) filesize($full));
-header('Cache-Control: public, max-age=86400');
+header('Cache-Control: public, max-age=604800, stale-while-revalidate=86400');
 header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 readfile($full);

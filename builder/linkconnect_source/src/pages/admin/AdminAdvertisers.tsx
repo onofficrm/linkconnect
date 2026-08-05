@@ -4,9 +4,9 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { 
   Building2, Activity, AlertCircle, Clock,
   Search, Download, X, ShieldAlert,
-  Wallet, Eye
+  Wallet, Eye, Trash2
 } from 'lucide-react';
-import { AdminMerchant, bulkAdminMerchants, fetchAdminMerchants, updateAdminMerchant, viewAsMerchant } from '../../lib/api';
+import { AdminMerchant, bulkAdminMerchants, deleteAdminMerchant, fetchAdminMerchants, purgeAdminDemoData, updateAdminMerchant, viewAsMerchant } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 import { AdminEntityMetaPanel } from '../../components/AdminEntityMetaPanel';
 
@@ -21,6 +21,10 @@ export function AdminAdvertisers() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [purging, setPurging] = useState(false);
   const isSuperAdmin = isLcSuperAdmin();
 
   const loadMerchants = useCallback(() => {
@@ -97,6 +101,49 @@ export function AdminAdvertisers() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  const handleDelete = async (force = false) => {
+    if (!selectedAdvertiser?.id) return;
+    if (deleteConfirmText !== '삭제') {
+      setActionError('삭제를 확인하려면 "삭제"를 입력해주세요.');
+      return;
+    }
+    setDeleting(true);
+    setActionError('');
+    try {
+      const result = await deleteAdminMerchant({
+        mtId: selectedAdvertiser.id,
+        confirm: '삭제',
+        force,
+      });
+      alert(result.message);
+      setShowDeleteModal(false);
+      setDeleteConfirmText('');
+      setSelectedAdvertiser(null);
+      loadMerchants();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : '삭제에 실패했습니다.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handlePurgeDemo = async () => {
+    if (!isSuperAdmin) return;
+    if (!window.confirm('데모/테스트 광고주(데모·테스트 상호, lc_advertiser)와 연결 상품을 삭제할까요?')) return;
+    const confirm = window.prompt('계속하려면 "삭제"를 입력하세요');
+    if (confirm !== '삭제') return;
+    setPurging(true);
+    try {
+      const result = await purgeAdminDemoData({ confirm: '삭제', resetConversions: false, purgeTestNamed: true });
+      alert(result.message);
+      loadMerchants();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '정리에 실패했습니다.');
+    } finally {
+      setPurging(false);
+    }
+  };
+
   return (
     <AdminLayout activeMenu="advertisers" title="광고주 관리" description="광고주별 광고상품, 광고비, 디비 처리 현황을 관리하세요.">
       
@@ -107,6 +154,20 @@ export function AdminAdvertisers() {
         <SummaryCard title="광고비 부족" value={String(summary.lowBalance)} suffix="곳" color="red" highlight icon={<AlertCircle size={18} />} />
         <SummaryCard title="승인 대기" value={String(summary.pending)} suffix="곳" color="yellow" highlight icon={<Clock size={18} />} />
       </div>
+
+      {isSuperAdmin ? (
+        <div className="mb-6 flex justify-end">
+          <button
+            type="button"
+            disabled={purging}
+            onClick={() => void handlePurgeDemo()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-bold hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            {purging ? '정리 중...' : '테스트/데모 광고주 일괄 정리'}
+          </button>
+        </div>
+      ) : null}
 
       <div className="grid lg:grid-cols-4 gap-6 mb-8">
         <div className="lg:col-span-3 flex flex-col">
@@ -435,6 +496,21 @@ export function AdminAdvertisers() {
                     {updating ? '처리 중...' : '중지 해제 (운영중)'}
                   </button>
                 )}
+                {isSuperAdmin && selectedAdvertiser.id ? (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => {
+                      setDeleteConfirmText('');
+                      setActionError('');
+                      setShowDeleteModal(true);
+                    }}
+                    className="col-span-2 py-2.5 border border-red-200 bg-white text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 disabled:opacity-60 transition-colors shadow-sm inline-flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} />
+                    광고주 삭제
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -446,6 +522,57 @@ export function AdminAdvertisers() {
           )}
         </div>
       </div>
+
+      {showDeleteModal && selectedAdvertiser ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="font-bold text-lg text-slate-900">광고주 삭제</div>
+            <p className="text-sm text-slate-600">
+              <strong className="text-slate-800">{selectedAdvertiser.name}</strong> 광고주를 삭제하시겠습니까?
+              연결된 광고상품도 함께 삭제됩니다.
+            </p>
+            {selectedAdvertiser.totalDb > 0 ? (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                접수 DB가 {selectedAdvertiser.totalDb.toLocaleString()}건 있습니다. 일반 삭제는 불가하며, 강제 삭제 시 DB도 함께 제거됩니다.
+              </p>
+            ) : null}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">
+                계속하려면 <span className="text-red-600">삭제</span>를 입력하세요
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="삭제"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-red-400"
+              />
+            </div>
+            {actionError ? <p className="text-sm text-red-600">{actionError}</p> : null}
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold text-slate-700"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={deleting || deleteConfirmText !== '삭제'}
+                onClick={() => void handleDelete(selectedAdvertiser.totalDb > 0)}
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {deleting ? '삭제 중...' : selectedAdvertiser.totalDb > 0 ? '강제 삭제' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }

@@ -1,30 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { Database, Download } from 'lucide-react';
-import { AdminConversion, fetchAdminConversions } from '../../lib/api';
-
-const fallbackRows: AdminConversion[] = [
-  { id: 'DB-260706-102', cvId: 0, date: '07.06 15:42', customer: '김*성', campaign: '개인회생 상담 DB', partner: 'PT-8832', advertiser: '희망법무법인', status: '승인완료', statusCode: 'approved', price: 50000 },
-  { id: 'DB-260706-098', cvId: 0, date: '07.06 14:18', customer: '박*민', campaign: '신용대출 조회', partner: 'PT-1029', advertiser: '(주)성공대부', status: '확인중', statusCode: 'pending', price: 0 },
-];
+import { Database, Download, Trash2 } from 'lucide-react';
+import { AdminConversion, fetchAdminConversions, resetAdminConversions } from '../../lib/api';
+import { isLcSuperAdmin } from '../../lib/auth';
 
 export function AdminConversions() {
-  const [rows, setRows] = useState<AdminConversion[]>(fallbackRows);
-  const [summary, setSummary] = useState({ todayReceived: 248, approved: 173, rejected: 42, pending: 18 });
+  const [rows, setRows] = useState<AdminConversion[]>([]);
+  const [summary, setSummary] = useState({ todayReceived: 0, approved: 0, rejected: 0, pending: 0 });
+  const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
+  const isSuperAdmin = isLcSuperAdmin();
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true);
     fetchAdminConversions()
       .then((data) => {
-        if (data.items.length) {
-          setRows(data.items);
-        }
+        setRows(data.items);
         setSummary(data.summary);
       })
       .catch(() => {
-        // 샘플 UI fallback
-      });
+        setRows([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleReset = async () => {
+    if (!isSuperAdmin) return;
+    if (!window.confirm('전체 디비 목록을 모두 삭제(초기화)할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+    const confirm = window.prompt('계속하려면 "초기화"를 입력하세요');
+    if (confirm !== '초기화') return;
+    setResetting(true);
+    try {
+      const result = await resetAdminConversions('초기화');
+      alert(result.message);
+      load();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '초기화에 실패했습니다.');
+    } finally {
+      setResetting(false);
+    }
+  };
 
   return (
     <AdminLayout activeMenu="db" title="전체 디비 관리" description="전체 접수·승인·취소 디비와 수익 분배를 조회합니다.">
@@ -32,7 +52,7 @@ export function AdminConversions() {
         <SummaryCard title="오늘 접수" value={String(summary.todayReceived)} suffix="건" />
         <SummaryCard title="승인 완료" value={String(summary.approved)} suffix="건" color="emerald" highlight />
         <SummaryCard title="취소/무효" value={String(summary.rejected)} suffix="건" color="red" />
-        <SummaryCard title="검수 대기" value={String(summary.pending)} suffix="건" color="orange" />
+        <SummaryCard title="검수 대기" value={String(summary.pending)} suffix="건" color="amber" />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -41,10 +61,23 @@ export function AdminConversions() {
             <Database size={20} className="text-cyan-500" />
             전체 디비 목록
           </h2>
-          <button type="button" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">
-            <Download size={16} />
-            엑셀 다운로드
-          </button>
+          <div className="flex items-center gap-2">
+            {isSuperAdmin ? (
+              <button
+                type="button"
+                disabled={resetting}
+                onClick={() => void handleReset()}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                {resetting ? '초기화 중...' : '목록 초기화'}
+              </button>
+            ) : null}
+            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">
+              <Download size={16} />
+              엑셀 다운로드
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[960px]">
@@ -61,20 +94,30 @@ export function AdminConversions() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50/80">
-                  <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.id}</td>
-                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.date}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{row.customer}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{row.partner}</td>
-                  <td className="px-4 py-3 text-slate-700">{row.advertiser}</td>
-                  <td className="px-4 py-3 text-slate-700">{row.campaign}</td>
-                  <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
-                  <td className="px-4 py-3 text-right tabular-nums text-cyan-600 font-semibold">
-                    {row.price > 0 ? `${row.price.toLocaleString()}원` : '-'}
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500">불러오는 중...</td>
                 </tr>
-              ))}
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-slate-500">등록된 디비가 없습니다.</td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50/80">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.id}</td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.date}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{row.customer}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{row.partner}</td>
+                    <td className="px-4 py-3 text-slate-700">{row.advertiser}</td>
+                    <td className="px-4 py-3 text-slate-700">{row.campaign}</td>
+                    <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
+                    <td className="px-4 py-3 text-right tabular-nums text-cyan-600 font-semibold">
+                      {row.price > 0 ? `${row.price.toLocaleString()}원` : '-'}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

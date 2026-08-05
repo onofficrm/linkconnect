@@ -30,13 +30,13 @@ export default function HeroSection() {
 
                     <div className={styles.heroImageCol}>
                         <div className={styles.heroImageCard}>
-                            <Image width={397} height={500} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" priority />
+                            <Image width={397} height={500} src={modemoAsset("/images/1_천안상가.jpg")} alt="천안 지역 상가의 철거 공사를 투명한 견적으로 깔끔하게 완료한 현장 사진" priority={!isMobile} />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>천안 상가</div>
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image width={667} height={500} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority />
+                            <Image width={667} height={500} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority={!isMobile} />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>용인 주택</div>
                         </div>
@@ -116,7 +116,7 @@ export default function HeroSection() {
                     <div className={styles.heroImagesMarquee}>
                         {/* First set of images */}
                         <div className={styles.heroImageCard}>
-                            <Image width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority />
+                            <Image width={123} height={188} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority={isMobile} />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>용인 주택</div>
                         </div>
