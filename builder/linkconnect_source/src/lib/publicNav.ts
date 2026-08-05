@@ -23,10 +23,10 @@ export const companySubItems: NavLinkItem[] = [
 /** @deprecated Footer 등 — companySubItems 사용 */
 export const companyNavItems = companySubItems;
 
-/** 캠페인·프로모션 — 홈에서는 섹션 스크롤, 그 외 경로에서는 전용 페이지 */
+/** 캠페인·프로모션 — 독립 목록 페이지로 이동 (카테고리 필터는 각 페이지에서) */
 export const campaignNavItems: NavLinkItem[] = [
-  { to: '/cpa-list', label: 'CPA', scrollTarget: 'cpa' },
-  { to: '/cps', label: 'CPS', scrollTarget: 'cps' },
+  { to: '/cpa-list', label: 'CPA' },
+  { to: '/cps', label: 'CPS' },
   // 복원: EVENTS_MENU_ENABLED = true
   ...(EVENTS_MENU_ENABLED
     ? [{ to: '/events', label: '이벤트/프로모션', scrollTarget: 'events' } satisfies NavLinkItem]
@@ -41,10 +41,21 @@ export const communityNavItem: NavLinkItem = {
 
 /** 푸터 — 캠페인 */
 export const footerCampaignNavItems: NavLinkItem[] = [
-  { to: '/cpa-list', label: 'CPA', scrollTarget: 'cpa' },
-  { to: '/cps', label: 'CPS', scrollTarget: 'cps' },
+  { to: '/cpa-list', label: 'CPA' },
+  { to: '/cps', label: 'CPS' },
   { to: '/', label: '콜디비란?', scrollTarget: 'call-db' },
 ];
+
+/** CPA/CPS 메뉴 활성 경로 (상세 페이지 포함) */
+export function isCampaignNavActive(pathname: string, to: string): boolean {
+  if (to === '/cpa-list') {
+    return pathname === '/cpa-list' || pathname.startsWith('/cpa/');
+  }
+  if (to === '/cps') {
+    return pathname === '/cps' || pathname.startsWith('/cps/');
+  }
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
 
 /** 푸터 — 서비스 */
 export const footerServiceNavItems: NavLinkItem[] = [

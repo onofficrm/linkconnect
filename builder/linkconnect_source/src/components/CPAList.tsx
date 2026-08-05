@@ -8,7 +8,16 @@ import { cpaCardImageUrl } from '../lib/optimizedImage';
 import { HomeSectionAnchor } from './HomeSectionAnchor';
 import { CallDbBadge, CallDbStatsHint } from './CallDbBadge';
 
-const filters = ['전체', '고수익', '신규', '승인율 높은 상품', '법률', '병원', '보험', '교육', '부동산'];
+/** 홈 미리보기용 — 클릭 시 CPA 독립 목록의 해당 카테고리로 이동 */
+const categoryShortcuts = [
+  { label: '전체', category: '' },
+  { label: '법률', category: '법률' },
+  { label: '병원', category: '병원' },
+  { label: '생활서비스', category: '생활서비스' },
+  { label: '금융', category: '금융' },
+  { label: '교육', category: '교육' },
+  { label: '렌탈', category: '렌탈' },
+];
 
 export function CPAList() {
   const [items, setItems] = useState<PublicCampaign[]>([]);
@@ -53,9 +62,10 @@ export function CPAList() {
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {filters.map((filter, i) => (
-            <button
-              key={filter}
+          {categoryShortcuts.map((filter, i) => (
+            <Link
+              key={filter.label}
+              to={filter.category ? `/cpa-list?category=${encodeURIComponent(filter.category)}` : '/cpa-list'}
               className={cn(
                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm',
                 i === 0
@@ -63,8 +73,8 @@ export function CPAList() {
                   : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50',
               )}
             >
-              {filter}
-            </button>
+              {filter.label}
+            </Link>
           ))}
         </div>
 

@@ -1,18 +1,34 @@
 import { Search, Info, CheckCircle2, AlertTriangle, XCircle, ShoppingBag, Clock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { CpsPublicList } from '../../components/cps/CpsPublicList';
 
 const fallbackCategories = ['전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타'];
 
+function normalizeCategory(raw: string | null, categories: string[]): string {
+  const value = (raw || '').trim();
+  if (!value || value === '전체') return '전체';
+  if (categories.includes(value)) return value;
+  return '전체';
+}
+
 export function CpsList() {
-  const [activeCategory, setActiveCategory] = useState('전체');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [categories, setCategories] = useState(fallbackCategories);
   const [items, setItems] = useState<PublicCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const activeCategory = normalizeCategory(searchParams.get('category'), categories);
+
+  const setActiveCategory = (cat: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (!cat || cat === '전체') next.delete('category');
+    else next.set('category', cat);
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +66,23 @@ export function CpsList() {
     [items],
   );
 
+  const groupedByCategory = useMemo(() => {
+    if (activeCategory !== '전체') return [];
+    const order = categories.filter((c) => c !== '전체');
+    const map = new Map<string, PublicCampaign[]>();
+    items.forEach((item) => {
+      const key = item.category || '기타';
+      const list = map.get(key) || [];
+      list.push(item);
+      map.set(key, list);
+    });
+    const keys = [
+      ...order.filter((c) => map.has(c)),
+      ...[...map.keys()].filter((c) => !order.includes(c)),
+    ];
+    return keys.map((category) => ({ category, items: map.get(category) || [] }));
+  }, [activeCategory, categories, items]);
+
   return (
     <div className="bg-slate-50 min-h-screen pt-32 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,7 +92,7 @@ export function CpsList() {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-4">CPS 광고상품</h1>
           <p className="text-slate-600 text-lg max-w-3xl">
-            구매·결제가 발생한 실적 기준으로 수수료를 받을 수 있는 CPS 캠페인입니다. 쿠키 기간 내 구매 전환을 추적합니다.
+            구매·결제가 발생한 실적 기준으로 수수료를 받을 수 있는 CPS 캠페인입니다. 카테고리별로 나눠 확인할 수 있습니다.
           </p>
         </div>
 
@@ -97,20 +130,12 @@ export function CpsList() {
           <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
-        {recommendedItems.length > 0 && (
+        {recommendedItems.length > 0 && activeCategory === '전체' && !searchQuery.trim() && (
           <div className="mb-10">
             <h2 className="text-xl font-bold text-slate-900 mb-4">추천 CPS 캠페인</h2>
             <CpsPublicList items={recommendedItems} compact />
           </div>
         )}
-
-        {recommendedItems.length > 0 ? <div className="h-px bg-slate-200 w-full mb-10" /> : null}
-
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">
-            전체 CPS <span className="text-cyan-600">({items.length})</span>
-          </h2>
-        </div>
 
         {loading ? (
           <div className="py-16 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">CPS 캠페인을 불러오는 중...</div>
@@ -119,10 +144,37 @@ export function CpsList() {
             <p className="text-slate-500 mb-4">표시할 CPS 캠페인이 없습니다.</p>
             <Link to="/cpa-list" className="text-cyan-600 font-bold">CPA 상품 보기</Link>
           </div>
-        ) : (
-          <div className="mb-16">
-            <CpsPublicList items={items} />
+        ) : activeCategory === '전체' ? (
+          <div className="space-y-12 mb-16">
+            {groupedByCategory.map((group) => (
+              <section key={group.category}>
+                <div className="mb-4 flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {group.category} <span className="text-cyan-600">({group.items.length})</span>
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory(group.category)}
+                    className="text-sm font-bold text-cyan-600 hover:text-cyan-700"
+                  >
+                    이 카테고리만 보기
+                  </button>
+                </div>
+                <CpsPublicList items={group.items} />
+              </section>
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">
+                {activeCategory} <span className="text-cyan-600">({items.length})</span>
+              </h2>
+            </div>
+            <div className="mb-16">
+              <CpsPublicList items={items} />
+            </div>
+          </>
         )}
 
         <div className="bg-slate-900 rounded-2xl p-8 md:p-10 text-white shadow-xl">

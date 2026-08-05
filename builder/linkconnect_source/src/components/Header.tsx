@@ -7,6 +7,7 @@ import {
   centerNavItems,
   companySubItems,
   communityNavItem,
+  isCampaignNavActive,
   isCompanyNavActive,
   type NavLinkItem,
 } from '../lib/publicNav';
@@ -175,11 +176,7 @@ export function Header() {
               <PublicNavLink
                 key={item.label}
                 item={item}
-                className={navLinkClass(
-                  item.scrollTarget && location.pathname === '/'
-                    ? location.hash === `#${item.scrollTarget}`
-                    : isActive(location.pathname, item.to),
-                )}
+                className={navLinkClass(isCampaignNavActive(location.pathname, item.to))}
               />
             ))}
             <PublicNavLink
@@ -245,7 +242,11 @@ export function Header() {
               key={item.label}
               item={item}
               onNavigate={closeMobile}
-              className="block px-3 py-2.5 pl-5 text-base font-medium text-slate-300 hover:text-white hover:bg-white/5 rounded-lg"
+              className={`block px-3 py-2.5 pl-5 text-base font-medium rounded-lg ${
+                isCampaignNavActive(location.pathname, item.to)
+                  ? 'text-white bg-white/5'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
             />
           ))}
 

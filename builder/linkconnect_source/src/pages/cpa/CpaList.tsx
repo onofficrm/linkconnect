@@ -1,6 +1,6 @@
-import { Search, Info, Link as LinkIcon, Filter, ChevronDown, CheckCircle2, AlertTriangle, XCircle, TrendingUp, ExternalLink } from 'lucide-react';
+import { Search, Info, Link as LinkIcon, CheckCircle2, AlertTriangle, XCircle, TrendingUp, ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchPublicCampaigns, PublicCampaign } from '../../lib/api';
 import { openLandingPage } from '../../lib/utils';
 import { CPA_THUMBNAIL_LIST_IMG_CLASS, CPA_THUMBNAIL_LIST_MEDIA_CLASS } from '../../lib/cpaThumbnail';
@@ -33,7 +33,7 @@ function toCardItem(campaign: PublicCampaign): CampaignCardItem {
     id: campaign.id,
     code: campaign.code || String(campaign.id),
     title: campaign.title,
-    category: campaign.category,
+    category: campaign.category || '기타',
     description: campaign.description || '',
     price: campaign.priceFormatted,
     approvalRate: campaign.approvalRate,
@@ -49,13 +49,29 @@ function toCardItem(campaign: PublicCampaign): CampaignCardItem {
   };
 }
 
+function normalizeCategory(raw: string | null, categories: string[]): string {
+  const value = (raw || '').trim();
+  if (!value || value === '전체') return '전체';
+  if (categories.includes(value)) return value;
+  return '전체';
+}
+
 export function CpaList() {
-  const [activeCategory, setActiveCategory] = useState('전체');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [categories, setCategories] = useState(fallbackCategories);
   const [items, setItems] = useState<CampaignCardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const activeCategory = normalizeCategory(searchParams.get('category'), categories);
+
+  const setActiveCategory = (cat: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (!cat || cat === '전체') next.delete('category');
+    else next.set('category', cat);
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +113,23 @@ export function CpaList() {
     [items],
   );
 
+  const groupedByCategory = useMemo(() => {
+    if (activeCategory !== '전체') return [];
+    const order = categories.filter((c) => c !== '전체');
+    const map = new Map<string, CampaignCardItem[]>();
+    items.forEach((item) => {
+      const key = item.category || '기타';
+      const list = map.get(key) || [];
+      list.push(item);
+      map.set(key, list);
+    });
+    const keys = [
+      ...order.filter((c) => map.has(c)),
+      ...[...map.keys()].filter((c) => !order.includes(c)),
+    ];
+    return keys.map((category) => ({ category, items: map.get(category) || [] }));
+  }, [activeCategory, categories, items]);
+
   return (
     <div className="bg-slate-50 min-h-screen pt-32 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -104,6 +137,7 @@ export function CpaList() {
           <h1 className="text-3xl font-bold text-slate-900 mb-4">CPA 광고상품</h1>
           <p className="text-slate-600 text-lg max-w-3xl">
             상담 신청, 회원가입, 견적 문의 등 성과가 발생한 디비 기준으로 수익을 받을 수 있는 CPA 캠페인입니다.
+            카테고리별로 나눠 확인할 수 있습니다.
           </p>
         </div>
 
@@ -111,6 +145,7 @@ export function CpaList() {
           {categories.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setActiveCategory(cat)}
               className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === cat
@@ -142,7 +177,7 @@ export function CpaList() {
           </div>
         )}
 
-        {recommendedItems.length > 0 && (
+        {recommendedItems.length > 0 && activeCategory === '전체' && !searchQuery.trim() && (
           <div className="mb-12">
             <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-emerald-500" />
@@ -156,22 +191,48 @@ export function CpaList() {
           </div>
         )}
 
-        <div className="h-px bg-slate-200 w-full mb-12" />
-
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">전체 캠페인 <span className="text-emerald-600">({items.length})</span></h2>
-        </div>
-
         {loading ? (
           <div className="py-16 text-center text-slate-500">캠페인을 불러오는 중...</div>
         ) : items.length === 0 ? (
           <div className="py-16 text-center text-slate-500">표시할 CPA 캠페인이 없습니다.</div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-            {items.map((item) => (
-              <CampaignCard key={item.id} item={item} />
+        ) : activeCategory === '전체' ? (
+          <div className="space-y-14 mb-16">
+            {groupedByCategory.map((group) => (
+              <section key={group.category} id={`cat-${encodeURIComponent(group.category)}`}>
+                <div className="mb-6 flex items-end justify-between gap-4 border-b border-slate-200 pb-3">
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {group.category}{' '}
+                    <span className="text-emerald-600">({group.items.length})</span>
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory(group.category)}
+                    className="text-sm font-bold text-emerald-600 hover:text-emerald-700"
+                  >
+                    이 카테고리만 보기
+                  </button>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {group.items.map((item) => (
+                    <CampaignCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
+        ) : (
+          <>
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">
+                {activeCategory} <span className="text-emerald-600">({items.length})</span>
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+              {items.map((item) => (
+                <CampaignCard key={item.id} item={item} />
+              ))}
+            </div>
+          </>
         )}
 
         <div className="bg-slate-900 rounded-2xl p-8 md:p-10 text-white shadow-xl">
