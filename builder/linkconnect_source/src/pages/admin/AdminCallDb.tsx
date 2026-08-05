@@ -142,7 +142,10 @@ export function AdminCallDb() {
   useEffect(() => {
     loadAll();
     fetchAdminPartners().then((d) => setPartners(d.items)).catch(() => setPartners([]));
-    fetchAdminCampaigns({ status: 'active' }).then((d) => setCampaigns(d.items)).catch(() => setCampaigns([]));
+    // status=active 는 광고비 충분 캠페인만 반환함 → 콜디비 배정은 잔액 부족(모두의철거 등)도 포함
+    fetchAdminCampaigns()
+      .then((d) => setCampaigns(d.items.filter((c) => c.statusCode === 'active')))
+      .catch(() => setCampaigns([]));
   }, [loadAll]);
 
   useEffect(() => {
@@ -757,6 +760,7 @@ export function AdminCallDb() {
             <div className="font-bold text-slate-800 mb-1">파트너·캠페인 직접 배정</div>
             <p className="text-xs text-slate-500 mb-3">
               파트너는 캠페인당 번호 1개입니다. 다른 캠페인을 고르면 추가로 배정되고, 같은 캠페인이면 기존 번호를 교체합니다.
+              광고비 부족 캠페인(예: 모두의철거·yevely.kr)도 배정 목록에 포함됩니다.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <select value={directPt} onChange={(e) => setDirectPt(e.target.value)} className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
@@ -768,6 +772,7 @@ export function AdminCallDb() {
                 {campaigns.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
+                    {c.lowBalance ? ' (광고비부족)' : ''}
                     {c.partnerPrice > 0
                       ? ` · P ${c.partnerPrice.toLocaleString()} / A ${(c.advertiserPrice || c.partnerPrice).toLocaleString()}`
                       : ''}
