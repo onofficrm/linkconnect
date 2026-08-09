@@ -5,7 +5,7 @@ import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { InsightBanner, RankBadge, ProgressBar, tableRowClass } from '../../components/center-ui';
 import { 
   Building2, Database, ShieldAlert, CreditCard, 
-  ServerCrash, RefreshCw, AlertCircle, PhoneCall, Headphones, FileText
+  ServerCrash, RefreshCw, AlertCircle, PhoneCall, Headphones, FileText, Globe2
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, ComposedChart, Line, CartesianGrid } from 'recharts';
 import { fetchAdminDashboard, fetchAdminAiSummary } from '../../lib/api';
@@ -70,6 +70,7 @@ export function AdminDashboard() {
     todayRejected: 42,
     todayRate: 69.7,
     todayRevenue: 8650000,
+    todayEmbed: 0,
     pendingDb: 18,
     pendingCharge: 2,
     pendingPartners: 1,
@@ -177,7 +178,7 @@ export function AdminDashboard() {
       <InsightBanner
         accent="slate"
         message={<>오늘 접수 <strong>{summary.todayReceived}건</strong> · 승인 <strong>{summary.todayApproved}건</strong> · 승인율 <strong>{summary.todayRate}%</strong></>}
-        subMessage={`처리 대기 DB ${summary.pendingDb}건, 계약 승인 대기 ${summary.pendingContracts ?? 0}건, 충전 대기 ${summary.pendingCharge}건, 광고비 부족 광고주 ${lowBalanceMerchants}곳`}
+        subMessage={`외부위젯 ${summary.todayEmbed ?? 0}건 · 처리 대기 DB ${summary.pendingDb}건 · 계약 승인 대기 ${summary.pendingContracts ?? 0}건 · 충전 대기 ${summary.pendingCharge}건`}
         actions={[
           { label: '승인 대기 DB', to: '/admin/conversions' },
           {
@@ -185,13 +186,14 @@ export function AdminDashboard() {
             to: '/admin/contracts?status=review_pending',
             variant: (summary.pendingContracts ?? 0) > 0 ? undefined : 'secondary',
           },
-          { label: '충전 승인', to: '/admin/billing', variant: 'secondary' },
+          { label: '외부 위젯', to: '/admin/embed', variant: 'secondary' },
         ]}
       />
       <AiReportInsight title="AI 운영 브리핑" fetchSummary={fetchAdminAiSummary} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" caption="금일 유입" />
+        <SummaryCard title="오늘 외부위젯" value={String(summary.todayEmbed ?? 0)} suffix="건" color="cyan" highlight caption="홈페이지·WP" />
         <SummaryCard title="오늘 승인 DB" value={String(summary.todayApproved)} suffix="건" color="emerald" highlight caption="처리 완료" />
         <SummaryCard title="오늘 취소/무효 DB" value={String(summary.todayRejected)} suffix="건" color="red" highlight />
         <SummaryCard title="오늘 승인율" value={String(summary.todayRate)} suffix="%" trend={summary.todayRate >= 70 ? 2.4 : -1.2} trendLabel="전일 대비" />
@@ -318,6 +320,18 @@ export function AdminDashboard() {
               </div>
               <Link to="/admin/partners" className="text-xs font-bold text-yellow-700 hover:text-yellow-800 bg-white px-3 py-1.5 rounded-lg border border-yellow-200 transition-colors shadow-sm">바로가기</Link>
             </div>
+
+            {(summary.todayEmbed ?? 0) > 0 && (
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-cyan-50 border border-cyan-100 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600">
+                    <Globe2 size={18} />
+                  </div>
+                  <span className="text-cyan-900 font-medium text-sm">오늘 외부위젯 접수 <strong className="text-cyan-700 ml-1">{summary.todayEmbed}건</strong></span>
+                </div>
+                <Link to="/admin/conversions?source=embed" className="text-xs font-bold text-cyan-700 hover:text-cyan-800 bg-white px-3 py-1.5 rounded-lg border border-cyan-200 transition-colors shadow-sm">바로가기</Link>
+              </div>
+            )}
 
             {(summary.pendingCallRequests ?? 0) > 0 && (
               <div className="flex items-center justify-between p-3.5 rounded-xl bg-violet-50 border border-violet-100 group">

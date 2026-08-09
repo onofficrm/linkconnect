@@ -8,7 +8,24 @@ if ($method === 'GET') {
 
     $filters = array(
         'status' => isset($_GET['status']) ? (string) $_GET['status'] : '',
+        'source' => isset($_GET['source']) ? (string) $_GET['source'] : '',
     );
+
+    $format = isset($_GET['format']) ? strtolower(trim((string) $_GET['format'])) : '';
+    if ($format === 'csv') {
+        if (!lc_db_installed()) {
+            lc_api_error('DB가 설치되지 않았습니다.', 'DB_NOT_READY', 400);
+        }
+        $csv = function_exists('lc_admin_conversions_export_csv')
+            ? lc_admin_conversions_export_csv($filters, 5000)
+            : '';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="conversions_' . date('Ymd_His') . '.csv"');
+        header('Cache-Control: no-store');
+        echo "\xEF\xBB\xBF"; // Excel UTF-8 BOM
+        echo $csv;
+        exit;
+    }
 
     $items = array();
     $summary = array(

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle, PhoneCall, Store, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle, PhoneCall, Store, FileText, Globe2 } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { getLcAuth, getMemberDisplayName } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
@@ -28,6 +28,7 @@ const sidebarSections = [
       { id: 'campaigns', label: '광고상품 관리', icon: <Briefcase size={20} />, path: '/admin/campaigns' },
       { id: 'cps', label: 'CPS 관리', icon: <Store size={20} />, path: '/admin/cps/setup' },
       { id: 'db', label: '전체 디비 관리', icon: <Database size={20} />, path: '/admin/conversions' },
+      { id: 'embed', label: '외부 상담 위젯', icon: <Globe2 size={20} />, path: '/admin/embed' },
       { id: 'call', label: '콜디비 관리', icon: <PhoneCall size={20} />, path: '/admin/call' },
     ],
   },

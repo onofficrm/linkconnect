@@ -9,6 +9,7 @@ import {
   LayoutDashboard, 
   MessageSquare, 
   Search, 
+  Globe2,
   Target, 
   User, 
   Wallet
@@ -38,10 +39,22 @@ export function AdvertiserDashboard() {
   const auth = getLcAuth();
   const showContractCard = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
   const [balance, setBalance] = useState('0');
-  const [summary, setSummary] = useState({ pending: 0, todayReceived: 0, todaySpend: 0 });
+  const [summary, setSummary] = useState({ pending: 0, todayReceived: 0, todaySpend: 0, todayEmbed: 0, embedTotal: 0 });
   const [wallet, setWallet] = useState({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
   const [chartData, setChartData] = useState<typeof fallbackChartData>([]);
-  const [recent, setRecent] = useState<Array<{ id: string; date: string; campaign: string; name: string; phone: string; status: string; price: number; needsAction: boolean }>>([]);
+  const [recent, setRecent] = useState<Array<{
+    id: string;
+    date: string;
+    campaign: string;
+    name: string;
+    phone: string;
+    status: string;
+    price: number;
+    needsAction: boolean;
+    source?: string;
+    channel?: string;
+    pageHost?: string;
+  }>>([]);
   const [pendingAction, setPendingAction] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
@@ -58,7 +71,7 @@ export function AdvertiserDashboard() {
       })
       .catch(() => {
         setBalance('0');
-        setSummary({ pending: 0, todayReceived: 0, todaySpend: 0 });
+        setSummary({ pending: 0, todayReceived: 0, todaySpend: 0, todayEmbed: 0, embedTotal: 0 });
         setWallet({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
         setChartData([]);
         setRecent([]);
@@ -68,6 +81,7 @@ export function AdvertiserDashboard() {
   }, []);
 
   const monthlyNet = wallet.monthlyCharge - wallet.monthlySpend;
+  const todayEmbed = summary.todayEmbed ?? 0;
 
   useEffect(() => {
     if (showContractCard || !auth.merchantContractSigned) {
@@ -110,22 +124,49 @@ export function AdvertiserDashboard() {
         <InsightBanner
           accent="cyan"
           message={<>오늘 접수 DB <strong>{summary.todayReceived}건</strong>, 승인 대기 <strong>{summary.pending}건</strong>입니다.</>}
-          subMessage="처리가 필요한 디비를 먼저 확인하면 광고비 소진과 전환율 관리가 수월해집니다."
+          subMessage={
+            todayEmbed > 0
+              ? `외부위젯 오늘 ${todayEmbed}건 · 누적 ${summary.embedTotal ?? 0}건 · 처리가 필요한 디비를 먼저 확인하세요.`
+              : '처리가 필요한 디비를 먼저 확인하면 광고비 소진과 전환율 관리가 수월해집니다.'
+          }
           actions={[
             { label: '디비 처리하기', to: '/advertiser/db', variant: 'primary' },
-            { label: '마케팅 성과 보기', to: '/advertiser/marketing', variant: 'secondary' },
+            { label: '외부위젯만 보기', to: '/advertiser/db?source=embed', variant: 'secondary' },
           ]}
         />
 
         {loading ? (
-          <SkeletonCardGrid count={4} />
+          <SkeletonCardGrid count={5} />
         ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <SummaryCard title="광고비 잔액" value={balance} suffix="원" highlight color="cyan" caption="실시간 잔액" />
           <SummaryCard title="승인대기 DB" value={String(summary.pending)} suffix="건" color="blue" highlight caption="즉시 처리 권장" />
           <SummaryCard title="오늘 접수 DB" value={String(summary.todayReceived)} suffix="건" caption="금일 유입" />
+          <SummaryCard title="오늘 외부위젯" value={String(todayEmbed)} suffix="건" color="cyan" caption="홈페이지·WP" />
           <SummaryCard title="오늘 사용 광고비" value={summary.todaySpend.toLocaleString()} suffix="원" caption="일일 소진" />
         </div>
+        )}
+
+        {todayEmbed > 0 && (
+          <div className="mb-8 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center shrink-0">
+                <Globe2 size={18} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-cyan-950">외부 홈페이지 위젯 접수</div>
+                <p className="text-xs text-cyan-900/80 mt-0.5">
+                  오늘 {todayEmbed}건 · 누적 {summary.embedTotal ?? 0}건이 파트너 사이트 위젯으로 들어왔습니다.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/advertiser/db?source=embed"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-bold shrink-0"
+            >
+              외부위젯 DB 보기
+            </Link>
+          </div>
         )}
 
         {/* Middle Area: Chart & Tables */}
@@ -243,6 +284,9 @@ export function AdvertiserDashboard() {
                     product={row.campaign}
                     status={row.status}
                     needsAction={row.needsAction}
+                    source={row.source}
+                    channel={row.channel}
+                    pageHost={row.pageHost}
                   />
                 ))}
               </tbody>
@@ -254,24 +298,64 @@ export function AdvertiserDashboard() {
   );
 }
 
-function TableRow({ date, name, phone, product, status, needsAction = false }: any) {
+function TableRow({
+  date,
+  name,
+  phone,
+  product,
+  status,
+  needsAction = false,
+  source,
+  channel,
+  pageHost,
+}: {
+  date: string;
+  name: string;
+  phone: string;
+  product: string;
+  status: string;
+  needsAction?: boolean;
+  source?: string;
+  channel?: string;
+  pageHost?: string;
+}) {
+  const isEmbed =
+    source === 'embed' ||
+    ['embed', 'wordpress', 'widget', 'external'].includes((channel || '').toLowerCase());
+
   return (
     <tr className={tableRowClass(undefined, needsAction)}>
       <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{date}</td>
       <td className="px-4 py-4 text-slate-900 font-medium whitespace-nowrap">{name}</td>
       <td className="px-4 py-4 text-slate-600 font-mono text-xs whitespace-nowrap">{phone}</td>
-      <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{product}</td>
+      <td className="px-4 py-4 text-slate-600 whitespace-nowrap">
+        <div className="flex flex-col gap-0.5">
+          <span>{product}</span>
+          {isEmbed ? (
+            <span className="inline-flex w-fit px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 text-[10px] font-bold">
+              외부위젯{pageHost ? ` · ${pageHost}` : ''}
+            </span>
+          ) : null}
+        </div>
+      </td>
       <td className="px-4 py-4 text-center whitespace-nowrap">
         <StatusBadge status={status} />
       </td>
       <td className="px-4 py-4 text-right whitespace-nowrap">
         {needsAction ? (
-          <div className="flex gap-2 justify-end">
-            <button className="px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded text-xs font-bold transition-colors shadow-sm">승인</button>
-            <button className="px-3 py-1.5 bg-red-600 text-white hover:bg-red-700 rounded text-xs font-bold transition-colors shadow-sm">취소</button>
-          </div>
+          <Link
+            to="/advertiser/db"
+            className="inline-flex px-3 py-1.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded text-xs font-bold transition-colors shadow-sm"
+          >
+            처리하기
+          </Link>
         ) : (
-          <button className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-xs font-medium transition-colors">상세보기</button>
+          <Link
+            to="/advertiser/db"
+            className="inline-flex px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded text-xs font-medium transition-colors"
+          >
+            상세보기
+          </Link>
         )}
       </td>
     </tr>

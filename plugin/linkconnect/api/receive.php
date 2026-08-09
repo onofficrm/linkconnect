@@ -15,14 +15,70 @@ if (!$body && $_POST) {
     $body = $_POST;
 }
 
+// 허니팟: 봇이 채운 경우 성공처럼 응답하고 저장하지 않음
+$honeypot = trim((string) ($body['website'] ?? $body['company_url'] ?? ''));
+if ($honeypot !== '') {
+    lc_api_success(array('message' => '상담 신청이 접수되었습니다.', 'duplicate' => false));
+}
+
+$channel = isset($body['channel']) ? trim((string) $body['channel']) : (isset($body['utm_source']) ? trim((string) $body['utm_source']) : '');
+$source = isset($body['source']) ? trim((string) $body['source']) : '';
+if ($source === '' && in_array(strtolower($channel), array('embed', 'wordpress', 'widget', 'external'), true)) {
+    $source = defined('LC_SOURCE_EMBED') ? LC_SOURCE_EMBED : 'embed';
+}
+if ($source === '') {
+    $source = defined('LC_SOURCE_FORM') ? LC_SOURCE_FORM : 'form';
+}
+
+$inquiry = isset($body['inquiry']) ? trim((string) $body['inquiry']) : '';
+$page_url = isset($body['page_url']) ? trim((string) $body['page_url']) : (isset($body['pageUrl']) ? trim((string) $body['pageUrl']) : '');
+if ($page_url !== '') {
+    $page_url = function_exists('mb_substr') ? mb_substr($page_url, 0, 500) : substr($page_url, 0, 500);
+}
+
+$referer = isset($body['referer']) ? trim((string) $body['referer']) : (isset($body['referrer']) ? trim((string) $body['referrer']) : '');
+if ($referer === '' && !empty($_SERVER['HTTP_REFERER'])) {
+    $referer = trim((string) $_SERVER['HTTP_REFERER']);
+}
+if ($referer !== '') {
+    $referer = function_exists('mb_substr') ? mb_substr($referer, 0, 500) : substr($referer, 0, 500);
+}
+
+$utm_source = isset($body['utm_source']) ? trim((string) $body['utm_source']) : (isset($body['utmSource']) ? trim((string) $body['utmSource']) : '');
+$utm_medium = isset($body['utm_medium']) ? trim((string) $body['utm_medium']) : (isset($body['utmMedium']) ? trim((string) $body['utmMedium']) : '');
+$utm_campaign = isset($body['utm_campaign']) ? trim((string) $body['utm_campaign']) : (isset($body['utmCampaign']) ? trim((string) $body['utmCampaign']) : '');
+if (($utm_source === '' || $utm_medium === '' || $utm_campaign === '') && $page_url !== '' && function_exists('lc_embed_parse_utm_from_url')) {
+    $parsed = lc_embed_parse_utm_from_url($page_url);
+    if ($utm_source === '') {
+        $utm_source = (string) ($parsed['utm_source'] ?? '');
+    }
+    if ($utm_medium === '') {
+        $utm_medium = (string) ($parsed['utm_medium'] ?? '');
+    }
+    if ($utm_campaign === '') {
+        $utm_campaign = (string) ($parsed['utm_campaign'] ?? '');
+    }
+}
+
+$sub_id = isset($body['sub_id']) ? trim((string) $body['sub_id']) : '';
+if ($sub_id === '' && $utm_campaign !== '') {
+    $sub_id = $utm_campaign;
+}
+
 $payload = array(
-    'name'    => isset($body['name']) ? (string) $body['name'] : '',
-    'phone'   => isset($body['phone']) ? (string) $body['phone'] : '',
-    'email'   => isset($body['email']) ? (string) $body['email'] : '',
-    'region'  => isset($body['region']) ? (string) $body['region'] : '',
-    'inquiry' => isset($body['inquiry']) ? (string) $body['inquiry'] : '',
-    'channel' => isset($body['channel']) ? (string) $body['channel'] : (isset($body['utm_source']) ? (string) $body['utm_source'] : ''),
-    'sub_id'  => isset($body['sub_id']) ? (string) $body['sub_id'] : (isset($body['utm_campaign']) ? (string) $body['utm_campaign'] : ''),
+    'name'         => isset($body['name']) ? (string) $body['name'] : '',
+    'phone'        => isset($body['phone']) ? (string) $body['phone'] : '',
+    'email'        => isset($body['email']) ? (string) $body['email'] : '',
+    'region'       => isset($body['region']) ? (string) $body['region'] : '',
+    'inquiry'      => $inquiry,
+    'channel'      => $channel,
+    'sub_id'       => $sub_id,
+    'source'       => $source,
+    'page_url'     => $page_url,
+    'referer'      => $referer,
+    'utm_source'   => $utm_source,
+    'utm_medium'   => $utm_medium,
+    'utm_campaign' => $utm_campaign,
 );
 
 if (!function_exists('lc_receive_campaign_matches_request')) {
@@ -81,6 +137,46 @@ if ($lk_code !== '') {
     $link = lc_link_get_with_campaign($lk_code);
     if (!$link || $link['lk_status'] !== 'active' || $link['cp_status'] !== LC_STATUS_ACTIVE) {
         lc_api_error('유효하지 않은 홍보 링크입니다.', 'INVALID_LINK', 404);
+    }
+
+    // 외부 위젯: 허용 도메인·위젯 키 검증
+    $is_embed = ($source === (defined('LC_SOURCE_EMBED') ? LC_SOURCE_EMBED : 'embed'))
+        || in_array(strtolower($channel), array('embed', 'wordpress', 'widget', 'external'), true);
+    if ($is_embed) {
+        $request_host = '';
+        if ($page_url !== '' && function_exists('lc_embed_host_from_url')) {
+            $request_host = lc_embed_host_from_url($page_url);
+        }
+        if ($request_host === '' && function_exists('lc_embed_request_host')) {
+            $request_host = lc_embed_request_host();
+        }
+        if (function_exists('lc_embed_domain_allowed')
+            && !lc_embed_domain_allowed((int) $link['pt_id'], $request_host !== '' ? $request_host : null)
+        ) {
+            lc_api_error('등록된 허용 도메인에서만 상담을 접수할 수 있습니다.', 'DOMAIN_NOT_ALLOWED', 403);
+        }
+
+        $widget_key = isset($body['widgetKey'])
+            ? trim((string) $body['widgetKey'])
+            : (isset($body['widget_key']) ? trim((string) $body['widget_key']) : '');
+        if (function_exists('lc_embed_widget_key_allowed')
+            && !lc_embed_widget_key_allowed((int) $link['pt_id'], $widget_key)
+        ) {
+            lc_api_error('위젯 키가 올바르지 않습니다. 설치 코드를 다시 복사해 주세요.', 'WIDGET_KEY_INVALID', 403);
+        }
+
+        if ($payload['channel'] === '') {
+            $payload['channel'] = 'embed';
+        }
+        $payload['source'] = defined('LC_SOURCE_EMBED') ? LC_SOURCE_EMBED : 'embed';
+
+        // IP 기준 rate limit (10분에 8회)
+        if (function_exists('lc_embed_rate_limit_check')) {
+            $rate = lc_embed_rate_limit_check($lk_code, 8, 600);
+            if (empty($rate['ok'])) {
+                lc_api_error($rate['message'] ?? '잠시 후 다시 시도해 주세요.', 'RATE_LIMITED', 429);
+            }
+        }
     }
 
     $result = lc_conversion_create_from_link($link, $payload);

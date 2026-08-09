@@ -59,6 +59,7 @@ import { AdminApi } from './pages/admin/AdminApi';
 import { AdminSupport } from './pages/admin/AdminSupport';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminConversions } from './pages/admin/AdminConversions';
+import { AdminEmbedWidgets } from './pages/admin/AdminEmbedWidgets';
 import { AdminEvents } from './pages/admin/AdminEvents';
 import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminReviewQueue } from './pages/admin/AdminReviewQueue';
@@ -164,6 +165,7 @@ export default function App() {
           <Route path="admin/ad-apply" element={<AdminAdApply />} />
           <Route path="admin/campaigns" element={<AdminCampaigns />} />
           <Route path="admin/conversions" element={<AdminConversions />} />
+          <Route path="admin/embed" element={<AdminEmbedWidgets />} />
           <Route path="admin/call" element={<AdminCallDb />} />
           <Route path="admin/linkprice" element={<AdminLinkprice />} />
           <Route path="admin/cps" element={<AdminCpsSetup />} />

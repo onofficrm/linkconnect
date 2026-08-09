@@ -9,6 +9,7 @@
   var useBlockProps = wp.blockEditor.useBlockProps;
   var PanelBody = wp.components.PanelBody;
   var TextControl = wp.components.TextControl;
+  var SelectControl = wp.components.SelectControl;
   var ServerSideRender = wp.serverSideRender
     ? wp.serverSideRender
     : wp.components && wp.components.ServerSideRender
@@ -39,6 +40,27 @@
               help: __('비우면 플러그인 설정값을 사용합니다.', 'linkconnect-lead'),
               onChange: function (value) {
                 setAttributes({ lkCode: value });
+              },
+            }),
+            el(TextControl, {
+              label: __('위젯 키 (권장)', 'linkconnect-lead'),
+              value: attributes.widgetKey || '',
+              help: __('파트너센터에서 발급한 wgt_ 키. 발급된 경우 입력하세요.', 'linkconnect-lead'),
+              onChange: function (value) {
+                setAttributes({ widgetKey: value });
+              },
+            }),
+            el(SelectControl, {
+              label: __('위젯 형태', 'linkconnect-lead'),
+              value: attributes.mode || '',
+              options: [
+                { label: __('설정값 사용', 'linkconnect-lead'), value: '' },
+                { label: __('폼형', 'linkconnect-lead'), value: 'form' },
+                { label: __('버튼형', 'linkconnect-lead'), value: 'button' },
+                { label: __('전화형', 'linkconnect-lead'), value: 'phone' },
+              ],
+              onChange: function (value) {
+                setAttributes({ mode: value });
               },
             }),
             el(TextControl, {
