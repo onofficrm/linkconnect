@@ -121,7 +121,7 @@ export const CustomerReviews: React.FC = () => {
             <ChevronRight className="w-6 h-6 aspect-square" />
           </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 sm:px-4 items-start">
             {visibleItems.map((rev, idx) => {
               const hiddenClass =
                 idx === 1 ? 'hidden md:flex' : idx === 2 ? 'hidden lg:flex' : 'flex';
@@ -130,7 +130,7 @@ export const CustomerReviews: React.FC = () => {
               return (
                 <article
                   key={`${rev.id}-${currentIndex}-${idx}`}
-                  className={`${hiddenClass} bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-300 flex-col justify-between max-w-sm mx-auto w-full group`}
+                  className={`${hiddenClass} bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-300 flex-col justify-start max-w-sm mx-auto w-full group h-auto`}
                 >
                   <div className="space-y-3 w-full">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
@@ -149,15 +149,15 @@ export const CustomerReviews: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLightboxPhoto(rev)}
-                      className="relative w-full aspect-[4/5] sm:aspect-[3/4] bg-slate-50 rounded-xl overflow-hidden cursor-pointer group/img border border-slate-100"
+                      className="relative w-full rounded-xl overflow-hidden cursor-pointer group/img border border-slate-100 bg-white block"
                     >
                       <img
                         src={src}
                         alt={`${rev.serviceUsed} 고객 후기 — ${rev.content.slice(0, 40)}`}
                         loading="lazy"
-                        width={400}
-                        height={520}
-                        className="w-full h-full object-contain object-top bg-white group-hover/img:scale-[1.02] transition-transform duration-300"
+                        width={700}
+                        height={400}
+                        className="w-full h-auto block group-hover/img:scale-[1.01] transition-transform duration-300 origin-center"
                       />
                       <div className="absolute inset-0 bg-slate-950/25 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                         <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-white/95 text-slate-900 text-xs font-extrabold rounded-xl shadow-md">
@@ -167,7 +167,6 @@ export const CustomerReviews: React.FC = () => {
                       </div>
                     </button>
 
-                    <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{rev.content}</p>
                     {rev.tags && rev.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {rev.tags.slice(0, 3).map((tag) => (
