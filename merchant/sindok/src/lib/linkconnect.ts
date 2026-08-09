@@ -75,12 +75,21 @@ export function buildInquiryText(fields: {
   spaceType?: string;
   preferredDate?: string;
   memo?: string;
+  photoCount?: number;
+  photoNames?: string[];
 }): string {
   const parts: string[] = [];
   if (fields.location) parts.push(`지역: ${fields.location}`);
   if (fields.serviceType) parts.push(`서비스: ${fields.serviceType}`);
   if (fields.spaceType) parts.push(`공간: ${fields.spaceType}`);
   if (fields.preferredDate) parts.push(`희망일: ${fields.preferredDate}`);
+  if (fields.photoCount && fields.photoCount > 0) {
+    const names =
+      fields.photoNames && fields.photoNames.length > 0
+        ? `:${fields.photoNames.slice(0, 3).join(',')}`
+        : '';
+    parts.push(`현장사진: ${fields.photoCount}장(상담 시 전달${names})`);
+  }
   if (fields.memo) parts.push(`문의: ${fields.memo}`);
   return trimInquiry(parts.join(' | '));
 }

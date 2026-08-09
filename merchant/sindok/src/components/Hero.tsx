@@ -20,11 +20,11 @@ import { trackGenerateLead } from "../lib/analytics";
 import { publicAsset } from "../lib/assets";
 
 const RECENT_REQUESTS = [
-  "방금 전 [서울 강남구] 김*진 고객님 당일 방문 견적 신청 완료",
-  "3분 전 [경기 성남시] 박*우 고객님 1:1 맞춤 케어 전화 상담 완료",
-  "8분 전 [서울 서초구] 이*영 고객님 무료 현장 진단 접수 완료",
-  "12분 전 [인천 연수구] 강*민 고객님 정기 케어 견적 신청 완료",
-  "15분 전 [경기 수원시] 윤*서 고객님 365일 긴급 출장 상담 접수",
+  "방금 전 [서울 강남구] 김*진 고객님 유품정리 당일 견적 신청 완료",
+  "3분 전 [경기 성남시] 박*우 고객님 짐·가구 반출 전화 상담 완료",
+  "8분 전 [서울 서초구] 이*영 고객님 유품정리 무료 견적 접수 완료",
+  "12분 전 [인천 연수구] 강*민 고객님 퇴거 정리 견적 신청 완료",
+  "15분 전 [경기 수원시] 윤*서 고객님 폐기물·잔짐 반출 상담 접수",
 ];
 
 // High quality representative work photo fallback
@@ -40,7 +40,7 @@ export const Hero: React.FC = () => {
     name: "",
     phone: "",
     location: "",
-    serviceType: "전문 공간 정리 및 케어",
+    serviceType: "유품정리서비스",
     agreedPrivacy: true,
   });
 
@@ -190,26 +190,25 @@ export const Hero: React.FC = () => {
             {/* Trust Eyebrow */}
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 border border-amber-400/40 rounded-lg text-amber-300 text-xs sm:text-sm font-extrabold tracking-wide">
               <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>CPA 검증 정식 전문가 팀</span>
-              <span className="text-amber-400 font-bold">| 당일 긴급 출장</span>
+              <span>유품정리서비스 전문팀</span>
+              <span className="text-amber-400 font-bold">| 당일 출장 가능</span>
             </div>
 
-            {/* Main Title (Exact User Text) */}
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight sm:leading-tight tracking-tight">
-              혼자 해결하기 어려운 정리, <br />
+              유품정리서비스, 혼자 빼내기 어려우시죠? <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
-                전문가가 처음부터 끝까지
+                분류부터 반출까지
               </span>{" "}
-              도와드립니다
+              전문팀이 책임집니다
             </h1>
 
-            {/* Sub Copy (Exact User Text) */}
             <p className="text-slate-200 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
-              현장 확인부터 정리·처리·마무리까지 <br className="hidden sm:inline" />
+              초점은 청소가 아니라{" "}
               <strong className="text-white font-bold underline decoration-blue-500 underline-offset-4 decoration-2">
-                경험 많은 전문팀
+                물건을 안전하게 빼내는 것
               </strong>
-              이 신속하고 안전하게 진행합니다.
+              입니다. <br className="hidden sm:inline" />
+              청소는 퇴거 후 빗자루 마감 정도만 진행합니다.
             </p>
 
             {/* Trust Bullet Points (4 Required Points) */}
@@ -242,8 +241,8 @@ export const Hero: React.FC = () => {
                 <div className="w-7 h-7 bg-indigo-500/20 text-indigo-400 rounded-lg flex items-center justify-center mx-auto mb-1.5">
                   <Star className="w-4 h-4 fill-indigo-400" />
                 </div>
-                <div className="text-xs sm:text-sm font-extrabold text-white">깔끔한 마무리</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">무상 A/S 보증</div>
+                <div className="text-xs sm:text-sm font-extrabold text-white">퇴거 간단 마감</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">빗자루 청소 수준</div>
               </div>
             </div>
 
@@ -323,7 +322,7 @@ export const Hero: React.FC = () => {
                         name: "",
                         phone: "",
                         location: "",
-                        serviceType: "전문 공간 정리 및 케어",
+                        serviceType: "유품정리서비스",
                         agreedPrivacy: true,
                       });
                     }}
@@ -401,11 +400,11 @@ export const Hero: React.FC = () => {
                       }
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:bg-white focus:border-blue-600 focus:outline-none transition-all"
                     >
-                      <option value="전문 공간 정리 및 케어">전문 공간 정리 및 케어</option>
-                      <option value="주거 공간 프리미엄 클리닝">주거 공간 프리미엄 클리닝</option>
-                      <option value="상업 / 오피스 정기 케어">상업 / 오피스 정기 케어</option>
-                      <option value="입주 / 이사 전문 케어">입주 / 이사 전문 케어</option>
-                      <option value="특수 오염 / 곰팡이 방제">특수 오염 / 곰팡이 방제</option>
+                      <option value="유품정리서비스">유품정리서비스</option>
+                      <option value="짐·잔짐 반출">짐·잔짐 반출</option>
+                      <option value="가구·가전 수거">가구·가전 수거</option>
+                      <option value="퇴거 정리 (간단 마감 포함)">퇴거 정리 (간단 마감 포함)</option>
+                      <option value="폐기물 처리">폐기물 처리</option>
                     </select>
                   </div>
 

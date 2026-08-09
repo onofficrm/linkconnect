@@ -24,13 +24,13 @@ export const FinalCta: React.FC = () => {
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
           더 이상 망설이지 마세요! <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
-            전문가 1:1 맞춤 진단
+            유품정리 1:1 맞춤 견적
           </span>
           을 무료로 먼저 받아보세요
         </h2>
 
         <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto">
-          전화 한 통 또는 온라인 신청으로 과잉 비용 없이 투명하게 견적을 안내해 드립니다.
+          물품 반출이 핵심입니다. 전화 한 통 또는 온라인 신청으로 투명하게 견적을 안내해 드립니다.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">

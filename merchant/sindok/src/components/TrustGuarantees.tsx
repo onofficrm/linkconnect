@@ -61,7 +61,7 @@ export const TrustGuarantees: React.FC = () => {
             <span className="text-blue-600">4가지 안심 시스템</span>을 보장합니다
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            처음부터 끝까지 투명하고 안전하게, 고객님의 소중한 공간을 케어해 드립니다.
+            처음부터 끝까지 투명하고 안전하게, 유품·짐 반출을 책임지고 도와드립니다.
           </p>
         </div>
 

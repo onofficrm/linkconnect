@@ -16,8 +16,8 @@ interface ComparisonCase {
 const COMPARISON_CASES: ComparisonCase[] = [
   {
     id: "case-1",
-    category: "침실 정리",
-    title: "침실·생활용품 정리 및 공간 확보",
+    category: "유품·짐 반출",
+    title: "침실 유품·생활용품 분류 및 반출",
     beforeImg: publicAsset("work-photo-01.jpg"),
     afterImg: publicAsset("work-photo-02.jpg"),
     duration: "당일 작업",
@@ -26,23 +26,23 @@ const COMPARISON_CASES: ComparisonCase[] = [
   },
   {
     id: "case-2",
-    category: "거실 정리",
-    title: "거실 적체 가구·짐 정리 및 개방감 회복",
+    category: "가구·짐 반출",
+    title: "거실 적체 가구·짐 반출 및 공간 확보",
     beforeImg: publicAsset("work-photo-03.jpg"),
     afterImg: publicAsset("work-photo-04.jpg"),
     duration: "당일 작업",
     location: "아파트 현장",
-    highlight: "가구·가전 정리 · 공간 확장",
+    highlight: "가구·가전 반출 · 공간 개방",
   },
   {
     id: "case-3",
-    category: "폐기물·마감",
-    title: "폐기물 분류·반출 후 마감 정돈",
+    category: "폐기물·퇴거 마감",
+    title: "폐기물 분류·반출 후 퇴거 간단 마감",
     beforeImg: publicAsset("work-photo-05.jpg"),
     afterImg: publicAsset("work-photo-06.jpg"),
     duration: "당일 작업",
     location: "주거 현장",
-    highlight: "폐기물 처리 · 깔끔 마감",
+    highlight: "폐기물 처리 · 빗자루 마감",
   },
 ];
 
@@ -107,13 +107,13 @@ export const BeforeAfterSlider: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-bold text-xs">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>시공 전후 실제 비교 (Before & After)</span>
+            <span>유품정리 전후 실제 비교 (Before & After)</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
-            놀라운 변화를 <span className="text-blue-600">직접 슬라이드</span>하여 확인해보세요
+            반출 전후 변화를 <span className="text-blue-600">직접 슬라이드</span>하여 확인해보세요
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            손가락이나 마우스로 중앙 슬라이더를 좌우로 움직여 정리 전후 모습을 비교해 보세요.
+            손가락이나 마우스로 중앙 슬라이더를 좌우로 움직여 물품 반출 전후 모습을 비교해 보세요.
           </p>
         </div>
 
@@ -170,12 +170,12 @@ export const BeforeAfterSlider: React.FC = () => {
           {/* After Image (Background / Full Width) */}
           <img
             src={activeCase.afterImg}
-            alt={`${activeCase.title} 정리 후`}
+            alt={`${activeCase.title} 반출 후`}
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute top-4 right-4 bg-emerald-600/90 text-white font-extrabold text-xs sm:text-sm px-3.5 py-1.5 rounded-lg shadow-md backdrop-blur-xs flex items-center gap-1.5 z-10">
             <CheckCircle2 className="w-4 h-4" />
-            <span>정리 후 (AFTER)</span>
+            <span>반출 후 (AFTER)</span>
           </div>
 
           {/* Before Image (Clipped overlay based on sliderPosition) */}
@@ -185,12 +185,12 @@ export const BeforeAfterSlider: React.FC = () => {
           >
             <img
               src={activeCase.beforeImg}
-              alt={`${activeCase.title} 정리 전`}
+              alt={`${activeCase.title} 반출 전`}
               className="absolute top-0 left-0 h-full max-w-none object-cover"
               style={{ width: containerRef.current?.getBoundingClientRect().width || "100%" }}
             />
             <div className="absolute top-4 left-4 bg-slate-900/90 text-amber-300 font-extrabold text-xs sm:text-sm px-3.5 py-1.5 rounded-lg shadow-md backdrop-blur-xs z-10">
-              <span>정리 전 (BEFORE)</span>
+              <span>반출 전 (BEFORE)</span>
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export const BeforeAfterSlider: React.FC = () => {
         {/* Quick Tips & Action */}
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            💡 현장 상황에 따라 최적의 수거 및 배치 방법을 맞춤 안내해 드립니다.
+            💡 현장 물품량에 따라 최적의 분류·반출 방법을 맞춤 안내해 드립니다.
           </p>
           <button
             onClick={scrollToForm}

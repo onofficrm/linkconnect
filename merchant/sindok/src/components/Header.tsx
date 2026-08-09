@@ -64,7 +64,7 @@ export const Header: React.FC = () => {
 
             <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-              <span>정식 검증 케어 업체</span>
+              <span>유품정리서비스 전문</span>
             </div>
           </div>
 

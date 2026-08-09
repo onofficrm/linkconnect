@@ -44,7 +44,7 @@ export const Advantages: React.FC = () => {
             <span className="text-blue-600">무엇이 다를까요?</span>
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            숙련된 전문가가 처음 상담부터 현장 마무리까지 완벽하게 케어합니다.
+            숙련된 전문가가 상담부터 물품 반출·퇴거 간단 마감까지 책임집니다.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export const Advantages: React.FC = () => {
 
               <div className="mt-5 pt-3 border-t border-slate-200/80 flex items-center gap-1.5 text-xs font-bold text-emerald-700">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>체계적 보증 케어</span>
+                <span>체계적 반출 진행</span>
               </div>
             </div>
           ))}

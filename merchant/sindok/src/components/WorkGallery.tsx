@@ -42,11 +42,11 @@ export const WorkGallery: React.FC = () => {
             <span>실제 작업사례</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
-            실제 작업 현장을 확인해보세요
+            실제 유품정리·반출 현장을 확인해보세요
           </h2>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            다양한 현장에서 진행한 실제 작업사례입니다. <br className="hidden sm:inline" />
-            사진을 통해 작업 과정과 결과를 확인해보세요.
+            유품·짐·가구 반출이 진행된 실제 현장입니다. <br className="hidden sm:inline" />
+            사진을 통해 반출 전후 변화를 확인해보세요.
           </p>
         </div>
 

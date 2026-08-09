@@ -4,13 +4,13 @@ import { Calculator, Clock, Users, ShieldCheck, ArrowRight, Sparkles } from "luc
 export const EstimateCalculator: React.FC = () => {
   const [spaceType, setSpaceType] = useState("아파트");
   const [sizeRange, setSizeRange] = useState("20~30평");
-  const [serviceDetail, setServiceDetail] = useState("전체 공간 정리");
+  const [serviceDetail, setServiceDetail] = useState("전체 공간 반출");
 
   // Calculate recommendation based on state
   const getCalculation = () => {
     let hours = "3~4시간";
     let team = "2~3인 전담팀";
-    let benefits = "무료 현장 진단 + 방역 소독 서비스";
+    let benefits = "무료 현장 진단 + 퇴거 간단 마감";
 
     if (sizeRange === "10평 미만") {
       hours = "2~3시간";
@@ -29,8 +29,10 @@ export const EstimateCalculator: React.FC = () => {
       team = "4인 이상 맞춤팀";
     }
 
-    if (serviceDetail === "가구/물품 처리 포함") {
-      benefits = "수거 분리 대행 + 무료 현장 진단 + 방역 소독";
+    if (serviceDetail === "가구·가전 수거 포함") {
+      benefits = "가구·가전 수거 + 무료 현장 진단 + 퇴거 간단 마감";
+    } else if (serviceDetail === "부분 공간 반출") {
+      benefits = "부분 반출 견적 + 무료 현장 진단";
     }
 
     return { hours, team, benefits };
@@ -63,10 +65,10 @@ export const EstimateCalculator: React.FC = () => {
             <span>3초 간이 견적 계산기</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-            우리 공간 맞춤 <span className="text-amber-400">예상 작업 일정</span> 확인하기
+            유품정리 맞춤 <span className="text-amber-400">예상 작업 일정</span> 확인하기
           </h2>
           <p className="text-slate-300 text-sm sm:text-base">
-            공간 종류와 평수를 선택하시면 투입 인력 및 예상 작업 시간이 바로 계산됩니다.
+            공간 종류와 평수를 선택하시면 반출 인력 및 예상 작업 시간이 바로 계산됩니다.
           </p>
         </div>
 
@@ -120,10 +122,10 @@ export const EstimateCalculator: React.FC = () => {
             {/* 3. 서비스 요구사항 */}
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-2">
-                3. 정리 및 케어 범위
+                3. 반출·처리 범위
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {["전체 공간 정리", "부분 공간 정리", "가구/물품 처리 포함"].map((detail) => (
+                {["전체 공간 반출", "부분 공간 반출", "가구·가전 수거 포함"].map((detail) => (
                   <button
                     key={detail}
                     onClick={() => setServiceDetail(detail)}
@@ -146,7 +148,7 @@ export const EstimateCalculator: React.FC = () => {
 
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <span className="text-xs font-extrabold text-blue-400 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> 맞춤 시공 진단 결과
+                <Sparkles className="w-3.5 h-3.5" /> 맞춤 반출 진단 결과
               </span>
               <span className="text-[11px] text-slate-400">1:1 현장 방문 무료</span>
             </div>
@@ -168,7 +170,7 @@ export const EstimateCalculator: React.FC = () => {
 
               <div className="flex items-start justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800">
                 <span className="text-xs text-slate-400 flex items-center gap-1.5 shrink-0">
-                  <ShieldCheck className="w-4 h-4 text-blue-400" /> 혜택 및 안심 케어
+                  <ShieldCheck className="w-4 h-4 text-blue-400" /> 포함 안내
                 </span>
                 <span className="text-xs font-bold text-amber-300 text-right">{result.benefits}</span>
               </div>

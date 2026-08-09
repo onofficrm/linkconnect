@@ -75,7 +75,7 @@ export const CustomerReviews: React.FC = () => {
     {
       icon: <ClipboardCheck className="w-5 h-5 text-emerald-600 aspect-square" />,
       title: '작업 완료 후 현장 확인',
-      desc: '작업 종료 후 고객님과 함께 최종 결과를 점검하고 깔끔하게 정돈 마감합니다.',
+      desc: '반출 결과를 함께 점검하고, 필요 시 퇴거 간단 마감(빗자루 청소)으로 마무리합니다.',
     },
   ];
 

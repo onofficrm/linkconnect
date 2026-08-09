@@ -43,15 +43,15 @@ export const PainPoints: React.FC = () => {
             <span>고객 고민 공감</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
-            어디서부터 어떻게 시작해야 할지 <br />
+            빼내야 할 물건이 많아 <br />
             <span className="text-blue-600">막막하신가요?</span>
           </h2>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            정리해야 할 물건이 많거나 대형 가구와 폐기물이 있는 경우, <br className="hidden sm:inline" />
-            개인이 직접 처리하기에는 많은 시간과 체력이 필요합니다.
+            유품·짐·대형 가구와 폐기물이 있는 경우, <br className="hidden sm:inline" />
+            개인이 직접 반출하기에는 많은 시간과 체력이 필요합니다.
           </p>
           <p className="text-slate-500 text-xs sm:text-sm font-medium">
-            전문 작업팀이 현장을 확인하고 필요한 작업을 체계적으로 진행하여 고객님의 부담을 줄여드립니다.
+            전문 작업팀이 물품을 분류·반출하고, 필요 시 퇴거 간단 마감까지 진행해 부담을 줄여드립니다.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export const PainPoints: React.FC = () => {
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] font-bold text-blue-600 flex items-center gap-1">
-                <span>전문 맞춤 케어 진행</span>
+                <span>전문 반출 상담 진행</span>
                 <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
