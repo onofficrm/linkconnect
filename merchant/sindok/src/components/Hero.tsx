@@ -194,12 +194,16 @@ export const Hero: React.FC = () => {
               <span className="text-amber-400 font-bold">| 당일 출장 가능</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight sm:leading-tight tracking-tight">
-              유품정리서비스, 혼자 빼내기 어려우시죠? <br />
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-[1.25] tracking-tight">
+              유품정리서비스,
+              <br />
+              혼자 빼내기 어려우시죠?
+              <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
                 분류부터 반출까지
-              </span>{" "}
-              전문팀이 책임집니다
+              </span>
+              <br />
+              전문팀이 책임집니다.
             </h1>
 
             <p className="text-slate-200 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
