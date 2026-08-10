@@ -1,4 +1,5 @@
-import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp, Download, Sparkles, Palette } from 'lucide-react';
+import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp, Download, Sparkles, Palette, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
 import {
@@ -222,6 +223,13 @@ export function PartnerLinks() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 shrink-0">
+              <Link
+                to="/partner/analytics?source=embed"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50"
+              >
+                <BarChart3 size={14} className="text-cyan-700" />
+                위젯 전환 분석
+              </Link>
               <button
                 type="button"
                 onClick={() => openWidgetGuide(links[0]?.code || '', 'preset')}
