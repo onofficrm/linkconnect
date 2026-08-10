@@ -1,7 +1,10 @@
-import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp, Download } from 'lucide-react';
+import { Copy, ExternalLink, Link as LinkIcon, Plus, MousePointerClick, Target, CheckCircle2, DollarSign, Info, X, Code2, CircleHelp, Download, Sparkles, Palette } from 'lucide-react';
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { PartnerLinkCreateFields, resolvePartnerChannel } from '../../components/partner/PartnerLinkCreateFields';
-import { PartnerWpEmbedGuideModal } from '../../components/partner/PartnerWpEmbedGuideModal';
+import {
+  PartnerWpEmbedGuideModal,
+  type EmbedGuideTabId,
+} from '../../components/partner/PartnerWpEmbedGuideModal';
 import { useEffect, useMemo, useState } from 'react';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import {
@@ -11,7 +14,23 @@ import {
   fetchPartnerLinks,
   PartnerLink,
 } from '../../lib/api';
-import { buildLeadEmbedSnippet, leadEmbedPluginDownloadUrl } from '../../lib/partnerEmbed';
+import { summarizeEmbedWidgetStatus } from '../../lib/embedConversion';
+import { EMBED_PRESETS, normalizeEmbedPreset } from '../../lib/embedPresets';
+import {
+  buildLeadEmbedSnippet,
+  fetchPartnerEmbedSettings,
+  leadEmbedPluginDownloadUrl,
+  type PartnerEmbedOptions,
+} from '../../lib/partnerEmbed';
+
+type EmbedListStatus = {
+  options: PartnerEmbedOptions;
+  hasCustomOptions: boolean;
+  domains: number;
+  embedToday: number;
+  embedTotal: number;
+  hasWidgetKey: boolean;
+};
 
 export function PartnerLinks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +49,8 @@ export function PartnerLinks() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [wpGuideOpen, setWpGuideOpen] = useState(false);
   const [wpGuideLkCode, setWpGuideLkCode] = useState('');
+  const [wpGuideTab, setWpGuideTab] = useState<EmbedGuideTabId>('preset');
+  const [embedStatus, setEmbedStatus] = useState<EmbedListStatus | null>(null);
 
   const notify = (msg: string) => {
     setMessage(msg);
@@ -44,8 +65,24 @@ export function PartnerLinks() {
       .finally(() => setLoading(false));
   };
 
+  const loadEmbedStatus = () => {
+    fetchPartnerEmbedSettings()
+      .then((data) => {
+        setEmbedStatus({
+          options: data.options || {},
+          hasCustomOptions: Boolean(data.hasCustomOptions),
+          domains: (data.domains || []).length,
+          embedToday: data.embedToday ?? 0,
+          embedTotal: data.embedTotal ?? 0,
+          hasWidgetKey: Boolean(data.hasWidgetKey),
+        });
+      })
+      .catch(() => setEmbedStatus(null));
+  };
+
   useEffect(() => {
     loadLinks();
+    loadEmbedStatus();
   }, []);
 
   useEffect(() => {
@@ -70,6 +107,20 @@ export function PartnerLinks() {
     approved: links.reduce((s, l) => s + l.approved, 0),
     confRevenue: links.reduce((s, l) => s + l.confRevenue, 0),
   }), [links]);
+
+  const widgetSummary = useMemo(() => {
+    if (!embedStatus) return null;
+    const presetId = normalizeEmbedPreset(embedStatus.options.preset);
+    const presetLabel = EMBED_PRESETS.find((p) => p.id === presetId)?.label || '기본형';
+    const cro = summarizeEmbedWidgetStatus(embedStatus.options);
+    return { presetId, presetLabel, cro };
+  }, [embedStatus]);
+
+  const openWidgetGuide = (code: string, tab: EmbedGuideTabId = 'preset') => {
+    setWpGuideLkCode(code);
+    setWpGuideTab(tab);
+    setWpGuideOpen(true);
+  };
 
   const handleCreate = async () => {
     if (!campaignId) return;
@@ -119,10 +170,7 @@ export function PartnerLinks() {
           </a>
           <button
             type="button"
-            onClick={() => {
-              setWpGuideLkCode(links[0]?.code || '');
-              setWpGuideOpen(true);
-            }}
+            onClick={() => openWidgetGuide(links[0]?.code || '', 'install')}
             className="px-4 py-2.5 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-slate-700 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
           >
             <CircleHelp size={18} className="text-emerald-600" /> 사용방법 안내
@@ -138,6 +186,61 @@ export function PartnerLinks() {
 
       {message ? (
         <div className="mb-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2">{message}</div>
+      ) : null}
+
+      {widgetSummary && embedStatus ? (
+        <div className="mb-6 rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 to-emerald-50/60 p-4 sm:p-5">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-2 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-slate-900">
+                  <Sparkles size={16} className="text-cyan-700" />
+                  상담 위젯 현황
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-cyan-200 text-[11px] font-bold text-cyan-900">
+                  {widgetSummary.presetLabel}
+                </span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                    widgetSummary.cro.croOn
+                      ? 'bg-emerald-100 border-emerald-200 text-emerald-800'
+                      : 'bg-slate-100 border-slate-200 text-slate-600'
+                  }`}
+                >
+                  {widgetSummary.cro.croSummary}
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-bold text-slate-600">
+                  {embedStatus.hasCustomOptions ? '설정 저장됨' : '기본값 적용 중'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                허용 도메인 {embedStatus.domains}개 · 위젯키 {embedStatus.hasWidgetKey ? '발급됨' : '미발급'} · 오늘 DB{' '}
+                {embedStatus.embedToday}건 · 누적 {embedStatus.embedTotal}건
+                {!embedStatus.hasCustomOptions
+                  ? ' · 미니멀폼·신뢰배지·모바일 CTA가 기본으로 켜져 있습니다. HTML 위젯에서 확인하고 저장하세요.'
+                  : ''}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => openWidgetGuide(links[0]?.code || '', 'preset')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-cyan-200 text-cyan-900 text-xs font-bold hover:bg-cyan-50"
+              >
+                <Palette size={14} />
+                디자인별 미리보기
+              </button>
+              <button
+                type="button"
+                onClick={() => openWidgetGuide(links[0]?.code || '', 'convert')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-700 text-white text-xs font-bold hover:bg-cyan-600"
+              >
+                <Sparkles size={14} />
+                전환 설정
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
@@ -180,75 +283,102 @@ export function PartnerLinks() {
                         </td>
                         <td className="px-4 py-4 font-medium text-slate-600">{link.subId || '-'}</td>
                         <td className="px-4 py-4">
-                          <div className="flex flex-wrap items-center gap-1.5 min-w-[220px] max-w-[360px]">
-                            <button
-                              type="button"
-                              onClick={() => copyUrl(displayUrl, link.id)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 max-w-full"
-                              title={`${displayUrl} (클릭하여 복사)`}
-                            >
-                              <LinkIcon size={14} className="shrink-0 text-slate-400" />
-                              <span className="truncate">{displayUrl}</span>
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busyId === link.id}
-                              onClick={async () => {
-                                setBusyId(link.id);
-                                try {
-                                  const res = await buildPartnerCpaShortlink({ linkId: link.id });
-                                  setShortUrls((prev) => ({ ...prev, [link.id]: res.shortUrl }));
-                                  notify('숏링크로 변환되었습니다.');
-                                } catch (e) {
-                                  notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
-                                } finally {
-                                  setBusyId(null);
+                          <div className="flex flex-col gap-1.5 min-w-[220px] max-w-[380px]">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => copyUrl(displayUrl, link.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 max-w-full"
+                                title={`${displayUrl} (클릭하여 복사)`}
+                              >
+                                <LinkIcon size={14} className="shrink-0 text-slate-400" />
+                                <span className="truncate">{displayUrl}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyId === link.id}
+                                onClick={async () => {
+                                  setBusyId(link.id);
+                                  try {
+                                    const res = await buildPartnerCpaShortlink({ linkId: link.id });
+                                    setShortUrls((prev) => ({ ...prev, [link.id]: res.shortUrl }));
+                                    notify('숏링크로 변환되었습니다.');
+                                  } catch (e) {
+                                    notify(e instanceof Error ? e.message : '숏링크 변환에 실패했습니다.');
+                                  } finally {
+                                    setBusyId(null);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-800 text-xs font-bold disabled:opacity-50"
+                              >
+                                <LinkIcon size={14} />
+                                {busyId === link.id ? '변환 중…' : '숏링크 변환'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copyUrl(displayUrl, link.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
+                                title="링크 복사"
+                              >
+                                {copiedId === link.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                                복사
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openWidgetGuide(link.code, 'preset')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold"
+                                title="상담 위젯 디자인·전환 설정 및 미리보기"
+                              >
+                                <Code2 size={14} />
+                                HTML 위젯
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void copyUrl(
+                                    buildLeadEmbedSnippet(link.code),
+                                    link.id,
+                                    '외부 홈페이지 설치 코드가 복사되었습니다.',
+                                  )
                                 }
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-800 text-xs font-bold disabled:opacity-50"
-                            >
-                              <LinkIcon size={14} />
-                              {busyId === link.id ? '변환 중…' : '숏링크 변환'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => copyUrl(displayUrl, link.id)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold"
-                              title="링크 복사"
-                            >
-                              {copiedId === link.id ? <CheckCircle2 size={14} /> : <Copy size={14} />}
-                              복사
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                void copyUrl(
-                                  buildLeadEmbedSnippet(link.code),
-                                  link.id,
-                                  '외부 홈페이지 설치 코드가 복사되었습니다.',
-                                );
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-bold"
-                              title="외부 홈페이지 상담 위젯 설치 코드 복사"
-                            >
-                              <Code2 size={14} />
-                              HTML 위젯
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setWpGuideLkCode(link.code);
-                                setWpGuideOpen(true);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50"
-                              title="외부 홈페이지 상담 위젯 사용방법"
-                            >
-                              <CircleHelp size={14} />
-                              안내
-                            </button>
-                            <a href={displayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50" title="새 창으로 열기">
-                              <ExternalLink size={14} />
-                            </a>
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50"
+                                title="설치 코드만 복사"
+                              >
+                                <Copy size={14} />
+                                코드
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openWidgetGuide(link.code, 'install')}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50"
+                                title="외부 홈페이지 상담 위젯 사용방법"
+                              >
+                                <CircleHelp size={14} />
+                                안내
+                              </button>
+                              <a href={displayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50" title="새 창으로 열기">
+                                <ExternalLink size={14} />
+                              </a>
+                            </div>
+                            {widgetSummary ? (
+                              <div className="flex flex-wrap items-center gap-1.5 pl-0.5">
+                                <span className="text-[10px] font-bold text-cyan-800 bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded">
+                                  위젯 {widgetSummary.presetLabel}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                    widgetSummary.cro.croOn
+                                      ? 'text-emerald-800 bg-emerald-50 border-emerald-100'
+                                      : 'text-slate-600 bg-slate-50 border-slate-200'
+                                  }`}
+                                >
+                                  {widgetSummary.cro.croOn ? 'CRO ON' : 'CRO OFF'}
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  {embedStatus?.hasCustomOptions ? '저장됨' : '기본값'}
+                                </span>
+                              </div>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-4 py-4 text-right font-bold text-slate-700">{link.clicks.toLocaleString()}</td>
@@ -296,19 +426,17 @@ export function PartnerLinks() {
                 숏링크 변환으로 <code className="text-cyan-300">/s/</code> 짧은 주소를 만든 뒤 복사해 채널에 게시하세요. 클릭은 기존 추적 링크로 연결됩니다.
               </p>
               <p className="text-slate-400 text-xs leading-relaxed">
-                <strong className="text-emerald-400 font-semibold">HTML 위젯</strong> 코드로 외부 홈페이지에 상담폼·전화를 넣고,
-                접수는 플랫폼 실적으로 확인할 수 있습니다.
+                <strong className="text-emerald-400 font-semibold">HTML 위젯</strong>에서 디자인 6종을 미리보고,
+                <strong className="text-cyan-300 font-semibold"> 전환</strong> 탭으로 미니멀폼·신뢰배지·모바일 CTA를 켜세요.
+                기본값이 이미 ON이지만, 저장하면 사이트에 확정 반영됩니다.
               </p>
               <button
                 type="button"
-                onClick={() => {
-                  setWpGuideLkCode(links[0]?.code || '');
-                  setWpGuideOpen(true);
-                }}
+                onClick={() => openWidgetGuide(links[0]?.code || '', 'preset')}
                 className="w-full mt-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold"
               >
-                <CircleHelp size={14} className="text-cyan-400" />
-                사용방법 안내 보기
+                <Palette size={14} className="text-cyan-400" />
+                디자인별 미리보기 열기
               </button>
             </div>
           </div>
@@ -319,6 +447,8 @@ export function PartnerLinks() {
         open={wpGuideOpen}
         onClose={() => setWpGuideOpen(false)}
         lkCode={wpGuideLkCode || undefined}
+        initialTab={wpGuideTab}
+        onSaved={loadEmbedStatus}
         onCopySnippet={
           wpGuideLkCode
             ? (snippet) => {
