@@ -94,6 +94,9 @@ if (is_array($config) && empty($config['_error']) && !empty($config['allowedDoma
             $parts[] = 'https://' . $h;
             $parts[] = 'http://' . $h;
         }
+        // 서브도메인(shop.example.com 등) iframe 허용
+        $parts[] = 'https://*.' . $host;
+        $parts[] = 'http://*.' . $host;
     }
     $parts = array_values(array_unique($parts));
     if ($parts) {
@@ -147,25 +150,44 @@ $esc = static function ($value) {
   ></script>
   <script>
     (function () {
+      var lastH = 0;
+      var ticking = false;
+      function measure() {
+        var root = document.getElementById('lc-lead-frame');
+        var h = 120;
+        if (root) {
+          h = Math.max(root.scrollHeight || 0, root.offsetHeight || 0, h);
+        } else if (document.body) {
+          h = Math.max(document.body.scrollHeight || 0, document.body.offsetHeight || 0, h);
+        }
+        return h;
+      }
       function postHeight() {
-        try {
-          var h = Math.max(
-            document.documentElement.scrollHeight || 0,
-            document.body ? document.body.scrollHeight : 0,
-            120
-          );
-          parent.postMessage({ type: 'lc-embed-resize', height: h }, '*');
-        } catch (e) {}
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          ticking = false;
+          try {
+            var h = measure();
+            // 부모 iframe 높이 변경 → document 리사이즈 피드백 루프 차단
+            if (Math.abs(h - lastH) < 2) return;
+            lastH = h;
+            parent.postMessage({ type: 'lc-embed-resize', height: h }, '*');
+          } catch (e) {}
+        });
       }
       window.addEventListener('load', postHeight);
-      window.addEventListener('resize', postHeight);
+      // window.resize 는 부모가 iframe 높이를 바꿀 때 재발화되어 흔들림을 만듦 → 구독하지 않음
       if (window.ResizeObserver) {
         try {
-          var ro = new ResizeObserver(postHeight);
-          ro.observe(document.documentElement);
+          var target = document.getElementById('lc-lead-frame') || document.body;
+          if (target) {
+            var ro = new ResizeObserver(postHeight);
+            ro.observe(target);
+          }
         } catch (e) {}
       }
-      setInterval(postHeight, 800);
+      setInterval(postHeight, 2500);
     })();
   </script>
 <?php } ?>

@@ -41,8 +41,8 @@ export function EmbedDevicePreviewFrame({
     if (!el) return;
     const update = () => {
       const avail = Math.max(120, el.clientWidth - 4);
-      const next = Math.min(1, avail / viewport.width);
-      setScale(Math.max(0.2, next));
+      const next = Math.min(1, Math.max(0.2, avail / viewport.width));
+      setScale((prev) => (Math.abs(prev - next) < 0.002 ? prev : next));
     };
     update();
     const ro = new ResizeObserver(update);
@@ -191,8 +191,8 @@ function ExpandedPreviewOverlay({
       const pad = 24;
       const availW = Math.max(200, el.clientWidth - pad);
       const availH = Math.max(200, el.clientHeight - pad);
-      const next = Math.min(1, availW / viewport.width, availH / viewport.height);
-      setScale(Math.max(0.35, next));
+      const next = Math.min(1, Math.max(0.35, availW / viewport.width, availH / viewport.height));
+      setScale((prev) => (Math.abs(prev - next) < 0.002 ? prev : next));
     };
     update();
     const ro = new ResizeObserver(update);

@@ -1067,6 +1067,7 @@
   }
 
   function bindFrameResize(iframe) {
+    var lastApplied = 0;
     function onMessage(ev) {
       var data = ev && ev.data;
       if (!data || !data.type) return;
@@ -1074,7 +1075,11 @@
       if (data.type === 'lc-embed-resize') {
         var h = parseInt(data.height, 10);
         if (!h || h < 80) return;
-        iframe.style.height = Math.min(Math.max(h + 8, 120), 900) + 'px';
+        var next = Math.min(Math.max(h + 8, 120), 1200);
+        // 1~2px 진동·부모 높이 변경 피드백으로 인한 흔들림 방지
+        if (Math.abs(next - lastApplied) < 3) return;
+        lastApplied = next;
+        iframe.style.height = next + 'px';
         return;
       }
       if (data.type === 'lc-embed-success') {

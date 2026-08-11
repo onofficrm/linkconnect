@@ -229,21 +229,34 @@ if (!function_exists('lc_embed_host_from_url')) {
 if (!function_exists('lc_embed_request_host')) {
     function lc_embed_request_host()
     {
-        $candidates = array();
-        if (!empty($_SERVER['HTTP_ORIGIN'])) {
-            $candidates[] = (string) $_SERVER['HTTP_ORIGIN'];
-        }
-        if (!empty($_SERVER['HTTP_REFERER'])) {
-            $candidates[] = (string) $_SERVER['HTTP_REFERER'];
-        }
+        $platform = function_exists('lc_embed_platform_host') ? lc_embed_platform_host() : '';
+        $referer_host = !empty($_SERVER['HTTP_REFERER'])
+            ? lc_embed_host_from_url((string) $_SERVER['HTTP_REFERER'])
+            : '';
+        $origin_host = !empty($_SERVER['HTTP_ORIGIN'])
+            ? lc_embed_host_from_url((string) $_SERVER['HTTP_ORIGIN'])
+            : '';
+        $page_host = '';
         if (isset($_GET['page_url'])) {
-            $candidates[] = (string) $_GET['page_url'];
+            $page_host = lc_embed_host_from_url((string) $_GET['page_url']);
+        } elseif (isset($_GET['pageUrl'])) {
+            $page_host = lc_embed_host_from_url((string) $_GET['pageUrl']);
+        }
+
+        // iframe 안(리퍼러·오리진이 플랫폼)에서는 부모 페이지 page_url 로 도메인 검증
+        if ($platform !== '' && $page_host !== '') {
+            if ($referer_host === $platform || $origin_host === $platform) {
+                return $page_host;
+            }
+        }
+
+        foreach (array($referer_host, $origin_host, $page_host) as $host) {
+            if ($host !== '') {
+                return $host;
+            }
         }
         if (isset($_GET['host'])) {
-            $candidates[] = (string) $_GET['host'];
-        }
-        foreach ($candidates as $candidate) {
-            $host = lc_embed_host_from_url($candidate);
+            $host = lc_embed_host_from_url((string) $_GET['host']);
             if ($host !== '') {
                 return $host;
             }
@@ -1173,12 +1186,13 @@ if (!function_exists('lc_embed_domain_allowed')) {
     /**
      * 허용 도메인이 비어 있으면 전체 허용(기존 호환). 등록된 경우만 검증.
      * 플랫폼 자체 도메인은 미리보기용으로 항상 허용.
+     * 등록 호스트의 서브도메인(예: shop.example.com ← example.com)도 허용.
      */
     function lc_embed_domain_allowed($pt_id, $request_host = null)
     {
         $host = $request_host !== null ? lc_embed_normalize_host($request_host) : lc_embed_request_host();
         $platform = lc_embed_platform_host();
-        if ($host !== '' && $platform !== '' && $host === $platform) {
+        if ($host !== '' && $platform !== '' && ($host === $platform || substr($host, -strlen('.' . $platform)) === '.' . $platform)) {
             return true;
         }
         $allowed = lc_embed_partner_allowed_domains($pt_id);
@@ -1188,7 +1202,23 @@ if (!function_exists('lc_embed_domain_allowed')) {
         if ($host === '') {
             return false;
         }
-        return in_array($host, $allowed, true);
+        if (in_array($host, $allowed, true)) {
+            return true;
+        }
+        foreach ($allowed as $allowed_host) {
+            $allowed_host = lc_embed_normalize_host($allowed_host);
+            if ($allowed_host === '') {
+                continue;
+            }
+            if ($host === $allowed_host) {
+                return true;
+            }
+            // example.com 등록 시 a.example.com 허용
+            if (substr($host, -strlen('.' . $allowed_host)) === '.' . $allowed_host) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
@@ -1360,7 +1390,7 @@ if (!function_exists('lc_embed_rotate_partner_widget_key')) {
 
 if (!function_exists('lc_embed_widget_key_allowed')) {
     /**
-     * - requireWidgetKey=false: 키가 없으면 통과, 발급된 경우 요청 키가 일치해야 함.
+     * - requireWidgetKey=false: 홍보코드만으로도 동작. 요청에 키가 있으면 저장된 키와 일치해야 함.
      * - requireWidgetKey=true: 저장된 키와 요청 키가 반드시 일치해야 함.
      */
     function lc_embed_widget_key_allowed($pt_id, $request_key = '')
@@ -1378,7 +1408,15 @@ if (!function_exists('lc_embed_widget_key_allowed')) {
             return !$require;
         }
 
-        return $request_key !== '' && hash_equals($stored, $request_key);
+        if ($require) {
+            return $request_key !== '' && hash_equals($stored, $request_key);
+        }
+
+        // 키 필수 아님 → 키 없는 설치(기존 HTML)도 허용. 키가 온 경우만 일치 검사.
+        if ($request_key === '') {
+            return true;
+        }
+        return hash_equals($stored, $request_key);
     }
 }
 

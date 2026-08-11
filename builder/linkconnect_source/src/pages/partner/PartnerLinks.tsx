@@ -32,6 +32,7 @@ type EmbedListStatus = {
   embedToday: number;
   embedTotal: number;
   hasWidgetKey: boolean;
+  widgetKey: string;
 };
 
 export function PartnerLinks() {
@@ -78,6 +79,7 @@ export function PartnerLinks() {
           embedToday: data.embedToday ?? 0,
           embedTotal: data.embedTotal ?? 0,
           hasWidgetKey: Boolean(data.hasWidgetKey),
+          widgetKey: data.widgetKey || '',
         });
       })
       .catch(() => setEmbedStatus(null));
@@ -376,7 +378,9 @@ export function PartnerLinks() {
                                 type="button"
                                 onClick={() =>
                                   void copyUrl(
-                                    buildLeadEmbedSnippet(link.code),
+                                    buildLeadEmbedSnippet(link.code, {
+                                      widgetKey: embedStatus?.widgetKey || '',
+                                    }),
                                     link.id,
                                     '외부 홈페이지 설치 코드가 복사되었습니다.',
                                   )
