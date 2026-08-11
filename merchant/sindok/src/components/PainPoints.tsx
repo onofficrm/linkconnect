@@ -36,7 +36,6 @@ export const PainPoints: React.FC = () => {
   return (
     <section id="section-painpoints" className="py-16 lg:py-20 bg-slate-50 border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold text-xs">
             <HelpCircle className="w-3.5 h-3.5 text-blue-600" />
@@ -51,16 +50,17 @@ export const PainPoints: React.FC = () => {
             개인이 직접 반출하기에는 많은 시간과 체력이 필요합니다.
           </p>
           <p className="text-slate-500 text-xs sm:text-sm font-medium">
-            전문 작업팀이 물품을 분류·반출하고, 필요 시 퇴거 간단 마감까지 진행해 부담을 줄여드립니다.
+            전문 작업팀이 물품을 분류·반출하고, 퇴거 마감까지 진행해 부담을 줄여드립니다.
           </p>
         </div>
 
-        {/* 4 Pain Point Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
           {PAIN_POINTS.map((item) => (
-            <div
+            <button
               key={item.id}
-              className="bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+              type="button"
+              onClick={scrollToForm}
+              className="bg-white border border-slate-200 hover:border-blue-400 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between group text-left min-h-[220px]"
             >
               <div className="space-y-3">
                 <div className="w-12 h-12 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -71,7 +71,7 @@ export const PainPoints: React.FC = () => {
                   {item.title}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   {item.desc}
                 </p>
               </div>
@@ -80,11 +80,10 @@ export const PainPoints: React.FC = () => {
                 <span>전문 반출 상담 진행</span>
                 <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
-        {/* Bottom Banner */}
         <div className="bg-gradient-to-r from-slate-900 to-blue-950 rounded-2xl p-6 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-center sm:text-left space-y-1">
             <h4 className="text-base sm:text-lg font-bold text-white">
@@ -95,6 +94,7 @@ export const PainPoints: React.FC = () => {
             </p>
           </div>
           <button
+            type="button"
             onClick={scrollToForm}
             className="shrink-0 px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow transition-all active:scale-95 flex items-center gap-1.5"
           >

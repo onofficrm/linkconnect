@@ -4,13 +4,12 @@ import { Calculator, Clock, Users, ShieldCheck, ArrowRight, Sparkles } from "luc
 export const EstimateCalculator: React.FC = () => {
   const [spaceType, setSpaceType] = useState("아파트");
   const [sizeRange, setSizeRange] = useState("20~30평");
-  const [serviceDetail, setServiceDetail] = useState("전체 공간 반출");
 
   // Calculate recommendation based on state
   const getCalculation = () => {
     let hours = "3~4시간";
     let team = "2~3인 전담팀";
-    let benefits = "무료 현장 진단 + 퇴거 간단 마감";
+    const benefits = "무료 현장 진단 + 퇴거 마감";
 
     if (sizeRange === "10평 미만") {
       hours = "2~3시간";
@@ -27,12 +26,6 @@ export const EstimateCalculator: React.FC = () => {
     } else if (sizeRange === "40평 이상") {
       hours = "5~7시간";
       team = "4인 이상 맞춤팀";
-    }
-
-    if (serviceDetail === "가구·가전 수거 포함") {
-      benefits = "가구·가전 수거 + 무료 현장 진단 + 퇴거 간단 마감";
-    } else if (serviceDetail === "부분 공간 반출") {
-      benefits = "부분 반출 견적 + 무료 현장 진단";
     }
 
     return { hours, team, benefits };
@@ -80,10 +73,11 @@ export const EstimateCalculator: React.FC = () => {
               <label className="block text-xs font-bold text-slate-300 mb-2">
                 1. 공간 종류 선택
               </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {["아파트", "빌라", "원룸/오피스텔", "단독주택", "사무실/상가"].map((type) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {["아파트", "빌라", "원룸/오피스텔", "단독주택"].map((type) => (
                   <button
                     key={type}
+                    type="button"
                     onClick={() => setSpaceType(type)}
                     className={`py-2.5 px-2 text-xs font-extrabold rounded-xl border transition-all ${
                       spaceType === type
@@ -106,6 +100,7 @@ export const EstimateCalculator: React.FC = () => {
                 {["10평 미만", "10~20평", "20~30평", "30~40평", "40평 이상"].map((size) => (
                   <button
                     key={size}
+                    type="button"
                     onClick={() => setSizeRange(size)}
                     className={`py-2.5 px-2 text-xs font-extrabold rounded-xl border transition-all ${
                       sizeRange === size
@@ -114,28 +109,6 @@ export const EstimateCalculator: React.FC = () => {
                     }`}
                   >
                     {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. 서비스 요구사항 */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-2">
-                3. 반출·처리 범위
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {["전체 공간 반출", "부분 공간 반출", "가구·가전 수거 포함"].map((detail) => (
-                  <button
-                    key={detail}
-                    onClick={() => setServiceDetail(detail)}
-                    className={`py-2.5 px-2 text-xs font-extrabold rounded-xl border transition-all ${
-                      serviceDetail === detail
-                        ? "bg-emerald-600 text-white border-emerald-500 shadow-md scale-102"
-                        : "bg-slate-900/80 text-slate-400 border-slate-700 hover:text-slate-200"
-                    }`}
-                  >
-                    {detail}
                   </button>
                 ))}
               </div>

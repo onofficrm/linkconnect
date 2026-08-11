@@ -22,7 +22,7 @@ export const ServiceDetails: React.FC = () => {
     },
     {
       feature: "마감 범위",
-      us: "퇴거 후 빗자루 청소 수준의 간단 마감",
+      us: "퇴거 후 깔끔한 마감 서비스",
       others: "전문 청소·방역을 묶어 과잉 견적 유도",
     },
     {
@@ -46,10 +46,10 @@ export const ServiceDetails: React.FC = () => {
             <span>유품정리서비스 차별점</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
-            청소 업체가 아니라 <span className="text-blue-600">물건 반출 전문</span>입니다
+            <span className="text-blue-600">“보이지 않는 곳에서 성실하게”</span>
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            유품정리의 핵심은 물건을 빼내는 일입니다. 청소·소독 중심 업체와 작업 범위를 비교해 보세요.
+            신독환경만의 철학으로 정직하고 깔끔하고 신속하게 정리해드립니다.
           </p>
         </div>
 
@@ -129,14 +129,14 @@ export const ServiceDetails: React.FC = () => {
               가구·가전 · 폐기물 처리
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              대형 가구·가전 운반과 폐기물 처리를 담당합니다. 작업 후에는 퇴거용 간단 빗자루 마감만 진행합니다.
+              대형 가구·가전 운반과 폐기물 처리를 담당합니다. 물품 반출 후 남은 잔여물을 치우고 바닥을 깔끔하게 정돈해 드립니다.
             </p>
             <ul className="space-y-1.5 text-xs text-slate-700 pt-2">
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-indigo-600" /> 침대·장롱·냉장고 등 대형 물품 수거
               </li>
               <li className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-indigo-600" /> 퇴거 후 빗자루 청소 수준 마감
+                <CheckCircle2 className="w-4 h-4 text-indigo-600" /> 퇴거 후 깔끔한 마감 서비스
               </li>
             </ul>
           </div>

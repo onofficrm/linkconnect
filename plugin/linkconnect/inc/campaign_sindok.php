@@ -5,7 +5,7 @@ if (!defined('_GNUBOARD_')) {
 
 if (!function_exists('lc_sindok_campaign_definition')) {
     /**
-     * 신독환경 정리·폐기물 CPA 광고상품 정의 (CPA-00014).
+     * 신독환경 유품정리서비스 CPA 광고상품 정의 (CPA-00014).
      *
      * @return array<string,mixed>
      */
@@ -14,7 +14,7 @@ if (!function_exists('lc_sindok_campaign_definition')) {
         return array(
             'code'               => 'CPA-00014',
             'alias_codes'        => array('CPA-SINDOK'),
-            'title'              => '주거정리·폐기물 상담 DB',
+            'title'              => '유품정리서비스 상담 DB',
             'category'           => '생활서비스',
             'price'              => 20000,
             'merchant_price'     => 30000,
@@ -22,7 +22,7 @@ if (!function_exists('lc_sindok_campaign_definition')) {
             'avg_time'           => '1.5일',
             'allowed_channels'   => '블로그, 카페, 지식iN, SNS',
             'forbidden_channels' => '허위광고, 브랜드 사칭, 스팸문자',
-            'description'        => '주거 정리·수납·폐기물·가구 처리 상담 DB. sindok 랜딩 연동 (신독환경).',
+            'description'        => '유품·짐·가구 반출·폐기물 처리 상담 DB(퇴거 마감 포함). sindok 랜딩 연동 (신독환경).',
             'badge'              => '신규',
             'recommended'        => true,
             'status'             => 'paused',

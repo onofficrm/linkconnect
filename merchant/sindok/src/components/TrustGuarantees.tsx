@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Award, Lock, DollarSign, CheckCircle2 } from "lucide-react";
+import { Award, Lock, DollarSign, CheckCircle2 } from "lucide-react";
 
 export const TrustGuarantees: React.FC = () => {
   const GUARANTEES = [
@@ -14,12 +14,6 @@ export const TrustGuarantees: React.FC = () => {
       title: "투명한 정찰제 약속",
       badge: "부당 추가금 0원",
       desc: "사전 합의된 방문/상담 견적 외에 현장에서 부당한 추가 요금을 절대 요구하지 않습니다.",
-    },
-    {
-      icon: <ShieldCheck className="w-6 h-6 text-indigo-600" />,
-      title: "배상책임보험 가입",
-      badge: "100% 안심 보장",
-      desc: "작업 진행 중 발생할 수 있는 가구/집기 파손에 대비해 배상책임보험에 정식 가입되어 있습니다.",
     },
     {
       icon: <Lock className="w-6 h-6 text-amber-600" />,
@@ -58,14 +52,14 @@ export const TrustGuarantees: React.FC = () => {
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
             믿고 맡기실 수 있도록 <br className="sm:hidden" />
-            <span className="text-blue-600">4가지 안심 시스템</span>을 보장합니다
+            <span className="text-blue-600">3가지 안심 시스템</span>을 보장합니다
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
             처음부터 끝까지 투명하고 안전하게, 유품·짐 반출을 책임지고 도와드립니다.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {GUARANTEES.map((item, idx) => (
             <div
               key={idx}

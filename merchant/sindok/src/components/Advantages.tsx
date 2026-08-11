@@ -44,7 +44,7 @@ export const Advantages: React.FC = () => {
             <span className="text-blue-600">무엇이 다를까요?</span>
           </h2>
           <p className="text-slate-600 text-sm sm:text-base">
-            숙련된 전문가가 상담부터 물품 반출·퇴거 간단 마감까지 책임집니다.
+            숙련된 전문가가 상담부터 물품 반출·퇴거 마감까지 책임집니다.
           </p>
         </div>
 

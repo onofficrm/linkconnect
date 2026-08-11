@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Zap,
   Clock,
-  Star,
   AlertCircle,
   Send,
   Check,
@@ -40,7 +39,8 @@ export const Hero: React.FC = () => {
     name: "",
     phone: "",
     location: "",
-    serviceType: "유품정리서비스",
+    spaceType: "아파트",
+    sizeRange: "20~30평",
     agreedPrivacy: true,
   });
 
@@ -126,7 +126,8 @@ export const Hero: React.FC = () => {
     try {
       const inquiry = buildInquiryText({
         location: quickForm.location || "지역 미지정",
-        serviceType: quickForm.serviceType,
+        serviceType: "유품정리서비스",
+        spaceType: `${quickForm.spaceType} · ${quickForm.sizeRange}`,
         memo: "히어로 빠른 상담 카드 접수",
       });
       const result = await submitConsultation(
@@ -195,28 +196,21 @@ export const Hero: React.FC = () => {
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-[1.25] tracking-tight">
-              유품정리서비스,
-              <br />
-              혼자 빼내기 어려우시죠?
+              혼자서는 힘든 유품정리,
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">
-                분류부터 반출까지
+                걱정만 쌓여가고 계신가요?
               </span>
-              <br />
-              전문팀이 책임집니다.
             </h1>
 
             <p className="text-slate-200 text-base sm:text-lg font-medium leading-relaxed max-w-2xl">
-              초점은 청소가 아니라{" "}
-              <strong className="text-white font-bold underline decoration-blue-500 underline-offset-4 decoration-2">
-                물건을 안전하게 빼내는 것
-              </strong>
-              입니다. <br className="hidden sm:inline" />
-              청소는 퇴거 후 빗자루 마감 정도만 진행합니다.
+              남겨진 물건 하나하나 정성껏,
+              <br className="hidden sm:inline" />
+              전문가가 책임지고 정리해드립니다.
             </p>
 
-            {/* Trust Bullet Points (4 Required Points) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+            {/* Trust Bullet Points */}
+            <div className="grid grid-cols-3 gap-2.5 pt-2">
               <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-center backdrop-blur-md shadow-sm hover:border-blue-500/50 transition-all">
                 <div className="w-7 h-7 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center mx-auto mb-1.5">
                   <Zap className="w-4 h-4" />
@@ -239,14 +233,6 @@ export const Hero: React.FC = () => {
                 </div>
                 <div className="text-xs sm:text-sm font-extrabold text-white">전문 작업팀 방문</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">자격증 보유 기사</div>
-              </div>
-
-              <div className="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3 text-center backdrop-blur-md shadow-sm hover:border-blue-500/50 transition-all">
-                <div className="w-7 h-7 bg-indigo-500/20 text-indigo-400 rounded-lg flex items-center justify-center mx-auto mb-1.5">
-                  <Star className="w-4 h-4 fill-indigo-400" />
-                </div>
-                <div className="text-xs sm:text-sm font-extrabold text-white">퇴거 간단 마감</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">빗자루 청소 수준</div>
               </div>
             </div>
 
@@ -326,7 +312,8 @@ export const Hero: React.FC = () => {
                         name: "",
                         phone: "",
                         location: "",
-                        serviceType: "유품정리서비스",
+                        spaceType: "아파트",
+                        sizeRange: "20~30평",
                         agreedPrivacy: true,
                       });
                     }}
@@ -392,24 +379,50 @@ export const Hero: React.FC = () => {
                     />
                   </div>
 
-                  {/* 4. 상담 내용 또는 서비스 종류 */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                      상담 내용 또는 서비스 종류
-                    </label>
-                    <select
-                      value={quickForm.serviceType}
-                      onChange={(e) =>
-                        setQuickForm({ ...quickForm, serviceType: e.target.value })
-                      }
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:bg-white focus:border-blue-600 focus:outline-none transition-all"
-                    >
-                      <option value="유품정리서비스">유품정리서비스</option>
-                      <option value="짐·잔짐 반출">짐·잔짐 반출</option>
-                      <option value="가구·가전 수거">가구·가전 수거</option>
-                      <option value="퇴거 정리 (간단 마감 포함)">퇴거 정리 (간단 마감 포함)</option>
-                      <option value="폐기물 처리">폐기물 처리</option>
-                    </select>
+                  {/* 4. 평수 · 공간 종류 */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                        평수 선택
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {["10평 미만", "10~20평", "20~30평", "30~40평", "40평 이상"].map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => setQuickForm({ ...quickForm, sizeRange: size })}
+                            className={`py-2 px-1 text-[11px] font-extrabold rounded-lg border transition-all ${
+                              quickForm.sizeRange === size
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-300"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                        공간 종류 선택
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {["아파트", "빌라", "원룸/오피스텔", "단독주택"].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setQuickForm({ ...quickForm, spaceType: type })}
+                            className={`py-2 px-1 text-[11px] font-extrabold rounded-lg border transition-all ${
+                              quickForm.spaceType === type
+                                ? "bg-indigo-600 text-white border-indigo-600"
+                                : "bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* 5. 개인정보 수집 및 이용 동의 */}

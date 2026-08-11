@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useState } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
+import { SocialProof } from './components/SocialProof';
 import { TrustGuarantees } from './components/TrustGuarantees';
 import { PainPoints } from './components/PainPoints';
 import { Advantages } from './components/Advantages';
@@ -46,6 +47,7 @@ export default function App() {
 
       <main>
         <Hero />
+        <SocialProof />
         <TrustGuarantees />
         <PainPoints />
 

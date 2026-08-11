@@ -37,12 +37,12 @@ const COMPARISON_CASES: ComparisonCase[] = [
   {
     id: "case-3",
     category: "폐기물·퇴거 마감",
-    title: "폐기물 분류·반출 후 퇴거 간단 마감",
+    title: "폐기물 분류·반출 후 퇴거 마감",
     beforeImg: publicAsset("work-photo-05.jpg"),
     afterImg: publicAsset("work-photo-06.jpg"),
     duration: "당일 작업",
     location: "주거 현장",
-    highlight: "폐기물 처리 · 빗자루 마감",
+    highlight: "폐기물 처리 · 퇴거 마감",
   },
 ];
 

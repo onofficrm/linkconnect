@@ -64,9 +64,9 @@ export const WORK_PHOTOS: WorkPhotoItem[] = [
     id: "work-photo-06",
     placeholderText: "work-photo-06",
     imageSrc: "work-photo-06.jpg",
-    title: "퇴거 간단 마감 완료",
+    title: "퇴거 마감 서비스 완료",
     category: "퇴거 마감",
-    description: "물품 반출 후 빗자루 청소 수준의 퇴거 간단 마감이 끝난 실내입니다.",
+    description: "물품 반출 후 남은 잔여물을 치우고 바닥을 깔끔하게 정돈해 드립니다.",
     defaultBadge: "마감 완료",
   },
   {
@@ -90,6 +90,7 @@ export const WORK_PHOTOS: WorkPhotoItem[] = [
 ];
 
 // 10 Customer Reviews — 실제 후기 캡처 (public/review-image-01~10.png)
+// serviceUsed는 사진에 표기된 카테고리와 맞춤 (유품정리/특수청소 → 유품정리)
 export const REVIEW_IMAGES: ReviewImageItem[] = [
   {
     id: "review-image-01",
@@ -132,7 +133,7 @@ export const REVIEW_IMAGES: ReviewImageItem[] = [
     placeholderText: "review-image-04",
     imageSrc: "review-image-04.png",
     author: "고객님",
-    serviceUsed: "유품정리",
+    serviceUsed: "폐기물 처리",
     location: "주거 현장",
     rating: 5,
     date: "2026-07",
@@ -180,7 +181,7 @@ export const REVIEW_IMAGES: ReviewImageItem[] = [
     placeholderText: "review-image-08",
     imageSrc: "review-image-08.png",
     author: "고객님",
-    serviceUsed: "가구·가전 수거",
+    serviceUsed: "폐기물 처리",
     location: "가구·가전 수거",
     rating: 5,
     date: "2026-07",
@@ -192,7 +193,7 @@ export const REVIEW_IMAGES: ReviewImageItem[] = [
     placeholderText: "review-image-09",
     imageSrc: "review-image-09.png",
     author: "고객님",
-    serviceUsed: "폐기물 처리",
+    serviceUsed: "유품정리",
     location: "고층 주거",
     rating: 5,
     date: "2026-07",
@@ -208,7 +209,7 @@ export const REVIEW_IMAGES: ReviewImageItem[] = [
     location: "유품 정리",
     rating: 5,
     date: "2026-07",
-    content: "진솔한 상담으로 바로 예약. 숙련된 팀이 꼼꼼히 반출하고 퇴거 간단 마감까지, 1년 걱정이 한순간에 풀렸습니다.",
+    content: "진솔한 상담으로 바로 예약. 숙련된 팀이 꼼꼼히 반출하고 퇴거 마감까지, 1년 걱정이 한순간에 풀렸습니다.",
     tags: ["결과물 완성도가 높아요", "약속 시간을 잘 지켜요", "요청사항을 정확히 반영해요", "응답이 빨라요", "응대가 친절해요"],
   },
 ];
@@ -237,12 +238,12 @@ export const FAQ_LIST: FaqItem[] = [
   {
     category: "작업 범위",
     question: "청소도 해주시나요?",
-    answer: "핵심은 유품·짐·가구 반출입니다. 청소는 퇴거 후 빗자루로 바닥을 쓸어 드리는 간단 마감 수준이며, 전문 입주·특수청소는 진행하지 않습니다.",
+    answer: "핵심은 유품·짐·가구 반출입니다. 물품 반출이 끝나면 깔끔하게 공간 내 잔여물을 정리하고 바닥을 정돈해 드립니다. 전문 입주·특수청소는 진행하지 않습니다.",
   },
   {
     category: "서비스 지역",
     question: "어떤 지역에서 작업이 가능한가요?",
-    answer: "서비스 가능 지역은 상담 접수 후 정확하게 안내해드립니다.",
+    answer: "서울·경기·인천 전 지역 출장 가능합니다. 수도권 어디든 일정에 맞춰 신속하게 방문합니다.",
   },
   {
     category: "상담 준비",
@@ -272,8 +273,8 @@ export const PAIN_POINTS = [
   },
   {
     id: 4,
-    title: "퇴거 후 간단 마감이 필요한 경우",
-    desc: "물품 반출이 끝나면 빗자루 청소 수준의 퇴거 간단 마감만 진행합니다. 전문 청소는 포함되지 않습니다.",
+    title: "퇴거를 위한 마감이 필요한 경우",
+    desc: "물품 반출이 끝나면 깔끔하게 공간 내 잔여물을 정리하고 바닥을 정돈해 드립니다.",
     icon: "Sparkles",
   },
 ];
@@ -296,8 +297,8 @@ export const SERVICE_ADVANTAGES = [
   },
   {
     icon: "CheckCircle2",
-    title: "퇴거 간단 마감",
-    desc: "반출 후 빗자루 청소 수준으로 바닥을 정리해 드립니다.",
+    title: "퇴거 마감 서비스",
+    desc: "물품 반출 후 남은 잔여물을 치우고 바닥을 깔끔하게 정돈해 드립니다.",
   },
   {
     icon: "ShieldCheck",
@@ -330,6 +331,6 @@ export const PROCESS_STEPS = [
   {
     step: "STEP 04",
     title: "작업 완료 확인",
-    desc: "반출 결과를 확인하고 퇴거 간단 마감으로 마무리합니다.",
+    desc: "반출 결과를 확인하고 깔끔한 퇴거 마감으로 마무리합니다.",
   },
 ];

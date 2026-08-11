@@ -1,6 +1,6 @@
 <?php
 /**
- * 신독환경 정리·폐기물 CPA 광고상품 등록
+ * 신독환경 유품정리서비스 CPA 광고상품 등록
  *
  * 브라우저: /plugin/linkconnect/install/apply_sindok_campaign.php?action=run
  */
@@ -84,7 +84,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body style="font-family:sans-serif;max-width:640px;margin:2rem auto;padding:1rem;">
   <h1>신독환경 CPA 광고상품 등록</h1>
-  <p>주거정리·폐기물 상담 DB(CPA-00014)를 등록/갱신하고 랜딩 URL을 <code>/merchant/sindok/</code> 로 연결합니다. 상호에 「신독」이 포함된 광고주가 있으면 자동 연결합니다.</p>
+  <p>유품정리서비스 상담 DB(CPA-00014)를 등록/갱신하고 랜딩 URL을 <code>/merchant/sindok/</code> 로 연결합니다. 상호에 「신독」이 포함된 광고주가 있으면 자동 연결합니다.</p>
   <p><a href="?action=run">실행</a></p>
 </body>
 </html>
