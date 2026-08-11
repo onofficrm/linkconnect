@@ -282,7 +282,7 @@ export const ConsultationForm: React.FC<ConsultationFormProps> = ({ onOpenPrivac
                   </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label htmlFor="form-input-date" className="block text-xs font-bold text-slate-600 mb-1.5">
                     작업 희망일 <span className="text-slate-400 font-normal">(선택)</span>
                   </label>
@@ -291,7 +291,7 @@ export const ConsultationForm: React.FC<ConsultationFormProps> = ({ onOpenPrivac
                     type="date"
                     value={formData.preferredDate}
                     onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
-                    className="w-full px-4 py-3 min-h-[48px] bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium text-slate-800"
+                    className="block w-full max-w-full min-w-0 box-border px-4 py-3 min-h-[48px] bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium text-slate-800 appearance-none"
                   />
                 </div>
 
