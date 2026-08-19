@@ -30,6 +30,11 @@ export function modemoAsset(path: string): string {
     return normalized;
   }
 
+  // 빌드 후처리가 이미 프록시 URL로 바꿔 둔 경우, 다시 붙이지 않는다.
+  if (normalized.includes('/plugin/linkconnect/api/merchant-static.php')) {
+    return normalized;
+  }
+
   if (
     normalized.startsWith('/images/') ||
     normalized.includes('/images/') ||
@@ -39,6 +44,10 @@ export function modemoAsset(path: string): string {
   }
 
   if (normalized.startsWith(MODEMO_IMPORT_BASE)) {
+    return normalized;
+  }
+
+  if (normalized.startsWith('/plugin/linkconnect/')) {
     return normalized;
   }
 

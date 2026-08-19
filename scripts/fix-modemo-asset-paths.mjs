@@ -39,13 +39,13 @@ function rewrite(content) {
 
   // /plugin/.../imports/modemo/images/... → proxy
   const baseEsc = BASE.replace(/\//g, '\\/');
-  s = s.replace(new RegExp(`${baseEsc}\\/images\\/([^"'\\s?#)]+)`, 'g'), (_, file) =>
-    toProxy(`images/${file}`),
+  s = s.replace(new RegExp(`${baseEsc}\\/images\\/([^"'\\s?#)]+)`, 'g'), (full, file) =>
+    full.includes('merchant-static.php') ? full : toProxy(`images/${file}`),
   );
 
-  // root-relative /images/...
-  s = s.replace(/"\/images\/([^"]+)"/g, (_, file) => `"${toProxy(`images/${file}`)}"`);
-  s = s.replace(/'\/images\/([^']+)'/g, (_, file) => `'${toProxy(`images/${file}`)}'`);
+  // root-relative /images/...  (modemoAsset 인자는 런타임 프록시 사용)
+  s = s.replace(/(?<!modemoAsset\()"\/images\/([^"]+)"/g, (_, file) => `"${toProxy(`images/${file}`)}"`);
+  s = s.replace(/(?<!modemoAsset\()'\/images\/([^']+)'/g, (_, file) => `'${toProxy(`images/${file}`)}'`);
   s = s.replace(/url\(\/images\/([^)]+)\)/g, (_, file) => `url(${toProxy(`images/${file}`)})`);
   s = s.replace(/url\("\/images\/([^"]+)"\)/g, (_, file) => `url("${toProxy(`images/${file}`)}")`);
   s = s.replace(/url\('\/images\/([^']+)'\)/g, (_, file) => `url('${toProxy(`images/${file}`)}')`);
