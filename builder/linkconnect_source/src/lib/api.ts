@@ -2135,6 +2135,13 @@ export function updateAdminInquiry(payload: { iqId: number; action: 'reply' | 's
   return adminApiPost<{ message: string; item: InquiryItem; summary: InquirySummary }>('inquiries.php', payload);
 }
 
+export function resendAdminInquiryNotify(iqId: number) {
+  return adminApiPost<{ message: string; mailSent: boolean; item: InquiryItem }>('inquiries.php', {
+    action: 'resend_notify',
+    iqId,
+  });
+}
+
 export function createPublicInquiry(payload: {
   category: string;
   subject: string;

@@ -290,9 +290,10 @@ export function AdminSettings() {
     setTestMailMessage('');
     setError('');
     try {
-      const data = await sendAdminTestEmail(raw.mailFromEmail || raw.adminEmail || '');
+      // 입점신청 알림과 동일한 수신함으로 검증
+      const data = await sendAdminTestEmail('support2580_@linkconnect.co.kr');
       applySettingsResponse(data);
-      setTestMailMessage(data.message || '테스트 메일을 발송했습니다.');
+      setTestMailMessage(data.message || '테스트 메일을 support2580_@linkconnect.co.kr 로 발송했습니다.');
       setTestMailStatus('sent');
       setTimeout(() => setTestMailStatus('idle'), 4000);
     } catch (err) {
@@ -335,7 +336,8 @@ export function AdminSettings() {
           </div>
           <div className="p-6 space-y-5">
             <p className="text-sm text-slate-500 leading-relaxed">
-              알림·인증·문의 회신 등에 사용하는 발신 메일 설정입니다. 아래 저장 시 바로 반영됩니다.
+              알림·인증·문의·입점신청 회신에 사용합니다. 「메일발송 사용」이 OFF면 입점 신청 메일도 발송되지 않습니다.
+              발신 이메일은 Cafe24에 생성된 <code className="text-xs bg-slate-100 px-1 rounded">@linkconnect.co.kr</code> 메일박스로 맞춰 주세요.
             </p>
             <div className={`rounded-xl border px-4 py-3 text-sm ${boolVal(raw, 'mailReady') ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
               <div className="font-bold mb-1">{boolVal(raw, 'mailReady') ? '메일 발송 준비됨' : '메일 발송 점검 필요'}</div>
@@ -343,6 +345,7 @@ export function AdminSettings() {
                 <li>메일 기능: {boolVal(raw, 'mailMailer') ? '정상' : '불가'}</li>
                 <li>메일발송 사용: {boolVal(raw, 'mailEmailUse') ? 'ON' : 'OFF'}</li>
                 <li>SMTP: {raw.mailSmtpHost ? `${raw.mailSmtpHost}${raw.mailSmtpPort ? `:${raw.mailSmtpPort}` : ''}` : '서버 기본(미설정)'}</li>
+                <li>입점신청 수신: support2580_@linkconnect.co.kr</li>
               </ul>
               {raw.mailIssues ? (
                 <p className="mt-2 text-xs whitespace-pre-line">{raw.mailIssues}</p>
@@ -360,12 +363,12 @@ export function AdminSettings() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                disabled={testMailStatus === 'sending' || !raw.mailFromEmail}
+                disabled={testMailStatus === 'sending' || !boolVal(raw, 'mailEmailUse')}
                 onClick={handleTestMail}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
               >
                 <Send size={16} />
-                {testMailStatus === 'sending' ? '발송 중...' : testMailStatus === 'sent' ? '발송 완료' : '테스트 메일 보내기'}
+                {testMailStatus === 'sending' ? '발송 중...' : testMailStatus === 'sent' ? '발송 완료' : '입점신청 수신함으로 테스트'}
               </button>
               {testMailMessage ? <span className="text-sm text-emerald-700">{testMailMessage}</span> : null}
             </div>

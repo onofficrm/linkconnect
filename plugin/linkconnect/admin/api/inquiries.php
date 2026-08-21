@@ -80,6 +80,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lc_api_error('문의 ID가 필요합니다.', 'INVALID_ID', 400);
     }
 
+    if (isset($body['action']) && $body['action'] === 'resend_notify') {
+        lc_inquiry_ensure_schema();
+        $row = lc_inquiry_get_by_id($iq_id);
+        if (!$row) {
+            lc_api_error('문의를 찾을 수 없습니다.', 'NOT_FOUND', 404);
+        }
+        $mail_ok = lc_inquiry_notify_admin_new($row);
+        lc_api_success(array(
+            'message'  => $mail_ok
+                ? '관리자 알림 메일을 재발송했습니다.'
+                : '메일 재발송에 실패했습니다. 관리자 설정 → 메일발송 사용/발신 이메일을 확인하세요.',
+            'mailSent' => (bool) $mail_ok,
+            'item'     => lc_inquiry_to_api($row, true),
+        ));
+    }
+
     $result = lc_inquiry_admin_reply($iq_id, $body);
     if (!$result['ok']) {
         lc_api_error($result['message'], 'INQUIRY_UPDATE_FAILED', 400);

@@ -403,28 +403,42 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
     function lc_inquiry_send_admin_email(array $inquiry)
     {
         if (!lc_inquiry_mailer_ready()) {
+            error_log('[LinkConnect Inquiry] mailer unavailable');
             return false;
         }
 
         global $config;
 
-        $from_name = function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect';
-        $admin_email = lc_inquiry_admin_recipient_email();
-        // 입점/문의 알림은 운영 메일 도메인으로 From/To 통일 (발송 실패 감소)
-        $from_email = $admin_email;
-        if (!empty($config['cf_admin_email']) && filter_var((string) $config['cf_admin_email'], FILTER_VALIDATE_EMAIL)) {
-            // 그누보드 관리자 메일이 같은 도메인이면 From으로 사용
-            $cf = (string) $config['cf_admin_email'];
-            if (stripos($cf, '@linkconnect.co.kr') !== false) {
-                $from_email = $cf;
-            }
-        }
-
-        if ($admin_email === '' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+        // 그누보드 mailer()는 cf_email_use=0 이면 조용히 return (null) 한다.
+        if (empty($config['cf_email_use'])) {
+            error_log('[LinkConnect Inquiry] cf_email_use is off — enable Admin → 설정 → 메일발송 사용');
             return false;
         }
-        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+
+        $admin_email = lc_inquiry_admin_recipient_email();
+        if ($admin_email === '' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
+            error_log('[LinkConnect Inquiry] invalid admin recipient');
+            return false;
+        }
+
+        // Cafe24: From 은 호스팅에 존재하는 @linkconnect.co.kr 메일박스여야 함
+        $from_name = function_exists('lc_email_notify_from_name')
+            ? lc_email_notify_from_name()
+            : (function_exists('lc_site_name') ? lc_site_name() : 'LinkConnect');
+        $from_email = '';
+        if (function_exists('lc_email_notify_from_email')) {
+            $from_email = lc_email_notify_from_email();
+        }
+        if ($from_email === '' && !empty($config['cf_admin_email']) && filter_var((string) $config['cf_admin_email'], FILTER_VALIDATE_EMAIL)) {
+            $from_email = (string) $config['cf_admin_email'];
+        }
+        // 외부 도메인 From 은 Cafe24에서 차단되는 경우가 많아 운영 도메인만 허용
+        if ($from_email === '' || stripos($from_email, '@linkconnect.co.kr') === false) {
             $from_email = $admin_email;
+        }
+        if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+            error_log('[LinkConnect Inquiry] invalid from email');
+            return false;
         }
 
         $code = (string) ($inquiry['iq_code'] ?? '');
@@ -438,6 +452,11 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
         $body_text = (string) ($inquiry['iq_body'] ?? '');
         $attach_name = (string) ($inquiry['iq_attachment_name'] ?? '');
         $admin_url = (defined('G5_URL') ? G5_URL : '') . '/admin/support';
+
+        $reply_to = '';
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $reply_to = $email;
+        }
 
         $esc = function ($v) {
             return htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -469,10 +488,15 @@ if (!function_exists('lc_inquiry_send_admin_email')) {
         $html .= '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;vertical-align:top;">내용</th><td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">' . nl2br($esc($body_text)) . '</td></tr>';
         $html .= '</table>';
         $html .= '<p style="margin-top:16px;"><a href="' . $esc($admin_url) . '">관리자에서 문의 확인</a></p>';
-        $html .= '<p style="margin-top:8px;color:#64748b;font-size:12px;">수신: ' . $esc($admin_email) . '</p>';
+        $html .= '<p style="margin-top:8px;color:#64748b;font-size:12px;">수신: ' . $esc($admin_email) . ' · 발신: ' . $esc($from_email) . '</p>';
 
         try {
-            return (bool) @mailer($from_name, $from_email, $admin_email, $subject, $html, 1);
+            // reply_to: 담당자 메일로 바로 회신 가능
+            $ok = (bool) mailer($from_name, $from_email, $admin_email, $subject, $html, 1, '', '', '', $reply_to);
+            if (!$ok) {
+                error_log('[LinkConnect Inquiry] mailer returned false code=' . $code . ' to=' . $admin_email . ' from=' . $from_email);
+            }
+            return $ok;
         } catch (Throwable $e) {
             error_log('[LinkConnect Inquiry] admin mail failed: ' . $e->getMessage());
             return false;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
 import { MessageSquare, Clock, CheckCircle2, HelpCircle, Search, CheckCheck, X, CornerDownRight, Paperclip } from 'lucide-react';
-import { fetchAdminInquiries, fetchAdminInquiryDetail, InquiryItem, InquirySummary, updateAdminInquiry, adminInquiryAttachmentUrl } from '../../lib/api';
+import { fetchAdminInquiries, fetchAdminInquiryDetail, InquiryItem, InquirySummary, updateAdminInquiry, adminInquiryAttachmentUrl, resendAdminInquiryNotify } from '../../lib/api';
 
 const emptySummary: InquirySummary = { total: 0, waiting: 0, processing: 0, closed: 0, today: 0 };
 
@@ -76,6 +76,25 @@ export function AdminSupport() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : '답변 등록에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResendNotify = async () => {
+    if (!selectedId) return;
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await resendAdminInquiryNotify(selectedId);
+      setMessage(result.message);
+      if (!result.mailSent) {
+        setError(result.message);
+        setMessage('');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '메일 재발송에 실패했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -182,6 +201,14 @@ export function AdminSupport() {
                         {detail.attachmentName || '첨부파일 다운로드'}
                       </a>
                     ) : null}
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={handleResendNotify}
+                      className="mt-3 w-full py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                    >
+                      관리자 알림 메일 재발송
+                    </button>
                   </div>
                 </section>
                 <section>
