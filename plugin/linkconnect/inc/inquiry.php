@@ -229,26 +229,28 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
         $ad_method = trim((string) ($payload['adMethod'] ?? ''));
         $message = trim((string) ($payload['message'] ?? ''));
 
-        if ($company === '' || $contact_name === '' || $contact_phone === '' || $contact_email === '') {
-            return array('ok' => false, 'message' => '업체명, 담당자명, 연락처, 이메일은 필수입니다.', 'inquiry' => null);
+        if ($contact_name === '' || $contact_phone === '') {
+            return array('ok' => false, 'message' => '담당자명과 연락처는 필수입니다.', 'inquiry' => null);
         }
-        if (!filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
+        if ($contact_email !== '' && !filter_var($contact_email, FILTER_VALIDATE_EMAIL)) {
             return array('ok' => false, 'message' => '올바른 이메일 주소를 입력해주세요.', 'inquiry' => null);
         }
-        if ($homepage === '' || $industry === '' || $ad_method === '' || $message === '') {
-            return array('ok' => false, 'message' => '홈페이지, 광고 업종, 희망 광고 방식, 소개/문의 내용은 필수입니다.', 'inquiry' => null);
-        }
-        if (!in_array($ad_method, array('CPA', 'CPS', 'CPA/CPS'), true)) {
+        if ($ad_method !== '' && !in_array($ad_method, array('CPA', 'CPS', 'CPA/CPS'), true)) {
             return array('ok' => false, 'message' => '희망 광고 방식을 선택해주세요. (CPA / CPS)', 'inquiry' => null);
         }
-        if (!is_array($file) || empty($file['tmp_name'])) {
-            $upload_err = is_array($file) ? (int) ($file['error'] ?? 0) : -1;
+
+        $has_file = is_array($file)
+            && !empty($file['tmp_name'])
+            && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
+        if (is_array($file) && !$has_file) {
+            $upload_err = (int) ($file['error'] ?? 0);
             if ($upload_err === UPLOAD_ERR_INI_SIZE || $upload_err === UPLOAD_ERR_FORM_SIZE) {
                 return array('ok' => false, 'message' => '사업자등록증 파일이 너무 큽니다. 10MB 이하로 첨부해 주세요.', 'inquiry' => null);
             }
-
-            return array('ok' => false, 'message' => '사업자등록증 첨부는 필수입니다.', 'inquiry' => null);
+            // UPLOAD_ERR_NO_FILE 등 — 첨부 없음으로 처리
         }
+
+        $subject_label = $company !== '' ? $company : $contact_name;
 
         $body = lc_inquiry_format_advertiser_apply_body(array(
             'companyName'  => $company,
@@ -265,7 +267,7 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
             'center'       => 'public',
             'mb_id'        => (string) ($payload['mb_id'] ?? ''),
             'category'     => '광고주 가입',
-            'subject'      => '[입점신청] ' . $company,
+            'subject'      => '[입점신청] ' . $subject_label,
             'body'         => $body,
             'contactName'  => $contact_name,
             'contactEmail' => $contact_email,
@@ -279,24 +281,26 @@ if (!function_exists('lc_inquiry_create_advertiser_apply')) {
         }
 
         $iq_id = (int) ($result['inquiry']['iq_id'] ?? 0);
-        $stored = lc_inquiry_store_attachment($file, $iq_id);
-        if (empty($stored['ok'])) {
-            // 문의는 남기고 첨부 실패만 안내 — 재첨부 유도보다 일관성 위해 실패 처리
-            $table = lc_table('inquiries');
-            lc_sql_query(" DELETE FROM `{$table}` WHERE iq_id = '{$iq_id}' LIMIT 1 ", false);
+        if ($has_file) {
+            $stored = lc_inquiry_store_attachment($file, $iq_id);
+            if (empty($stored['ok'])) {
+                // 문의는 남기고 첨부 실패만 안내 — 재첨부 유도보다 일관성 위해 실패 처리
+                $table = lc_table('inquiries');
+                lc_sql_query(" DELETE FROM `{$table}` WHERE iq_id = '{$iq_id}' LIMIT 1 ", false);
 
-            return array('ok' => false, 'message' => $stored['message'], 'inquiry' => null);
+                return array('ok' => false, 'message' => $stored['message'], 'inquiry' => null);
+            }
+
+            $table = lc_table('inquiries');
+            lc_sql_query(" UPDATE `{$table}` SET
+                iq_attachment_path = '" . lc_sql_escape($stored['path']) . "',
+                iq_attachment_name = '" . lc_sql_escape($stored['name']) . "',
+                iq_attachment_mime = '" . lc_sql_escape($stored['mime']) . "'
+                WHERE iq_id = '{$iq_id}' ", false);
         }
 
-        $table = lc_table('inquiries');
-        lc_sql_query(" UPDATE `{$table}` SET
-            iq_attachment_path = '" . lc_sql_escape($stored['path']) . "',
-            iq_attachment_name = '" . lc_sql_escape($stored['name']) . "',
-            iq_attachment_mime = '" . lc_sql_escape($stored['mime']) . "'
-            WHERE iq_id = '{$iq_id}' ", false);
-
         $inquiry = lc_inquiry_get_by_id($iq_id);
-        // 사업자등록증 첨부 완료 후 support2580_@linkconnect.co.kr 로 알림
+        // 접수 완료 후 support2580_@linkconnect.co.kr 로 알림
         $mail_sent = false;
         if (is_array($inquiry)) {
             $mail_sent = lc_inquiry_notify_admin_new($inquiry);

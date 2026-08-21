@@ -99,11 +99,6 @@ if ($method === 'POST') {
             $file = $_FILES['bizLicense'];
         }
 
-        // 파일이 선택됐는데 서버에 안 도착한 경우 (용량·네트워크)
-        if ($file === null && $form_type === 'advertiser_apply') {
-            lc_api_error('사업자등록증 첨부는 필수입니다. 파일이 전송되지 않았습니다.', 'ATTACHMENT_REQUIRED', 400);
-        }
-
         $result = lc_inquiry_create_advertiser_apply(array(
             'mb_id'        => $mb_id,
             'companyName'  => $body['companyName'] ?? '',

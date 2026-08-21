@@ -2156,7 +2156,7 @@ export async function createAdvertiserApplyInquiry(payload: {
   industry: string;
   adMethod: string;
   message: string;
-  attachment: File;
+  attachment?: File | null;
   website?: string;
 }) {
   const form = new FormData();
@@ -2169,7 +2169,9 @@ export async function createAdvertiserApplyInquiry(payload: {
   form.append('industry', payload.industry);
   form.append('adMethod', payload.adMethod);
   form.append('message', payload.message);
-  form.append('attachment', payload.attachment);
+  if (payload.attachment) {
+    form.append('attachment', payload.attachment);
+  }
   if (payload.website) form.append('website', payload.website);
 
   const response = await fetch(`${PUBLIC_API_BASE}/inquiry.php`, {

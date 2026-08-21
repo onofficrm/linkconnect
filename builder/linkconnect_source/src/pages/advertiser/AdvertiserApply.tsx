@@ -34,24 +34,11 @@ export function AdvertiserApply() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (
-      !companyName.trim() ||
-      !contactName.trim() ||
-      !contactPhone.trim() ||
-      !contactEmail.trim() ||
-      !homepage.trim() ||
-      !industry.trim() ||
-      !adMethod ||
-      !message.trim()
-    ) {
-      setError('필수 항목을 모두 입력해주세요.');
+    if (!contactName.trim() || !contactPhone.trim()) {
+      setError('담당자명과 연락처는 필수입니다.');
       return;
     }
-    if (!file) {
-      setError('사업자등록증을 첨부해주세요.');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
+    if (file && file.size > 10 * 1024 * 1024) {
       setError('사업자등록증은 10MB 이하만 첨부할 수 있습니다.');
       return;
     }
@@ -160,7 +147,7 @@ export function AdvertiserApply() {
                 </div>
                 <div>
                   <h2 className="font-bold text-slate-900">입점 신청 양식</h2>
-                  <p className="text-xs text-slate-500">아래 항목을 입력하고 사업자등록증을 첨부해 주세요.</p>
+                  <p className="text-xs text-slate-500">담당자명·연락처만 필수입니다. 나머지 항목은 선택 사항입니다.</p>
                 </div>
               </div>
 
@@ -177,13 +164,12 @@ export function AdvertiserApply() {
               />
 
               <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">업체명 *</span>
+                <span className="text-sm font-semibold text-slate-800">업체명</span>
                 <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
                   placeholder="회사·상호명"
-                  required
                 />
               </label>
 
@@ -210,46 +196,43 @@ export function AdvertiserApply() {
               </div>
 
               <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">이메일 *</span>
+                <span className="text-sm font-semibold text-slate-800">이메일</span>
                 <input
                   type="email"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                  required
                 />
               </label>
 
               <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">홈페이지 또는 랜딩페이지 *</span>
+                <span className="text-sm font-semibold text-slate-800">홈페이지 또는 랜딩페이지</span>
                 <input
                   value={homepage}
                   onChange={(e) => setHomepage(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
                   placeholder="https://"
-                  required
                 />
               </label>
 
               <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">광고 업종 *</span>
+                <span className="text-sm font-semibold text-slate-800">광고 업종</span>
                 <input
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
                   placeholder="예: 법률·금융, 교육, 커머스 등"
-                  required
                 />
               </label>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-slate-800">희망 광고 방식 (CPA / CPS) *</legend>
+                <legend className="text-sm font-semibold text-slate-800">희망 광고 방식 (CPA / CPS)</legend>
                 <div className="flex flex-wrap gap-2">
                   {AD_METHODS.map((m) => (
                     <button
                       key={m}
                       type="button"
-                      onClick={() => setAdMethod(m)}
+                      onClick={() => setAdMethod((prev) => (prev === m ? '' : m))}
                       className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
                         adMethod === m
                           ? 'bg-slate-900 text-white border-slate-900'
@@ -263,19 +246,18 @@ export function AdvertiserApply() {
               </fieldset>
 
               <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">간단한 소개 및 문의 내용 *</span>
+                <span className="text-sm font-semibold text-slate-800">간단한 소개 및 문의 내용</span>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={5}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
                   placeholder="서비스 소개, 희망 규모, 문의 사항을 적어 주세요."
-                  required
                 />
               </label>
 
               <div className="space-y-2">
-                <span className="text-sm font-semibold text-slate-800 block">첨부 — 사업자등록증 *</span>
+                <span className="text-sm font-semibold text-slate-800 block">첨부 — 사업자등록증</span>
                 <input
                   ref={fileRef}
                   type="file"
