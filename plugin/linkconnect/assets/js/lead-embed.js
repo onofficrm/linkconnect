@@ -29,10 +29,27 @@
     return document.currentScript || (function () {
       var list = document.getElementsByTagName('script');
       for (var i = list.length - 1; i >= 0; i--) {
-        if ((list[i].src || '').indexOf('lead-embed.js') !== -1) return list[i];
+        var src = list[i].src || '';
+        if (src.indexOf('lead-embed.js') !== -1) return list[i];
+        if (list[i].getAttribute('data-lc-embed') === '1') return list[i];
       }
       return null;
     })();
+  }
+
+  /** Cloudways / WP Rocket / Rocket Loader 대응: 페이지의 모든 임베드 스크립트 */
+  function findEmbedScripts() {
+    var out = [];
+    var list = document.getElementsByTagName('script');
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      var src = s.src || '';
+      var hasCode = !!(s.getAttribute('data-lk-code') || s.getAttribute('data-lkCode'));
+      if (hasCode && (src.indexOf('lead-embed.js') !== -1 || s.getAttribute('data-lc-embed') === '1')) {
+        out.push(s);
+      }
+    }
+    return out;
   }
 
   function scriptBase(script) {
@@ -1048,12 +1065,20 @@
   }
 
   function buildFrameSrc(frameUrl, opts) {
+    var pageUrl = opts.pageUrl || window.location.href;
+    var host = '';
+    try {
+      host = new URL(pageUrl, window.location.href).hostname || '';
+    } catch (e0) {
+      host = window.location.hostname || '';
+    }
     var url = frameUrl
       + (frameUrl.indexOf('?') >= 0 ? '&' : '?')
       + 'lkCode=' + encodeURIComponent(opts.lkCode || '')
       + '&mode=' + encodeURIComponent(opts.mode === 'button' ? 'form' : (opts.mode || 'form'))
       + '&channel=' + encodeURIComponent(opts.channel || 'embed')
-      + '&page_url=' + encodeURIComponent(opts.pageUrl || window.location.href);
+      + '&page_url=' + encodeURIComponent(pageUrl)
+      + '&host=' + encodeURIComponent(host);
     if (opts.subId) {
       url += '&sub_id=' + encodeURIComponent(opts.subId);
     }
@@ -1118,11 +1143,16 @@
     var iframe = el('iframe', 'lc-embed-frame', {
       src: buildFrameSrc(frameUrl, opts),
       title: '상담 신청',
-      loading: 'lazy',
+      loading: 'eager',
       referrerpolicy: 'no-referrer-when-downgrade',
     });
     iframe.setAttribute('allow', 'clipboard-write');
+    iframe.setAttribute('importance', 'high');
     iframe.style.height = '520px';
+    iframe.style.width = '100%';
+    iframe.style.border = '0';
+    iframe.style.display = 'block';
+    iframe.style.maxWidth = '100%';
     host.appendChild(iframe);
     mount.appendChild(host);
     bindFrameResize(iframe);
@@ -1190,15 +1220,19 @@
     }
 
     mountLoading(mount);
+    var pageUrl = opts.pageUrl || window.location.href;
+    var host = '';
+    try { host = new URL(pageUrl, window.location.href).hostname || ''; } catch (eH) { host = window.location.hostname || ''; }
     var url = configUrl
       + (configUrl.indexOf('?') >= 0 ? '&' : '?')
       + 'lkCode=' + encodeURIComponent(opts.lkCode)
-      + '&page_url=' + encodeURIComponent(opts.pageUrl || window.location.href);
+      + '&page_url=' + encodeURIComponent(pageUrl)
+      + '&host=' + encodeURIComponent(host);
     if (opts.widgetKey) {
       url += '&widgetKey=' + encodeURIComponent(opts.widgetKey);
     }
 
-    fetch(url, { headers: { Accept: 'application/json' } })
+    fetch(url, { headers: { Accept: 'application/json' }, mode: 'cors', credentials: 'omit' })
       .then(function (res) {
         return res.text().then(function (text) {
           var data = null;
@@ -1227,10 +1261,31 @@
 
   function bootOne(scriptOrMount) {
     var isScript = !!(scriptOrMount && scriptOrMount.tagName === 'SCRIPT');
-    var script = isScript ? scriptOrMount : currentScript();
+    var script = isScript ? scriptOrMount : null;
     var mount = isScript ? resolveMount(script) : scriptOrMount;
     if (!mount) return;
     if (mount.getAttribute('data-lc-ready') === '1') return;
+
+    // div만 있는 경우(캐시가 script data-* 를 잃음) → 매칭 스크립트 또는 페이지 내 임베드 스크립트 탐색
+    if (!script) {
+      var mountId = mount.id ? '#' + mount.id : '';
+      var scripts = findEmbedScripts();
+      for (var si = 0; si < scripts.length; si++) {
+        var cand = scripts[si];
+        var t = attr(cand, 'data-target');
+        if (mountId && t === mountId) {
+          script = cand;
+          break;
+        }
+      }
+      if (!script && scripts.length) {
+        script = scripts[0];
+      }
+      if (!script) {
+        script = currentScript();
+      }
+    }
+
     mount.setAttribute('data-lc-ready', '1');
 
     var lkCode = resolveLkCode(script, mount);
@@ -1239,6 +1294,16 @@
     var subId = attr(script, 'data-sub-id') || attr(mount, 'data-sub-id') || '';
     var mode = resolveMode(script, mount);
     var base = scriptBase(script);
+    // 스크립트 src 를 못 읽으면(합쳐진 번들 등) 플랫폼 절대 URL 폴백
+    if (!base) {
+      try {
+        var known = document.querySelector('script[src*="lead-embed.js"]');
+        if (known) base = scriptBase(known);
+      } catch (eBase) {}
+    }
+    if (!base) {
+      base = 'https://linkconnect.co.kr/plugin/linkconnect';
+    }
     var pageUrl = attr(script, 'data-page-url') || attr(mount, 'data-page-url') || window.location.href;
     var forceInline =
       attr(script, 'data-frame') === '1' ||
@@ -1288,7 +1353,7 @@
       var configUrl =
         attr(script, 'data-config-url') ||
         attr(mount, 'data-config-url') ||
-        (base ? base + '/api/embed.php' : '');
+        (opts.base ? opts.base + '/api/embed.php' : '');
       if (!configUrl) {
         mountButtonIframe(mount, frameUrl, opts);
         return;
@@ -1296,11 +1361,14 @@
       var labelUrl = configUrl
         + (configUrl.indexOf('?') >= 0 ? '&' : '?')
         + 'lkCode=' + encodeURIComponent(opts.lkCode)
-        + '&page_url=' + encodeURIComponent(opts.pageUrl || window.location.href);
+        + '&page_url=' + encodeURIComponent(opts.pageUrl || window.location.href)
+        + '&host=' + encodeURIComponent((function () {
+          try { return new URL(opts.pageUrl || window.location.href).hostname; } catch (e) { return window.location.hostname || ''; }
+        })());
       if (opts.widgetKey) {
         labelUrl += '&widgetKey=' + encodeURIComponent(opts.widgetKey);
       }
-      fetch(labelUrl, { headers: { Accept: 'application/json' } })
+      fetch(labelUrl, { headers: { Accept: 'application/json' }, mode: 'cors', credentials: 'omit' })
         .then(function (res) { return res.json().catch(function () { return null; }); })
         .then(function (data) {
           if (data && data.ok && data.data) {
@@ -1319,19 +1387,35 @@
   }
 
   function boot(scriptHint) {
+    var booted = false;
     var script = scriptHint || currentScript();
     if (script && (attr(script, 'data-lk-code') || attr(script, 'data-target'))) {
       bootOne(script);
-      return;
+      booted = true;
     }
+
+    // div에 data-lc-lead / data-lk-code 가 있는 경우 (스니펫·WP 블록)
     var nodes = document.querySelectorAll('[data-lc-lead]:not([data-lc-ready="1"])');
     if (nodes.length) {
       for (var i = 0; i < nodes.length; i++) {
         bootOne(nodes[i]);
+        booted = true;
       }
-      return;
     }
-    if (script) {
+
+    // Rocket Loader 등으로 currentScript 가 비어도, 페이지 내 임베드 스크립트 전부 부팅
+    var scripts = findEmbedScripts();
+    for (var j = 0; j < scripts.length; j++) {
+      var s = scripts[j];
+      var targetSel = attr(s, 'data-target');
+      var mount = targetSel ? qs(targetSel) : null;
+      if (mount && mount.getAttribute('data-lc-ready') === '1') continue;
+      if (!mount && !attr(s, 'data-lk-code')) continue;
+      bootOne(s);
+      booted = true;
+    }
+
+    if (!booted && script) {
       bootOne(script);
     }
   }
@@ -1345,6 +1429,19 @@
   } else {
     start();
   }
+  // Cloudways / WP Rocket 지연 실행·동적 삽입 대비
+  window.addEventListener('load', function () {
+    try {
+      var pending = document.querySelectorAll('[data-lc-lead]:not([data-lc-ready="1"])');
+      if (pending.length || findEmbedScripts().some(function (s) {
+        var t = attr(s, 'data-target');
+        var m = t ? qs(t) : null;
+        return !m || m.getAttribute('data-lc-ready') !== '1';
+      })) {
+        boot(null);
+      }
+    } catch (e) {}
+  });
 
   window.LinkConnectLeadEmbed = { boot: boot, bootOne: bootOne };
 })();

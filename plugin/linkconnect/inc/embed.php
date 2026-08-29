@@ -96,9 +96,13 @@ if (!function_exists('lc_embed_brand_name')) {
 if (!function_exists('lc_embed_script_url')) {
     function lc_embed_script_url()
     {
-        return function_exists('lc_asset_url')
+        $url = function_exists('lc_asset_url')
             ? lc_asset_url('js/lead-embed.js')
             : lc_site_absolute_url('/plugin/linkconnect/assets/js/lead-embed.js');
+        // Cloudways/CDN 캐시 무력화: 파일 mtime 기반 버전
+        $file = dirname(__DIR__) . '/assets/js/lead-embed.js';
+        $ver = is_file($file) ? (string) filemtime($file) : (string) time();
+        return $url . (strpos($url, '?') === false ? '?' : '&') . 'v=' . rawurlencode($ver);
     }
 }
 
@@ -242,6 +246,19 @@ if (!function_exists('lc_embed_request_host')) {
         } elseif (isset($_GET['pageUrl'])) {
             $page_host = lc_embed_host_from_url((string) $_GET['pageUrl']);
         }
+        $explicit_host = '';
+        if (isset($_GET['host'])) {
+            $explicit_host = lc_embed_host_from_url((string) $_GET['host']);
+        }
+
+        // 외부 임베드(Cloudways/WP 등): 클라이언트가 넘긴 page_url·host 를 최우선.
+        // Referer 가 비거나 CDN/플랫폼으로 바뀌어도 실제 설치 도메인으로 검증한다.
+        if ($page_host !== '') {
+            return $page_host;
+        }
+        if ($explicit_host !== '') {
+            return $explicit_host;
+        }
 
         // iframe 안(리퍼러·오리진이 플랫폼)에서는 부모 페이지 page_url 로 도메인 검증
         if ($platform !== '' && $page_host !== '') {
@@ -250,13 +267,7 @@ if (!function_exists('lc_embed_request_host')) {
             }
         }
 
-        foreach (array($referer_host, $origin_host, $page_host) as $host) {
-            if ($host !== '') {
-                return $host;
-            }
-        }
-        if (isset($_GET['host'])) {
-            $host = lc_embed_host_from_url((string) $_GET['host']);
+        foreach (array($referer_host, $origin_host) as $host) {
             if ($host !== '') {
                 return $host;
             }
@@ -1619,10 +1630,16 @@ if (!function_exists('lc_embed_snippet_html')) {
             ? ' data-widget-key="' . htmlspecialchars($widget_key, ENT_QUOTES, 'UTF-8') . '"'
             : '';
 
+        // data-lc-lead / data-lk-code 를 div에도 둠 → Cloudways(WP Rocket·Rocket Loader)가
+        // script의 currentScript/data-* 를 잃어도 마운트 노드로 부팅 가능
+        $div_attrs = ' id="' . $id . '" data-lc-lead="1" data-lk-code="' . $code . '" data-channel="embed"'
+            . $widget_attr . $mode_attr;
+
         return '<!-- ' . $brand . ' ' . $label . " -->\n"
-            . '<div id="' . $id . '"></div>' . "\n"
+            . '<div' . $div_attrs . '></div>' . "\n"
             . '<script src="' . $script . '" data-lk-code="' . $code . '"' . $widget_attr
-            . ' data-target="#' . $id . '" data-channel="embed"' . $mode_attr . ' async></script>';
+            . ' data-target="#' . $id . '" data-channel="embed"' . $mode_attr
+            . ' data-lc-embed="1" async defer></script>';
     }
 }
 

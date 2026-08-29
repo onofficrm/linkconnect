@@ -49,9 +49,9 @@ export const EMBED_HELP: Record<string, { title: string; body: ReactNode }> = {
     title: '허용 도메인',
     body: (
       <TipBody
-        why="위젯이 동작해도 되는 사이트 주소를 등록합니다. 예: example.com (www 없이도 보통 같이 인식됩니다)."
+        why="위젯이 동작해도 되는 사이트 주소를 등록합니다. 예: example.com (www 없이도 보통 같이 인식됩니다). Cloudways 스테이징(xxx.cloudwaysapps.com)에도 넣을 거면 그 주소도 함께 등록하세요."
         ifSkip="비워 두면 모든 사이트에서 위젯이 동작합니다. 무단 설치가 걱정되면 반드시 등록하세요."
-        tip="실제 설치할 도메인만 넣고 저장한 뒤, 미리보기로 접수가 되는지 확인하세요."
+        tip="실제 설치할 도메인만 넣고 저장한 뒤, 미리보기로 접수가 되는지 확인하세요. WP Rocket·Cloudflare Rocket Loader 사용 시 캐시를 비운 뒤 HTML을 다시 붙여 넣으세요."
       />
     ),
   },
@@ -69,8 +69,8 @@ export const EMBED_HELP: Record<string, { title: string; body: ReactNode }> = {
     title: '워드프레스 플러그인',
     body: (
       <TipBody
-        why="HTML을 직접 넣기 어려울 때 zip 플러그인을 설치하고, 설정에 홍보코드(·위젯 키)를 넣은 뒤 숏코드/블록으로 페이지에 붙입니다."
-        tip="테마·캐시 플러그인이 iframe을 막지 않는지 확인하세요. GTM 전환은 dataLayer 이벤트로 잡을 수 있습니다."
+        why="HTML을 직접 넣기 어려울 때 zip 플러그인을 설치하고, 설정에 홍보코드(·위젯 키)를 넣은 뒤 숏코드/블록으로 페이지에 붙입니다. Cloudways 호스팅도 동일합니다."
+        tip="테마·캐시(WP Rocket)·Cloudflare Rocket Loader가 스크립트를 합치거나 지연시키면 폼이 안 보일 수 있습니다. 해당 페이지는 JS 최적화 제외 후 캐시를 비우세요. GTM 전환은 dataLayer 이벤트로 잡을 수 있습니다."
       />
     ),
   },

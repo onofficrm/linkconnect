@@ -57,6 +57,15 @@ if ($lk_code !== '' && function_exists('lc_embed_config_for_lk_code')) {
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer-when-downgrade');
+// Cloudways 등 외부 호스트 iframe: 구형 X-Frame-Options 제거, CSP frame-ancestors 만 사용
+if (function_exists('header_remove')) {
+    header_remove('X-Frame-Options');
+}
+if (function_exists('lc_api_allow_public_cors')) {
+    lc_api_allow_public_cors();
+} else {
+    header('Access-Control-Allow-Origin: *');
+}
 
 $script_url = function_exists('lc_embed_script_url') ? lc_embed_script_url() : '';
 $brand = function_exists('lc_embed_brand_name') ? lc_embed_brand_name() : '상담';
