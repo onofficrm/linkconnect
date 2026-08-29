@@ -71,7 +71,7 @@ export function PartnerProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       setData(next);
       applyPhoneVisibility(next.partner_phone);
-      document.title = `모두의철거 | 상가·주택 철거 비교견적`;
+      document.title = `철거 업체`;
       setReady(true);
     }
 

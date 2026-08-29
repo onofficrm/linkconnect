@@ -33,10 +33,14 @@ const pretendard = localFont({
   preload: true,
 });
 
+const SITE_TITLE = "철거 업체";
+const SITE_DESCRIPTION =
+  "철거 업체 모두의철거에서 상가, 사무실, 주택, 공장 등 다양한 공간의 철거 서비스를 알아보세요. 현장 상황에 맞춰 철거 범위와 작업 방법을 확인하고, 원상복구 및 폐기물 처리까지 편리하게 진행할 수 있습니다. 전문 철거업체를 통해 안전하고 체계적인 철거 작업을 상담받아보세요.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://yevely.kr"),
-  title: "모두의철거 | 상가·주택 철거 비교견적",
-  description: "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
     other: {
@@ -70,8 +74,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "모두의철거 | 상가·주택 철거 비교견적",
-    description: "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     url: "/merchant/modemo/",
     siteName: "모두의철거",
     locale: "ko_KR",
@@ -79,8 +83,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "모두의철거 | 상가·주택 철거 비교견적",
-    description: "상가·학원·주택 철거와 사무실 원상복구, 폐기물 처리까지. 모두의철거에서 검증된 업체 비교견적을 무료로 받아보세요.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
   alternates: {
     canonical: "/merchant/modemo/",
