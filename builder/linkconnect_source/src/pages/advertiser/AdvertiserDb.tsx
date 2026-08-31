@@ -346,7 +346,14 @@ export function AdvertiserDb() {
                   <td className="px-4 py-4 text-slate-900 font-bold whitespace-nowrap">{db.name}</td>
                   <td className="px-4 py-4 text-slate-600 font-mono text-xs whitespace-nowrap">{db.phone}</td>
                   <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{db.region}</td>
-                  <td className="px-4 py-4 text-slate-600 max-w-[150px] truncate" title={db.inquiry}>{db.inquiry}</td>
+                  <td className="px-4 py-4 text-slate-600 max-w-[150px] truncate" title={db.inquiry}>
+                    <span className="inline-flex items-center gap-1 max-w-full">
+                      {db.attachmentName ? (
+                        <FileText size={14} className="shrink-0 text-cyan-600" title={`첨부: ${db.attachmentName}`} />
+                      ) : null}
+                      <span className="truncate">{db.inquiry}</span>
+                    </span>
+                  </td>
                   <td className="px-4 py-4 text-slate-500 font-mono text-xs whitespace-nowrap">{db.partner}</td>
                   <td className="px-4 py-4 text-center whitespace-nowrap">
                     <StatusBadge status={db.status} />
@@ -527,7 +534,7 @@ export function AdvertiserDb() {
                       {selectedDb.inquiry}
                     </div>
                   </div>
-                  {selectedDb.attachmentName && (selectedDb.attachmentUrl || selectedDb.attachmentDownloadUrl) ? (
+                  {selectedDb.attachmentName ? (
                     <div className="md:col-span-2">
                       <div className="text-slate-400 mb-1 flex items-center gap-1.5">
                         <FileText size={14} /> 고객 첨부파일
@@ -545,6 +552,11 @@ export function AdvertiserDb() {
                             </a>
                           ) : null}
                         </div>
+                        {selectedDb.attachmentStored === false ? (
+                          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                            배포 이전 접수로 파일 본문은 저장되지 않았습니다. 파일명만 확인할 수 있습니다.
+                          </p>
+                        ) : null}
                         {selectedDb.attachmentPreviewable && selectedDb.attachmentUrl ? (
                           selectedDb.attachmentMime?.startsWith('image/') ? (
                             <a href={selectedDb.attachmentUrl} target="_blank" rel="noreferrer" className="block">

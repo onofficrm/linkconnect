@@ -334,6 +334,7 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
                 'attachmentUrl'         => '',
                 'attachmentDownloadUrl' => '',
                 'attachmentPreviewable' => false,
+                'attachmentStored'      => false,
             );
 
         return array_merge(array(

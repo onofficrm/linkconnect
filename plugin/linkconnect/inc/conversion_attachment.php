@@ -227,6 +227,21 @@ if (!function_exists('lc_conversion_merchant_owns_cv')) {
     }
 }
 
+if (!function_exists('lc_conversion_inquiry_attachment_name')) {
+    function lc_conversion_inquiry_attachment_name($inquiry)
+    {
+        $inquiry = (string) $inquiry;
+        if ($inquiry === '') {
+            return '';
+        }
+        if (preg_match('/견적서첨부:\s*([^|]+)/u', $inquiry, $matches)) {
+            return trim((string) ($matches[1] ?? ''));
+        }
+
+        return '';
+    }
+}
+
 if (!function_exists('lc_conversion_attachment_api_meta')) {
     function lc_conversion_attachment_api_meta(array $row)
     {
@@ -234,13 +249,18 @@ if (!function_exists('lc_conversion_attachment_api_meta')) {
         $path = trim((string) ($row['cv_attachment_path'] ?? ''));
         $name = trim((string) ($row['cv_attachment_name'] ?? ''));
         $mime = trim((string) ($row['cv_attachment_mime'] ?? ''));
+        $inquiry_name = lc_conversion_inquiry_attachment_name((string) ($row['cv_inquiry'] ?? ''));
+        if ($name === '' && $inquiry_name !== '') {
+            $name = $inquiry_name;
+        }
         if ($path === '' || $cv_id <= 0) {
             return array(
-                'attachmentName'        => '',
-                'attachmentMime'        => '',
+                'attachmentName'        => $name,
+                'attachmentMime'        => $mime,
                 'attachmentUrl'         => '',
                 'attachmentDownloadUrl' => '',
                 'attachmentPreviewable' => false,
+                'attachmentStored'      => false,
             );
         }
 
@@ -253,6 +273,7 @@ if (!function_exists('lc_conversion_attachment_api_meta')) {
             'attachmentUrl'         => $base . '?cvId=' . $cv_id . '&inline=1',
             'attachmentDownloadUrl' => $base . '?cvId=' . $cv_id,
             'attachmentPreviewable' => $preview,
+            'attachmentStored'      => true,
         );
     }
 }
@@ -288,6 +309,141 @@ if (!function_exists('lc_conversion_serve_attachment_for_merchant')) {
             'name'     => $name,
             'mime'     => $mime !== '' ? $mime : 'application/octet-stream',
             'inline'   => (bool) $inline,
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_phone_digits')) {
+    function lc_conversion_phone_digits($phone)
+    {
+        return preg_replace('/\D+/', '', (string) $phone);
+    }
+}
+
+if (!function_exists('lc_conversion_delete_attachment_files')) {
+    function lc_conversion_delete_attachment_files($cv_id, $relative = '')
+    {
+        $cv_id = (int) $cv_id;
+        if ($cv_id <= 0) {
+            return;
+        }
+        $dir = lc_conversion_attachment_dir() . '/' . $cv_id;
+        if (is_dir($dir)) {
+            $dh = opendir($dir);
+            if ($dh !== false) {
+                while (($entry = readdir($dh)) !== false) {
+                    if ($entry === '.' || $entry === '..') {
+                        continue;
+                    }
+                    $path = $dir . '/' . $entry;
+                    if (is_file($path)) {
+                        @unlink($path);
+                    }
+                }
+                closedir($dh);
+            }
+            @rmdir($dir);
+        }
+        if ($relative !== '') {
+            $full = lc_conversion_attachment_full_path($relative);
+            if ($full !== '' && is_file($full)) {
+                @unlink($full);
+            }
+        }
+    }
+}
+
+if (!function_exists('lc_conversion_delete_by_ids')) {
+    /**
+     * @param int[] $cv_ids
+     * @return array{ok:bool,message:string,deleted:int,kept:int[]}
+     */
+    function lc_conversion_delete_by_ids(array $cv_ids)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'deleted' => 0, 'kept' => array());
+        }
+        $cv_ids = array_values(array_unique(array_filter(array_map('intval', $cv_ids), function ($id) {
+            return $id > 0;
+        })));
+        if (!$cv_ids) {
+            return array('ok' => false, 'message' => '삭제할 디비 ID가 없습니다.', 'deleted' => 0, 'kept' => array());
+        }
+
+        $table = lc_table('conversions');
+        $deleted = 0;
+        foreach ($cv_ids as $cv_id) {
+            $row = function_exists('lc_conversion_get_by_id') ? lc_conversion_get_by_id($cv_id) : null;
+            if (!is_array($row)) {
+                continue;
+            }
+            lc_conversion_delete_attachment_files($cv_id, (string) ($row['cv_attachment_path'] ?? ''));
+            if (lc_sql_query(" DELETE FROM `{$table}` WHERE cv_id = '{$cv_id}' LIMIT 1 ", false) !== false) {
+                $deleted++;
+            }
+        }
+
+        return array(
+            'ok'      => true,
+            'message' => $deleted . '건 삭제했습니다.',
+            'deleted' => $deleted,
+            'kept'    => array(),
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_prune_modemo_except')) {
+    /**
+     * @return array{ok:bool,message:string,deleted:int,kept:array|null}
+     */
+    function lc_conversion_prune_modemo_except($keep_name, $keep_phone)
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'deleted' => 0, 'kept' => null);
+        }
+
+        $keep_name = trim((string) $keep_name);
+        $keep_phone_digits = lc_conversion_phone_digits($keep_phone);
+        if ($keep_name === '' || $keep_phone_digits === '') {
+            return array('ok' => false, 'message' => '유지할 고객명·연락처가 필요합니다.', 'deleted' => 0, 'kept' => null);
+        }
+
+        $cp_table = lc_table('campaigns');
+        $cv_table = lc_table('conversions');
+        $campaign = lc_sql_fetch(" SELECT cp_id FROM `{$cp_table}` WHERE cp_code = 'CPA-MODEMO' LIMIT 1 ");
+        if (!is_array($campaign)) {
+            return array('ok' => false, 'message' => '모두의철거(CPA-MODEMO) 캠페인을 찾을 수 없습니다.', 'deleted' => 0, 'kept' => null);
+        }
+        $cp_id = (int) ($campaign['cp_id'] ?? 0);
+
+        $keep_row = null;
+        $delete_ids = array();
+        $result = lc_sql_query(" SELECT cv_id, cv_name, cv_phone, cv_attachment_path FROM `{$cv_table}`
+            WHERE cp_id = '{$cp_id}'
+            ORDER BY cv_id ASC ", false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $digits = lc_conversion_phone_digits($row['cv_phone'] ?? '');
+                $name = trim((string) ($row['cv_name'] ?? ''));
+                if ($name === $keep_name && $digits === $keep_phone_digits) {
+                    $keep_row = $row;
+                    continue;
+                }
+                $delete_ids[] = (int) ($row['cv_id'] ?? 0);
+            }
+        }
+
+        if (!$keep_row) {
+            return array('ok' => false, 'message' => '유지할 디비(' . $keep_name . ' / ' . $keep_phone . ')를 찾지 못했습니다.', 'deleted' => 0, 'kept' => null);
+        }
+
+        $delete_result = lc_conversion_delete_by_ids($delete_ids);
+
+        return array(
+            'ok'      => true,
+            'message' => '모두의철거 디비 ' . (int) $delete_result['deleted'] . '건 삭제, ' . $keep_name . ' 1건 유지',
+            'deleted' => (int) $delete_result['deleted'],
+            'kept'    => $keep_row,
         );
     }
 }

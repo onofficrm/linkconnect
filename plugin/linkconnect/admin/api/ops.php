@@ -108,6 +108,26 @@ if ($method === 'POST') {
         lc_api_success($result);
     }
 
+    if ($action === 'prune_modemo_conversions') {
+        if (!lc_is_super_admin()) {
+            lc_api_error('최고관리자만 실행할 수 있습니다.', 'FORBIDDEN', 403);
+        }
+        if (!function_exists('lc_conversion_prune_modemo_except')) {
+            lc_api_error('디비 정리 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
+        }
+        $keep_name = isset($body['keepName']) ? trim((string) $body['keepName']) : '이동익';
+        $keep_phone = isset($body['keepPhone']) ? trim((string) $body['keepPhone']) : '010-9562-2599';
+        $result = lc_conversion_prune_modemo_except($keep_name, $keep_phone);
+        if (empty($result['ok'])) {
+            lc_api_error((string) ($result['message'] ?? '실패'), 'PRUNE_FAILED', 400);
+        }
+        lc_api_success(array(
+            'message' => (string) ($result['message'] ?? ''),
+            'deleted' => (int) ($result['deleted'] ?? 0),
+            'keptCvId' => is_array($result['kept'] ?? null) ? (int) ($result['kept']['cv_id'] ?? 0) : 0,
+        ));
+    }
+
     if ($action === 'apply_modemo_campaign') {
         if (!function_exists('lc_campaign_ensure_modemo')) {
             lc_api_error('modemo 캠페인 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);

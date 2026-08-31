@@ -589,6 +589,7 @@ export type MerchantConversion = {
   attachmentUrl?: string;
   attachmentDownloadUrl?: string;
   attachmentPreviewable?: boolean;
+  attachmentStored?: boolean;
 };
 
 export type MerchantDashboardResponse = {
