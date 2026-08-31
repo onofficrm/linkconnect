@@ -36,7 +36,7 @@ export default function HeroSection() {
                         </div>
 
                         <div className={styles.heroImageCard}>
-                            <Image width={667} height={500} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" priority={!isMobile} />
+                            <Image width={667} height={500} src={modemoAsset("/images/1_용인주택.jpg")} alt="용인 주택의 철거 공사가 깔끔하게 완료된 현장 사진" />
                             <div className={styles.heroImageOverlay} />
                             <div className={styles.heroImageLabel}>용인 주택</div>
                         </div>

@@ -112,13 +112,20 @@ export default {
       let html = await upstream.text();
       html = rewriteHtml(html, publicHost);
       outHeaders.delete('Content-Length');
-      // HTML은 짧게 캐시 (배포 반영)
-      outHeaders.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
-      return new Response(html, {
+      outHeaders.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+      const htmlResponse = new Response(html, {
         status: upstream.status,
         statusText: upstream.statusText,
         headers: outHeaders,
       });
+      if (request.method === 'GET' && upstream.status === 200) {
+        try {
+          await cache.put(request, htmlResponse.clone());
+        } catch (_) {
+          /* ignore quota */
+        }
+      }
+      return htmlResponse;
     }
 
     if (isCacheablePath(target.pathname) || target.pathname.includes('merchant-static.php')) {

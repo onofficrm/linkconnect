@@ -75,6 +75,7 @@ export default function SimpleQuoteSection() {
         campaign_id: data.campaign_id,
         merchant_id: data.merchant_id,
       },
+      file,
     );
 
     if (result.ok) {
@@ -250,7 +251,7 @@ export default function SimpleQuoteSection() {
                     accept="image/*,.pdf"
                   />
                   {file ? <p className={styles.fileName}>{file.name}</p> : null}
-                  <p className={styles.fileHint}>파일명은 상담 시 참고용으로만 기록됩니다.</p>
+                  <p className={styles.fileHint}>PDF·이미지 파일(최대 10MB)을 첨부할 수 있습니다.</p>
                 </div>
 
                 {status === "error" && feedback ? (

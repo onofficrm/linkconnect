@@ -83,6 +83,12 @@ if (is_file(LC_PLUGIN_PATH . '/inc/wallet.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/conversion.php')) {
     require_once LC_PLUGIN_PATH . '/inc/conversion.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/conversion_attachment.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/conversion_attachment.php';
+    if (function_exists('lc_conversion_attachment_ensure_schema')) {
+        lc_conversion_attachment_ensure_schema();
+    }
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/admin.php')) {
     require_once LC_PLUGIN_PATH . '/inc/admin.php';
 }

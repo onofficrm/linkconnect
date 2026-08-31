@@ -671,6 +671,9 @@ if (!function_exists('lc_db_run_migrations')) {
             'cv_call_result' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_call_duration`",
             'cv_final_status' => "varchar(20) NOT NULL DEFAULT '' AFTER `cv_call_result`",
             'cv_final_locked' => "tinyint(1) NOT NULL DEFAULT 0 AFTER `cv_final_status`",
+            'cv_attachment_path' => "varchar(500) NOT NULL DEFAULT '' AFTER `cv_inquiry`",
+            'cv_attachment_name' => "varchar(255) NOT NULL DEFAULT '' AFTER `cv_attachment_path`",
+            'cv_attachment_mime'   => "varchar(120) NOT NULL DEFAULT '' AFTER `cv_attachment_name`",
         ) as $col => $definition) {
             if (lc_db_table_exists($conversions) && !lc_db_column_exists($conversions, $col)) {
                 $alters[] = "ALTER TABLE `{$conversions}` ADD COLUMN `{$col}` {$definition}";

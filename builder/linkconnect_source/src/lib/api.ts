@@ -584,6 +584,11 @@ export type MerchantConversion = {
   adminComment?: string;
   partnerPublic?: boolean;
   history?: Array<{ time: string; text: string }>;
+  attachmentName?: string;
+  attachmentMime?: string;
+  attachmentUrl?: string;
+  attachmentDownloadUrl?: string;
+  attachmentPreviewable?: boolean;
 };
 
 export type MerchantDashboardResponse = {

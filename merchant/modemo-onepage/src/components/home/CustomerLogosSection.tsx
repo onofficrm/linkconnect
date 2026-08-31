@@ -23,7 +23,7 @@ const LOGOS_ROW_3_MOBILE = BUSINESS_LOGOS.slice(17, 25);
 
 const LogoTrack = ({ logos, reverse = false, prefix = '' }: { logos: string[]; reverse?: boolean; prefix?: string }) => (
     <div className={reverse ? styles.logosRowTrackReverse : styles.logosRowTrack}>
-        {[1, 2, 3].map((setIndex) => (
+        {[1, 2].map((setIndex) => (
             <div key={`${prefix}-track-${setIndex}`} className={styles.logosGroup}>
                 {logos.map((logo, i) => (
                     <div key={`${prefix}-row-${setIndex}-${i}`} className={styles.logoCard}>
@@ -33,6 +33,7 @@ const LogoTrack = ({ logos, reverse = false, prefix = '' }: { logos: string[]; r
                                 alt={logo.replace('.png', '')}
                                 width={200}
                                 height={50}
+                                loading="lazy"
                                 style={{ width: 'auto', height: '100%' }}
                             />
                         </div>

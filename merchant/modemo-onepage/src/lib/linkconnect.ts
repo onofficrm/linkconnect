@@ -90,36 +90,51 @@ export function buildInquiryText(fields: {
 export async function submitConsultation(
   payload: ConsultationPayload,
   tracking: ConsultationTracking = {},
+  file?: File | null,
 ): Promise<ConsultationResult> {
   const lkCode = tracking.lkCode || resolveLkCode();
   const campaignId = tracking.campaign_id || resolveCampaignId();
 
-  const body: Record<string, string> = {
+  const fields: Record<string, string> = {
     name: payload.name.trim(),
     phone: payload.phone.trim(),
     inquiry: trimInquiry(payload.inquiry),
   };
 
   if (lkCode) {
-    body.lkCode = lkCode;
-    if (tracking.channel) body.channel = tracking.channel;
+    fields.lkCode = lkCode;
+    if (tracking.channel) fields.channel = tracking.channel;
   } else {
     // 독립도메인 직접 유입 → 서버에서 호스트/캠페인 매칭 후 유입경로 SEO
-    if (campaignId) body.campaignId = campaignId;
-    body.channel = 'SEO';
+    if (campaignId) fields.campaignId = campaignId;
+    fields.channel = 'SEO';
   }
 
-  if (tracking.sub_id) body.sub_id = tracking.sub_id;
-  if (tracking.utm_source) body.utm_source = tracking.utm_source;
-  if (tracking.utm_medium) body.utm_medium = tracking.utm_medium;
-  if (tracking.utm_campaign) body.utm_campaign = tracking.utm_campaign;
+  if (tracking.sub_id) fields.sub_id = tracking.sub_id;
+  if (tracking.utm_source) fields.utm_source = tracking.utm_source;
+  if (tracking.utm_medium) fields.utm_medium = tracking.utm_medium;
+  if (tracking.utm_campaign) fields.utm_campaign = tracking.utm_campaign;
 
   try {
-    const res = await fetch(receiveApiUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let res: Response;
+    if (file) {
+      const form = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== '') form.append(key, value);
+      });
+      form.append('attachment', file);
+      res = await fetch(receiveApiUrl(), {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: form,
+      });
+    } else {
+      res = await fetch(receiveApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(fields),
+      });
+    }
 
     const data = await res.json().catch(() => ({}));
     const resultPayload =

@@ -527,6 +527,44 @@ export function AdvertiserDb() {
                       {selectedDb.inquiry}
                     </div>
                   </div>
+                  {selectedDb.attachmentName && (selectedDb.attachmentUrl || selectedDb.attachmentDownloadUrl) ? (
+                    <div className="md:col-span-2">
+                      <div className="text-slate-400 mb-1 flex items-center gap-1.5">
+                        <FileText size={14} /> 고객 첨부파일
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-slate-800 break-all">{selectedDb.attachmentName}</span>
+                          {selectedDb.attachmentDownloadUrl ? (
+                            <a
+                              href={selectedDb.attachmentDownloadUrl}
+                              className="text-xs font-bold text-cyan-700 hover:underline shrink-0"
+                              download={selectedDb.attachmentName}
+                            >
+                              다운로드
+                            </a>
+                          ) : null}
+                        </div>
+                        {selectedDb.attachmentPreviewable && selectedDb.attachmentUrl ? (
+                          selectedDb.attachmentMime?.startsWith('image/') ? (
+                            <a href={selectedDb.attachmentUrl} target="_blank" rel="noreferrer" className="block">
+                              <img
+                                src={selectedDb.attachmentUrl}
+                                alt={selectedDb.attachmentName}
+                                className="max-h-80 w-full object-contain rounded-lg border border-slate-200 bg-white"
+                              />
+                            </a>
+                          ) : (
+                            <iframe
+                              title={selectedDb.attachmentName}
+                              src={selectedDb.attachmentUrl}
+                              className="w-full h-96 rounded-lg border border-slate-200 bg-white"
+                            />
+                          )
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

@@ -326,7 +326,17 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
         }
         $page_url = lc_conversion_page_url($row);
 
-        return array(
+        $attachment_meta = function_exists('lc_conversion_attachment_api_meta')
+            ? lc_conversion_attachment_api_meta($row)
+            : array(
+                'attachmentName'        => '',
+                'attachmentMime'        => '',
+                'attachmentUrl'         => '',
+                'attachmentDownloadUrl' => '',
+                'attachmentPreviewable' => false,
+            );
+
+        return array_merge(array(
             'id'          => (string) $row['cv_code'],
             'cvId'        => (int) $row['cv_id'],
             'date'        => date('Y.m.d H:i', strtotime($row['cv_created_at'])),
@@ -364,7 +374,7 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
             'adminComment'     => '',
             'partnerPublic'    => !isset($row['cv_partner_visible']) || (int) $row['cv_partner_visible'] === 1,
             'history'     => lc_conversion_merchant_history($row),
-        );
+        ), $attachment_meta);
     }
 }
 

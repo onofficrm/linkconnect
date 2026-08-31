@@ -10,9 +10,54 @@ if (function_exists('lc_api_allow_public_cors')) {
 
 lc_api_require_method('POST');
 
-$body = lc_api_read_json_body();
-if (!$body && $_POST) {
+$upload_attachment = null;
+$content_type = isset($_SERVER['CONTENT_TYPE']) ? (string) $_SERVER['CONTENT_TYPE'] : '';
+if (stripos($content_type, 'multipart/form-data') !== false) {
     $body = $_POST;
+    if (!empty($_FILES['attachment']) && is_array($_FILES['attachment'])) {
+        $upload_attachment = $_FILES['attachment'];
+    }
+} else {
+    $body = lc_api_read_json_body();
+    if (!$body && $_POST) {
+        $body = $_POST;
+    }
+}
+if (!is_array($body)) {
+    $body = array();
+}
+
+if (!function_exists('lc_receive_attach_uploaded_file')) {
+    /**
+     * @return array{ok:bool,message:string,conversion:array|null}
+     */
+    function lc_receive_attach_uploaded_file(array $result, $attachment_file)
+    {
+        if (empty($result['ok']) || !is_array($result['conversion']) || !$attachment_file || !is_array($attachment_file)) {
+            return $result;
+        }
+        if (!function_exists('lc_conversion_save_attachment')) {
+            return $result;
+        }
+
+        $cv_id = (int) ($result['conversion']['cv_id'] ?? 0);
+        if ($cv_id <= 0) {
+            return $result;
+        }
+
+        $saved = lc_conversion_save_attachment($cv_id, $attachment_file);
+        if (empty($saved['ok'])) {
+            error_log('[LinkConnect receive] attachment save failed cv_id=' . $cv_id . ' msg=' . (string) ($saved['message'] ?? ''));
+            return $result;
+        }
+
+        $fresh = function_exists('lc_conversion_get_by_id') ? lc_conversion_get_by_id($cv_id) : null;
+        if (is_array($fresh)) {
+            $result['conversion'] = $fresh;
+        }
+
+        return $result;
+    }
 }
 
 // 허니팟: 봇이 채운 경우 성공처럼 응답하고 저장하지 않음
@@ -180,6 +225,7 @@ if ($lk_code !== '') {
     }
 
     $result = lc_conversion_create_from_link($link, $payload);
+    $result = lc_receive_attach_uploaded_file($result, $upload_attachment);
     if (!$result['ok']) {
         $err_code = isset($result['code']) ? (string) $result['code'] : 'CREATE_FAILED';
         if ($err_code === 'DUPLICATE_RECENT') {
@@ -262,6 +308,7 @@ if (!is_array($campaign)) {
 }
 
 $result = lc_conversion_create_from_seo_campaign($campaign, $payload);
+$result = lc_receive_attach_uploaded_file($result, $upload_attachment);
 if (!$result['ok']) {
     $err_code = isset($result['code']) ? (string) $result['code'] : 'CREATE_FAILED';
     if ($err_code === 'DUPLICATE_RECENT') {

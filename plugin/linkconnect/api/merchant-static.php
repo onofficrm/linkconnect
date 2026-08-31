@@ -119,6 +119,53 @@ function lc_merchant_static_resolve_file($base, $rel) {
     return false;
 }
 
+/**
+ * raster 이미지 기본 WebP·리사이즈 (쿼리 w/h/fmt 로 덮어쓰기 가능).
+ *
+ * @return array{w:int,h:int,fit:string,fmt:string,original:bool}
+ */
+function lc_merchant_static_image_opts($rel, $full)
+{
+    if (function_exists('lc_image_variant_parse_request')) {
+        $opts = lc_image_variant_parse_request();
+        if ($opts['w'] > 0 || $opts['h'] > 0 || $opts['fmt'] !== '' || !empty($opts['original'])) {
+            return $opts;
+        }
+    } else {
+        $opts = array('w' => 0, 'h' => 0, 'fit' => 'contain', 'fmt' => '', 'original' => false);
+    }
+
+    $ext = strtolower(pathinfo((string) $full, PATHINFO_EXTENSION));
+    if (in_array($ext, array('gif', 'webp'), true)) {
+        $opts['original'] = true;
+
+        return $opts;
+    }
+
+    $rel = str_replace('\\', '/', (string) $rel);
+    $w = 960;
+    if (strpos($rel, 'business_logos/') !== false) {
+        $w = 240;
+    } elseif (preg_match('#^images/[0-9]_#u', $rel)) {
+        $w = 1200;
+    } elseif (preg_match('/logo_(black|white)\.png$/i', $rel)) {
+        $w = 320;
+    }
+
+    $fmt = 'webp';
+    if (!function_exists('imagewebp')) {
+        $fmt = '';
+    }
+
+    return array(
+        'w'        => $w,
+        'h'        => 0,
+        'fit'      => 'contain',
+        'fmt'      => $fmt,
+        'original' => false,
+    );
+}
+
 $full = lc_merchant_static_resolve_file($base, $rel);
 if ($full === false) {
     http_response_code(404);
@@ -139,9 +186,20 @@ $mime_map = array(
 );
 $mime = isset($mime_map[$ext]) ? $mime_map[$ext] : 'application/octet-stream';
 
+$cache_control = 'public, max-age=604800, stale-while-revalidate=86400';
+$is_raster = in_array($ext, array('jpg', 'jpeg', 'png'), true);
+
+if ($is_raster && function_exists('lc_image_output_resolved')) {
+    $opts = lc_merchant_static_image_opts($rel, $full);
+    if (lc_image_output_resolved($full, $mime, $cache_control, $opts)) {
+        header('Access-Control-Allow-Origin: *');
+        exit;
+    }
+}
+
 header('Content-Type: ' . $mime);
 header('Content-Length: ' . (string) filesize($full));
-header('Cache-Control: public, max-age=604800, stale-while-revalidate=86400');
+header('Cache-Control: ' . $cache_control);
 header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 readfile($full);
