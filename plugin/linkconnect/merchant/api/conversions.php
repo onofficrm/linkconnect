@@ -67,6 +67,28 @@ if ($method === 'POST') {
     $body = lc_api_read_json_body();
 
     $action = isset($body['action']) ? (string) $body['action'] : '';
+
+    if ($action === 'prune_except') {
+        $confirm = isset($body['confirm']) ? trim((string) $body['confirm']) : '';
+        if ($confirm !== '삭제확인') {
+            lc_api_error('confirm에 "삭제확인"을 입력해주세요.', 'CONFIRM_REQUIRED', 400);
+        }
+        if (!function_exists('lc_conversion_prune_modemo_except')) {
+            lc_api_error('디비 정리 모듈을 찾을 수 없습니다.', 'NOT_FOUND', 500);
+        }
+        $keep_name = isset($body['keepName']) ? trim((string) $body['keepName']) : '이동익';
+        $keep_phone = isset($body['keepPhone']) ? trim((string) $body['keepPhone']) : '010-9562-2599';
+        $result = lc_conversion_prune_modemo_except($keep_name, $keep_phone, $mt_id);
+        if (empty($result['ok'])) {
+            lc_api_error((string) ($result['message'] ?? '실패'), 'PRUNE_FAILED', 400);
+        }
+        lc_api_success(array(
+            'message'  => (string) ($result['message'] ?? ''),
+            'deleted'  => (int) ($result['deleted'] ?? 0),
+            'keptCvId' => is_array($result['kept'] ?? null) ? (int) ($result['kept']['cv_id'] ?? 0) : 0,
+        ));
+    }
+
     $cv_id = isset($body['cvId']) ? (int) $body['cvId'] : 0;
     $comment = isset($body['comment']) ? trim((string) $body['comment']) : '';
 

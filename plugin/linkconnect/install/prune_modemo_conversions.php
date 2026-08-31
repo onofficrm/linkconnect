@@ -11,6 +11,7 @@ $is_cli = php_sapi_name() === 'cli';
 $action = isset($_REQUEST['action']) ? (string) $_REQUEST['action'] : 'form';
 $keep_name = isset($_REQUEST['keep_name']) ? trim((string) $_REQUEST['keep_name']) : '이동익';
 $keep_phone = isset($_REQUEST['keep_phone']) ? trim((string) $_REQUEST['keep_phone']) : '010-9562-2599';
+$confirm = isset($_REQUEST['confirm']) ? trim((string) $_REQUEST['confirm']) : '';
 
 if (!function_exists('lc_prune_modemo_token_ok')) {
     function lc_prune_modemo_token_ok()
@@ -32,9 +33,16 @@ if (!function_exists('lc_prune_modemo_token_ok')) {
 }
 
 $token_ok = lc_prune_modemo_token_ok();
+$merchant_mt_id = function_exists('lc_conversion_prune_modemo_merchant_ok')
+    ? lc_conversion_prune_modemo_merchant_ok()
+    : 0;
+$merchant_ok = $merchant_mt_id > 0 && $confirm === '삭제확인';
 
-if (!$is_cli && $action === 'run' && !$token_ok && !lc_is_super_admin()) {
-    alert('최고관리자만 실행할 수 있습니다.', G5_URL);
+if (!$is_cli && $action === 'run' && !$token_ok && !lc_is_super_admin() && !$merchant_ok) {
+    if ($merchant_mt_id > 0 && $confirm !== '삭제확인') {
+        alert('삭제를 확인하려면 confirm=삭제확인 을 함께 전달해주세요.', G5_URL);
+    }
+    alert('최고관리자 또는 모두의철거 광고주(삭제확인)만 실행할 수 있습니다.', G5_URL);
 }
 
 if ($action === 'run' || $is_cli) {
@@ -46,7 +54,8 @@ if ($action === 'run' || $is_cli) {
         alert('conversion_attachment.php를 로드할 수 없습니다.');
     }
 
-    $result = lc_conversion_prune_modemo_except($keep_name, $keep_phone);
+    $owner_mt_id = $is_cli || lc_is_super_admin() || $token_ok ? 0 : $merchant_mt_id;
+    $result = lc_conversion_prune_modemo_except($keep_name, $keep_phone, $owner_mt_id);
     if ($is_cli) {
         if (empty($result['ok'])) {
             fwrite(STDERR, (string) ($result['message'] ?? 'failed') . "\n");
@@ -79,9 +88,11 @@ header('Content-Type: text/html; charset=utf-8');
   <p>지정한 고객 1건만 남기고 CPA-MODEMO 캠페인 디비를 모두 삭제합니다.</p>
   <form method="get">
     <input type="hidden" name="action" value="run">
+    <input type="hidden" name="confirm" value="삭제확인">
     <p><label>유지 고객명 <input name="keep_name" value="<?php echo htmlspecialchars($keep_name, ENT_QUOTES, 'UTF-8'); ?>"></label></p>
     <p><label>유지 연락처 <input name="keep_phone" value="<?php echo htmlspecialchars($keep_phone, ENT_QUOTES, 'UTF-8'); ?>"></label></p>
-    <p><button type="submit">실행</button></p>
+    <p class="text-sm">모두의철거 광고주로 로그인한 상태에서 실행하세요.</p>
+    <p><button type="submit">실행 (이동익 1건만 유지)</button></p>
   </form>
 </body>
 </html>

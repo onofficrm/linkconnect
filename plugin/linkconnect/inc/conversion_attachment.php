@@ -394,9 +394,10 @@ if (!function_exists('lc_conversion_delete_by_ids')) {
 
 if (!function_exists('lc_conversion_prune_modemo_except')) {
     /**
+     * @param int $owner_mt_id 0 이면 검증 생략(관리자), &gt;0 이면 CPA-MODEMO 소유 광고주만
      * @return array{ok:bool,message:string,deleted:int,kept:array|null}
      */
-    function lc_conversion_prune_modemo_except($keep_name, $keep_phone)
+    function lc_conversion_prune_modemo_except($keep_name, $keep_phone, $owner_mt_id = 0)
     {
         if (!lc_db_installed()) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.', 'deleted' => 0, 'kept' => null);
@@ -410,15 +411,19 @@ if (!function_exists('lc_conversion_prune_modemo_except')) {
 
         $cp_table = lc_table('campaigns');
         $cv_table = lc_table('conversions');
-        $campaign = lc_sql_fetch(" SELECT cp_id FROM `{$cp_table}` WHERE cp_code = 'CPA-MODEMO' LIMIT 1 ");
+        $campaign = lc_sql_fetch(" SELECT cp_id, mt_id FROM `{$cp_table}` WHERE cp_code = 'CPA-MODEMO' LIMIT 1 ");
         if (!is_array($campaign)) {
             return array('ok' => false, 'message' => '모두의철거(CPA-MODEMO) 캠페인을 찾을 수 없습니다.', 'deleted' => 0, 'kept' => null);
         }
         $cp_id = (int) ($campaign['cp_id'] ?? 0);
+        $owner_mt_id = (int) $owner_mt_id;
+        if ($owner_mt_id > 0 && (int) ($campaign['mt_id'] ?? 0) !== $owner_mt_id) {
+            return array('ok' => false, 'message' => '모두의철거 캠페인에 대한 권한이 없습니다.', 'deleted' => 0, 'kept' => null);
+        }
 
         $keep_row = null;
         $delete_ids = array();
-        $result = lc_sql_query(" SELECT cv_id, cv_name, cv_phone, cv_attachment_path FROM `{$cv_table}`
+        $result = lc_sql_query(" SELECT cv_id, cv_name, cv_phone, cv_attachment_path, cv_created_at FROM `{$cv_table}`
             WHERE cp_id = '{$cp_id}'
             ORDER BY cv_id ASC ", false);
         if ($result) {
@@ -445,5 +450,29 @@ if (!function_exists('lc_conversion_prune_modemo_except')) {
             'deleted' => (int) $delete_result['deleted'],
             'kept'    => $keep_row,
         );
+    }
+}
+
+if (!function_exists('lc_conversion_prune_modemo_merchant_ok')) {
+    function lc_conversion_prune_modemo_merchant_ok()
+    {
+        if (!function_exists('lc_get_current_merchant')) {
+            return 0;
+        }
+        $merchant = lc_get_current_merchant();
+        if (!is_array($merchant)) {
+            return 0;
+        }
+        $mt_id = (int) ($merchant['mt_id'] ?? 0);
+        if ($mt_id <= 0 || !lc_db_installed()) {
+            return 0;
+        }
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT mt_id FROM `{$cp_table}` WHERE cp_code = 'CPA-MODEMO' LIMIT 1 ");
+        if (!is_array($campaign) || (int) ($campaign['mt_id'] ?? 0) !== $mt_id) {
+            return 0;
+        }
+
+        return $mt_id;
     }
 }
