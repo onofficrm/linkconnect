@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Scope global-ish rules under landing root to avoid leaking into other LC pages */
+.modu-demolition-landing {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    "Malgun Gothic",
+    sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modu-demolition-landing {
+  scroll-behavior: smooth;
+}
+
+.modu-demolition-landing ::-webkit-scrollbar {
+  width: 6px;
+}
+.modu-demolition-landing ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.modu-demolition-landing ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.modu-demolition-landing ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

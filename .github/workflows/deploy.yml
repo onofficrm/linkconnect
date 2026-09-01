@@ -65,13 +65,13 @@ jobs:
           test -f ../../plugin/onoff-builder-bridge/imports/hasugu_cpa/index.html
           echo "Hasugu CPA bundle: $(grep -o 'index-[A-Za-z0-9]*\.js' ../../plugin/onoff-builder-bridge/imports/hasugu_cpa/index.html)"
 
-      - name: Build modemo merchant landing
+      - name: Build modemo merchant landing (모두의 철거 Vite)
         run: |
-          cd merchant/modemo-onepage
+          cd "merchant/모두의-철거"
           npm ci
-          npm run deploy:imports
+          VITE_LC_DRY_RUN=0 npm run deploy:imports
           test -f ../../plugin/onoff-builder-bridge/imports/modemo/index.html
-          echo "Modemo bundle ready: $(test -f ../../plugin/onoff-builder-bridge/imports/modemo/index.html && echo OK)"
+          echo "Modemo bundle: $(grep -oE 'index-[A-Za-z0-9_-]+\.(js|css)' ../../plugin/onoff-builder-bridge/imports/modemo/index.html | head -5 | tr '\n' ' ')"
 
       - name: Build sindok merchant landing
         run: |
@@ -95,7 +95,7 @@ jobs:
           find plugin/onoff-builder-bridge/imports/modemo -name '.DS_Store' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/sindok -name '._*' -delete 2>/dev/null || true
           find plugin/onoff-builder-bridge/imports/sindok -name '.DS_Store' -delete 2>/dev/null || true
-          rm -rf builder/linkconnect_source/node_modules merchant/bunkrupt/node_modules merchant/bankrupt_dasibom/node_modules merchant/hasugu_cpa/node_modules merchant/modemo-onepage/node_modules merchant/sindok/node_modules
+          rm -rf builder/linkconnect_source/node_modules merchant/bunkrupt/node_modules merchant/bankrupt_dasibom/node_modules merchant/hasugu_cpa/node_modules merchant/모두의-철거/node_modules merchant/sindok/node_modules
 
       - name: Prepare deploy bundle (app code + SPA core)
         run: |

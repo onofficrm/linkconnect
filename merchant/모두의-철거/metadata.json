@@ -1,0 +1,6 @@
+{
+  "name": "모두의 철거",
+  "description": "상가·인테리어·사무실·주택 철거 및 원상복구 맞춤 견적 상담 플랫폼 모두의 철거",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

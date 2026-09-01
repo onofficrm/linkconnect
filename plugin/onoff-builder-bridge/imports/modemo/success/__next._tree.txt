@@ -1,5 +1,0 @@
-:HL["/plugin/onoff-builder-bridge/imports/modemo/_next/static/chunks/6525d15c5e340aad.css","style"]
-:HL["/plugin/onoff-builder-bridge/imports/modemo/_next/static/media/Pretendard_Bold-s.p.cf8746a0.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-:HL["/plugin/onoff-builder-bridge/imports/modemo/_next/static/media/Pretendard_Regular-s.p.7d5750d9.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-:HL["/plugin/onoff-builder-bridge/imports/modemo/_next/static/chunks/60f40d6edb3fe724.css","style"]
-0:{"buildId":"xJKvchA17Bq1ut0WY9vjl","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"success","paramType":null,"paramKey":"success","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
