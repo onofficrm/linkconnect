@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   adminNavItem,
-  campaignNavItems,
   centerNavItems,
   companySubItems,
   communityNavItem,
+  getCampaignNavItems,
   isCampaignNavActive,
   isCompanyNavActive,
   type NavLinkItem,
@@ -172,7 +172,7 @@ export function Header() {
             aria-label="주요 메뉴"
           >
             <CompanyNavDropdown />
-            {campaignNavItems.map((item) => (
+            {getCampaignNavItems().map((item) => (
               <PublicNavLink
                 key={item.label}
                 item={item}
@@ -237,7 +237,7 @@ export function Header() {
           ))}
 
           <p className="px-3 pt-4 pb-1 text-xs font-bold text-slate-500 uppercase tracking-wider">캠페인</p>
-          {campaignNavItems.map((item) => (
+          {getCampaignNavItems().map((item) => (
             <PublicNavLink
               key={item.label}
               item={item}

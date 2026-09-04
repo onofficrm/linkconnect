@@ -97,6 +97,20 @@ export function isLcSuperAdmin(): boolean {
   return getLcAuth().isSuperAdmin;
 }
 
+/**
+ * CPS 공개·센터 UI 노출 스위치.
+ * 복원: true 로 바꾸면 홈 CPS 섹션·헤더/푸터 CPS 메뉴·관련 라우트가 다시 표시됩니다.
+ * API·숏링크·포스트백 기능은 이 플래그와 무관하게 유지됩니다.
+ */
+export const CPS_UI_ENABLED = false;
+
+/**
+ * CPS UI 노출 여부 (홈·메뉴·센터 사이드바·공개/파트너/관리자 CPS 화면).
+ */
+export function isCpsUiVisible(): boolean {
+  return CPS_UI_ENABLED;
+}
+
 export function isLcPartner(): boolean {
   return getLcAuth().isPartner;
 }

@@ -1,4 +1,5 @@
 import { Activity, BadgeDollarSign, ShieldCheck, Zap } from 'lucide-react';
+import { isCpsUiVisible } from '../lib/auth';
 
 const features = [
   {
@@ -24,6 +25,12 @@ const features = [
 ];
 
 export function Features() {
+  const showCps = isCpsUiVisible();
+  const items = features.map((feature) =>
+    feature.title === '다양한 CPA/CPS 상품' && !showCps
+      ? { ...feature, title: '다양한 CPA 상품' }
+      : feature,
+  );
   return (
     <section className="py-24 bg-white border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -32,7 +39,7 @@ export function Features() {
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, i) => (
+          {items.map((feature, i) => (
             <div key={i} className="bg-slate-50 border border-slate-100 p-8 rounded-2xl hover:border-slate-200 hover:shadow-lg transition-all text-center">
               <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mx-auto mb-6 border border-slate-100">
                 {feature.icon}

@@ -13,10 +13,12 @@ import {
   LpOrder,
 } from '../../lib/api';
 import { DataTableEmpty, SkeletonCardGrid, tableRowClass } from '../../components/center-ui';
+import { isCpsUiVisible } from '../../lib/auth';
 
 const REFRESH_MS = 30_000;
 
 export function PartnerLiveEarnings() {
+  const showCps = isCpsUiVisible();
   const [cpaSummary, setCpaSummary] = useState({
     todayEstRevenue: 0,
     estRevenue: 0,
@@ -37,11 +39,9 @@ export function PartnerLiveEarnings() {
     else setLoading(true);
     setError('');
     try {
-      const [dash, cps, orders] = await Promise.all([
-        fetchPartnerDashboard(),
-        fetchPartnerLpStats().catch(() => null),
-        fetchPartnerLpOrders({ limit: 8 }).catch(() => null),
-      ]);
+      const dash = await fetchPartnerDashboard();
+      const cps = showCps ? await fetchPartnerLpStats().catch(() => null) : null;
+      const orders = showCps ? await fetchPartnerLpOrders({ limit: 8 }).catch(() => null) : null;
       setCpaSummary({
         todayEstRevenue: dash.summary.todayEstRevenue ?? 0,
         estRevenue: dash.summary.estRevenue ?? 0,
@@ -51,7 +51,9 @@ export function PartnerLiveEarnings() {
       });
       setRecentCpa(dash.recent ?? []);
       if (cps?.stats) setCpsStats(cps.stats);
+      else setCpsStats(null);
       if (orders?.items) setRecentCps(orders.items.slice(0, 8));
+      else setRecentCps([]);
       setUpdatedAt(new Date());
     } catch (err) {
       setError(err instanceof Error ? err.message : '실시간 수익을 불러오지 못했습니다.');
@@ -59,7 +61,7 @@ export function PartnerLiveEarnings() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [showCps]);
 
   useEffect(() => {
     load();
@@ -67,8 +69,8 @@ export function PartnerLiveEarnings() {
     return () => window.clearInterval(timer);
   }, [load]);
 
-  const cpsExpected = cpsStats?.expectedEarnings ?? 0;
-  const cpsConfirmed = cpsStats?.confirmedEarnings ?? 0;
+  const cpsExpected = showCps ? (cpsStats?.expectedEarnings ?? 0) : 0;
+  const cpsConfirmed = showCps ? (cpsStats?.confirmedEarnings ?? 0) : 0;
   const totalEst = cpaSummary.estRevenue + cpsExpected;
   const totalConf = cpaSummary.confRevenue + cpsConfirmed;
   const todayLive = cpaSummary.todayEstRevenue + cpsExpected;
@@ -77,7 +79,7 @@ export function PartnerLiveEarnings() {
     <PartnerLayout activeMenu="live-earnings" title="실시간 수익">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6 -mt-2">
         <p className="text-slate-500 text-sm">
-          CPA·CPS 예상/확정 수익을 한눈에 확인합니다. {REFRESH_MS / 1000}초마다 자동 갱신됩니다.
+          {showCps ? 'CPA·CPS 예상/확정 수익을 한눈에 확인합니다.' : 'CPA 예상/확정 수익을 한눈에 확인합니다.'} {REFRESH_MS / 1000}초마다 자동 갱신됩니다.
         </p>
         <div className="flex items-center gap-3 shrink-0">
           {updatedAt ? (
@@ -102,19 +104,21 @@ export function PartnerLiveEarnings() {
       ) : null}
 
       {loading ? (
-        <SkeletonCardGrid count={6} />
+        <SkeletonCardGrid count={showCps ? 6 : 5} />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <SummaryCard title="오늘 실시간 예상" value={todayLive.toLocaleString()} suffix="원" highlight color="emerald" icon={<Zap className="text-emerald-500" />} caption="CPA 오늘 + CPS 예상" />
-          <SummaryCard title="합산 예상수익" value={totalEst.toLocaleString()} suffix="원" icon={<Clock className="text-amber-500" />} />
-          <SummaryCard title="합산 확정수익" value={totalConf.toLocaleString()} suffix="원" highlight dark icon={<Wallet className="text-emerald-400" />} />
+        <div className={`grid grid-cols-2 md:grid-cols-3 ${showCps ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-4 mb-8`}>
+          <SummaryCard title="오늘 실시간 예상" value={todayLive.toLocaleString()} suffix="원" highlight color="emerald" icon={<Zap className="text-emerald-500" />} caption={showCps ? 'CPA 오늘 + CPS 예상' : 'CPA 오늘 예상'} />
+          <SummaryCard title={showCps ? '합산 예상수익' : '예상수익'} value={totalEst.toLocaleString()} suffix="원" icon={<Clock className="text-amber-500" />} />
+          <SummaryCard title={showCps ? '합산 확정수익' : '확정수익'} value={totalConf.toLocaleString()} suffix="원" highlight dark icon={<Wallet className="text-emerald-400" />} />
           <SummaryCard title="CPA 확정" value={cpaSummary.confRevenue.toLocaleString()} suffix="원" icon={<Target className="text-cyan-500" />} />
-          <SummaryCard title="CPS 확정" value={formatWon(cpsConfirmed)} suffix="원" icon={<ShoppingBag className="text-cyan-500" />} />
+          {showCps ? (
+            <SummaryCard title="CPS 확정" value={formatWon(cpsConfirmed)} suffix="원" icon={<ShoppingBag className="text-cyan-500" />} />
+          ) : null}
           <SummaryCard title="오늘 클릭·DB" value={`${cpaSummary.todayClicks}/${cpaSummary.todayReceived}`} caption="클릭 / 접수" />
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+      <div className={`grid ${showCps ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-6 mb-8`}>
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-slate-900 flex items-center gap-2">
@@ -138,6 +142,7 @@ export function PartnerLiveEarnings() {
           </div>
         </div>
 
+        {showCps ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-slate-900 flex items-center gap-2">
@@ -160,9 +165,10 @@ export function PartnerLiveEarnings() {
             </div>
           </div>
         </div>
+        ) : null}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className={`grid ${showCps ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-6`}>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
             <h2 className="font-bold text-slate-900">최근 CPA 접수</h2>
@@ -196,6 +202,7 @@ export function PartnerLiveEarnings() {
           </div>
         </div>
 
+        {showCps ? (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
             <h2 className="font-bold text-slate-900">최근 CPS 실적</h2>
@@ -228,6 +235,7 @@ export function PartnerLiveEarnings() {
             </table>
           </div>
         </div>
+        ) : null}
       </div>
     </PartnerLayout>
   );

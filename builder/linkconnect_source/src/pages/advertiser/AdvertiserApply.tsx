@@ -2,7 +2,7 @@ import { FormEvent, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, CheckCircle2, FileUp, Paperclip, Send } from 'lucide-react';
 import { createAdvertiserApplyInquiry, PartnerApiError } from '../../lib/api';
-import { getLcAuth } from '../../lib/auth';
+import { getLcAuth, isCpsUiVisible } from '../../lib/auth';
 
 const STEPS = [
   { n: 1, label: '입점 양식 제출' },
@@ -10,10 +10,13 @@ const STEPS = [
   { n: 3, label: '계약 진행' },
 ];
 
-const AD_METHODS = ['CPA', 'CPS', 'CPA/CPS'] as const;
+const AD_METHODS_ALL = ['CPA', 'CPS', 'CPA/CPS'] as const;
+const AD_METHODS_CPA_ONLY = ['CPA'] as const;
 
 export function AdvertiserApply() {
   const auth = getLcAuth();
+  const showCps = isCpsUiVisible();
+  const AD_METHODS = showCps ? AD_METHODS_ALL : AD_METHODS_CPA_ONLY;
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [companyName, setCompanyName] = useState('');
@@ -22,7 +25,7 @@ export function AdvertiserApply() {
   const [contactEmail, setContactEmail] = useState(auth.memberEmail || '');
   const [homepage, setHomepage] = useState('');
   const [industry, setIndustry] = useState('');
-  const [adMethod, setAdMethod] = useState<(typeof AD_METHODS)[number] | ''>('');
+  const [adMethod, setAdMethod] = useState<(typeof AD_METHODS_ALL)[number] | ''>('');
   const [message, setMessage] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [website, setWebsite] = useState(''); // honeypot
@@ -226,7 +229,7 @@ export function AdvertiserApply() {
               </label>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-slate-800">희망 광고 방식 (CPA / CPS)</legend>
+                <legend className="text-sm font-semibold text-slate-800">{showCps ? '희망 광고 방식 (CPA / CPS)' : '희망 광고 방식 (CPA)'}</legend>
                 <div className="flex flex-wrap gap-2">
                   {AD_METHODS.map((m) => (
                     <button

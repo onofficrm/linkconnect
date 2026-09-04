@@ -2,6 +2,7 @@ import { ArrowUpRight, MousePointerClick, Link2, PenLine, Wallet, ShoppingCart, 
 import { Link } from 'react-router-dom';
 import { g5RegisterUrl } from '../lib/urls';
 import { AffiliateWebtoon } from '../components/AffiliateWebtoon';
+import { isCpsUiVisible } from '../lib/auth';
 
 const steps = [
   {
@@ -50,6 +51,7 @@ const revenueTypes = [
 ];
 
 export function Affiliate() {
+  const showCps = isCpsUiVisible();
   return (
     <main>
       {/* Hero */}
@@ -162,9 +164,11 @@ export function Affiliate() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/cps" className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-xl text-sm transition-colors">
-              CPS 캠페인 보기
-            </Link>
+            {showCps ? (
+              <Link to="/cps" className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-xl text-sm transition-colors">
+                CPS 캠페인 보기
+              </Link>
+            ) : null}
             <Link to="/cpa-list" className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm transition-colors">
               CPA 캠페인 보기
             </Link>

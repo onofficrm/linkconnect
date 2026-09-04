@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle, PhoneCall, Store, FileText, Globe2 } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
-import { getLcAuth, getMemberDisplayName } from '../lib/auth';
+import { getLcAuth, getMemberDisplayName, isCpsUiVisible } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
 import { g5MemberEditUrl } from '../lib/urls';
 import { AiGuideChat } from '../components/AiGuideChat';
@@ -56,6 +56,11 @@ const sidebarSections = [
 export function AdminLayout({ children, activeMenu, title, description }: { children: React.ReactNode, activeMenu: string, title: string, description?: string }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const auth = getLcAuth();
+  const showCps = isCpsUiVisible();
+  const visibleSections = sidebarSections.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => showCps || item.id !== 'cps'),
+  }));
   const displayName = getMemberDisplayName();
   const memberEmail = auth.memberEmail ?? '';
   const memberInitials = displayName.slice(0, 2).toUpperCase();
@@ -84,7 +89,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
             <Link to="/" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">홈페이지</Link>
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
             <Link to="/cpa-list" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPA</Link>
-            <Link to="/cps" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPS</Link>
+            {showCps ? <Link to="/cps" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">CPS</Link> : null}
             {/* 복원: 이벤트/프로모션 메뉴 */}
             {/* <Link to="/events" className="px-3 py-2 text-slate-300 hover:text-white transition-colors">이벤트/프로모션</Link> */}
             <div className="w-1 h-1 bg-slate-700 rounded-full mx-1"></div>
@@ -140,7 +145,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
           ${isSidebarOpen ? 'translate-x-0 pt-16' : '-translate-x-full'}
         `}>
           <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6 hide-scrollbar">
-            {sidebarSections.map((section) => (
+            {visibleSections.map((section) => (
               <div key={section.label}>
                 <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{section.label}</div>
                 <div className="space-y-1">

@@ -18,7 +18,7 @@ import { MemberAuthMenu } from '../components/MemberAuthMenu';
 import { CenterTopBar } from '../components/CenterTopBar';
 import { ImpersonateBanner } from '../components/ImpersonateBanner';
 import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdminWidget';
-import { getLcAuth } from '../lib/auth';
+import { getLcAuth, isCpsUiVisible } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
 import { CenterNavItem } from '../components/center-ui';
@@ -37,6 +37,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
   const dateLabel = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일 (${weekdays[today.getDay()]})`;
 
+  const showCps = isCpsUiVisible();
   const menuSections = [
     {
       label: '개요',
@@ -49,7 +50,9 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
       items: [
         { id: 'live-earnings', icon: <Zap size={20} />, label: '실시간 수익', path: '/partner/live-earnings' },
         { id: 'db-status', icon: <Target size={20} />, label: 'CPA 실적', path: '/partner/db-status' },
-        { id: 'cps-orders', icon: <Target size={20} />, label: 'CPS 실적', path: '/partner/cps/orders' },
+        ...(showCps
+          ? [{ id: 'cps-orders', icon: <Target size={20} />, label: 'CPS 실적', path: '/partner/cps/orders' }]
+          : []),
         { id: 'call', icon: <PhoneCall size={20} />, label: '콜디비', path: '/partner/call' },
       ],
     },

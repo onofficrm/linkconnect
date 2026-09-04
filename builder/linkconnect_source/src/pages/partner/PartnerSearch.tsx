@@ -23,6 +23,7 @@ import { DataTableEmpty, RankBadge, SkeletonTable, tableRowClass } from '../../c
 import { CpsChannelGuide, parseChannelItems } from '../../components/cps/CpsChannelGuide';
 import { formatCpsCommissionRate } from '../../components/cps/CpsShared';
 import { buildLeadEmbedSnippet } from '../../lib/partnerEmbed';
+import { isCpsUiVisible } from '../../lib/auth';
 
 const fallbackCpaCategories = ['전체', '금융', '법률', '병원', '교육', '생활서비스', '렌탈', '기타'];
 const fallbackCpsCategories = ['전체', '여행/티켓', '종합쇼핑몰', '건강', '패션', '뷰티', '생활/인테리어', '기타'];
@@ -35,7 +36,8 @@ function isCpsCampaign(campaign: PartnerCampaign) {
 }
 
 export function PartnerSearch() {
-  const [productType, setProductType] = useState<ProductType>('all');
+  const showCps = isCpsUiVisible();
+  const [productType, setProductType] = useState<ProductType>(showCps ? 'all' : 'cpa');
   const [activeCategory, setActiveCategory] = useState('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState(fallbackCpaCategories);
@@ -59,6 +61,10 @@ export function PartnerSearch() {
   const [wpGuideOpen, setWpGuideOpen] = useState(false);
 
   useEffect(() => {
+    if (!showCps && productType !== 'cpa') {
+      setProductType('cpa');
+      return;
+    }
     let cancelled = false;
 
     const load = async () => {
@@ -99,7 +105,7 @@ export function PartnerSearch() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [activeCategory, searchQuery, productType]);
+  }, [activeCategory, searchQuery, productType, showCps]);
 
   const cpaCampaigns = useMemo(() => campaigns.filter((i) => !isCpsCampaign(i)), [campaigns]);
   const cpsCampaigns = useMemo(() => campaigns.filter((i) => isCpsCampaign(i)), [campaigns]);
@@ -231,7 +237,9 @@ export function PartnerSearch() {
   return (
     <PartnerLayout activeMenu="search" title="광고상품 찾기">
       <p className="text-slate-500 mb-8 -mt-2">
-        CPA 리드형 상품과 CPS 쇼핑몰 상품을 한곳에서 찾고 홍보할 수 있습니다.
+        {showCps
+          ? 'CPA 리드형 상품과 CPS 쇼핑몰 상품을 한곳에서 찾고 홍보할 수 있습니다.'
+          : 'CPA 리드형 상품을 찾고 홍보할 수 있습니다.'}
       </p>
 
       {error && (
@@ -240,19 +248,20 @@ export function PartnerSearch() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <SummaryCard title="전체 상품" value={String(campaigns.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
+      <div className={`grid grid-cols-2 ${showCps ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 mb-6`}>
+        <SummaryCard title="전체 상품" value={String(showCps ? campaigns.length : cpaCampaigns.length)} suffix="개" icon={<Briefcase className="text-slate-500" />} />
         <SummaryCard title="CPA 상품" value={String(counts.cpa || cpaCampaigns.length)} suffix="개" icon={<PlusCircle className="text-blue-500" />} />
-        <SummaryCard title="CPS 쇼핑" value={String(counts.cps || cpsCampaigns.length)} suffix="개" icon={<ShoppingBag className="text-cyan-500" />} />
+        {showCps ? (
+          <SummaryCard title="CPS 쇼핑" value={String(counts.cps || cpsCampaigns.length)} suffix="개" icon={<ShoppingBag className="text-cyan-500" />} />
+        ) : null}
         <SummaryCard title="평균 CPA 단가" value={avgPrice} suffix="원" highlight icon={<DollarSign className="text-cyan-500" />} />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {([
-          ['all', '전체'],
-          ['cpa', 'CPA'],
-          ['cps', 'CPS'],
-        ] as const).map(([id, label]) => (
+        {(showCps
+          ? ([['all', '전체'], ['cpa', 'CPA'], ['cps', 'CPS']] as const)
+          : ([['cpa', 'CPA']] as const)
+        ).map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -264,9 +273,11 @@ export function PartnerSearch() {
             {label}
           </button>
         ))}
-        <Link to="/partner/cps" className="ml-auto text-sm font-bold text-cyan-700 self-center">
-          CPS 전용 화면 →
-        </Link>
+        {showCps ? (
+          <Link to="/partner/cps" className="ml-auto text-sm font-bold text-cyan-700 self-center">
+            CPS 전용 화면 →
+          </Link>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-2 mb-6">

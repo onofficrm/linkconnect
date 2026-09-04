@@ -39,6 +39,7 @@ import {
   ProgressBar,
   tableRowClass,
 } from '../../components/center-ui';
+import { isCpsUiVisible } from '../../lib/auth';
 
 const emptyData: PartnerAnalyticsResponse = {
   source: 'cpa',
@@ -121,10 +122,15 @@ function parseAnalyticsSource(raw: string | null): PartnerAnalyticsSource {
 
 export function PartnerAnalytics() {
   const [searchParams] = useSearchParams();
+  const showCps = isCpsUiVisible();
   const [data, setData] = useState<PartnerAnalyticsResponse>(emptyData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [source, setSource] = useState<PartnerAnalyticsSource>(() => parseAnalyticsSource(searchParams.get('source')));
+  const [source, setSource] = useState<PartnerAnalyticsSource>(() => {
+    const parsed = parseAnalyticsSource(searchParams.get('source'));
+    if (!isCpsUiVisible() && parsed === 'cps') return 'cpa';
+    return parsed;
+  });
   const [period, setPeriod] = useState<7 | 30 | 90>(7);
   const [channel, setChannel] = useState('');
   const [linkName, setLinkName] = useState('');
@@ -136,6 +142,13 @@ export function PartnerAnalytics() {
   const isCps = source === 'cps';
   const isEmbed = source === 'embed';
   const isCpa = source === 'cpa';
+  const sourceOptions = showCps ? SOURCE_OPTIONS : SOURCE_OPTIONS.filter((opt) => opt.value !== 'cps');
+
+  useEffect(() => {
+    if (!showCps && source === 'cps') {
+      setSource('cpa');
+    }
+  }, [showCps, source]);
 
   const loadData = useCallback(async (filters: PartnerAnalyticsFilters) => {
     setLoading(true);
@@ -302,7 +315,7 @@ export function PartnerAnalytics() {
         </div>
 
         <div className="inline-flex p-1 bg-slate-100 rounded-xl w-fit flex-wrap">
-          {SOURCE_OPTIONS.map((opt) => (
+          {sourceOptions.map((opt) => (
             <button
               key={opt.value}
               type="button"

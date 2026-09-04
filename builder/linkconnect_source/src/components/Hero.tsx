@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
+import { isCpsUiVisible } from '../lib/auth';
 
 const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.webp`;
 
@@ -37,8 +38,9 @@ export function Hero() {
             </h1>
 
             <p className="text-lg text-slate-400 leading-relaxed max-w-xl">
-              CPA DB 캠페인, CPS 구매 캠페인, 파트너 단독 0503 콜디비까지.
-              실시간 성과와 정산 내역을 링크커넥트에서 관리하세요.
+              {isCpsUiVisible()
+                ? 'CPA DB 캠페인, CPS 구매 캠페인, 파트너 단독 0503 콜디비까지. 실시간 성과와 정산 내역을 링크커넥트에서 관리하세요.'
+                : 'CPA DB 캠페인과 파트너 단독 0503 콜디비까지. 실시간 성과와 정산 내역을 링크커넥트에서 관리하세요.'}
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -46,9 +48,11 @@ export function Hero() {
                 인기 CPA 상품 보기
                 <ArrowUpRight className="w-5 h-5" />
               </Link>
-              <Link to="/cps" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors">
-                CPS 상품 둘러보기
-              </Link>
+              {isCpsUiVisible() ? (
+                <Link to="/cps" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-xl border border-white/10 transition-colors">
+                  CPS 상품 둘러보기
+                </Link>
+              ) : null}
               <Link
                 to="/"
                 onClick={(e) => sectionLinkClick(e, 'call-db', location.pathname)}

@@ -16,6 +16,7 @@ import {
   scrollToSectionWhenReady,
 } from '../lib/navigation';
 import { EVENTS_MENU_ENABLED } from '../lib/publicNav';
+import { isCpsUiVisible } from '../lib/auth';
 
 export function Home() {
   const location = useLocation();
@@ -33,7 +34,7 @@ export function Home() {
       <Hero />
       <CategoryLinks />
       <CPAList />
-      <CPSList />
+      {isCpsUiVisible() ? <CPSList /> : null}
       <CallDbIntro />
       <Features />
       <PartnerIntro />

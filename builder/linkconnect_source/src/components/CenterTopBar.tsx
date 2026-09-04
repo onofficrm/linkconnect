@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { isCpsUiVisible } from '../lib/auth';
 
 type CenterTopBarProps = {
   center: 'partner' | 'advertiser';
@@ -37,6 +38,7 @@ const navLinks = [
 export function CenterTopBar({ center }: CenterTopBarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const config = centerConfig[center];
+  const links = navLinks.filter((l) => isCpsUiVisible() || l.to !== '/cps');
 
   return (
     <header className="h-14 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 sticky top-0 w-full z-40 text-white">
@@ -63,7 +65,7 @@ export function CenterTopBar({ center }: CenterTopBarProps) {
         </Link>
 
         <nav className="hidden xl:flex items-center gap-1 text-sm font-medium">
-          {navLinks.map((item, index) => {
+          {links.map((item, index) => {
             const isActive = item.center === center;
             const showDivider = index === 0 || index === 4;
 
@@ -86,7 +88,7 @@ export function CenterTopBar({ center }: CenterTopBarProps) {
 
       {mobileOpen ? (
         <div className="absolute top-14 left-0 right-0 bg-slate-950 border-b border-slate-800 xl:hidden z-50 py-2 px-2 shadow-xl">
-          {navLinks.map((item) => {
+          {links.map((item) => {
             const isActive = item.center === center;
             return (
               <Link

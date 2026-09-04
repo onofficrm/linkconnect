@@ -2,7 +2,7 @@ import { Link as LinkIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   companyNavItems,
-  footerCampaignNavItems,
+  getFooterCampaignNavItems,
   footerServiceNavItems,
 } from '../lib/publicNav';
 import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
@@ -110,7 +110,7 @@ export function Footer() {
             </FooterColumn>
 
             <FooterColumn title="캠페인">
-              {footerCampaignNavItems.map((item) => (
+              {getFooterCampaignNavItems().map((item) => (
                 <li key={item.label}>
                   <FooterNavLink item={item} />
                 </li>

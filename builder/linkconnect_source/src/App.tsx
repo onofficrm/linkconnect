@@ -88,6 +88,7 @@ import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
 import { AdvertiserContractAccessGuard } from './components/advertiser/AdvertiserContractAccessGuard';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { CpsUiGuard } from './components/CpsUiGuard';
 
 export default function App() {
   return (
@@ -101,8 +102,10 @@ export default function App() {
           <Route path="select-center" element={<CenterSelect />} />
           <Route path="cpa-list" element={<CpaList />} />
           <Route path="cpa/:code" element={<CpaCampaignDetail />} />
-          <Route path="cps" element={<CpsList />} />
-          <Route path="cps/:code" element={<CpsMerchantDetail />} />
+          <Route element={<CpsUiGuard fallback="/" />}>
+            <Route path="cps" element={<CpsList />} />
+            <Route path="cps/:code" element={<CpsMerchantDetail />} />
+          </Route>
           <Route path="events" element={<Events />} />
           <Route path="events/detail" element={<EventDetail />} />
           <Route path="notice" element={<NoticeList />} />
@@ -125,11 +128,13 @@ export default function App() {
           <Route path="partner" element={<PartnerDashboard />} />
           <Route path="partner/live-earnings" element={<PartnerLiveEarnings />} />
           <Route path="partner/search" element={<PartnerSearch />} />
-          <Route path="partner/cps" element={<PartnerCps />} />
-          <Route path="partner/cps/links" element={<PartnerCpsLinks />} />
-          <Route path="partner/cps/clicks" element={<PartnerCpsClicks />} />
-          <Route path="partner/cps/orders" element={<PartnerCpsOrders />} />
-          <Route path="partner/cps/earnings" element={<PartnerCpsEarnings />} />
+          <Route element={<CpsUiGuard fallback="/partner" />}>
+            <Route path="partner/cps" element={<PartnerCps />} />
+            <Route path="partner/cps/links" element={<PartnerCpsLinks />} />
+            <Route path="partner/cps/clicks" element={<PartnerCpsClicks />} />
+            <Route path="partner/cps/orders" element={<PartnerCpsOrders />} />
+            <Route path="partner/cps/earnings" element={<PartnerCpsEarnings />} />
+          </Route>
           <Route path="partner/links" element={<PartnerLinks />} />
           <Route path="partner/db-status" element={<PartnerDbStatus />} />
           <Route path="partner/call" element={<PartnerCall />} />
@@ -167,19 +172,21 @@ export default function App() {
           <Route path="admin/conversions" element={<AdminConversions />} />
           <Route path="admin/embed" element={<AdminEmbedWidgets />} />
           <Route path="admin/call" element={<AdminCallDb />} />
-          <Route path="admin/linkprice" element={<AdminLinkprice />} />
-          <Route path="admin/cps" element={<AdminCpsSetup />} />
-          <Route path="admin/cps/setup" element={<AdminCpsSetup />} />
-          <Route path="admin/cps/e2e" element={<AdminCpsE2e />} />
-          <Route path="admin/cps/settings" element={<AdminCpsSettings />} />
-          <Route path="admin/cps/merchants" element={<AdminCpsMerchants />} />
-          <Route path="admin/cps/clicks" element={<AdminCpsClicks />} />
-          <Route path="admin/cps/orders" element={<AdminCpsOrders />} />
-          <Route path="admin/cps/unmatched" element={<AdminCpsUnmatched />} />
-          <Route path="admin/cps/postbacks" element={<AdminCpsPostbacks />} />
-          <Route path="admin/cps/sync-logs" element={<AdminCpsSyncLogs />} />
-          <Route path="admin/cps/rates" element={<AdminCpsRates />} />
-          <Route path="admin/cps/settlements" element={<AdminCpsSettlements />} />
+          <Route element={<CpsUiGuard fallback="/admin" />}>
+            <Route path="admin/linkprice" element={<AdminLinkprice />} />
+            <Route path="admin/cps" element={<AdminCpsSetup />} />
+            <Route path="admin/cps/setup" element={<AdminCpsSetup />} />
+            <Route path="admin/cps/e2e" element={<AdminCpsE2e />} />
+            <Route path="admin/cps/settings" element={<AdminCpsSettings />} />
+            <Route path="admin/cps/merchants" element={<AdminCpsMerchants />} />
+            <Route path="admin/cps/clicks" element={<AdminCpsClicks />} />
+            <Route path="admin/cps/orders" element={<AdminCpsOrders />} />
+            <Route path="admin/cps/unmatched" element={<AdminCpsUnmatched />} />
+            <Route path="admin/cps/postbacks" element={<AdminCpsPostbacks />} />
+            <Route path="admin/cps/sync-logs" element={<AdminCpsSyncLogs />} />
+            <Route path="admin/cps/rates" element={<AdminCpsRates />} />
+            <Route path="admin/cps/settlements" element={<AdminCpsSettlements />} />
+          </Route>
           <Route path="admin/inspections" element={<AdminInspections />} />
           <Route path="admin/billing" element={<AdminBilling />} />
           <Route path="admin/settlements" element={<AdminSettlements />} />

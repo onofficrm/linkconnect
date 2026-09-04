@@ -1,3 +1,5 @@
+import { isCpsUiVisible } from './auth';
+
 export interface NavLinkItem {
   to: string;
   label: string;
@@ -12,6 +14,12 @@ export interface NavLinkItem {
  */
 export const EVENTS_MENU_ENABLED = false;
 
+/** CPS 메뉴 항목 필터 — CPS_UI_ENABLED=false 이면 /cps 숨김 (복원: auth.ts CPS_UI_ENABLED) */
+export function filterCpsNavItems(items: NavLinkItem[]): NavLinkItem[] {
+  if (isCpsUiVisible()) return items;
+  return items.filter((item) => item.to !== '/cps' && !item.to.startsWith('/cps/'));
+}
+
 /** 회사소개 드롭다운 하위 메뉴 */
 export const companySubItems: NavLinkItem[] = [
   { to: '/about', label: '회사소개' },
@@ -24,7 +32,7 @@ export const companySubItems: NavLinkItem[] = [
 export const companyNavItems = companySubItems;
 
 /** 캠페인·프로모션 — 독립 목록 페이지로 이동 (카테고리 필터는 각 페이지에서) */
-export const campaignNavItems: NavLinkItem[] = [
+const campaignNavItemsAll: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
   // 복원: EVENTS_MENU_ENABLED = true
@@ -33,6 +41,13 @@ export const campaignNavItems: NavLinkItem[] = [
     : []),
 ];
 
+export function getCampaignNavItems(): NavLinkItem[] {
+  return filterCpsNavItems(campaignNavItemsAll);
+}
+
+/** @deprecated getCampaignNavItems() 사용 */
+export const campaignNavItems = campaignNavItemsAll;
+
 /** 커뮤니티 대메뉴 */
 export const communityNavItem: NavLinkItem = {
   to: '/community',
@@ -40,11 +55,18 @@ export const communityNavItem: NavLinkItem = {
 };
 
 /** 푸터 — 캠페인 */
-export const footerCampaignNavItems: NavLinkItem[] = [
+const footerCampaignNavItemsAll: NavLinkItem[] = [
   { to: '/cpa-list', label: 'CPA' },
   { to: '/cps', label: 'CPS' },
   { to: '/', label: '콜디비란?', scrollTarget: 'call-db' },
 ];
+
+export function getFooterCampaignNavItems(): NavLinkItem[] {
+  return filterCpsNavItems(footerCampaignNavItemsAll);
+}
+
+/** @deprecated getFooterCampaignNavItems() 사용 */
+export const footerCampaignNavItems = footerCampaignNavItemsAll;
 
 /** CPA/CPS 메뉴 활성 경로 (상세 페이지 포함) */
 export function isCampaignNavActive(pathname: string, to: string): boolean {

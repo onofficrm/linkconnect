@@ -19,7 +19,7 @@ import {
   deleteAdminCampaignThumbnail,
   generateAdminCampaignThumbnailAi,
 } from '../../lib/api';
-import { isLcSuperAdmin } from '../../lib/auth';
+import { isCpsUiVisible, isLcSuperAdmin } from '../../lib/auth';
 import { promoGuideStatusLabel, promoGuideStatusStyle } from '../../lib/campaignPromoGuide';
 import { AdminCampaignPromoGuidePanel } from '../../components/admin/AdminCampaignPromoGuidePanel';
 import {
@@ -735,7 +735,7 @@ export function AdminCampaigns() {
                         className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                       >
                         <option value="CPA">CPA</option>
-                        <option value="CPS">CPS</option>
+                        {isCpsUiVisible() ? <option value="CPS">CPS</option> : null}
                       </select>
                     </div>
                     <div className="col-span-1">
@@ -807,7 +807,7 @@ export function AdminCampaigns() {
                         className={`w-full px-3 py-2 border rounded-xl text-sm resize-y min-h-[72px] ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                         placeholder="파트너·공개 목록에 표시될 한 줄 설명을 입력하세요"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">CPA/CPS 상품 목록·상세 카드에 노출됩니다.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">{isCpsUiVisible() ? 'CPA/CPS 상품 목록·상세 카드에 노출됩니다.' : 'CPA 상품 목록·상세 카드에 노출됩니다.'}</p>
                     </div>
                   </div>
                 </section>
