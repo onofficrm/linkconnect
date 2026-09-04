@@ -91,16 +91,16 @@ export default function Header() {
                 <Link href="/" className={styles.logo}>
                     <div className={styles.desktopLogo}>
                         {isBlack ? (
-                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={203} height={54} priority style={{ width: '100%', height: 'auto' }} />
                         ) : (
-                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={203} height={45} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={203} height={54} priority style={{ width: '100%', height: 'auto' }} />
                         )}
                     </div>
                     <div className={styles.mobileLogo}>
                         {isBlack ? (
-                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거" width={180} height={47} priority style={{ width: '100%', height: 'auto' }} />
                         ) : (
-                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={180} height={40} priority style={{ width: '100%', height: 'auto' }} />
+                            <Image src={modemoAsset("/images/logo_black.png")} alt="모두의철거" width={180} height={47} priority style={{ width: '100%', height: 'auto' }} />
                         )}
                     </div>
                 </Link>

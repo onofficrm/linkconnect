@@ -54,7 +54,7 @@ export default function FooterCtaSection() {
                     </div>
                     <FadeIn>
                         <div className={styles.logoWrapper}>
-                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거 브랜드 로고" width={isMobile ? 161 : 253} height={isMobile ? 37 : 58} className={styles.logo} />
+                            <Image src={modemoAsset("/images/logo_white.png")} alt="모두의철거 브랜드 로고" width={isMobile ? 161 : 253} height={isMobile ? 42 : 67} className={styles.logo} />
                         </div>
                     </FadeIn>
 

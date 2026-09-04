@@ -53,7 +53,7 @@ export default function CustomerLogosSection() {
                 <span className={styles.reviewsTitleAccent}>700여곳</span>이 넘는 고객사가
                 <span className={styles.reviewsTitleLogoLine}>
                     <span>
-                        <Image src={modemoAsset("/images/logo_black.png")} alt="700여 곳 이상의 고객사가 선택한 투명한 철거 플랫폼 모두의철거 브랜드 로고" width={188} height={43} className={styles.reviewsTitleLogo} />
+                        <Image src={modemoAsset("/images/logo_black.png")} alt="700여 곳 이상의 고객사가 선택한 투명한 철거 플랫폼 모두의철거 브랜드 로고" width={188} height={50} className={styles.reviewsTitleLogo} />
                     </span>
                 </span>
                 를 선택했습니다.
