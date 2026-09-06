@@ -19,7 +19,7 @@ export default function Footer() {
           <p className={styles.footerSlogan}>철거의 새로운 기준, 철거의 모든 것</p>
           <div className={styles.footerInfo}>
             <p>
-              상호명 : 파밍시티
+              상호명 : 모두의 철거
               <span className={styles.divider}>|</span>
               대표자 : {rep}
               <span className={styles.divider}>|</span>

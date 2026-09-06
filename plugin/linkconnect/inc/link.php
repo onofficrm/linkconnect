@@ -253,7 +253,7 @@ if (!function_exists('lc_campaign_builtin_tracking_base_map')) {
     {
         return array(
             'CPA-DASIBOM' => 'https://air911.co.kr',
-            'CPA-MODEMO'  => 'https://yevely.kr',
+            // CPA-MODEMO: 독립도메인(yevely.kr) 제거 → 메인 linkconnect.co.kr/merchant/modemo/
             'CPA-HASUGU'  => 'https://skawning.co.kr',
         );
     }

@@ -6,7 +6,7 @@ interface FooterProps {
   onOpenPrivacyModal: () => void;
 }
 
-/** Production legal SoT from merchant/modemo-onepage Footer (파밍시티). */
+/** Production legal footer for 모두의 철거 landing. */
 export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyModal }) => {
   const ctx = typeof window !== 'undefined' ? window.LC_LANDING_CONTEXT : undefined;
   const brand = '모두의 철거';
@@ -22,9 +22,9 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyModal }) => {
             <img
               src={modemoAsset('images/logo_white.png')}
               alt={brand}
-              className="h-7 w-auto object-contain opacity-95"
-              width={100}
-              height={28}
+              className="h-8 sm:h-9 w-auto object-contain opacity-95"
+              width={152}
+              height={40}
             />
           </div>
 
@@ -54,7 +54,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyModal }) => {
           <p>
             <strong className="text-slate-300">브랜드:</strong> {brand}
             &nbsp;|&nbsp;
-            <strong className="text-slate-300">상호명:</strong> 파밍시티
+            <strong className="text-slate-300">상호명:</strong> {brand}
             &nbsp;|&nbsp;
             <strong className="text-slate-300">대표자:</strong> {rep}
             &nbsp;|&nbsp;

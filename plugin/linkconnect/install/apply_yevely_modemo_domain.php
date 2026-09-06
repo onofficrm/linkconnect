@@ -1,9 +1,10 @@
 <?php
 /**
- * CPA-MODEMO 독립도메인 yevely.kr 적용
+ * [DEPRECATED] yevely.kr 독립도메인 적용 — 사용 중단.
+ * 대신: /plugin/linkconnect/install/apply_modemo_main_domain.php
+ * CLI: php scripts/apply-modemo-main-domain.php
  *
- * 브라우저: /plugin/linkconnect/install/apply_yevely_modemo_domain.php?action=run
- * CLI: php scripts/apply-yevely-modemo-domain.php
+ * 이 스크립트는 이제 독립도메인 제거(메인 전환)를 실행합니다.
  */
 require_once dirname(__DIR__) . '/_common.php';
 
@@ -36,15 +37,15 @@ if (!$is_cli && $action === 'run' && !$token_ok && !lc_is_super_admin()) {
 }
 
 if ($action === 'run' || $is_cli) {
-    if (!function_exists('lc_campaign_ensure_modemo')) {
+    if (!function_exists('lc_modemo_migrate_off_yevely')) {
         if ($is_cli) {
-            fwrite(STDERR, "lc_campaign_ensure_modemo not found.\n");
+            fwrite(STDERR, "lc_modemo_migrate_off_yevely not found.\n");
             exit(1);
         }
         alert('campaign_modemo.php를 로드할 수 없습니다.');
     }
 
-    $result = lc_campaign_ensure_modemo(array('activate' => true));
+    $result = lc_modemo_migrate_off_yevely();
 
     if ($is_cli) {
         if (!$result['ok']) {
@@ -70,12 +71,13 @@ header('Content-Type: text/html; charset=utf-8');
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>yevely.kr → 모두의철거 독립도메인</title>
+  <title>yevely.kr 독립도메인 제거 (deprecated)</title>
 </head>
 <body style="font-family:sans-serif;max-width:640px;margin:2rem auto;padding:1rem;">
-  <h1>yevely.kr 독립도메인 적용</h1>
-  <p>CPA-MODEMO 의 <code>cp_tracking_base_url</code> 을 <strong>https://yevely.kr</strong> 로 설정하고 ADV-0008에 연결·활성화합니다.</p>
-  <p>랜딩 본체 URL은 <code>/merchant/modemo/</code> (linkconnect) 유지, 파트너 공개 링크만 yevely.kr/r/… 로 나갑니다.</p>
+  <h1>yevely.kr 독립도메인 제거</h1>
+  <p>이 스크립트는 더 이상 yevely.kr 를 적용하지 않습니다.
+    CPA-MODEMO 를 <strong>https://linkconnect.co.kr/merchant/modemo/</strong> 메인 랜딩으로 전환합니다.</p>
+  <p>권장 경로: <code>/plugin/linkconnect/install/apply_modemo_main_domain.php</code></p>
   <p><a href="?action=run">실행</a></p>
 </body>
 </html>

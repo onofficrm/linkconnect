@@ -1,14 +1,23 @@
-/** Asset URL — files live in public/images and sync into imports/modemo/images. */
+/**
+ * 독립도메인(yevely.kr)에서도 깨지지 않도록 이미지 경로를 PHP 프록시로 제공한다.
+ * Cafe24 핫링크는 Referer 가 linkconnect 가 아니면 /plugin/.../images 직접 접근을 403 한다.
+ */
+export const MODEMO_IMPORT_BASE = '/plugin/onoff-builder-bridge/imports/modemo';
+export const MODEMO_IMAGE_PROXY = '/plugin/linkconnect/api/merchant-static.php';
 
 /**
  * @param rel e.g. "images/logo_black.png" or "logo_black.png"
  */
 export function modemoAsset(rel: string): string {
   let path = rel.replace(/^\/+/, '');
+  if (path.startsWith(MODEMO_IMPORT_BASE.replace(/^\//, ''))) {
+    path = path.slice(MODEMO_IMPORT_BASE.replace(/^\//, '').length).replace(/^\/+/, '');
+  }
+  if (path.includes('merchant-static.php')) {
+    return path.startsWith('/') ? path : `/${path}`;
+  }
   if (!path.startsWith('images/') && !path.startsWith('favicon')) {
     path = `images/${path}`;
   }
-  // Vite base: /plugin/onoff-builder-bridge/imports/modemo/
-  const base = import.meta.env.BASE_URL || '/';
-  return `${base}${path}`;
+  return `${MODEMO_IMAGE_PROXY}?m=modemo&p=${encodeURIComponent(path)}`;
 }

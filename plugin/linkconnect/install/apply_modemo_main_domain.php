@@ -1,17 +1,17 @@
 <?php
 /**
- * 모두의철거(modemo) CPA 광고상품 등록
+ * CPA-MODEMO 독립도메인(yevely.kr) 제거 → linkconnect.co.kr/merchant/modemo/
  *
- * 브라우저: /plugin/linkconnect/install/apply_modemo_campaign.php?action=run
- * CLI: php scripts/apply-modemo-campaign.php
+ * 브라우저: /plugin/linkconnect/install/apply_modemo_main_domain.php?action=run
+ * CLI: php scripts/apply-modemo-main-domain.php
  */
 require_once dirname(__DIR__) . '/_common.php';
 
 $is_cli = php_sapi_name() === 'cli';
 $action = isset($_REQUEST['action']) ? (string) $_REQUEST['action'] : 'form';
 
-if (!function_exists('lc_apply_modemo_token_ok')) {
-    function lc_apply_modemo_token_ok()
+if (!function_exists('lc_apply_modemo_main_domain_token_ok')) {
+    function lc_apply_modemo_main_domain_token_ok()
     {
         if (!function_exists('g5site_cfg')) {
             return false;
@@ -29,33 +29,22 @@ if (!function_exists('lc_apply_modemo_token_ok')) {
     }
 }
 
-$token_ok = lc_apply_modemo_token_ok();
+$token_ok = lc_apply_modemo_main_domain_token_ok();
 
 if (!$is_cli && $action === 'run' && !$token_ok && !lc_is_super_admin()) {
     alert('최고관리자만 실행할 수 있습니다.', G5_URL);
 }
 
 if ($action === 'run' || $is_cli) {
-    if (!function_exists('lc_campaign_ensure_modemo')) {
+    if (!function_exists('lc_modemo_migrate_off_yevely')) {
         if ($is_cli) {
-            fwrite(STDERR, "lc_campaign_ensure_modemo not found.\n");
+            fwrite(STDERR, "lc_modemo_migrate_off_yevely not found.\n");
             exit(1);
         }
         alert('campaign_modemo.php를 로드할 수 없습니다.');
     }
 
-    $opts = array('activate' => true);
-    if (isset($_REQUEST['advertiser_mb_id']) && trim((string) $_REQUEST['advertiser_mb_id']) !== '') {
-        $opts['advertiser_mb_id'] = trim((string) $_REQUEST['advertiser_mb_id']);
-    }
-    if (isset($_REQUEST['mt_id']) && (int) $_REQUEST['mt_id'] > 0) {
-        $opts['mt_id'] = (int) $_REQUEST['mt_id'];
-    }
-    if (isset($_REQUEST['activate']) && (string) $_REQUEST['activate'] === '0') {
-        unset($opts['activate']);
-    }
-
-    $result = lc_campaign_ensure_modemo($opts);
+    $result = lc_modemo_migrate_off_yevely();
 
     if ($is_cli) {
         if (!$result['ok']) {
@@ -81,11 +70,14 @@ header('Content-Type: text/html; charset=utf-8');
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>모두의철거 CPA 광고상품 등록</title>
+  <title>모두의철거 → 메인 도메인</title>
 </head>
 <body style="font-family:sans-serif;max-width:640px;margin:2rem auto;padding:1rem;">
-  <h1>모두의철거(modemo) CPA 광고상품 등록</h1>
-  <p>철거·원상복구 상담 DB(CPA-MODEMO)를 등록합니다. ADV-0008이 있으면 자동 연결·활성화하고, 랜딩은 <code>https://linkconnect.co.kr/merchant/modemo/</code> 를 사용합니다(독립도메인 없음).</p>
+  <h1>모두의철거 독립도메인 제거</h1>
+  <p>CPA-MODEMO 의 <code>cp_tracking_base_url</code> 을 비우고 랜딩을
+    <strong>https://linkconnect.co.kr/merchant/modemo/</strong> 로 맞춥니다.</p>
+  <p>파트너 홍보 링크는 <code>https://linkconnect.co.kr/r/…</code> 형식이며,
+    숏링크 타겟의 yevely.kr 도메인도 메인으로 교체합니다.</p>
   <p><a href="?action=run">실행</a></p>
 </body>
 </html>

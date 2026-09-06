@@ -63,8 +63,8 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
 
         $def = lc_modemo_campaign_definition();
         $landing = lc_modemo_landing_url();
-        // 철거 랜딩 독립 도메인 (다시봄 air911 과 동일 패턴)
-        $tracking_base = 'https://yevely.kr';
+        // 독립도메인 미사용 — 파트너 홍보링크는 linkconnect.co.kr/r/… → /merchant/modemo/
+        $tracking_base = '';
         $table = lc_table('campaigns');
 
         $mt_id = isset($options['mt_id']) ? (int) $options['mt_id'] : 0;
@@ -114,10 +114,11 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
 
             return array(
                 'ok'      => true,
-                'message' => '모두의철거 CPA 캠페인을 갱신했습니다. (독립도메인 yevely.kr)',
+                'message' => '모두의철거 CPA 캠페인을 갱신했습니다. (메인 도메인 linkconnect.co.kr/merchant/modemo/)',
                 'cpId'    => $cp_id,
                 'created' => false,
                 'trackingBaseUrl' => $tracking_base,
+                'landingUrl' => $landing,
             );
         }
 
@@ -159,11 +160,90 @@ if (!function_exists('lc_campaign_ensure_modemo')) {
         return array(
             'ok'      => true,
             'message' => $mt_id > 0
-                ? '모두의철거 CPA 캠페인을 생성했습니다. (독립도메인 yevely.kr)'
+                ? '모두의철거 CPA 캠페인을 생성했습니다. (메인 도메인 linkconnect.co.kr/merchant/modemo/)'
                 : '모두의철거 CPA 캠페인을 광고주 미연결(일시중지) 상태로 등록했습니다.',
             'cpId'    => $cp_id,
             'created' => true,
             'trackingBaseUrl' => $tracking_base,
+            'landingUrl' => $landing,
+        );
+    }
+}
+
+if (!function_exists('lc_modemo_migrate_off_yevely')) {
+    /**
+     * yevely.kr 독립도메인 잔여 데이터 정리 → linkconnect 메인 도메인.
+     *
+     * @return array{ok:bool,message:string,campaignUpdated?:bool,shortlinksUpdated?:int,landingUrl?:string}
+     */
+    function lc_modemo_migrate_off_yevely()
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $ensure = lc_campaign_ensure_modemo(array('activate' => false));
+        if (empty($ensure['ok'])) {
+            return array('ok' => false, 'message' => (string) ($ensure['message'] ?? '캠페인 갱신 실패'));
+        }
+
+        $main = defined('G5_URL') ? rtrim((string) G5_URL, '/') : 'https://linkconnect.co.kr';
+        $landing = $main . lc_modemo_landing_path();
+        $short_updated = 0;
+
+        $table = lc_table('campaigns');
+        $code_esc = lc_sql_escape('CPA-MODEMO');
+        // 기존 yevely 값이 남아 있으면 강제 비움 + 랜딩 URL 보정
+        lc_sql_query(
+            " UPDATE `{$table}` SET
+                cp_tracking_base_url = '',
+                cp_landing_url = '" . lc_sql_escape($landing) . "',
+                cp_updated_at = NOW()
+              WHERE cp_code = '{$code_esc}' ",
+            false
+        );
+
+        if (function_exists('lc_lp_shortlink_ensure_table') && lc_lp_shortlink_ensure_table()) {
+            $sl = lc_table('lp_shortlinks');
+            $links = lc_table('links');
+            // MODEMO 캠페인 링크의 숏링크 타겟 yevely → 메인 도메인
+            $result = lc_sql_query(
+                " SELECT s.id, s.target_url, s.short_code
+                  FROM `{$sl}` s
+                  INNER JOIN `{$links}` lk
+                    ON (s.product_url = CONCAT('lk:', lk.lk_id) OR s.merchant_code = CONCAT('cpa:', lk.lk_code))
+                  INNER JOIN `{$table}` c ON c.cp_id = lk.cp_id
+                  WHERE c.cp_code = 'CPA-MODEMO'
+                    AND (s.target_url LIKE '%yevely.kr%' OR s.target_url LIKE '%yevely.jp%') ",
+                false
+            );
+            if ($result) {
+                while ($row = sql_fetch_array($result)) {
+                    $target = (string) ($row['target_url'] ?? '');
+                    $next = preg_replace('#https?://(?:www\.)?yevely\.(?:kr|jp)#i', $main, $target);
+                    if (!is_string($next) || $next === '' || $next === $target) {
+                        continue;
+                    }
+                    $hash = hash('sha256', $next);
+                    lc_sql_query(
+                        " UPDATE `{$sl}` SET
+                            target_url = '" . lc_sql_escape($next) . "',
+                            target_hash = '" . lc_sql_escape($hash) . "'
+                          WHERE id = '" . (int) $row['id'] . "' ",
+                        false
+                    );
+                    $short_updated++;
+                }
+            }
+        }
+
+        return array(
+            'ok'                => true,
+            'message'           => '모두의철거 독립도메인을 제거하고 메인 랜딩으로 전환했습니다.',
+            'campaignUpdated'   => true,
+            'shortlinksUpdated' => $short_updated,
+            'landingUrl'        => $landing,
+            'trackingBaseUrl'   => '',
         );
     }
 }
