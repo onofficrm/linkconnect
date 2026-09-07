@@ -10,6 +10,8 @@ on:
       - 'plugin/linkconnect/inc/call.php'
       - 'plugin/linkconnect/inc/call_recording_request.php'
       - 'plugin/linkconnect/install/rematch_call_logs.php'
+      - 'plugin/linkconnect/install/import_call_logs_0503_sept.php'
+      - 'plugin/linkconnect/install/data/call_import_0503_202609.csv'
       - 'plugin/linkconnect/admin/api/call.php'
       - 'plugin/linkconnect/partner/api/call.php'
       - 'plugin/onoff-builder-bridge/imports/linkconnect/**'
