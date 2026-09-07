@@ -100,6 +100,20 @@ if (!defined('LC_ONOFFCPA_LEGACY_URL')) {
     define('LC_ONOFFCPA_LEGACY_URL', 'https://onoffcpa.iwinv.net');
 }
 
+/**
+ * 콜디비 통화내역 동기화 (onoffcpa → 링크커넥트·트렌드허브)
+ * 수신 API: /plugin/linkconnect/api/call_logs_inbound.php
+ */
+if (!defined('LC_CALL_LOG_SYNC_ENABLED')) {
+    define('LC_CALL_LOG_SYNC_ENABLED', true);
+}
+if (!defined('LC_CALL_LOG_SYNC_SECRET')) {
+    define('LC_CALL_LOG_SYNC_SECRET', 'lc-call-sync-v1-9e4b7c2a1f8d6035');
+}
+if (!defined('LC_CALL_LOG_SYNC_PEERS')) {
+    define('LC_CALL_LOG_SYNC_PEERS', '');
+}
+
 
 /* ── LinkConnect 전용 DB (그누보드 기본 DB와 분리) ── */
 if (!defined('LC_MYSQL_DB')) {
