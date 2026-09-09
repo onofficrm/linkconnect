@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import {
   AlertTriangle,
@@ -9,9 +10,17 @@ import {
   PhoneIncoming,
   Save,
   Search,
-  Settings2,
+  XCircle,
 } from 'lucide-react';
-import { CallLog, MerchantCallCampaign, fetchMerchantCallCampaigns, fetchMerchantCallLogs, requestMerchantCallRecording, saveMerchantCallSettings } from '../../lib/api';
+import {
+  CallLog,
+  MerchantCallCampaign,
+  cancelMerchantCallConversion,
+  fetchMerchantCallCampaigns,
+  fetchMerchantCallLogs,
+  requestMerchantCallRecording,
+  saveMerchantCallSettings,
+} from '../../lib/api';
 import { CallRecordingCell } from '../../components/call/CallRecordingCell';
 import { DataTableEmpty, EmptyState, InsightBanner, SummaryCard, tableRowClass } from '../../components/center-ui';
 
@@ -45,12 +54,19 @@ export function AdvertiserCall() {
   const [drafts, setDrafts] = useState<Record<number, Draft>>({});
   const [saving, setSaving] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [cancelTarget, setCancelTarget] = useState<CallLog | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelComment, setCancelComment] = useState('');
+  const [partnerVisible, setPartnerVisible] = useState(true);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   const summary = useMemo(() => {
     const adminReady = items.filter((item) => item.adminEnabled).length;
     const enabled = items.filter((item) => drafts[item.cpId]?.enabled).length;
     const success = logs.filter((log) => log.result === 'success').length;
     const missed = logs.filter((log) => log.result === 'missed').length;
+    const cancellable = logs.filter((log) => log.canCancel).length;
     return {
       total: items.length,
       adminReady,
@@ -58,6 +74,7 @@ export function AdvertiserCall() {
       success,
       missed,
       totalCalls: logs.length,
+      cancellable,
     };
   }, [drafts, items, logs]);
 
@@ -121,21 +138,54 @@ export function AdvertiserCall() {
     }
   };
 
+  const openCancel = (log: CallLog) => {
+    setCancelTarget(log);
+    setCancelReason('');
+    setCancelComment('');
+    setPartnerVisible(true);
+    setCancelError('');
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!cancelTarget || !cancelReason) {
+      setCancelError('취소 사유를 선택해 주세요.');
+      return;
+    }
+    setCancelBusy(true);
+    setCancelError('');
+    try {
+      const res = await cancelMerchantCallConversion({
+        clogId: cancelTarget.clogId,
+        reason: cancelReason,
+        comment: cancelComment,
+        partnerVisible,
+      });
+      setMessage(res.message);
+      setCancelTarget(null);
+      loadLogs();
+    } catch (e) {
+      setCancelError(e instanceof Error ? e.message : '취소 처리에 실패했습니다.');
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
   return (
     <AdvertiserLayout activeMenu="call" title="콜디비">
       <div className="space-y-6">
         <InsightBanner
           accent="cyan"
           message={<>콜디비 수신 상품 <strong>{summary.enabled}개</strong>, 최근 통화 <strong>{summary.totalCalls}건</strong>이 집계되었습니다.</>}
-          subMessage="상품별 수신번호 1·2를 저장하면 관리자가 업로드한 통화내역이 가상번호 기준으로 자동 매칭됩니다. 수신번호 변경 시 관리자에게 중요알림이 갑니다."
-          actions={[{ label: '디비 확인', to: '/advertiser/db', variant: 'secondary' }]}
+          subMessage="연결된 콜디비(신규접수)는 이 화면에서 CPA와 동일하게 취소할 수 있습니다. 상세 검수는 디비 확인에서도 가능합니다."
+          actions={[{ label: '디비 확인', to: '/advertiser/db?source=call', variant: 'secondary' }]}
         />
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryCard title="전체 상품" value={summary.total} suffix="개" icon={<Settings2 className="text-slate-500" />} caption="콜디비 설정 대상" />
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <SummaryCard title="전체 상품" value={summary.total} suffix="개" icon={<PhoneCall className="text-slate-500" />} caption="콜디비 설정 대상" />
           <SummaryCard title="관리자 활성" value={summary.adminReady} suffix="개" icon={<CheckCircle2 className="text-cyan-500" />} highlight color="cyan" caption="가상번호 배정 가능" />
           <SummaryCard title="수신 ON" value={summary.enabled} suffix="개" icon={<PhoneForwarded className="text-emerald-500" />} highlight color="emerald" caption="착신 운영 중" />
           <SummaryCard title="통화 성공" value={summary.success} suffix="건" icon={<PhoneIncoming className="text-blue-500" />} caption={`부재중 ${summary.missed}건`} />
+          <SummaryCard title="취소 가능" value={summary.cancellable} suffix="건" icon={<XCircle className="text-rose-500" />} caption="신규접수 콜디비" />
         </div>
 
         {message && (
@@ -162,9 +212,6 @@ export function AdvertiserCall() {
                   상품별 콜 운영 설정
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">광고상품별 수신 상태와 착신번호를 관리합니다.</p>
-              </div>
-              <div className="text-xs text-slate-500">
-                관리자 활성 후 광고주가 수신 ON/OFF와 착신번호를 저장할 수 있습니다.
               </div>
             </div>
 
@@ -243,7 +290,6 @@ export function AdvertiserCall() {
                       <div className="text-xs text-slate-400">
                         수신: <span className="font-mono text-slate-600">{formatPhone(d.forward1)}</span>
                         {d.forward2 ? <span className="font-mono text-slate-500"> / {formatPhone(d.forward2)}</span> : null}
-                        <span className="block sm:inline sm:ml-2 text-amber-600 font-medium">번호 변경 시 관리자에게 중요알림이 전달됩니다.</span>
                       </div>
                       <button type="button" onClick={() => handleSave(c.cpId)} disabled={saving === c.cpId || blocked}
                         className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded-xl text-sm disabled:opacity-50 shadow-sm">
@@ -266,7 +312,7 @@ export function AdvertiserCall() {
                 통화 내역
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                내 광고상품에 연결된 가상번호의 통화내역만 표시됩니다.
+                연결된 콜디비가 신규접수이면 「취소」로 CPA와 동일하게 처리할 수 있습니다.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -297,17 +343,19 @@ export function AdvertiserCall() {
                   <th className="px-5 py-3 font-medium">파트너</th>
                   <th className="px-5 py-3 font-medium text-center">통화시간</th>
                   <th className="px-5 py-3 font-medium text-center">결과</th>
+                  <th className="px-5 py-3 font-medium text-center">디비</th>
                   <th className="px-5 py-3 font-medium text-center">녹음</th>
+                  <th className="px-5 py-3 font-medium text-center">처리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {logs.length === 0 ? (
                   <DataTableEmpty
-                    colSpan={8}
+                    colSpan={10}
                     title="통화 내역이 없습니다"
-                    description="관리자가 콜업체 통화내역 엑셀을 업로드하면 이곳에 표시됩니다."
+                    description="관리자가 콜업체 통화내역을 업로드하면 이곳에 표시됩니다."
                   />
-                ) : logs.map((l, index) => {
+                ) : logs.map((l) => {
                   const r = resultLabel[l.result] ?? { label: l.result, cls: 'text-slate-500' };
                   return (
                     <tr key={l.clogId} className={tableRowClass(undefined, l.result === 'missed')}>
@@ -322,12 +370,42 @@ export function AdvertiserCall() {
                           {r.label}
                         </span>
                       </td>
+                      <td className="px-5 py-4 text-center text-xs">
+                        {l.cvId > 0 ? (
+                          <span className={`font-bold ${l.canCancel ? 'text-amber-600' : 'text-slate-500'}`}>
+                            {l.cvStatusLabel || l.cvStatus || '연결됨'}
+                            {l.finalLocked ? ' · 잠금' : ''}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">DB 없음</span>
+                        )}
+                      </td>
                       <td className="px-5 py-4 text-center">
                         <CallRecordingCell
                           meta={l.recordingRequest}
                           onRequest={(memo) => handleRecordingRequest(l.clogId, memo)}
                           compact
                         />
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        {l.canCancel ? (
+                          <button
+                            type="button"
+                            onClick={() => openCancel(l)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg"
+                          >
+                            <XCircle size={13} /> 취소
+                          </button>
+                        ) : l.cvId > 0 ? (
+                          <Link
+                            to={`/advertiser/db?source=call&q=${encodeURIComponent(String(l.cvId))}`}
+                            className="text-xs font-bold text-cyan-600 hover:underline"
+                          >
+                            디비 확인
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -337,6 +415,65 @@ export function AdvertiserCall() {
           </div>
         </div>
       </div>
+
+      {cancelTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900">콜디비 취소</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {cancelTarget.startedAt} · {formatPhone(cancelTarget.caller)} · CPA 취소와 동일하게 처리됩니다.
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">취소 사유 *</label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-red-500"
+                >
+                  <option value="" disabled>사유를 선택해주세요</option>
+                  <option value="연락불가">연락불가 (3회 이상 부재 등)</option>
+                  <option value="중복디비">중복디비</option>
+                  <option value="장난접수">장난/허위 정보 접수</option>
+                  <option value="조건불일치">조건불일치 (나이/지역 등)</option>
+                  <option value="지역불가">서비스 불가 지역</option>
+                  <option value="이미상담">이미 상담받은 고객</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">상세 코멘트</label>
+                <textarea
+                  value={cancelComment}
+                  onChange={(e) => setCancelComment(e.target.value)}
+                  placeholder="상세한 취소 사유를 남겨주세요."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm min-h-[100px] resize-none outline-none focus:border-red-500"
+                />
+              </div>
+              <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+                <input type="checkbox" checked={partnerVisible} onChange={(e) => setPartnerVisible(e.target.checked)} className="mt-1 accent-cyan-600" />
+                <span>
+                  <span className="font-medium block">파트너에게 사유 공개</span>
+                  <span className="text-xs text-slate-500">체크 시 파트너도 취소 사유와 코멘트를 확인할 수 있습니다.</span>
+                </span>
+              </label>
+              {cancelError ? <p className="text-sm text-red-600 font-medium">{cancelError}</p> : null}
+            </div>
+            <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-2">
+              <button type="button" onClick={() => setCancelTarget(null)} disabled={cancelBusy}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 disabled:opacity-50">
+                닫기
+              </button>
+              <button type="button" onClick={handleCancelConfirm} disabled={cancelBusy || !cancelReason}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">
+                {cancelBusy ? '처리 중…' : '취소 확정'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdvertiserLayout>
   );
 }
