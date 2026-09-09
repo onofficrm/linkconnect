@@ -7,10 +7,10 @@ if (!function_exists('lc_settings_defaults')) {
     function lc_settings_defaults()
     {
         return array(
-            'siteName'              => '링크커넥트',
+            'siteName'              => '온오프CPA',
             'siteStatus'            => 'active',
-            'adminEmail'            => 'support2580_@linkconnect.co.kr',
-            'supportEmail'          => 'support2580_@linkconnect.co.kr',
+            'adminEmail'            => 'help@onoffcpa.com',
+            'supportEmail'          => 'help@onoffcpa.com',
             'supportPhone'          => '070-8098-6824',
             'timezone'              => 'Asia/Seoul',
             'duplicateDays'         => 30,
@@ -77,7 +77,7 @@ if (!function_exists('lc_settings_defaults')) {
             'callWebhookToken'      => '',
             'callDefaultPrice'      => 0,
             'callMinDuration'       => 0,
-            'callCreateOnMissed'    => '0',
+            'callCreateOnMissed'    => '1',
             'callRecordingMode'     => 'normal',
             // 링크프라이스 CPS (외부 네트워크 — CPA와 분리)
             'lpEnabled'             => '0',
@@ -395,7 +395,7 @@ if (!function_exists('lc_settings_raw_for_admin')) {
 if (!function_exists('lc_settings_to_api')) {
     function lc_settings_to_api(array $settings)
     {
-        return array(
+        $payload = array(
             'general' => array(
                 'siteName'     => (string) ($settings['siteName'] ?? ''),
                 'siteStatus'   => (string) ($settings['siteStatus'] ?? 'active'),
@@ -520,5 +520,12 @@ if (!function_exists('lc_settings_to_api')) {
                 'config'               => function_exists('lc_lp_config_to_api') ? lc_lp_config_to_api() : null,
             ),
         );
+
+        // CPS 미취급(LC_CPS_ENABLED=false) — 관리자센터에 링크프라이스 설정 노출 안 함
+        if (!function_exists('lc_cps_enabled') || !lc_cps_enabled()) {
+            unset($payload['linkprice']);
+        }
+
+        return $payload;
     }
 }
