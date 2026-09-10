@@ -1,306 +1,96 @@
-import { FormEvent, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, CheckCircle2, FileUp, Paperclip, Send } from 'lucide-react';
-import { createAdvertiserApplyInquiry, PartnerApiError } from '../../lib/api';
-import { getLcAuth, isCpsUiVisible } from '../../lib/auth';
+import { Building2, Mail, MessageCircle } from 'lucide-react';
 
-const STEPS = [
-  { n: 1, label: '입점 양식 제출' },
-  { n: 2, label: '광고주센터 승인' },
-  { n: 3, label: '계약 진행' },
-];
+const KAKAO_OPEN_CHAT = 'https://open.kakao.com/o/seLMPtMi';
+const SUPPORT_EMAIL = 'support2580_@linkconnect.co.kr';
 
-const AD_METHODS_ALL = ['CPA', 'CPS', 'CPA/CPS'] as const;
-const AD_METHODS_CPA_ONLY = ['CPA'] as const;
-
+/**
+ * 광고주 입점 문의 — 양식 대신 카카오톡·이메일 채널 안내
+ */
 export function AdvertiserApply() {
-  const auth = getLcAuth();
-  const showCps = isCpsUiVisible();
-  const AD_METHODS = showCps ? AD_METHODS_ALL : AD_METHODS_CPA_ONLY;
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const [companyName, setCompanyName] = useState('');
-  const [contactName, setContactName] = useState(auth.memberName || auth.memberNick || '');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactEmail, setContactEmail] = useState(auth.memberEmail || '');
-  const [homepage, setHomepage] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [adMethod, setAdMethod] = useState<(typeof AD_METHODS_ALL)[number] | ''>('');
-  const [message, setMessage] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [website, setWebsite] = useState(''); // honeypot
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [submittedCode, setSubmittedCode] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!contactName.trim() || !contactPhone.trim()) {
-      setError('담당자명과 연락처는 필수입니다.');
-      return;
-    }
-    if (file && file.size > 10 * 1024 * 1024) {
-      setError('사업자등록증은 10MB 이하만 첨부할 수 있습니다.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSuccessMsg('');
-    try {
-      const data = await createAdvertiserApplyInquiry({
-        companyName,
-        contactName,
-        contactPhone,
-        contactEmail,
-        homepage,
-        industry,
-        adMethod,
-        message,
-        attachment: file,
-        website,
-      });
-      setSubmittedCode(data.item.id);
-      setSuccessMsg(data.message);
-      setCompanyName('');
-      setContactPhone('');
-      setHomepage('');
-      setIndustry('');
-      setAdMethod('');
-      setMessage('');
-      setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
-    } catch (err) {
-      setError(err instanceof PartnerApiError || err instanceof Error ? err.message : '신청 접수에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="bg-slate-950 text-white pt-28 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-cyan-400 text-sm font-semibold tracking-wide mb-3">광고주 입점 문의</p>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">링크커넥트 광고주 입점 신청</h1>
-          <p className="text-slate-400 text-base md:text-lg">
-            입점 양식을 제출하시면 검토 후 광고주센터 승인 · 계약 안내를 드립니다.
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight mb-4">광고주 입점 신청 문의</h1>
+          <p className="text-slate-400 text-base md:text-lg leading-relaxed">
+            링크커넥트 광고주 입점 및 제휴에 대해 궁금한 사항이 있으신가요?
+            <br className="hidden sm:block" />
+            아래 채널을 통해 편하게 문의해 주세요.
           </p>
-          <ol className="mt-10 flex flex-col sm:flex-row items-stretch justify-center gap-3 sm:gap-2">
-            {STEPS.map((step, i) => (
-              <li key={step.n} className="flex-1 flex items-center gap-3 sm:flex-col sm:gap-2">
-                <div className="flex items-center gap-3 w-full sm:flex-col sm:w-auto">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-slate-950 text-sm font-bold">
-                    {step.n}
-                  </span>
-                  <span className="text-sm font-medium text-white text-left sm:text-center">{step.label}</span>
-                </div>
-                {i < STEPS.length - 1 ? (
-                  <span className="hidden sm:block text-slate-600 text-lg leading-none" aria-hidden>
-                    →
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
       <section className="px-4 sm:px-6 lg:px-8 -mt-6 pb-20">
-        <div className="max-w-2xl mx-auto">
-          {successMsg ? (
-            <div className="rounded-2xl border border-emerald-200 bg-white p-8 shadow-sm text-center space-y-4">
-              <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
-              <h2 className="text-xl font-bold text-slate-900">입점 신청이 접수되었습니다</h2>
-              <p className="text-sm text-slate-600">{successMsg}</p>
-              {submittedCode ? (
-                <p className="text-sm font-mono font-bold text-cyan-700 bg-cyan-50 inline-block px-3 py-1.5 rounded-lg">
-                  접수번호 {submittedCode}
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 shrink-0 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+                <MessageCircle className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">카카오톡 문의</h2>
+                  <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+                    카카오톡으로 빠르고 간편하게 문의하실 수 있습니다.
+                  </p>
+                </div>
+                <a
+                  href={KAKAO_OPEN_CHAT}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#FEE500] text-slate-900 text-sm font-bold hover:brightness-95 transition-all"
+                >
+                  카카오톡으로 문의하기
+                </a>
+                <p className="text-xs text-slate-500 break-all">
+                  <a
+                    href={KAKAO_OPEN_CHAT}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-700 hover:underline"
+                  >
+                    {KAKAO_OPEN_CHAT}
+                  </a>
                 </p>
-              ) : null}
-              <p className="text-sm text-slate-500">
-                승인 후 광고주센터에서 계약을 진행해 주세요.
-              </p>
-              <div className="flex flex-wrap justify-center gap-3 pt-2">
-                <Link
-                  to="/advertiser"
-                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800"
-                >
-                  광고주센터로 이동
-                </Link>
-                <Link
-                  to="/inquiry"
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50"
-                >
-                  접수 내역 조회
-                </Link>
               </div>
             </div>
-          ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5"
-              encType="multipart/form-data"
-            >
-              <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
-                <div className="h-10 w-10 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-cyan-600" />
-                </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 shrink-0 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center">
+                <Mail className="h-6 w-6 text-cyan-600" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-3">
                 <div>
-                  <h2 className="font-bold text-slate-900">입점 신청 양식</h2>
-                  <p className="text-xs text-slate-500">담당자명·연락처만 필수입니다. 나머지 항목은 선택 사항입니다.</p>
+                  <h2 className="text-lg font-bold text-slate-900">이메일 문의</h2>
+                  <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+                    광고주 입점 및 제휴 관련 문의사항을 이메일로 보내주세요.
+                  </p>
                 </div>
-              </div>
-
-              {/* honeypot */}
-              <input
-                type="text"
-                name="website"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                className="hidden"
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden
-              />
-
-              <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">업체명</span>
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                  placeholder="회사·상호명"
-                />
-              </label>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-semibold text-slate-800">담당자명 *</span>
-                  <input
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                    required
-                  />
-                </label>
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-semibold text-slate-800">연락처 *</span>
-                  <input
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                    placeholder="010-0000-0000"
-                    required
-                  />
-                </label>
-              </div>
-
-              <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">이메일</span>
-                <input
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                />
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">홈페이지 또는 랜딩페이지</span>
-                <input
-                  value={homepage}
-                  onChange={(e) => setHomepage(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                  placeholder="https://"
-                />
-              </label>
-
-              <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">광고 업종</span>
-                <input
-                  value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                  placeholder="예: 법률·금융, 교육, 커머스 등"
-                />
-              </label>
-
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-semibold text-slate-800">{showCps ? '희망 광고 방식 (CPA / CPS)' : '희망 광고 방식 (CPA)'}</legend>
-                <div className="flex flex-wrap gap-2">
-                  {AD_METHODS.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setAdMethod((prev) => (prev === m ? '' : m))}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                        adMethod === m
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-white text-slate-700 border-slate-300 hover:border-slate-400'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <label className="block space-y-1.5">
-                <span className="text-sm font-semibold text-slate-800">간단한 소개 및 문의 내용</span>
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  rows={5}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500"
-                  placeholder="서비스 소개, 희망 규모, 문의 사항을 적어 주세요."
-                />
-              </label>
-
-              <div className="space-y-2">
-                <span className="text-sm font-semibold text-slate-800 block">첨부 — 사업자등록증</span>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,application/pdf,image/*"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setFile(f);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 text-sm font-medium text-slate-700 transition-colors"
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('광고주 입점·제휴 문의')}`}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-colors"
                 >
-                  {file ? <Paperclip className="h-4 w-4 text-cyan-600" /> : <FileUp className="h-4 w-4" />}
-                  {file ? file.name : '사업자등록증 파일 선택 (PDF·이미지, 최대 10MB)'}
-                </button>
+                  이메일 보내기
+                </a>
+                <p className="text-sm font-mono font-semibold text-slate-800 break-all">{SUPPORT_EMAIL}</p>
               </div>
+            </div>
+          </div>
 
-              {error ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm disabled:opacity-60 transition-colors"
-              >
-                <Send className="h-4 w-4" />
-                {loading ? '접수 중...' : '입점 신청 제출'}
-              </button>
-
-              <p className="text-xs text-slate-500 text-center leading-relaxed">
-                제출 후 관리자 검토 → 광고주센터 승인 → 전자계약 순으로 진행됩니다.
-                <br />
-                일반 문의는 <Link to="/inquiry" className="text-cyan-700 underline">고객문의</Link>를 이용해 주세요.
-              </p>
-            </form>
-          )}
+          <div className="rounded-2xl border border-slate-200 bg-slate-100/80 p-5 sm:p-6 flex items-start gap-3">
+            <Building2 className="h-5 w-5 text-slate-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-slate-600 leading-relaxed">
+              이미 광고주센터 계정이 있다면{' '}
+              <Link to="/advertiser" className="font-semibold text-cyan-700 hover:underline">
+                광고주센터
+              </Link>
+              에서 계약·상품·홍보 가이드를 이어서 진행할 수 있습니다.
+            </p>
+          </div>
         </div>
       </section>
     </main>

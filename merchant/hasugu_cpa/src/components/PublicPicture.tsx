@@ -1,3 +1,5 @@
+import { hasuguAsset } from '../lib/hasuguAsset';
+
 type Props = {
   name: string;
   alt: string;
@@ -8,7 +10,7 @@ type Props = {
   fetchPriority?: 'high' | 'low' | 'auto';
 };
 
-/** public/{name}.webp + .jpg 폴백 (PNG 대비 용량 절감) */
+/** public/{name}.webp + .jpg 폴백 — merchant-static 프록시로 핫링크 회피 */
 export default function PublicPicture({
   name,
   alt,
@@ -18,12 +20,11 @@ export default function PublicPicture({
   height,
   fetchPriority,
 }: Props) {
-  const base = import.meta.env.BASE_URL;
   return (
     <picture>
-      <source srcSet={`${base}${name}.webp`} type="image/webp" />
+      <source srcSet={hasuguAsset(`${name}.webp`)} type="image/webp" />
       <img
-        src={`${base}${name}.jpg`}
+        src={hasuguAsset(`${name}.jpg`)}
         alt={alt}
         className={className}
         loading={loading}
