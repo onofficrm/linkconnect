@@ -138,6 +138,7 @@ if (!function_exists('lc_campaign_ensure_sindok')) {
                 cp_name = '" . lc_sql_escape((string) $def['title']) . "',
                 cp_category = '" . lc_sql_escape((string) $def['category']) . "',
                 cp_landing_url = '" . lc_sql_escape($landing) . "',
+                cp_tracking_base_url = '',
                 cp_description = '" . lc_sql_escape((string) $def['description']) . "',
                 cp_status = '" . lc_sql_escape($next_status) . "',
                 cp_updated_at = NOW()
@@ -168,6 +169,7 @@ if (!function_exists('lc_campaign_ensure_sindok')) {
             cp_forbidden_channels = '" . lc_sql_escape((string) $def['forbidden_channels']) . "',
             cp_description = '" . lc_sql_escape((string) $def['description']) . "',
             cp_landing_url = '" . lc_sql_escape($landing) . "',
+            cp_tracking_base_url = '',
             cp_status = '" . lc_sql_escape($status) . "',
             cp_badge = '" . lc_sql_escape((string) $def['badge']) . "',
             cp_recommended = '" . (!empty($def['recommended']) ? 1 : 0) . "',

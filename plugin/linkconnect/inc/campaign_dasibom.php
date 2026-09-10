@@ -62,7 +62,8 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
 
         $def = lc_dasibom_campaign_definition();
         $landing = lc_dasibom_landing_url();
-        $tracking_base = 'https://air911.co.kr';
+        // 독립도메인 미사용 — 메인 linkconnect.co.kr/merchant/dasibom/
+        $tracking_base = '';
         $table = lc_table('campaigns');
 
         $mt_id = isset($options['mt_id']) ? (int) $options['mt_id'] : 0;

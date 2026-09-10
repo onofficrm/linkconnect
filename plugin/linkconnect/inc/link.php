@@ -245,23 +245,146 @@ if (!function_exists('lc_link_configured_tracking_hosts')) {
 
 if (!function_exists('lc_campaign_builtin_tracking_base_map')) {
     /**
-     * 내장 광고상품 코드 → 독립 도메인 (추가 상품은 여기 또는 관리자 trackingBaseUrl)
+     * 내장 광고상품 코드 → 독립 도메인.
+     * 독립도메인 전면 미사용 — 빈 맵 유지 (메인 linkconnect.co.kr 만 사용).
      *
      * @return array<string,string>
      */
     function lc_campaign_builtin_tracking_base_map()
     {
+        return array();
+    }
+}
+
+if (!function_exists('lc_campaign_legacy_independent_domain_hosts')) {
+    /**
+     * 제거 대상 독립도메인 호스트 목록.
+     *
+     * @return array<int,string>
+     */
+    function lc_campaign_legacy_independent_domain_hosts()
+    {
         return array(
-            'CPA-DASIBOM' => 'https://air911.co.kr',
-            // CPA-MODEMO: 독립도메인(yevely.kr) 제거 → 메인 linkconnect.co.kr/merchant/modemo/
-            'CPA-HASUGU'  => 'https://skawning.co.kr',
+            'air911.co.kr',
+            'www.air911.co.kr',
+            'skawning.co.kr',
+            'www.skawning.co.kr',
+            'agrio.co.kr',
+            'www.agrio.co.kr',
+            'yevely.kr',
+            'www.yevely.kr',
+            'yevely.jp',
+            'www.yevely.jp',
         );
+    }
+}
+
+if (!function_exists('lc_campaign_clear_independent_tracking_domains')) {
+    /**
+     * CPA 광고상품의 독립도메인(cp_tracking_base_url)을 모두 비운다.
+     *
+     * @param array{migrate_shortlinks?:bool} $options
+     * @return array{ok:bool,message:string,campaignsCleared:int,shortlinksUpdated:int}
+     */
+    function lc_campaign_clear_independent_tracking_domains(array $options = array())
+    {
+        $out = array(
+            'ok'                => true,
+            'message'           => '',
+            'campaignsCleared'  => 0,
+            'shortlinksUpdated' => 0,
+        );
+
+        if (!lc_db_installed()) {
+            $out['ok'] = false;
+            $out['message'] = 'DB가 설치되지 않았습니다.';
+
+            return $out;
+        }
+
+        $table = lc_table('campaigns');
+        if (!function_exists('lc_db_column_exists') || !lc_db_column_exists($table, 'cp_tracking_base_url')) {
+            $out['message'] = 'cp_tracking_base_url 컬럼이 없습니다.';
+
+            return $out;
+        }
+
+        // 등록된 독립도메인 전부 제거
+        $where = "cp_tracking_base_url <> ''";
+
+        $before = lc_sql_fetch(
+            " SELECT COUNT(*) AS cnt FROM `{$table}` WHERE cp_tracking_base_url <> '' ",
+            false
+        );
+        $before_cnt = $before ? (int) $before['cnt'] : 0;
+
+        lc_sql_query(
+            " UPDATE `{$table}` SET
+                cp_tracking_base_url = '',
+                cp_updated_at = NOW()
+              WHERE {$where} ",
+            false
+        );
+
+        $after = lc_sql_fetch(
+            " SELECT COUNT(*) AS cnt FROM `{$table}` WHERE cp_tracking_base_url <> '' ",
+            false
+        );
+        $after_cnt = $after ? (int) $after['cnt'] : 0;
+        $out['campaignsCleared'] = max(0, $before_cnt - $after_cnt);
+
+        $migrate_shortlinks = !isset($options['migrate_shortlinks']) || !empty($options['migrate_shortlinks']);
+        if ($migrate_shortlinks && function_exists('lc_lp_shortlink_ensure_table') && lc_lp_shortlink_ensure_table()) {
+            $main = defined('G5_URL') ? rtrim((string) G5_URL, '/') : 'https://linkconnect.co.kr';
+            $sl = lc_table('lp_shortlinks');
+            $hosts = lc_campaign_legacy_independent_domain_hosts();
+            $like_parts = array();
+            foreach ($hosts as $host) {
+                $like_parts[] = "target_url LIKE '%" . lc_sql_escape($host) . "%'";
+            }
+            $result = $like_parts
+                ? lc_sql_query(
+                    " SELECT id, target_url FROM `{$sl}` WHERE " . implode(' OR ', $like_parts),
+                    false
+                )
+                : false;
+            if ($result) {
+                while ($row = sql_fetch_array($result)) {
+                    $target = (string) ($row['target_url'] ?? '');
+                    $next = preg_replace(
+                        '#https?://(?:www\.)?(?:air911\.co\.kr|skawning\.co\.kr|agrio\.co\.kr|yevely\.kr|yevely\.jp)#i',
+                        $main,
+                        $target
+                    );
+                    if (!is_string($next) || $next === '' || $next === $target) {
+                        continue;
+                    }
+                    $hash = hash('sha256', $next);
+                    lc_sql_query(
+                        " UPDATE `{$sl}` SET
+                            target_url = '" . lc_sql_escape($next) . "',
+                            target_hash = '" . lc_sql_escape($hash) . "'
+                          WHERE id = '" . (int) $row['id'] . "' ",
+                        false
+                    );
+                    $out['shortlinksUpdated']++;
+                }
+            }
+        }
+
+        $out['message'] = sprintf(
+            'CPA 독립도메인을 제거했습니다. 캠페인 %d건, 숏링크 %d건.',
+            $out['campaignsCleared'],
+            $out['shortlinksUpdated']
+        );
+
+        return $out;
     }
 }
 
 if (!function_exists('lc_campaign_sync_builtin_tracking_domains')) {
     /**
-     * 내장 상품의 cp_tracking_base_url 만 보정 (이름/단가 등은 건드리지 않음)
+     * 내장/레거시 독립도메인이 남아 있으면 비운다 (파트너 API 호출 시 재적용 방지).
      */
     function lc_campaign_sync_builtin_tracking_domains()
     {
@@ -269,22 +392,8 @@ if (!function_exists('lc_campaign_sync_builtin_tracking_domains')) {
             return;
         }
 
-        $table = lc_table('campaigns');
-        if (!function_exists('lc_db_column_exists') || !lc_db_column_exists($table, 'cp_tracking_base_url')) {
-            return;
-        }
-
-        foreach (lc_campaign_builtin_tracking_base_map() as $code => $base) {
-            $code_esc = lc_sql_escape($code);
-            $base_esc = lc_sql_escape(rtrim($base, '/'));
-            lc_sql_query(
-                " UPDATE `{$table}`
-                  SET cp_tracking_base_url = '{$base_esc}', cp_updated_at = NOW()
-                  WHERE cp_code = '{$code_esc}'
-                    AND (cp_tracking_base_url = '' OR cp_tracking_base_url <> '{$base_esc}') ",
-                false
-            );
-        }
+        // 매 요청마다 숏링크 전체 스캔은 부담 → 캠페인 컬럼만 가볍게 정리
+        lc_campaign_clear_independent_tracking_domains(array('migrate_shortlinks' => false));
     }
 }
 

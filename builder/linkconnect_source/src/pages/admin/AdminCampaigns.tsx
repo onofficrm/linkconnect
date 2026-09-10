@@ -785,11 +785,11 @@ export function AdminCampaigns() {
                         onChange={(e) => updateEditForm({ trackingBaseUrl: e.target.value })}
                         disabled={!isEditMode}
                         className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
-                        placeholder="https://yevely.kr"
+                        placeholder="(비움 = 메인 사이트)"
                       />
                       <p className="text-[11px] text-slate-400 mt-1">
-                        이 상품의 파트너 홍보 링크(/r/)·상담 랜딩(/c/)에 사용합니다. 비우면 환경설정의 기본 독립 도메인(또는 메인 사이트)을 사용합니다. 경로 없이 도메인만 입력하세요.
-                        랜딩 URL이 linkconnect 도메인이어도, 여기에 값을 넣으면 공개·클릭 이동 주소는 독립 도메인으로 바뀝니다.
+                        현재 CPA 독립도메인은 사용하지 않습니다. 비워 두면 파트너 홍보 링크(/r/)·상담 랜딩(/c/)이 메인 사이트(linkconnect.co.kr)로 나갑니다.
+                        랜딩 URL이 linkconnect 머천트 경로여도, 여기에 값을 넣으면 공개·클릭 이동 주소가 해당 도메인으로 바뀝니다.
                       </p>
                       {editForm.trackingBaseUrl.trim() !== '' && (
                         <p className="text-[11px] text-slate-500 mt-1 font-mono break-all">
