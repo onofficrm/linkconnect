@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchPublicCampaigns, type PublicCampaign } from '../lib/api';
 import { cpaCardImageUrl } from '../lib/optimizedImage';
 
@@ -17,7 +17,46 @@ function sortCampaigns(items: PublicCampaign[]) {
   });
 }
 
-function SlideContent({ item }: { item: PublicCampaign }) {
+function slideChips(item: PublicCampaign, rank: number) {
+  const chips: { key: string; label: string; className: string }[] = [];
+  chips.push({
+    key: 'cat',
+    label: item.category || 'CPA',
+    className: 'bg-white/15 text-white',
+  });
+  if (item.recommended) {
+    chips.push({
+      key: 'rec',
+      label: '추천',
+      className: 'bg-cyan-500/30 text-cyan-100',
+    });
+  } else if (rank < 2) {
+    chips.push({
+      key: 'hot',
+      label: 'HOT 입점',
+      className: 'bg-rose-500/30 text-rose-100',
+    });
+  }
+  if (item.badge) {
+    chips.push({
+      key: 'badge',
+      label: item.badge,
+      className: 'bg-emerald-500/30 text-emerald-100',
+    });
+  }
+  if (item.approvalRate) {
+    chips.push({
+      key: 'apr',
+      label: `승인율 ${item.approvalRate}`,
+      className: 'bg-slate-950/45 text-slate-100',
+    });
+  }
+  return chips.slice(0, 3);
+}
+
+function SlideContent({ item, rank }: { item: PublicCampaign; rank: number }) {
+  const chips = slideChips(item, rank);
+
   return (
     <Link
       to={`/cpa/${encodeURIComponent(item.code || String(item.id))}`}
@@ -40,38 +79,35 @@ function SlideContent({ item }: { item: PublicCampaign }) {
         </div>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/35 to-transparent px-4 pb-4 pt-14 transition-opacity duration-300 group-hover:opacity-0">
-        <p className="text-base font-bold text-white drop-shadow line-clamp-1">{item.title}</p>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-transparent" />
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+        <div className="flex flex-wrap gap-1.5">
+          {chips.map((chip) => (
+            <span
+              key={chip.key}
+              className={`rounded-md px-2 py-0.5 text-[11px] font-semibold backdrop-blur-sm ${chip.className}`}
+            >
+              {chip.label}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-end bg-slate-950/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100 px-4 py-4">
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          <span className="rounded-md bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white">
-            {item.category || 'CPA'}
-          </span>
-          {item.badge ? (
-            <span className="rounded-md bg-emerald-500/25 px-2 py-0.5 text-[11px] font-bold text-emerald-200">
-              {item.badge}
-            </span>
-          ) : null}
-          {item.recommended ? (
-            <span className="rounded-md bg-cyan-500/25 px-2 py-0.5 text-[11px] font-bold text-cyan-200">
-              추천
-            </span>
-          ) : null}
-        </div>
-        <p className="text-lg font-bold text-white leading-snug line-clamp-2">{item.title}</p>
-        <p className="mt-2 text-sm text-slate-200">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-9 pt-10">
+        <p className="text-base font-bold leading-snug text-white drop-shadow line-clamp-2">{item.title}</p>
+        <p className="mt-1.5 text-sm text-slate-200">
           승인시{' '}
-          <span className="text-xl font-bold text-emerald-400">
+          <span className="text-2xl font-bold tracking-tight text-emerald-400">
             {(item.price || 0).toLocaleString()}
           </span>
-          <span className="text-emerald-400 font-semibold">원</span>
+          <span className="ml-0.5 text-base font-bold text-emerald-400">원</span>
         </p>
-        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-300">
-          {item.approvalRate ? <span>승인율 {item.approvalRate}</span> : null}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-300">
           {item.avgTime ? <span>평균 {item.avgTime}</span> : null}
-          <span>클릭하여 상세 보기</span>
+          <span className="text-emerald-300/90 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            클릭하여 상세 보기 →
+          </span>
         </div>
       </div>
     </Link>
@@ -131,19 +167,30 @@ export function HeroAdvertiserMarquee() {
     return () => window.clearInterval(timer);
   }, [paused, loading, items.length, animating, go]);
 
+  const active = items[index];
+
   return (
     <div className="relative mx-auto w-[88%] max-w-[30.8rem] lg:ml-auto lg:mr-0">
-      <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 blur-2xl rounded-3xl" />
+      <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/25 to-cyan-500/20 blur-2xl rounded-3xl" />
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl backdrop-blur-sm">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3.5 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-300">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-400" />
+              </span>
+              LIVE
+            </span>
             입점 CPA
             <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
               {loading ? '…' : `${total}개`}
             </span>
           </div>
-          <span className="text-[10px] text-slate-500">호버 시 단가 · 자동 넘김</span>
+          <span className="text-[10px] text-slate-500">
+            {active?.approvalRate ? `승인율 ${active.approvalRate} · ` : ''}
+            자동 넘김
+          </span>
         </div>
 
         <div
@@ -167,9 +214,9 @@ export function HeroAdvertiserMarquee() {
               className="flex h-full transition-transform duration-700 ease-out will-change-transform"
               style={{ transform: `translate3d(-${index * 100}%, 0, 0)` }}
             >
-              {items.map((item) => (
+              {items.map((item, i) => (
                 <div key={item.id} className="relative h-full w-full shrink-0 grow-0 basis-full">
-                  <SlideContent item={item} />
+                  <SlideContent item={item} rank={i} />
                 </div>
               ))}
             </div>
