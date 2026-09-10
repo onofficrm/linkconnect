@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { AdvertiserIntro } from '../components/AdvertiserIntro';
-import { CategoryLinks } from '../components/CategoryLinks';
 import { CallDbIntro } from '../components/CallDbIntro';
 import { CPAList } from '../components/CPAList';
 import { CPSList } from '../components/CPSList';
@@ -32,7 +31,6 @@ export function Home() {
   return (
     <main>
       <Hero />
-      <CategoryLinks />
       <CPAList />
       {isCpsUiVisible() ? <CPSList /> : null}
       <CallDbIntro />
