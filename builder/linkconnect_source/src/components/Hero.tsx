@@ -3,8 +3,7 @@ import type { MouseEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { handleSectionLink, scrollToSectionAfterPaint } from '../lib/navigation';
 import { isCpsUiVisible } from '../lib/auth';
-
-const heroDashboardImage = `${import.meta.env.BASE_URL}hero_dashboard_mockup.webp`;
+import { HeroAdvertiserMarquee } from './HeroAdvertiserMarquee';
 
 function sectionLinkClick(
   e: MouseEvent<HTMLAnchorElement>,
@@ -69,18 +68,7 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 blur-2xl rounded-3xl"></div>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-              <img
-                src={heroDashboardImage}
-                alt="LinkConnect Dashboard Preview"
-                className="w-full h-auto object-cover"
-                decoding="async"
-                fetchPriority="high"
-              />
-            </div>
-          </div>
+          <HeroAdvertiserMarquee />
         </div>
       </div>
     </section>
