@@ -164,7 +164,7 @@ export function HeroAdvertiserMarquee() {
             </div>
           ) : (
             <div
-              className="flex h-full transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+              className="flex h-full transition-transform duration-700 ease-out will-change-transform"
               style={{ transform: `translate3d(-${index * 100}%, 0, 0)` }}
             >
               {items.map((item) => (
