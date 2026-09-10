@@ -132,7 +132,7 @@ export function HeroAdvertiserMarquee() {
   }, [paused, loading, items.length, animating, go]);
 
   return (
-    <div className="relative mx-auto w-[80%] max-w-md lg:ml-auto lg:mr-0">
+    <div className="relative mx-auto w-[88%] max-w-[30.8rem] lg:ml-auto lg:mr-0">
       <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 blur-2xl rounded-3xl" />
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/80 shadow-2xl backdrop-blur-sm">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3.5 py-2.5">
