@@ -5,6 +5,7 @@ import { SummaryCard, StatusBadge } from '../../components/advertiser/Advertiser
 import { downloadMerchantConversionsCsv, fetchMerchantConversions, MerchantConversion, reportMerchantChannel, updateMerchantConversion } from '../../lib/api';
 import { HelpTipButton } from '../../components/HelpTipButton';
 import { EMBED_HELP } from '../../lib/embedHelpTips';
+import { ConversionInflowCell, ConversionInflowDetails } from '../../components/ConversionInflowPath';
 
 type SourceFilter = '' | 'embed' | 'call' | 'form';
 import { Database, CheckCircle2, Clock, XCircle, Search, Filter, Download, AlertCircle, ChevronRight, MessageSquare, Check, X, FileText, AlertTriangle, User, Link2, MonitorPlay, LogIn, Calendar, Hash, ArrowRight, Bot, Loader2 } from 'lucide-react';
@@ -331,7 +332,7 @@ export function AdvertiserDb() {
                 <th className="px-4 py-4 font-medium whitespace-nowrap">연락처</th>
                 <th className="px-4 py-4 font-medium whitespace-nowrap">지역</th>
                 <th className="px-4 py-4 font-medium whitespace-nowrap">문의내용</th>
-                <th className="px-4 py-4 font-medium whitespace-nowrap">유입 파트너</th>
+                <th className="px-4 py-4 font-medium whitespace-nowrap">유입경로</th>
                 <th className="px-4 py-4 font-medium text-center whitespace-nowrap">상태</th>
                 <th className="px-4 py-4 font-medium text-right whitespace-nowrap">광고비 차감액</th>
                 <th className="px-4 py-4 font-medium text-center whitespace-nowrap">코멘트</th>
@@ -354,7 +355,9 @@ export function AdvertiserDb() {
                       <span className="truncate">{db.inquiry}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-4 text-slate-500 font-mono text-xs whitespace-nowrap">{db.partner}</td>
+                  <td className="px-4 py-4 text-slate-500 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <ConversionInflowCell data={db} showPartner />
+                  </td>
                   <td className="px-4 py-4 text-center whitespace-nowrap">
                     <StatusBadge status={db.status} />
                   </td>
@@ -585,62 +588,8 @@ export function AdvertiserDb() {
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2 text-slate-800 font-bold text-sm">
                   <Link2 size={16} className="text-slate-400" /> 유입 정보
                 </div>
-                <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                  <div>
-                    <div className="text-slate-400 mb-1">유입 파트너 코드</div>
-                    <div className="font-medium font-mono text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded inline-block">{selectedDb.partner}</div>
-                  </div>
-                  <div>
-                    <div className="text-slate-400 mb-1">홍보 채널</div>
-                    <div className="font-medium text-slate-900 flex flex-wrap items-center gap-1.5">
-                      <span>{selectedDb.channel || '-'}</span>
-                      {selectedDb.source === 'embed' || ['embed', 'wordpress', 'widget', 'external'].includes((selectedDb.channel || '').toLowerCase()) ? (
-                        <span className="inline-flex px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 text-[10px] font-bold">외부위젯</span>
-                      ) : selectedDb.source === 'call' ? (
-                        <span className="inline-flex px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 text-[10px] font-bold">콜디비</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="text-slate-400 mb-1">설치 페이지 (외부위젯)</div>
-                    {selectedDb.pageUrl ? (
-                      <a href={selectedDb.pageUrl} target="_blank" rel="noreferrer" className="text-cyan-700 hover:underline break-all">
-                        {selectedDb.pageHost ? `${selectedDb.pageHost} · ` : ''}{selectedDb.pageUrl}
-                      </a>
-                    ) : (
-                      <span className="text-slate-500">-</span>
-                    )}
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="text-slate-400 mb-1">랜딩 URL</div>
-                    {selectedDb.landingUrl ? (
-                      <a href={selectedDb.landingUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
-                        {selectedDb.landingUrl}
-                      </a>
-                    ) : (
-                      <span className="text-slate-500">-</span>
-                    )}
-                  </div>
-                  <div className="md:col-span-2">
-                    <div className="text-slate-400 mb-1">유입경로 (Referer)</div>
-                    <div className="text-slate-600 text-xs break-all" title={selectedDb.referer || ''}>
-                      {selectedDb.referer || '-'}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2 bg-slate-50 p-3 rounded-lg grid grid-cols-3 gap-3">
-                    <div>
-                      <div className="text-slate-400 text-xs mb-0.5">UTM Source</div>
-                      <div className="font-medium font-mono text-slate-700 text-xs">{selectedDb.utmSource || '-'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-400 text-xs mb-0.5">UTM Medium</div>
-                      <div className="font-medium font-mono text-slate-700 text-xs">{selectedDb.utmMedium || '-'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-400 text-xs mb-0.5">UTM Campaign</div>
-                      <div className="font-medium font-mono text-slate-700 text-xs">{selectedDb.utmCampaign || '-'}</div>
-                    </div>
-                  </div>
+                <div className="p-5">
+                  <ConversionInflowDetails data={selectedDb} showPartner />
                 </div>
               </div>
 
