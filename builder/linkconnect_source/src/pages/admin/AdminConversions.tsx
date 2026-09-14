@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard, StatusBadge } from '../../components/admin/AdminShared';
-import { Database, Download, Trash2 } from 'lucide-react';
+import { Calendar, Database, Download, FileText, Link2, MonitorPlay, Trash2, User, X } from 'lucide-react';
 import { AdminConversion, downloadAdminConversionsCsv, fetchAdminConversions, resetAdminConversions } from '../../lib/api';
 import { isLcSuperAdmin } from '../../lib/auth';
 import { HelpTipButton } from '../../components/HelpTipButton';
 import { EMBED_HELP } from '../../lib/embedHelpTips';
-import { ConversionInflowCell } from '../../components/ConversionInflowPath';
+import { ConversionInflowCell, ConversionInflowDetails } from '../../components/ConversionInflowPath';
 
 type SourceFilter = '' | 'embed' | 'call' | 'form';
 
@@ -27,11 +27,32 @@ export function AdminConversions() {
   const [resetting, setResetting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>(() => parseSourceFilter(searchParams.get('source')));
+  const [selectedDb, setSelectedDb] = useState<AdminConversion | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const isSuperAdmin = isLcSuperAdmin();
 
   useEffect(() => {
     setSourceFilter(parseSourceFilter(searchParams.get('source')));
   }, [searchParams]);
+
+  const closeDetail = useCallback(() => {
+    setIsDetailOpen(false);
+    setSelectedDb(null);
+  }, []);
+
+  useEffect(() => {
+    if (!isDetailOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeDetail();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isDetailOpen, closeDetail]);
+
+  const openDetail = (row: AdminConversion) => {
+    setSelectedDb(row);
+    setIsDetailOpen(true);
+  };
 
   const load = useCallback(() => {
     setLoading(true);
@@ -99,43 +120,42 @@ export function AdminConversions() {
               { id: 'embed' as SourceFilter, label: '외부위젯' },
               { id: 'call' as SourceFilter, label: '콜디비' },
               { id: 'form' as SourceFilter, label: '폼/링크' },
-            ]).map((item) => (
+            ]).map((tab) => (
               <button
-                key={item.id || 'all'}
+                key={tab.id || 'all'}
                 type="button"
                 onClick={() => {
-                  setSourceFilter(item.id);
-                  if (item.id) setSearchParams({ source: item.id });
-                  else setSearchParams({});
+                  const next = new URLSearchParams(searchParams);
+                  if (tab.id) next.set('source', tab.id);
+                  else next.delete('source');
+                  setSearchParams(next, { replace: true });
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                  sourceFilter === item.id
-                    ? 'bg-cyan-600 text-white border-cyan-600'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                  sourceFilter === tab.id
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {item.label}
+                {tab.label}
               </button>
             ))}
-            <HelpTipButton title={EMBED_HELP.sourceFilter.title}>{EMBED_HELP.sourceFilter.body}</HelpTipButton>
-          </div>
-          <div className="flex items-center gap-2">
             {isSuperAdmin ? (
               <button
                 type="button"
+                onClick={handleReset}
                 disabled={resetting}
-                onClick={() => void handleReset()}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-60"
               >
                 <Trash2 size={16} />
                 {resetting ? '초기화 중...' : '목록 초기화'}
               </button>
             ) : null}
+            <HelpTipButton title={EMBED_HELP.sourceFilter.title}>{EMBED_HELP.sourceFilter.body}</HelpTipButton>
             <button
               type="button"
+              onClick={handleDownload}
               disabled={downloading}
-              onClick={() => void handleDownload()}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
               <Download size={16} />
               {downloading ? '다운로드 중...' : 'CSV 다운로드'}
@@ -169,28 +189,165 @@ export function AdminConversions() {
                 </tr>
               ) : (
                 rows.map((row) => (
-                    <tr key={row.id} className="border-t border-slate-100 hover:bg-slate-50/80">
-                      <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.id}</td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.date}</td>
-                      <td className="px-4 py-3 font-medium text-slate-900">{row.customer || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-800 whitespace-nowrap">{row.phone || '-'}</td>
-                      <td className="px-4 py-3 font-mono text-xs">{row.partner}</td>
-                      <td className="px-4 py-3">
-                        <ConversionInflowCell data={row} showAbuse />
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">{row.advertiser}</td>
-                      <td className="px-4 py-3 text-slate-700">{row.campaign}</td>
-                      <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
-                      <td className="px-4 py-3 text-right tabular-nums text-cyan-600 font-semibold">
-                        {row.price > 0 ? `${row.price.toLocaleString()}원` : '-'}
-                      </td>
-                    </tr>
-                  ))
+                  <tr
+                    key={row.id}
+                    className={`border-t border-slate-100 hover:bg-slate-50/80 ${
+                      selectedDb?.cvId === row.cvId ? 'bg-cyan-50/60' : ''
+                    }`}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{row.id}</td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{row.date}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => openDetail(row)}
+                        className="font-medium text-cyan-700 hover:text-cyan-900 hover:underline text-left"
+                        title="랜딩 입력 정보 보기"
+                      >
+                        {row.customer || '-'}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-800 whitespace-nowrap">{row.phone || '-'}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{row.partner}</td>
+                    <td className="px-4 py-3">
+                      <ConversionInflowCell data={row} showAbuse />
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">{row.advertiser}</td>
+                    <td className="px-4 py-3 text-slate-700">{row.campaign}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={row.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-cyan-600 font-semibold">
+                      {row.price > 0 ? `${row.price.toLocaleString()}원` : '-'}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {isDetailOpen && selectedDb ? (
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in"
+          onClick={closeDetail}
+        >
+          <div
+            className="w-full md:w-[560px] h-full bg-slate-50 flex flex-col shadow-2xl animate-in slide-in-from-right overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="고객 디비 상세"
+          >
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-white shrink-0">
+              <h2 className="text-lg font-bold text-slate-900">고객 디비 상세</h2>
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex flex-col gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={selectedDb.status} />
+                  <span className="text-xs font-mono text-slate-400">{selectedDb.id}</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">{selectedDb.campaign || '-'}</h3>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Calendar size={14} />
+                    {selectedDb.date} 접수
+                  </span>
+                  <span>단가 {selectedDb.price > 0 ? `${selectedDb.price.toLocaleString()}원` : '-'}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2 text-slate-800 font-bold text-sm">
+                  <User size={16} className="text-slate-400" /> 랜딩 입력 정보
+                </div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                  <div>
+                    <div className="text-slate-400 mb-1">고객명</div>
+                    <div className="font-medium text-slate-900">{selectedDb.customer || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">연락처</div>
+                    <div className="font-medium font-mono text-slate-900">{selectedDb.phone || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">이메일</div>
+                    <div className="font-medium text-slate-900 break-all">{selectedDb.email || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">지역</div>
+                    <div className="font-medium text-slate-900">{selectedDb.region || '-'}</div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-slate-400 mb-1">문의내용</div>
+                    <div className="bg-slate-50 p-3 rounded-lg text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedDb.inquiry || '-'}
+                    </div>
+                  </div>
+                  {selectedDb.attachmentName ? (
+                    <div className="sm:col-span-2">
+                      <div className="text-slate-400 mb-1 flex items-center gap-1.5">
+                        <FileText size={14} /> 첨부파일
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm text-slate-800 break-all">
+                        {selectedDb.attachmentName}
+                        {selectedDb.attachmentStored === false ? (
+                          <p className="mt-2 text-xs text-amber-700">파일명만 확인 가능합니다.</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2 text-slate-800 font-bold text-sm">
+                  <Link2 size={16} className="text-slate-400" /> 유입 정보
+                </div>
+                <div className="p-5">
+                  <ConversionInflowDetails data={selectedDb} showPartner showAbuse />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2 text-slate-800 font-bold text-sm">
+                  <MonitorPlay size={16} className="text-slate-400" /> 캠페인 / 파트너
+                </div>
+                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                  <div>
+                    <div className="text-slate-400 mb-1">광고상품</div>
+                    <div className="font-medium text-slate-900">{selectedDb.campaign || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">광고주</div>
+                    <div className="font-medium text-slate-900">{selectedDb.advertiser || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">파트너</div>
+                    <div className="font-medium font-mono text-slate-900">{selectedDb.partner || '-'}</div>
+                  </div>
+                  <div>
+                    <div className="text-slate-400 mb-1">채널 / 출처</div>
+                    <div className="font-medium text-slate-900">
+                      {[selectedDb.channel, selectedDb.source].filter(Boolean).join(' · ') || '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AdminLayout>
   );
 }
