@@ -244,6 +244,12 @@ if (!function_exists('lc_db_run_schema')) {
                 `pt_code` varchar(20) NOT NULL,
                 `pt_name` varchar(100) NOT NULL DEFAULT '',
                 `pt_status` varchar(20) NOT NULL DEFAULT 'pending',
+                `pt_entity_type` varchar(20) NOT NULL DEFAULT '',
+                `pt_resident_no` varchar(20) NOT NULL DEFAULT '',
+                `pt_company_name` varchar(200) NOT NULL DEFAULT '',
+                `pt_business_number` varchar(20) NOT NULL DEFAULT '',
+                `pt_representative_name` varchar(100) NOT NULL DEFAULT '',
+                `pt_company_address` varchar(300) NOT NULL DEFAULT '',
                 `pt_bank_name` varchar(50) NOT NULL DEFAULT '',
                 `pt_bank_account` varchar(50) NOT NULL DEFAULT '',
                 `pt_bank_holder` varchar(50) NOT NULL DEFAULT '',
@@ -682,6 +688,12 @@ if (!function_exists('lc_db_run_migrations')) {
 
         $partners = lc_table('partners');
         foreach (array(
+            'pt_entity_type' => "varchar(20) NOT NULL DEFAULT '' AFTER `pt_status`",
+            'pt_resident_no' => "varchar(20) NOT NULL DEFAULT '' AFTER `pt_entity_type`",
+            'pt_company_name' => "varchar(200) NOT NULL DEFAULT '' AFTER `pt_resident_no`",
+            'pt_business_number' => "varchar(20) NOT NULL DEFAULT '' AFTER `pt_company_name`",
+            'pt_representative_name' => "varchar(100) NOT NULL DEFAULT '' AFTER `pt_business_number`",
+            'pt_company_address' => "varchar(300) NOT NULL DEFAULT '' AFTER `pt_representative_name`",
             'pt_admin_memo' => "varchar(500) NOT NULL DEFAULT '' AFTER `pt_balance`",
             'pt_admin_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `pt_admin_memo`",
             'pt_assigned_mb_id' => "varchar(20) NOT NULL DEFAULT '' AFTER `pt_admin_tags`",

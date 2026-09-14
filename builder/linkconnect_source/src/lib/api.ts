@@ -102,10 +102,26 @@ export type PartnerProfile = {
   status: string;
   statusLabel: string;
   balance: number;
+  entityType?: string;
+  entityTypeLabel?: string;
+  residentNo?: string;
+  companyName?: string;
+  businessNumber?: string;
+  representativeName?: string;
+  companyAddress?: string;
   bankName: string;
   bankAccount: string;
   bankHolder: string;
   createdAt: string;
+};
+
+export type PartnerApplyPayload = {
+  entityType: 'individual' | 'business';
+  residentNo?: string;
+  companyName?: string;
+  businessNumber?: string;
+  representativeName?: string;
+  companyAddress?: string;
 };
 
 export type PartnerMeResponse = {
@@ -458,8 +474,8 @@ export function downloadPartnerConversionsCsv(filters?: { status?: string; q?: s
   return downloadCsvBlob(url.toString(), `partner_conversions_${Date.now()}.csv`);
 }
 
-export function applyPartner() {
-  return partnerApiPost<{ partner: PartnerProfile | null; message: string }>('apply.php');
+export function applyPartner(payload: PartnerApplyPayload) {
+  return partnerApiPost<{ partner: PartnerProfile | null; message: string }>('apply.php', payload);
 }
 
 const MERCHANT_API_BASE = lcPluginUrl('merchant/api');
@@ -757,6 +773,13 @@ export type AdminPartner = {
   phone?: string;
   email?: string;
   channels?: string;
+  entityType?: string;
+  entityTypeLabel?: string;
+  residentNo?: string;
+  companyName?: string;
+  businessNumber?: string;
+  representativeName?: string;
+  companyAddress?: string;
   bankName?: string;
   bankAccount?: string;
   bankHolder?: string;
