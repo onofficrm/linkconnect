@@ -1875,6 +1875,10 @@ if (!function_exists('lc_conversion_to_inspection_api')) {
             : trim((string) ($row['cv_page_url'] ?? ''));
         $source = (string) ($row['cv_source'] ?? 'form');
         $channel = (string) ($row['cv_channel'] ?? '');
+        $phone = trim((string) ($row['cv_phone'] ?? ''));
+        if ($phone !== '' && function_exists('lc_conversion_format_phone')) {
+            $phone = lc_conversion_format_phone($phone);
+        }
 
         return array(
             'id'              => (string) $row['cv_code'],
@@ -1884,8 +1888,8 @@ if (!function_exists('lc_conversion_to_inspection_api')) {
             'campaign'        => (string) ($row['cp_name'] ?? ''),
             'advertiser'      => (string) ($row['mt_company'] ?? ''),
             'partner'         => (string) ($row['pt_name'] ?? '') . ' (' . (string) ($row['pt_code'] ?? '') . ')',
-            'customer'        => lc_conversion_mask_name($row['cv_name']),
-            'phone'           => lc_conversion_mask_phone($row['cv_phone']),
+            'customer'        => (string) ($row['cv_name'] ?? ''),
+            'phone'           => $phone,
             'inquiry'         => (string) ($row['cv_inquiry'] ?? ''),
             'reason'          => (string) ($row['cv_reject_reason'] !== '' ? $row['cv_reject_reason'] : $row['cv_comment']),
             'comment'         => (string) $row['cv_comment'],
