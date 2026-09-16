@@ -3199,6 +3199,7 @@ export type CallLog = {
   cvStatus?: string;
   cvStatusLabel?: string;
   finalLocked?: boolean;
+  canApprove?: boolean;
   canCancel?: boolean;
   hasRecording: boolean;
   recordingUrl?: string;
