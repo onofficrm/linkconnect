@@ -19,6 +19,7 @@ export function StatusBadge({ status }: { status: string }) {
     '답변대기': 'bg-yellow-50 text-yellow-600 border-yellow-200',
     '답변완료': 'bg-cyan-50 text-cyan-600 border-cyan-200',
     '홍보없음': 'bg-slate-100 text-slate-500 border-slate-200',
+    '콜디비 미생성': 'bg-violet-50 text-violet-700 border-violet-200',
   };
 
   const defaultStyle = 'bg-slate-100 text-slate-600 border-slate-200';

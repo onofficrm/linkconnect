@@ -9,7 +9,6 @@ import {
   PieChart,
   Target,
   XCircle,
-  PhoneCall,
   Zap,
   Menu,
   X,
@@ -49,11 +48,10 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
       label: '실적',
       items: [
         { id: 'live-earnings', icon: <Zap size={20} />, label: '실시간 수익', path: '/partner/live-earnings' },
-        { id: 'db-status', icon: <Target size={20} />, label: 'CPA 실적', path: '/partner/db-status' },
+        { id: 'db-status', icon: <Target size={20} />, label: '디비 확인', path: '/partner/db-status' },
         ...(showCps
           ? [{ id: 'cps-orders', icon: <Target size={20} />, label: 'CPS 실적', path: '/partner/cps/orders' }]
           : []),
-        { id: 'call', icon: <PhoneCall size={20} />, label: '콜디비', path: '/partner/call' },
       ],
     },
     {

@@ -452,6 +452,7 @@ if (!function_exists('lc_conversion_to_api_merchant')) {
         return array_merge(array(
             'id'          => (string) $row['cv_code'],
             'cvId'        => (int) $row['cv_id'],
+            'createdAt'   => (string) ($row['cv_created_at'] ?? ''),
             'date'        => date('Y.m.d H:i', strtotime($row['cv_created_at'])),
             'campaign'    => (string) ($row['cp_name'] ?? ''),
             'name'        => (string) $row['cv_name'],
@@ -497,10 +498,22 @@ if (!function_exists('lc_conversion_list_for_api')) {
     {
         if (lc_db_installed()) {
             $rows = lc_conversion_list_for_merchant($mt_id, $filters);
-
-            return array_map(function ($row) {
+            $items = array_map(function ($row) {
                 return lc_conversion_to_api_merchant($row, false);
             }, $rows);
+
+            if (function_exists('lc_conversion_call_log_only_for_merchant_api')) {
+                $items = array_merge($items, lc_conversion_call_log_only_for_merchant_api($mt_id, $filters));
+                usort($items, function ($a, $b) {
+                    $at = strtotime((string) ($a['createdAt'] ?? '')) ?: 0;
+                    $bt = strtotime((string) ($b['createdAt'] ?? '')) ?: 0;
+                    return $bt <=> $at;
+                });
+                $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
+                $items = array_slice($items, 0, max(1, min(5000, $limit)));
+            }
+
+            return $items;
         }
 
         if (!function_exists('lc_sample_merchant_dbs')) {
@@ -554,6 +567,181 @@ if (!function_exists('lc_conversion_list_for_api')) {
         }
 
         return $items;
+    }
+}
+
+if (!function_exists('lc_conversion_source_allows_call_log_only')) {
+    function lc_conversion_source_allows_call_log_only(array $filters)
+    {
+        $source = strtolower(trim((string) ($filters['source'] ?? '')));
+        return $source === '' || $source === 'call';
+    }
+}
+
+if (!function_exists('lc_conversion_call_result_label')) {
+    function lc_conversion_call_result_label($result)
+    {
+        $result = (string) $result;
+        $labels = array(
+            defined('LC_CALL_RESULT_SUCCESS') ? LC_CALL_RESULT_SUCCESS : 'success' => '통화성공',
+            defined('LC_CALL_RESULT_MISSED') ? LC_CALL_RESULT_MISSED : 'missed' => '부재중',
+            defined('LC_CALL_RESULT_BUSY') ? LC_CALL_RESULT_BUSY : 'busy' => '통화중',
+            defined('LC_CALL_RESULT_FAIL') ? LC_CALL_RESULT_FAIL : 'fail' => '실패',
+        );
+
+        return isset($labels[$result]) ? $labels[$result] : $result;
+    }
+}
+
+if (!function_exists('lc_conversion_call_log_price')) {
+    function lc_conversion_call_log_price(array $row, $merchant_price = false)
+    {
+        if (!function_exists('lc_call_should_create_conversion')) {
+            return 0;
+        }
+        $check = lc_call_should_create_conversion(
+            (int) ($row['cp_id'] ?? 0),
+            (string) ($row['clog_result'] ?? ''),
+            (int) ($row['clog_duration'] ?? 0),
+            array('ignoreEnabled' => true)
+        );
+
+        if ($merchant_price) {
+            return (int) ($check['advertiserPrice'] ?? $check['price'] ?? 0);
+        }
+
+        return (int) ($check['partnerPrice'] ?? $check['price'] ?? 0);
+    }
+}
+
+if (!function_exists('lc_conversion_call_log_only_rows')) {
+    function lc_conversion_call_log_only_rows(array $filters = array(), $limit = 200)
+    {
+        if (!lc_db_installed() || !lc_db_table_exists(lc_table('call_logs')) || !lc_conversion_source_allows_call_log_only($filters)) {
+            return array();
+        }
+        if (!empty($filters['status']) || !empty($filters['rejected_only'])) {
+            return array();
+        }
+
+        $clog = lc_table('call_logs');
+        $cp_table = lc_table('campaigns');
+        $pt_table = lc_table('partners');
+        $where = " l.cv_id = '0' AND l.cp_id > '0' AND l.pt_id > '0' ";
+        if (!empty($filters['mt_id'])) {
+            $where .= " AND l.mt_id = '" . (int) $filters['mt_id'] . "' ";
+        }
+        if (!empty($filters['pt_id'])) {
+            $where .= " AND l.pt_id = '" . (int) $filters['pt_id'] . "' ";
+        }
+        if (!empty($filters['q'])) {
+            $q = lc_sql_escape((string) $filters['q']);
+            $where .= " AND (l.clog_caller LIKE '%{$q}%' OR l.clog_virtual_number LIKE '%{$q}%' OR c.cp_name LIKE '%{$q}%' OR p.pt_code LIKE '%{$q}%') ";
+        }
+
+        $limit = max(1, min(5000, (int) $limit));
+        $rows = array();
+        $sql = " SELECT l.*, c.cp_name, p.pt_code
+            FROM `{$clog}` l
+            LEFT JOIN `{$cp_table}` c ON c.cp_id = l.cp_id
+            LEFT JOIN `{$pt_table}` p ON p.pt_id = l.pt_id
+            WHERE {$where}
+            ORDER BY l.clog_started_at DESC, l.clog_id DESC
+            LIMIT {$limit} ";
+        $result = lc_sql_query($sql, false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+}
+
+if (!function_exists('lc_conversion_call_log_only_to_api')) {
+    function lc_conversion_call_log_only_to_api(array $row, $mask_phone = true)
+    {
+        $caller = (string) ($row['clog_caller'] ?? '');
+        $phone = $mask_phone ? lc_conversion_mask_phone($caller) : lc_conversion_format_phone($caller);
+        $duration = (int) ($row['clog_duration'] ?? 0);
+        $result = (string) ($row['clog_result'] ?? '');
+        $result_label = lc_conversion_call_result_label($result);
+        $created_at = (string) ($row['clog_started_at'] ?? '');
+        $price = lc_conversion_call_log_price($row, !$mask_phone);
+        $virtual = function_exists('lc_call_number_format')
+            ? lc_call_number_format((string) ($row['clog_virtual_number'] ?? ''))
+            : (string) ($row['clog_virtual_number'] ?? '');
+
+        return array(
+            'id'            => 'CALL-' . (int) ($row['clog_id'] ?? 0),
+            'cvId'          => 0,
+            'callLogId'     => (int) ($row['clog_id'] ?? 0),
+            'isCallLogOnly' => true,
+            'createdAt'     => $created_at,
+            'date'          => $created_at !== '' ? date('Y.m.d H:i', strtotime($created_at)) : '',
+            'campaign'      => (string) ($row['cp_name'] ?? ''),
+            'name'          => '콜인입',
+            'phone'         => $phone,
+            'email'         => '',
+            'region'        => '',
+            'inquiry'       => '콜디비 통화 ' . floor($duration / 60) . '분 ' . ($duration % 60) . '초 (' . $result_label . ')',
+            'partner'       => (string) ($row['pt_code'] ?? '-'),
+            'status'        => '콜디비 미생성',
+            'statusCode'    => 'call_uncreated',
+            'price'         => $price,
+            'comment'       => '',
+            'needsAction'   => !$mask_phone,
+            'channel'       => '콜디비',
+            'source'        => defined('LC_SOURCE_CALL') ? LC_SOURCE_CALL : 'call',
+            'subId'         => '',
+            'pageUrl'       => '',
+            'pageHost'      => '',
+            'landingUrl'    => '',
+            'referer'       => '',
+            'ip'            => '',
+            'device'        => '',
+            'linkCode'      => '',
+            'utmSource'     => '',
+            'utmMedium'     => '',
+            'utmCampaign'   => '',
+            'approvalCriteria' => '콜디비 미생성 건은 콜디비 취소 처리만 가능합니다.',
+            'cancelCriteria'   => '취소 확정 시 콜디비를 생성한 뒤 취소/무효 상태로 저장합니다.',
+            'adminComment'     => '',
+            'partnerPublic'    => true,
+            'history'          => array(array('time' => $created_at, 'text' => '콜디비 통화 로그 접수')),
+            'callDuration'     => $duration,
+            'callResult'       => $result,
+            'callResultLabel'  => $result_label,
+            'virtualNumber'    => $virtual,
+            'estRevenue'       => $mask_phone ? $price : 0,
+            'confRevenue'      => 0,
+            'reason'           => '',
+            'appeal'           => '',
+            'hasAppeal'        => false,
+        );
+    }
+}
+
+if (!function_exists('lc_conversion_call_log_only_for_merchant_api')) {
+    function lc_conversion_call_log_only_for_merchant_api($mt_id, array $filters = array())
+    {
+        $filters['mt_id'] = (int) $mt_id;
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
+        return array_map(function ($row) {
+            return lc_conversion_call_log_only_to_api($row, false);
+        }, lc_conversion_call_log_only_rows($filters, $limit));
+    }
+}
+
+if (!function_exists('lc_conversion_call_log_only_for_partner_api')) {
+    function lc_conversion_call_log_only_for_partner_api($pt_id, array $filters = array())
+    {
+        $filters['pt_id'] = (int) $pt_id;
+        $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
+        return array_map(function ($row) {
+            return lc_conversion_call_log_only_to_api($row, true);
+        }, lc_conversion_call_log_only_rows($filters, $limit));
     }
 }
 
@@ -1302,6 +1490,28 @@ if (!function_exists('lc_conversion_partner_export_csv')) {
                 (string) (int) ($item['confRevenue'] ?? 0),
             ));
         }
+        if (function_exists('lc_conversion_call_log_only_for_partner_api')) {
+            foreach (lc_conversion_call_log_only_for_partner_api($pt_id, $filters) as $item) {
+                $lines[] = $csv_row(array(
+                    (string) ($item['id'] ?? ''),
+                    (string) ($item['createdAt'] ?? ''),
+                    (string) ($item['campaign'] ?? ''),
+                    (string) ($item['name'] ?? ''),
+                    (string) ($item['phone'] ?? ''),
+                    '콜디비',
+                    (string) ($item['channel'] ?? ''),
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    (string) ($item['status'] ?? ''),
+                    (string) (int) ($item['price'] ?? 0),
+                    (string) (int) ($item['estRevenue'] ?? 0),
+                    (string) (int) ($item['confRevenue'] ?? 0),
+                ));
+            }
+        }
         return implode("\n", $lines) . "\n";
     }
 }
@@ -1357,6 +1567,28 @@ if (!function_exists('lc_conversion_merchant_export_csv')) {
                 (string) (int) ($item['price'] ?? 0),
             ));
         }
+        if (function_exists('lc_conversion_call_log_only_for_merchant_api')) {
+            foreach (lc_conversion_call_log_only_for_merchant_api($mt_id, $filters) as $item) {
+                $lines[] = $csv_row(array(
+                    (string) ($item['id'] ?? ''),
+                    (string) ($item['createdAt'] ?? ''),
+                    (string) ($item['campaign'] ?? ''),
+                    (string) ($item['name'] ?? ''),
+                    (string) ($item['phone'] ?? ''),
+                    '',
+                    (string) ($item['partner'] ?? ''),
+                    '콜디비',
+                    (string) ($item['channel'] ?? ''),
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    (string) ($item['status'] ?? ''),
+                    (string) (int) ($item['price'] ?? 0),
+                ));
+            }
+        }
         return implode("\n", $lines) . "\n";
     }
 }
@@ -1380,6 +1612,7 @@ if (!function_exists('lc_conversion_to_api_partner')) {
         return array(
             'id'          => (string) $row['cv_code'],
             'cvId'        => (int) $row['cv_id'],
+            'createdAt'   => (string) ($row['cv_created_at'] ?? ''),
             'date'        => date('Y.m.d H:i', strtotime($row['cv_created_at'])),
             'campaign'    => (string) ($row['cp_name'] ?? ''),
             'name'        => lc_conversion_mask_name($row['cv_name']),
@@ -1433,7 +1666,19 @@ if (!function_exists('lc_conversion_list_for_partner_api')) {
     {
         $rows = lc_conversion_list_for_partner($pt_id, $filters);
 
-        return array_map('lc_conversion_to_api_partner', $rows);
+        $items = array_map('lc_conversion_to_api_partner', $rows);
+        if (function_exists('lc_conversion_call_log_only_for_partner_api')) {
+            $items = array_merge($items, lc_conversion_call_log_only_for_partner_api($pt_id, $filters));
+            usort($items, function ($a, $b) {
+                $at = strtotime((string) ($a['createdAt'] ?? '')) ?: 0;
+                $bt = strtotime((string) ($b['createdAt'] ?? '')) ?: 0;
+                return $bt <=> $at;
+            });
+            $limit = isset($filters['limit']) ? (int) $filters['limit'] : 200;
+            $items = array_slice($items, 0, max(1, min(5000, $limit)));
+        }
+
+        return $items;
     }
 }
 
