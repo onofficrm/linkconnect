@@ -61,6 +61,7 @@ export function StatusBadge({ status }: { status: string }) {
     '검증오류': 'bg-yellow-50 text-yellow-600 border-yellow-200',
     '접수완료': 'bg-slate-100 text-slate-600 border-slate-200',
     '처리중': 'bg-blue-50 text-blue-600 border-blue-200',
+    '콜디비 미생성': 'bg-violet-50 text-violet-700 border-violet-200',
   };
 
   const defaultStyle = 'bg-slate-100 text-slate-600 border-slate-200';
