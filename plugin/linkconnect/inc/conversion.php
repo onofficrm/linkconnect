@@ -1421,11 +1421,31 @@ if (!function_exists('lc_conversion_list_for_partner')) {
         $click_meta = function_exists('lc_conversion_click_meta_select_sql')
             ? lc_conversion_click_meta_select_sql()
             : " '' AS cl_referer, '' AS cl_user_agent, '' AS cl_ip ";
+
+        $clog_select = " 0 AS call_log_id, 0 AS call_duration, '' AS call_result, '' AS call_virtual_number ";
+        $clog_join = '';
+        if (function_exists('lc_db_table_exists') && lc_db_table_exists(lc_table('call_logs'))) {
+            $clog_table = lc_table('call_logs');
+            $clog_select = " clog.clog_id AS call_log_id,
+                IFNULL(clog.clog_duration, 0) AS call_duration,
+                IFNULL(clog.clog_result, '') AS call_result,
+                IFNULL(clog.clog_virtual_number, '') AS call_virtual_number ";
+            // cv 당 최신 콜로그만 조인 (중복 행 방지)
+            $clog_join = " LEFT JOIN `{$clog_table}` clog ON clog.clog_id = (
+                SELECT c2.clog_id FROM `{$clog_table}` c2
+                WHERE c2.cv_id = cv.cv_id AND c2.cv_id > 0
+                ORDER BY c2.clog_id DESC
+                LIMIT 1
+            ) ";
+        }
+
         $sql = " SELECT cv.*, c.cp_name, c.cp_landing_url, c.cp_tracking_base_url, lk.lk_code,
-            {$click_meta}
+            {$click_meta},
+            {$clog_select}
             FROM `{$cv_table}` cv
             INNER JOIN `{$cp_table}` c ON c.cp_id = cv.cp_id
             LEFT JOIN `" . lc_table('links') . "` lk ON lk.lk_id = cv.lk_id
+            {$clog_join}
             WHERE {$where}
             ORDER BY cv.cv_id DESC
             LIMIT {$limit} ";
@@ -1465,6 +1485,7 @@ if (!function_exists('lc_conversion_partner_export_csv')) {
         $lines = array();
         $lines[] = $csv_row(array(
             'DB ID', '접수일시', '광고상품', '고객명', '연락처', '출처', '채널',
+            '통화시간(초)', '통화결과', '가상번호',
             '설치URL', '설치호스트', 'UTM Source', 'UTM Medium', 'UTM Campaign',
             '상태', '단가', '예상수익', '확정수익',
         ));
@@ -1480,6 +1501,9 @@ if (!function_exists('lc_conversion_partner_export_csv')) {
                     ? lc_embed_source_label($item['source'] ?? '', $item['channel'] ?? '')
                     : (string) ($item['source'] ?? ''),
                 (string) ($item['channel'] ?? ''),
+                (string) (int) ($item['callDuration'] ?? 0),
+                (string) ($item['callResultLabel'] ?? ''),
+                (string) ($item['virtualNumber'] ?? ''),
                 (string) ($item['pageUrl'] ?? ''),
                 (string) ($item['pageHost'] ?? ''),
                 (string) ($item['utmSource'] ?? ''),
@@ -1501,6 +1525,9 @@ if (!function_exists('lc_conversion_partner_export_csv')) {
                     (string) ($item['phone'] ?? ''),
                     '콜디비',
                     (string) ($item['channel'] ?? ''),
+                    (string) (int) ($item['callDuration'] ?? 0),
+                    (string) ($item['callResultLabel'] ?? ''),
+                    (string) ($item['virtualNumber'] ?? ''),
                     '',
                     '',
                     '',
@@ -1610,6 +1637,19 @@ if (!function_exists('lc_conversion_to_api_partner')) {
             ? lc_conversion_resolve_inflow_meta($row, 'mask')
             : array();
 
+        $source = (string) ($row['cv_source'] ?? 'form');
+        $call_duration = (int) ($row['call_duration'] ?? ($row['clog_duration'] ?? 0));
+        $call_result = (string) ($row['call_result'] ?? ($row['clog_result'] ?? ''));
+        $call_result_label = $call_result !== '' && function_exists('lc_conversion_call_result_label')
+            ? lc_conversion_call_result_label($call_result)
+            : $call_result;
+        $call_log_id = (int) ($row['call_log_id'] ?? ($row['clog_id'] ?? 0));
+        $virtual_raw = (string) ($row['call_virtual_number'] ?? ($row['clog_virtual_number'] ?? ''));
+        $virtual_number = $virtual_raw !== '' && function_exists('lc_call_number_format')
+            ? lc_call_number_format($virtual_raw)
+            : $virtual_raw;
+        $is_call = strtolower($source) === 'call' || $call_log_id > 0 || $call_duration > 0 || $call_result !== '';
+
         return array(
             'id'          => (string) $row['cv_code'],
             'cvId'        => (int) $row['cv_id'],
@@ -1619,7 +1659,7 @@ if (!function_exists('lc_conversion_to_api_partner')) {
             'name'        => lc_conversion_mask_name($row['cv_name']),
             'phone'       => lc_conversion_mask_phone($row['cv_phone']),
             'channel'     => (string) $row['cv_channel'],
-            'source'      => (string) ($row['cv_source'] ?? 'form'),
+            'source'      => $source,
             'subId'       => (string) ($inflow['subId'] ?? $row['cv_sub_id'] ?? ''),
             'pageUrl'     => $page_url,
             'pageHost'    => lc_conversion_page_host($page_url),
@@ -1642,6 +1682,11 @@ if (!function_exists('lc_conversion_to_api_partner')) {
             'hasAppeal'   => trim((string) ($row['cv_partner_appeal'] ?? '')) !== '',
             'qualityScore'=> $approved && $quality_score > 0 ? $quality_score : 0,
             'qualityTags' => $approved ? lc_conversion_decode_quality_tags($row['cv_quality_tags'] ?? '') : array(),
+            'callLogId'   => $call_log_id > 0 ? $call_log_id : null,
+            'callDuration'=> $is_call ? $call_duration : null,
+            'callResult'  => $is_call ? $call_result : null,
+            'callResultLabel' => $is_call ? $call_result_label : null,
+            'virtualNumber' => $is_call ? $virtual_number : null,
         );
     }
 }
