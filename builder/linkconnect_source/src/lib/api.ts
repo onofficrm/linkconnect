@@ -593,6 +593,8 @@ export type MerchantConversion = {
   region: string;
   inquiry: string;
   partner: string;
+  partnerMemberId?: string;
+  partnerCode?: string;
   status: string;
   statusCode: string;
   price: number;
@@ -888,6 +890,8 @@ export type AdminConversion = {
   date: string;
   campaign: string;
   partner: string;
+  /** 파트너 이름 (관리자 표시용) */
+  partnerName?: string;
   /** 파트너 코드 (PTN-XXXX) */
   partnerCode?: string;
   /** 파트너 로그인 아이디 (mb_id) */
