@@ -40,7 +40,7 @@ export function AdvertiserDashboard() {
   const showContractCard = shouldShowMerchantContractNotice(auth) && auth.merchantContractGraceActive;
   const [balance, setBalance] = useState('0');
   const [summary, setSummary] = useState({ pending: 0, todayReceived: 0, todaySpend: 0, todayEmbed: 0, embedTotal: 0 });
-  const [wallet, setWallet] = useState({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
+  const [wallet, setWallet] = useState({ monthlyCharge: 0, monthlySpend: 0, monthlyAdminDeduct: 0, availableBalance: 0 });
   const [chartData, setChartData] = useState<typeof fallbackChartData>([]);
   const [recent, setRecent] = useState<Array<{
     id: string;
@@ -64,7 +64,7 @@ export function AdvertiserDashboard() {
       .then((data) => {
         setBalance(data.balanceFormatted);
         setSummary(data.summary);
-        setWallet(data.wallet ?? { monthlyCharge: 0, monthlySpend: 0, availableBalance: data.balance ?? 0 });
+        setWallet(data.wallet ?? { monthlyCharge: 0, monthlySpend: 0, monthlyAdminDeduct: 0, availableBalance: data.balance ?? 0 });
         setChartData(Array.isArray(data.chart7d) ? data.chart7d : []);
         setRecent(data.recent);
         setPendingAction(data.pendingAction);
@@ -72,7 +72,7 @@ export function AdvertiserDashboard() {
       .catch(() => {
         setBalance('0');
         setSummary({ pending: 0, todayReceived: 0, todaySpend: 0, todayEmbed: 0, embedTotal: 0 });
-        setWallet({ monthlyCharge: 0, monthlySpend: 0, availableBalance: 0 });
+        setWallet({ monthlyCharge: 0, monthlySpend: 0, monthlyAdminDeduct: 0, availableBalance: 0 });
         setChartData([]);
         setRecent([]);
         setPendingAction(0);
@@ -80,7 +80,8 @@ export function AdvertiserDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const monthlyNet = wallet.monthlyCharge - wallet.monthlySpend;
+  const adminDeduct = wallet.monthlyAdminDeduct ?? 0;
+  const monthlyNet = wallet.monthlyCharge - wallet.monthlySpend - adminDeduct;
   const todayEmbed = summary.todayEmbed ?? 0;
 
   useEffect(() => {
@@ -225,9 +226,15 @@ export function AdvertiserDashboard() {
                   <span className="font-semibold text-white">+{wallet.monthlyCharge.toLocaleString()} 원</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-white/10">
-                  <span className="text-slate-400">이번 달 사용액</span>
+                  <span className="text-slate-400">이번 달 사용액 (DB)</span>
                   <span className="font-semibold text-rose-400">-{wallet.monthlySpend.toLocaleString()} 원</span>
                 </div>
+                {adminDeduct > 0 ? (
+                  <div className="flex justify-between items-center py-3 border-b border-white/10">
+                    <span className="text-slate-400">관리자 수동 차감</span>
+                    <span className="font-semibold text-violet-300">-{adminDeduct.toLocaleString()} 원</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between items-center py-3 border-b border-white/10">
                   <span className="text-slate-400">이번 달 순증감</span>
                   <span className={`font-semibold ${monthlyNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>

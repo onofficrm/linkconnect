@@ -137,10 +137,11 @@ if (!function_exists('lc_wallet_merchant_summary')) {
     {
         if (!lc_db_installed()) {
             return array(
-                'balance'          => 0,
-                'monthlyCharge'    => 0,
-                'monthlySpend'     => 0,
-                'availableBalance' => 0,
+                'balance'           => 0,
+                'monthlyCharge'     => 0,
+                'monthlySpend'      => 0,
+                'monthlyAdminDeduct'=> 0,
+                'availableBalance'  => 0,
             );
         }
 
@@ -156,18 +157,29 @@ if (!function_exists('lc_wallet_merchant_summary')) {
               AND wt_status = 'completed'
               AND wt_created_at >= '{$month_start}' ");
 
+        // 광고 사용액: DB 전환(conversion) 차감만. 관리자 수동 차감(admin_adjust)은 별도 집계.
         $spend_row = lc_sql_fetch(" SELECT COALESCE(SUM(ABS(wt_amount)), 0) AS total
             FROM `{$table}`
             WHERE mt_id = '{$mt_id}'
               AND wt_type = 'deduct'
               AND wt_status = 'completed'
+              AND wt_ref_type = 'conversion'
+              AND wt_created_at >= '{$month_start}' ");
+
+        $admin_deduct_row = lc_sql_fetch(" SELECT COALESCE(SUM(ABS(wt_amount)), 0) AS total
+            FROM `{$table}`
+            WHERE mt_id = '{$mt_id}'
+              AND wt_type = 'deduct'
+              AND wt_status = 'completed'
+              AND wt_ref_type = 'admin_adjust'
               AND wt_created_at >= '{$month_start}' ");
 
         return array(
-            'balance'          => $balance,
-            'monthlyCharge'    => (int) ($charge_row['total'] ?? 0),
-            'monthlySpend'     => (int) ($spend_row['total'] ?? 0),
-            'availableBalance' => $balance,
+            'balance'           => $balance,
+            'monthlyCharge'     => (int) ($charge_row['total'] ?? 0),
+            'monthlySpend'      => (int) ($spend_row['total'] ?? 0),
+            'monthlyAdminDeduct'=> (int) ($admin_deduct_row['total'] ?? 0),
+            'availableBalance'  => $balance,
         );
     }
 }

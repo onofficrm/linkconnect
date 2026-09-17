@@ -648,6 +648,7 @@ export type MerchantDashboardResponse = {
   wallet: {
     monthlyCharge: number;
     monthlySpend: number;
+    monthlyAdminDeduct?: number;
     availableBalance: number;
   };
   chart7d: Array<{ date: string; db: number; approval: number; cancel: number }>;
@@ -1758,6 +1759,7 @@ export type MerchantWalletResponse = {
     balance: number;
     monthlyCharge: number;
     monthlySpend: number;
+    monthlyAdminDeduct?: number;
     availableBalance: number;
   };
   items: MerchantWalletTransaction[];
