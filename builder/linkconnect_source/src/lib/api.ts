@@ -4397,6 +4397,7 @@ export type AdminContractDetail = {
   }>;
   documentPreviewUrl: string;
   documentPdfUrl: string;
+  documentSourceHtml?: string;
   signatureUrl: string;
 };
 
@@ -4448,6 +4449,14 @@ export function updateAdminContractStatus(payload: {
   reason: string;
 }) {
   return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', payload);
+}
+
+export function updateAdminContractDocument(payload: { mcId: number; html: string }) {
+  return adminApiPost<{ message: string; detail: AdminContractDetail }>('contracts.php', {
+    action: 'update_document',
+    mcId: payload.mcId,
+    html: payload.html,
+  });
 }
 
 export function addAdminContractAddendum(payload: {
