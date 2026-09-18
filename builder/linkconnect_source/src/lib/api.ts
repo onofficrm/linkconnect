@@ -4399,6 +4399,7 @@ export type AdminContractDetail = {
   documentPdfUrl: string;
   documentSourceHtml?: string;
   signatureUrl: string;
+  signatureDataUrl?: string;
 };
 
 export function fetchAdminContracts(filters?: {
