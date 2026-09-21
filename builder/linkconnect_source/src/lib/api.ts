@@ -2137,6 +2137,17 @@ export type AdminNetProfitDaily = {
   netProfitShare20: number;
 };
 
+export type AdminNetProfitPayout = {
+  id: number;
+  amount: number;
+  memo: string;
+  paidAt: string;
+  periodFrom: string;
+  periodTo: string;
+  adminId: string;
+  createdAt: string;
+};
+
 export type AdminNetProfitSummary = {
   dateFrom: string;
   dateTo: string;
@@ -2144,8 +2155,11 @@ export type AdminNetProfitSummary = {
   partnerAmount: number;
   netProfit: number;
   netProfitShare20: number;
+  share20Paid: number;
+  share20Remaining: number;
   approvedCount: number;
   daily: AdminNetProfitDaily[];
+  payouts: AdminNetProfitPayout[];
   dbReady: boolean;
   allowed: boolean;
 };
@@ -2154,6 +2168,28 @@ export function fetchAdminNetProfit(filters?: { dateFrom?: string; dateTo?: stri
   return adminApiGet<AdminNetProfitSummary>('net_profit.php', {
     dateFrom: filters?.dateFrom ?? '',
     dateTo: filters?.dateTo ?? '',
+  });
+}
+
+export function createAdminNetProfitPayout(payload: {
+  amount: number;
+  memo?: string;
+  paidAt?: string;
+  periodFrom: string;
+  periodTo: string;
+}) {
+  return adminApiPost<{ message: string; payout: AdminNetProfitPayout | null; summary: AdminNetProfitSummary }>('net_profit.php', {
+    action: 'create_payout',
+    ...payload,
+  });
+}
+
+export function deleteAdminNetProfitPayout(payload: { id: number; periodFrom: string; periodTo: string }) {
+  return adminApiPost<{ message: string; summary: AdminNetProfitSummary }>('net_profit.php', {
+    action: 'delete_payout',
+    id: payload.id,
+    periodFrom: payload.periodFrom,
+    periodTo: payload.periodTo,
   });
 }
 

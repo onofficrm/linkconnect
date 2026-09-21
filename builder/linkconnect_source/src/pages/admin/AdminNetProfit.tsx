@@ -2,8 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { SummaryCard } from '../../components/admin/AdminShared';
-import { Building2, Users, TrendingUp, Percent, Calendar, Loader2 } from 'lucide-react';
-import { fetchAdminNetProfit, type AdminNetProfitSummary } from '../../lib/api';
+import { Building2, Users, TrendingUp, Percent, Calendar, Loader2, Wallet, Trash2 } from 'lucide-react';
+import {
+  createAdminNetProfitPayout,
+  deleteAdminNetProfitPayout,
+  fetchAdminNetProfit,
+  type AdminNetProfitSummary,
+} from '../../lib/api';
 import { isNetProfitUiVisible } from '../../lib/auth';
 
 type PeriodPreset = 'this_month' | 'last_month' | '7d' | '30d' | 'custom';
@@ -62,8 +67,11 @@ const emptySummary: AdminNetProfitSummary = {
   partnerAmount: 0,
   netProfit: 0,
   netProfitShare20: 0,
+  share20Paid: 0,
+  share20Remaining: 0,
   approvedCount: 0,
   daily: [],
+  payouts: [],
   dbReady: true,
   allowed: true,
 };
@@ -75,7 +83,12 @@ export function AdminNetProfit() {
   const [dateTo, setDateTo] = useState(initial.to);
   const [summary, setSummary] = useState<AdminNetProfitSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutPaidAt, setPayoutPaidAt] = useState(formatDate(new Date()));
+  const [payoutMemo, setPayoutMemo] = useState('');
   const allowed = isNetProfitUiVisible();
 
   const load = useCallback(async (from: string, to: string) => {
@@ -124,6 +137,50 @@ export function AdminNetProfit() {
     }
     setPeriodPreset('custom');
     void load(from, to);
+  };
+
+  const handleCreatePayout = async () => {
+    const amount = Number(String(payoutAmount).replace(/[^0-9]/g, ''));
+    if (!amount || amount <= 0) {
+      setError('지급 금액을 입력해 주세요.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await createAdminNetProfitPayout({
+        amount,
+        memo: payoutMemo.trim(),
+        paidAt: payoutPaidAt || formatDate(new Date()),
+        periodFrom: dateFrom,
+        periodTo: dateTo,
+      });
+      setSummary(res.summary);
+      setPayoutAmount('');
+      setPayoutMemo('');
+      setMessage(res.message || '지급 내역을 등록했습니다.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '지급 내역 등록에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePayout = async (id: number) => {
+    if (!window.confirm('이 지급 내역을 삭제할까요?')) return;
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await deleteAdminNetProfitPayout({ id, periodFrom: dateFrom, periodTo: dateTo });
+      setSummary(res.summary);
+      setMessage(res.message || '지급 내역을 삭제했습니다.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '삭제에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const periodLabel = useMemo(() => {
@@ -204,6 +261,9 @@ export function AdminNetProfit() {
       {error ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
+      {message ? (
+        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>
+      ) : null}
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-slate-500">
@@ -212,49 +272,111 @@ export function AdminNetProfit() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+            <SummaryCard title="승인 DB" value={summary.approvedCount.toLocaleString()} suffix="건" icon={<Calendar size={18} />} />
+            <SummaryCard title="광고주 과금액" value={won(summary.advertiserAmount)} suffix="원" color="blue" icon={<Building2 size={18} />} />
+            <SummaryCard title="파트너 지급액" value={won(summary.partnerAmount)} suffix="원" color="yellow" icon={<Users size={18} />} />
+            <SummaryCard title="순이익" value={won(summary.netProfit)} suffix="원" color="emerald" highlight icon={<TrendingUp size={18} />} />
+            <SummaryCard title="순이익 20%" value={won(summary.netProfitShare20)} suffix="원" color="violet" highlight icon={<Percent size={18} />} />
             <SummaryCard
-              title="승인 DB"
-              value={summary.approvedCount.toLocaleString()}
-              suffix="건"
-              icon={<Calendar size={18} />}
-            />
-            <SummaryCard
-              title="광고주 과금액"
-              value={won(summary.advertiserAmount)}
+              title="20% 잔액"
+              value={won(summary.share20Remaining)}
               suffix="원"
-              color="blue"
-              icon={<Building2 size={18} />}
-            />
-            <SummaryCard
-              title="파트너 지급액"
-              value={won(summary.partnerAmount)}
-              suffix="원"
-              color="yellow"
-              icon={<Users size={18} />}
-            />
-            <SummaryCard
-              title="순이익"
-              value={won(summary.netProfit)}
-              suffix="원"
-              color="emerald"
+              color="indigo"
               highlight
-              icon={<TrendingUp size={18} />}
+              caption={`지급 ${won(summary.share20Paid)}원`}
+              icon={<Wallet size={18} />}
             />
-            <SummaryCard
-              title="순이익 20%"
-              value={won(summary.netProfitShare20)}
-              suffix="원"
-              color="violet"
-              highlight
-              icon={<Percent size={18} />}
-            />
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">20% 지급 등록</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  현재 조회 기간({dateFrom} ~ {dateTo})의 20% 몫에서 지급한 금액을 기록합니다.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold text-slate-500">지급 금액</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="예: 10000"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs font-semibold text-slate-500">지급일</span>
+                  <input
+                    type="date"
+                    value={payoutPaidAt}
+                    onChange={(e) => setPayoutPaidAt(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"
+                  />
+                </label>
+              </div>
+              <label className="block space-y-1">
+                <span className="text-xs font-semibold text-slate-500">메모 / 코멘트</span>
+                <textarea
+                  value={payoutMemo}
+                  onChange={(e) => setPayoutMemo(e.target.value)}
+                  rows={3}
+                  placeholder="예: 홍길동 계좌 이체 / 중간 정산"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm resize-y"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void handleCreatePayout()}
+                disabled={saving}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {saving ? '저장 중…' : '지급 내역 등록'}
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h2 className="text-sm font-bold text-slate-900">20% 지급 내역</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  총 지급 {won(summary.share20Paid)}원 · 잔액 {won(summary.share20Remaining)}원
+                </p>
+              </div>
+              {(summary.payouts?.length ?? 0) === 0 ? (
+                <p className="px-5 py-10 text-sm text-slate-500 text-center">등록된 지급 내역이 없습니다.</p>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {summary.payouts.map((p) => (
+                    <li key={p.id} className="px-5 py-3.5 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900">{won(p.amount)}원</p>
+                        <p className="text-xs text-slate-500 mt-0.5">지급일 {p.paidAt}</p>
+                        {p.memo ? <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">{p.memo}</p> : null}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeletePayout(p.id)}
+                        disabled={saving}
+                        className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        title="삭제"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-sm font-bold text-slate-900">일별 내역</h2>
-              <p className="text-xs text-slate-500">승인 시각(cv_updated_at) 기준</p>
+              <p className="text-xs text-slate-500">승인 시각 기준</p>
             </div>
             {summary.daily.length === 0 ? (
               <p className="px-5 py-10 text-sm text-slate-500 text-center">해당 기간 승인 데이터가 없습니다.</p>
