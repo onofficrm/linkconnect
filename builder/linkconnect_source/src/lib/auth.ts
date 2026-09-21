@@ -105,10 +105,21 @@ export function isLcSuperAdmin(): boolean {
 export const CPS_UI_ENABLED = false;
 
 /**
+ * 링크커넥트 전용 순이익 정산 메뉴.
+ * trendhub/onoffcpa 등 다른 사이트 빌드에서는 false 로 두세요.
+ */
+export const NET_PROFIT_UI_ENABLED = true;
+
+/**
  * CPS UI 노출 여부 (홈·메뉴·센터 사이드바·공개/파트너/관리자 CPS 화면).
  */
 export function isCpsUiVisible(): boolean {
   return CPS_UI_ENABLED;
+}
+
+/** 순이익 정산 메뉴 노출 여부 (링크커넥트 전용) */
+export function isNetProfitUiVisible(): boolean {
+  return NET_PROFIT_UI_ENABLED;
 }
 
 export function isLcPartner(): boolean {

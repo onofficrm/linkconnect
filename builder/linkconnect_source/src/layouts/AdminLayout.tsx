@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle, PhoneCall, Store, FileText, Globe2 } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Briefcase, Database, ShieldAlert, CreditCard, Receipt, Code, MessageSquare, Settings, Search, Menu, ChevronRight, Gift, ScrollText, ClipboardList, AlertTriangle, PhoneCall, Store, FileText, Globe2, TrendingUp } from 'lucide-react';
 import { MemberAuthMenu } from '../components/MemberAuthMenu';
-import { getLcAuth, getMemberDisplayName, isCpsUiVisible } from '../lib/auth';
+import { getLcAuth, getMemberDisplayName, isCpsUiVisible, isNetProfitUiVisible } from '../lib/auth';
 import { queueScrollTo } from '../lib/navigation';
 import { g5MemberEditUrl } from '../lib/urls';
 import { AiGuideChat } from '../components/AiGuideChat';
@@ -39,6 +39,7 @@ const sidebarSections = [
       { id: 'channel_reports', label: '금지 채널 신고', icon: <AlertTriangle size={20} />, path: '/admin/channel-reports' },
       { id: 'billing', label: '광고비 관리', icon: <CreditCard size={20} />, path: '/admin/billing' },
       { id: 'settlements', label: '정산 관리', icon: <Receipt size={20} />, path: '/admin/settlements' },
+      { id: 'net_profit', label: '순이익 정산', icon: <TrendingUp size={20} />, path: '/admin/net-profit' },
     ],
   },
   {
@@ -57,9 +58,14 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const auth = getLcAuth();
   const showCps = isCpsUiVisible();
+  const showNetProfit = isNetProfitUiVisible();
   const visibleSections = sidebarSections.map((section) => ({
     ...section,
-    items: section.items.filter((item) => showCps || item.id !== 'cps'),
+    items: section.items.filter((item) => {
+      if (!showCps && item.id === 'cps') return false;
+      if (!showNetProfit && item.id === 'net_profit') return false;
+      return true;
+    }),
   }));
   const displayName = getMemberDisplayName();
   const memberEmail = auth.memberEmail ?? '';

@@ -53,6 +53,7 @@ import { AdminCampaigns } from './pages/admin/AdminCampaigns';
 import { AdminInspections } from './pages/admin/AdminInspections';
 import { AdminBilling } from './pages/admin/AdminBilling';
 import { AdminSettlements } from './pages/admin/AdminSettlements';
+import { AdminNetProfit } from './pages/admin/AdminNetProfit';
 import { AdminApi } from './pages/admin/AdminApi';
 import { AdminSupport } from './pages/admin/AdminSupport';
 import { AdminSettings } from './pages/admin/AdminSettings';
@@ -188,6 +189,7 @@ export default function App() {
           <Route path="admin/inspections" element={<AdminInspections />} />
           <Route path="admin/billing" element={<AdminBilling />} />
           <Route path="admin/settlements" element={<AdminSettlements />} />
+          <Route path="admin/net-profit" element={<AdminNetProfit />} />
           <Route path="admin/api" element={<AdminApi />} />
           <Route path="admin/support" element={<AdminSupport />} />
           <Route path="admin/settings" element={<AdminSettings />} />

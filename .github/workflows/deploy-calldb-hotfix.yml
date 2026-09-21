@@ -69,6 +69,9 @@ on:
       - 'bbs/register_form_update.php'
       - 'skin/social/social_register_member.skin.php'
       - 'mobile/skin/social/social_register_member.skin.php'
+      - 'plugin/linkconnect/inc/net_profit.php'
+      - 'plugin/linkconnect/admin/api/net_profit.php'
+      - 'builder/linkconnect_source/src/pages/admin/AdminNetProfit.tsx'
       - '.github/workflows/deploy-calldb-hotfix.yml'
   workflow_dispatch:
 
@@ -113,6 +116,8 @@ jobs:
             "plugin/linkconnect/merchant/contract-signature.php"
             "plugin/linkconnect/inc/merchant_contract_read.php"
             "plugin/linkconnect/inc/merchant_contract.php"
+            "plugin/linkconnect/admin/api/net_profit.php"
+            "plugin/linkconnect/inc/net_profit.php"
             "bbs/register_form.php"
             "bbs/register_form_update.php"
             "skin/social/social_register_member.skin.php"

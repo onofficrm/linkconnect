@@ -2128,6 +2128,35 @@ export function updateAdminSettlement(payload: { action: 'review' | 'approve' | 
   return adminApiPost<{ message: string; settlement: AdminSettlement | null; summary: AdminSettlementSummary }>('settlements.php', payload);
 }
 
+export type AdminNetProfitDaily = {
+  date: string;
+  approvedCount: number;
+  advertiserAmount: number;
+  partnerAmount: number;
+  netProfit: number;
+  netProfitShare20: number;
+};
+
+export type AdminNetProfitSummary = {
+  dateFrom: string;
+  dateTo: string;
+  advertiserAmount: number;
+  partnerAmount: number;
+  netProfit: number;
+  netProfitShare20: number;
+  approvedCount: number;
+  daily: AdminNetProfitDaily[];
+  dbReady: boolean;
+  allowed: boolean;
+};
+
+export function fetchAdminNetProfit(filters?: { dateFrom?: string; dateTo?: string }) {
+  return adminApiGet<AdminNetProfitSummary>('net_profit.php', {
+    dateFrom: filters?.dateFrom ?? '',
+    dateTo: filters?.dateTo ?? '',
+  });
+}
+
 export type AdminInspection = {
   id: string;
   cvId: number;

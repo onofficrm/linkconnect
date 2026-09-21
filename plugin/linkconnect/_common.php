@@ -125,6 +125,9 @@ if (is_file(LC_PLUGIN_PATH . '/inc/campaign_sindok.php')) {
 if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
     require_once LC_PLUGIN_PATH . '/inc/settlement.php';
 }
+if (is_file(LC_PLUGIN_PATH . '/inc/net_profit.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/net_profit.php';
+}
 if (is_file(LC_PLUGIN_PATH . '/inc/inquiry.php')) {
     require_once LC_PLUGIN_PATH . '/inc/inquiry.php';
 }
