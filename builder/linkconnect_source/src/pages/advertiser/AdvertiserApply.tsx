@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Building2, Mail, MessageCircle } from 'lucide-react';
 
-const KAKAO_OPEN_CHAT = 'https://open.kakao.com/o/seLMPtMi';
+const KAKAO_OPEN_CHAT = 'https://pf.kakao.com/_xinxarX/chat';
 const SUPPORT_EMAIL = 'support2580_@linkconnect.co.kr';
 
 /**

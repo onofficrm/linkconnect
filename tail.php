@@ -23,7 +23,7 @@ if (!isset($site_config) && is_file(G5_PATH.'/_site.config.php')) {
 // 푸터·하단 버튼 — _site.config.php 우선, 없으면 기본값
 $g5_footer_tel_display = function_exists('g5site_cfg') ? g5site_cfg('phone', '02-123-4567') : '02-123-4567';
 $g5_footer_tel_link    = function_exists('g5site_tel_link') ? g5site_tel_link($g5_footer_tel_display) : 'tel:021234567';
-$g5_footer_kakao_url   = function_exists('g5site_cfg') ? g5site_cfg('kakao_url', 'https://pf.kakao.com/_xxxxx') : 'https://pf.kakao.com/_xxxxx';
+$g5_footer_kakao_url   = function_exists('g5site_cfg') ? g5site_cfg('kakao_url', 'https://pf.kakao.com/_xinxarX/chat') : 'https://pf.kakao.com/_xinxarX/chat';
 $g5_footer_company     = function_exists('g5site_cfg') ? g5site_cfg('company_name', '회사명') : '회사명';
 $g5_footer_ceo         = function_exists('g5site_cfg') ? g5site_cfg('ceo_name', '대표자명') : '대표자명';
 $g5_footer_intro       = function_exists('g5site_cfg') ? g5site_cfg('footer_desc', '고객과 함께 성장하는 든든한 파트너입니다.') : '고객과 함께 성장하는 든든한 파트너입니다.';
