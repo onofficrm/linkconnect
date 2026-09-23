@@ -25,6 +25,10 @@ if ($method === 'GET') {
             lc_campaign_ensure_modemo(array('activate' => true));
         }
     }
+    // CPA-00015 랜딩 URL이 비어 있을 때만 /merchant/dotrak/ 연결
+    if (lc_db_installed() && function_exists('lc_campaign_ensure_dotrak')) {
+        lc_campaign_ensure_dotrak();
+    }
 
     $filters = array(
         'status'   => isset($_GET['status']) ? (string) $_GET['status'] : '',

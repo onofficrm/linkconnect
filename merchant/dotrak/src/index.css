@@ -1,0 +1,39 @@
+/* design.css 위에 얹는 연동용 스타일 (동의 행은 디자인의 인라인 스타일을 클래스로 옮김) */
+
+.consent-list { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.consent-row { display: flex; align-items: center; min-height: 44px; padding: 0 4px; }
+.consent-label { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; }
+.consent-label input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #0f7d4b; }
+.consent-label span { font-size: 13px; color: #78716c; line-height: 1.4; }
+.consent-view {
+  background: none; border: none; color: #0f7d4b; font-size: 12px; cursor: pointer;
+  padding: 4px 0; white-space: nowrap; text-decoration: underline;
+}
+
+.lead-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+.cta-pair button:disabled { opacity: .6; cursor: wait; }
+
+.form-done { text-align: center; }
+.form-done .eyebrow-tag { margin-left: auto; margin-right: auto; }
+
+.footer-link { text-decoration: underline; }
+
+.policy-backdrop {
+  position: fixed; inset: 0; z-index: 200; background: rgba(12, 10, 9, .6);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.policy-modal {
+  width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto;
+  background: #fff; border-radius: 16px; padding: 24px 20px 20px;
+  box-shadow: 0 20px 60px -12px rgba(0, 0, 0, .35);
+}
+.policy-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.policy-rows { display: flex; flex-direction: column; gap: 10px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.policy-row dt { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 2px; }
+.policy-row dd { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+.policy-note { margin-top: 12px; font-size: 12px; color: var(--text-3); line-height: 1.6; }
+.policy-close {
+  margin-top: 16px; width: 100%; padding: 13px; border-radius: 10px;
+  background: var(--text); color: #fff; font-size: 14px; font-weight: 800;
+}

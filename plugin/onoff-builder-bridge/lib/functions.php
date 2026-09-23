@@ -984,7 +984,7 @@ if (!function_exists('onoff_builder_render_import_page')) {
             }
         }
 
-        if ($id === 'banktupt' || $id === 'dasibom' || $id === 'hasugu_cpa' || $id === 'modemo' || $id === 'sindok') {
+        if ($id === 'banktupt' || $id === 'dasibom' || $id === 'hasugu_cpa' || $id === 'modemo' || $id === 'sindok' || $id === 'dotrak') {
             $lc_common = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect/_common.php' : '';
             if ($lc_common !== '' && is_file($lc_common)) {
                 include_once $lc_common;
@@ -1015,6 +1015,11 @@ if (!function_exists('onoff_builder_render_import_page')) {
                 if ($id === 'sindok') {
                     if (empty($params['cid']) && empty($params['campaign_id'])) {
                         $params['cid'] = 'CPA-00014';
+                    }
+                }
+                if ($id === 'dotrak') {
+                    if (empty($params['cid']) && empty($params['campaign_id'])) {
+                        $params['cid'] = 'CPA-00015';
                     }
                 }
                 $ctx = lc_landing_context_for_api($params);

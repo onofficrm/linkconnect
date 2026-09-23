@@ -1,0 +1,14 @@
+{
+  "id": "dotrak",
+  "name": "도트락 두피문신 SMP CPA 랜딩",
+  "path": "dotrak",
+  "entry": "index.html",
+  "enabled": true,
+  "needs_build": false,
+  "mode": "standalone",
+  "seo_title": "도트락 SMP — 무제한 두피문신 49만원 (남여)",
+  "seo_description": "두피문신 세계협회 회장이 개발한 영구 유지 SMP. 면적 무제한 + 1년 무상 A/S + 모낭재생앰플 업그레이드 무료.",
+  "import_path": "/plugin/onoff-builder-bridge/imports/dotrak",
+  "created_at": "2026-09-23 00:00:00",
+  "memo": "CPA-00015 → 위픽그로스(도트락SMP). cp_landing_url: /merchant/dotrak/"
+}

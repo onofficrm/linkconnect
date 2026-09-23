@@ -78,5 +78,17 @@
         "seo_title": "유품정리서비스 무료상담 | 신독환경",
         "seo_description": "유품·짐·가구 반출과 폐기물 처리에 집중합니다. 물품 반출 후 퇴거 마감까지. 신독환경 전문팀 무료 견적 상담.",
         "created_at": "2026-08-04 00:00:00"
+    },
+    {
+        "id": "dotrak",
+        "name": "도트락 두피문신 SMP CPA 랜딩",
+        "path": "dotrak",
+        "entry": "index.html",
+        "enabled": true,
+        "needs_build": false,
+        "mode": "standalone",
+        "seo_title": "도트락 SMP — 무제한 두피문신 49만원 (남여)",
+        "seo_description": "두피문신 세계협회 회장이 개발한 영구 유지 SMP. 면적 무제한 + 1년 무상 A/S + 모낭재생앰플 업그레이드 무료.",
+        "created_at": "2026-09-23 00:00:00"
     }
 ]
