@@ -25,9 +25,13 @@ if ($method === 'GET') {
             lc_campaign_ensure_modemo(array('activate' => true));
         }
     }
-    // CPA-00015 랜딩 URL이 비어 있을 때만 /merchant/dotrak/ 연결
+    // 도트락(CPA-00015): 없으면 생성, 있으면 빈 랜딩 URL만 /merchant/dotrak/ 로 연결
     if (lc_db_installed() && function_exists('lc_campaign_ensure_dotrak')) {
-        lc_campaign_ensure_dotrak();
+        $cp_table = lc_table('campaigns');
+        $dotrak = lc_sql_fetch(" SELECT cp_id, cp_landing_url FROM `{$cp_table}` WHERE cp_code = 'CPA-00015' LIMIT 1 ", false);
+        if (!$dotrak || trim((string) ($dotrak['cp_landing_url'] ?? '')) === '') {
+            lc_campaign_ensure_dotrak();
+        }
     }
 
     $filters = array(

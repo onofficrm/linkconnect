@@ -983,6 +983,86 @@ if (!function_exists('lc_campaign_merchant_summary')) {
     }
 }
 
+if (!function_exists('lc_campaign_builtin_merchant_landing')) {
+    /**
+     * 빌트인 머천트 랜딩이 있는 광고상품이면 랜딩 URL을 반환한다.
+     * 예: 도트락 → https://linkconnect.co.kr/merchant/dotrak/
+     *
+     * @return string 매칭 없으면 빈 문자열
+     */
+    function lc_campaign_builtin_merchant_landing($name = '', $code = '')
+    {
+        $name = trim((string) $name);
+        $code = strtoupper(trim((string) $code));
+
+        $entries = array();
+
+        if (function_exists('lc_dotrak_landing_url')) {
+            $needles = array('도트락', '두피문신');
+            if (function_exists('lc_dotrak_campaign_definition')) {
+                $def = lc_dotrak_campaign_definition();
+                if (!empty($def['name_needles']) && is_array($def['name_needles'])) {
+                    $needles = $def['name_needles'];
+                }
+            }
+            $entries[] = array(
+                'codes'   => array('CPA-00015', 'CPA-DOTRAK'),
+                'needles' => $needles,
+                'url'     => lc_dotrak_landing_url(),
+            );
+        }
+        if (function_exists('lc_sindok_landing_url')) {
+            $entries[] = array(
+                'codes'   => array('CPA-00014', 'CPA-SINDOK'),
+                'needles' => array('신독환경', '유품정리'),
+                'url'     => lc_sindok_landing_url(),
+            );
+        }
+        if (function_exists('lc_hasugu_cpa_landing_url')) {
+            $entries[] = array(
+                'codes'   => array('CPA-HASUGU'),
+                'needles' => array('하수구', '배관'),
+                'url'     => lc_hasugu_cpa_landing_url(),
+            );
+        }
+        if (function_exists('lc_modemo_landing_url')) {
+            $entries[] = array(
+                'codes'   => array('CPA-MODEMO'),
+                'needles' => array('모두의철거', '모두의 철거'),
+                'url'     => lc_modemo_landing_url(),
+            );
+        }
+
+        foreach ($entries as $entry) {
+            if ($code !== '' && in_array($code, $entry['codes'], true)) {
+                return (string) $entry['url'];
+            }
+        }
+
+        if ($name === '') {
+            return '';
+        }
+
+        foreach ($entries as $entry) {
+            foreach ((array) $entry['needles'] as $needle) {
+                $needle = trim((string) $needle);
+                if ($needle === '') {
+                    continue;
+                }
+                if (function_exists('mb_strpos')) {
+                    if (mb_strpos($name, $needle) !== false) {
+                        return (string) $entry['url'];
+                    }
+                } elseif (strpos($name, $needle) !== false) {
+                    return (string) $entry['url'];
+                }
+            }
+        }
+
+        return '';
+    }
+}
+
 if (!function_exists('lc_campaign_require_approved_contract')) {
     /**
      * 광고 등록/활성화는 계약 승인 완료 광고주만 가능
@@ -1095,6 +1175,16 @@ if (!function_exists('lc_campaign_save')) {
             'cp_landing_url'        => isset($payload['landingUrl']) ? trim((string) $payload['landingUrl']) : '',
             'cp_tracking_base_url'  => '',
         );
+
+        // 랜딩 URL이 비어 있으면 빌트인 머천트 랜딩을 상품명·코드로 자동 연결
+        // (예: 도트락 → /merchant/dotrak/, 신독 → /merchant/sindok/)
+        if ($fields['cp_landing_url'] === '' && function_exists('lc_campaign_builtin_merchant_landing')) {
+            $code_hint = is_array($existing_row) ? (string) ($existing_row['cp_code'] ?? '') : '';
+            $auto_landing = lc_campaign_builtin_merchant_landing($name, $code_hint);
+            if ($auto_landing !== '') {
+                $fields['cp_landing_url'] = $auto_landing;
+            }
+        }
 
         // badge / recommended 는 폼에서 안 보내면 기존 값 유지 (미전송 시 추천 해제 → 메인 상위 노출 순서가 바뀌던 버그)
         if (array_key_exists('badge', $payload)) {

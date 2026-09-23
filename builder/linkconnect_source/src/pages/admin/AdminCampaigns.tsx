@@ -123,6 +123,34 @@ function toEditForm(campaign: AdminCampaign | null, isNew = false): EditForm {
   };
 }
 
+/** 빌트인 머천트 랜딩 — 상품명/코드 매칭 시 등록 폼에 랜딩 URL 자동 채움 */
+const BUILTIN_MERCHANT_LANDINGS: Array<{ codes: string[]; needles: string[]; path: string }> = [
+  { codes: ['CPA-00015', 'CPA-DOTRAK'], needles: ['도트락', '두피문신'], path: '/merchant/dotrak/' },
+  { codes: ['CPA-00014', 'CPA-SINDOK'], needles: ['신독환경', '유품정리'], path: '/merchant/sindok/' },
+  { codes: ['CPA-HASUGU'], needles: ['하수구', '배관'], path: '/merchant/hasugu_cpa/' },
+  { codes: ['CPA-MODEMO'], needles: ['모두의철거', '모두의 철거'], path: '/merchant/modemo/' },
+];
+
+function resolveBuiltinMerchantLanding(name: string, code = ''): string {
+  const normalizedCode = code.trim().toUpperCase();
+  const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
+  const toUrl = (path: string) => (origin ? `${origin}${path}` : path);
+
+  for (const entry of BUILTIN_MERCHANT_LANDINGS) {
+    if (normalizedCode && entry.codes.includes(normalizedCode)) {
+      return toUrl(entry.path);
+    }
+  }
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  for (const entry of BUILTIN_MERCHANT_LANDINGS) {
+    if (entry.needles.some((needle) => trimmed.includes(needle))) {
+      return toUrl(entry.path);
+    }
+  }
+  return '';
+}
+
 export function AdminCampaigns() {
   const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
   const [summary, setSummary] = useState<AdminCampaignSummary>(emptySummary);
@@ -398,7 +426,16 @@ export function AdminCampaigns() {
   };
 
   const updateEditForm = (patch: Partial<EditForm>) => {
-    setEditForm((prev) => (prev ? { ...prev, ...patch } : prev));
+    setEditForm((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      // 상품명 입력 시 랜딩 URL이 비어 있으면 빌트인 머천트 경로를 자동 채움
+      if (Object.prototype.hasOwnProperty.call(patch, 'name') && !next.landingUrl.trim()) {
+        const auto = resolveBuiltinMerchantLanding(next.name, next.code === '신규등록' ? '' : next.code);
+        if (auto) next.landingUrl = auto;
+      }
+      return next;
+    });
   };
 
   return (
@@ -776,6 +813,20 @@ export function AdminCampaigns() {
                         className={`w-full px-3 py-2 border rounded-xl text-sm ${isEditMode ? 'bg-white border-slate-300 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                         placeholder="https://"
                       />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        상품명에 도트락·신독·하수구·모두의철거 등이 포함되면 머천트 랜딩 URL이 자동으로 채워집니다.
+                        {(() => {
+                          const suggested = resolveBuiltinMerchantLanding(
+                            editForm.name,
+                            editForm.code === '신규등록' ? '' : editForm.code,
+                          );
+                          return suggested ? (
+                            <>
+                              {' '}현재 매칭: <span className="font-mono text-slate-500">{suggested}</span>
+                            </>
+                          ) : null;
+                        })()}
+                      </p>
                     </div>
                     <div className="col-span-2">
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">홍보 링크 독립 도메인</label>
