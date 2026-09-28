@@ -1,3 +1,4 @@
+import { resolveHeroVariant } from './heroVariant';
 import { getParam } from './partnerData';
 
 const LK_CODE_STORAGE = 'lc_dotrak_lkCode';
@@ -37,7 +38,7 @@ export function resolveCampaignId(): string {
   return typeof injected === 'string' && injected !== '' ? injected : DEFAULT_CAMPAIGN_ID;
 }
 
-export type LeadCta = 'price' | 'consult';
+export type LeadCta = 'quote';
 
 export interface LeadPayload {
   branch: string;
@@ -64,11 +65,12 @@ function trimInquiry(text: string, max = 500): string {
 
 export function buildInquiryText(payload: LeadPayload): string {
   const parts = [
-    `신청: ${payload.cta === 'price' ? '가격 알아보기' : '상담 신청'}`,
+    '신청: 무료 견적',
     `방문 지점: ${payload.branch}`,
     `고민 부위: ${payload.areas.join(', ')}`,
-    `거주 지역: ${payload.region}`,
+    `거주 지역: ${payload.region || '미선택'}`,
     `마케팅 동의: ${payload.marketingConsent ? 'Y' : 'N'}`,
+    `히어로: ${resolveHeroVariant()}`,
   ];
   return trimInquiry(parts.join(' | '));
 }
