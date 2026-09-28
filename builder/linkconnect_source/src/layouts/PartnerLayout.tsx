@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Link as LinkIcon,
   MessageSquare,
+  PhoneCall,
   PieChart,
   Target,
   XCircle,
@@ -52,6 +53,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
         ...(showCps
           ? [{ id: 'cps-orders', icon: <Target size={20} />, label: 'CPS 실적', path: '/partner/cps/orders' }]
           : []),
+        { id: 'call', icon: <PhoneCall size={20} />, label: '콜디비', path: '/partner/call' },
       ],
     },
     {

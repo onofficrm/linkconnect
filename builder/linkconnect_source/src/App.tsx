@@ -30,6 +30,7 @@ import { PartnerCpsClicks } from './pages/partner/cps/PartnerCpsClicks';
 import { PartnerCpsOrders } from './pages/partner/cps/PartnerCpsOrders';
 import { PartnerCpsEarnings } from './pages/partner/cps/PartnerCpsEarnings';
 import { PartnerLiveEarnings } from './pages/partner/PartnerLiveEarnings';
+import { PartnerCall } from './pages/partner/PartnerCall';
 
 import { AdvertiserCampaigns } from './pages/advertiser/AdvertiserCampaigns';
 import { AdvertiserCampaignGuide } from './pages/advertiser/AdvertiserCampaignGuide';
@@ -136,7 +137,7 @@ export default function App() {
           </Route>
           <Route path="partner/links" element={<PartnerLinks />} />
           <Route path="partner/db-status" element={<PartnerDbStatus />} />
-          <Route path="partner/call" element={<Navigate to="/partner/db-status?source=call" replace />} />
+          <Route path="partner/call" element={<PartnerCall />} />
           <Route path="partner/db-cancel" element={<PartnerDbCancel />} />
           <Route path="partner/analytics" element={<PartnerAnalytics />} />
           <Route path="partner/report" element={<PartnerReport />} />
