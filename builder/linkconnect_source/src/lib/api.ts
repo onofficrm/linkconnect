@@ -1139,6 +1139,79 @@ export function fetchAdminConversions(filters?: { status?: string; source?: stri
   });
 }
 
+export type AdminInflowSource = 'all' | 'form' | 'embed' | 'call';
+
+export interface AdminInflowMetric {
+  label: string;
+  total: number;
+  approved?: number;
+  approvalRate?: number;
+  percentage: number;
+  id?: number;
+  code?: string;
+  key?: string;
+}
+
+export interface AdminInflowPath {
+  sourceKey: string;
+  sourceLabel: string;
+  channel: string;
+  refererHost: string;
+  pageHost: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  total: number;
+  approved: number;
+  approvalRate: number;
+  percentage: number;
+}
+
+export interface AdminInflowResponse {
+  range: { dateFrom: string; dateTo: string; period: number };
+  summary: {
+    clicks: number;
+    uniqueVisitors: number;
+    totalDb: number;
+    approved: number;
+    rejected: number;
+    pending: number;
+    approvalRate: number;
+    convRate: number;
+  };
+  chart: Array<{ date: string; clicks: number; db: number; approved: number }>;
+  sources: AdminInflowMetric[];
+  channels: AdminInflowMetric[];
+  referrers: AdminInflowMetric[];
+  pageHosts: AdminInflowMetric[];
+  utmSources: AdminInflowMetric[];
+  utmMediums: AdminInflowMetric[];
+  utmCampaigns: AdminInflowMetric[];
+  clickReferrers: AdminInflowMetric[];
+  devices: AdminInflowMetric[];
+  partners: AdminInflowMetric[];
+  campaigns: AdminInflowMetric[];
+  paths: AdminInflowPath[];
+  filterOptions: {
+    partners: Array<{ id: number; code: string; label: string }>;
+    campaigns: Array<{ id: number; code: string; label: string }>;
+  };
+}
+
+export function fetchAdminInflow(filters: {
+  period: 7 | 30 | 90;
+  source: AdminInflowSource;
+  ptId?: number;
+  cpId?: number;
+}) {
+  return adminApiGet<AdminInflowResponse>('inflow.php', {
+    period: String(filters.period),
+    source: filters.source === 'all' ? '' : filters.source,
+    ptId: filters.ptId ? String(filters.ptId) : '',
+    cpId: filters.cpId ? String(filters.cpId) : '',
+  });
+}
+
 export function downloadAdminConversionsCsv(filters?: { status?: string; source?: string }) {
   const url = new URL(`${ADMIN_API_BASE}/conversions.php`, window.location.origin);
   url.searchParams.set('format', 'csv');
