@@ -20,6 +20,7 @@ import { SummaryCard, StatusBadge } from '../../components/advertiser/Advertiser
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
 import { fetchMerchantCampaigns, fetchMerchantDashboard } from '../../lib/api';
 import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
+import { g5MemberEditUrl } from '../../lib/urls';
 import { guideNeedsAttention } from '../../lib/advertiserOnboarding';
 import { InsightBanner, SkeletonCardGrid, DataTableEmpty, tableRowClass } from '../../components/center-ui';
 
@@ -109,6 +110,15 @@ export function AdvertiserDashboard() {
   return (
     <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
         {showContractCard ? <AdvertiserContractNotice /> : null}
+
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
+          <p className="font-bold">DB 알림 수신번호</p>
+          <p className="mt-1 leading-relaxed">
+            카카오톡 아이디는 사용할 수 없습니다. 디비 유입 시 카카오톡으로 알림을 받을 수 있는, 카카오톡에 가입한 휴대폰 번호를{' '}
+            <a href={g5MemberEditUrl()} className="font-bold underline">회원정보 수정</a>
+            의 휴대폰번호에 넣어 주세요.
+          </p>
+        </div>
 
         {showOnboardingBanner ? (
           <InsightBanner

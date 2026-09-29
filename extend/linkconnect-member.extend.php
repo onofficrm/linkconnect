@@ -80,6 +80,14 @@ if (!function_exists('linkconnect_bootstrap_login_redirect')) {
     }
 }
 
+if (!function_exists('linkconnect_member_is_advertiser')) {
+    function linkconnect_member_is_advertiser()
+    {
+        linkconnect_bootstrap_login_redirect();
+        return function_exists('lc_is_merchant') && lc_is_merchant();
+    }
+}
+
 if (!function_exists('linkconnect_member_login_home_url')) {
     function linkconnect_member_login_home_url()
     {

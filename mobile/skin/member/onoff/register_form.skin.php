@@ -150,6 +150,9 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
 	                <label for="reg_mb_hp">휴대폰번호<?php if (!empty($hp_required)) { ?> (필수)<?php } ?><?php echo $desc_phone ?></label>
 	                
 	                <input type="text" name="mb_hp" value="<?php echo get_text($member['mb_hp']) ?>" id="reg_mb_hp" <?php echo $hp_required; ?> <?php echo $hp_readonly; ?> class="frm_input full_input <?php echo $hp_required; ?> <?php echo $hp_readonly; ?>" maxlength="20" placeholder="휴대폰번호">
+	                <?php if (function_exists('linkconnect_member_is_advertiser') && linkconnect_member_is_advertiser()) { ?>
+	                <p class="frm_info">디비 유입 시 카카오톡으로 알림을 받을 수 있는, 카카오톡에 가입한 휴대폰 번호를 넣어 주세요. 카카오톡 아이디는 사용할 수 없습니다.</p>
+	                <?php } ?>
 	                <?php if ($config['cf_cert_use'] && ($config['cf_cert_hp'] || $config['cf_cert_simple'])) { ?>
 	                <input type="hidden" name="old_mb_hp" value="<?php echo get_text($member['mb_hp']) ?>">
 	                <?php } ?>
