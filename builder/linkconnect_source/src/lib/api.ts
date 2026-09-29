@@ -2519,6 +2519,21 @@ export function sendMerchantNotifyTest() {
   return merchantApiPost<MerchantNotifyPrefsResponse>('notification_prefs.php', { action: 'test' });
 }
 
+export type MerchantAlimtalkPhones = {
+  phones: string[];
+  memberPhone: string;
+  limit: number;
+  message?: string;
+};
+
+export function fetchMerchantAlimtalkPhones() {
+  return merchantApiGet<MerchantAlimtalkPhones>('alimtalk_phones.php');
+}
+
+export function saveMerchantAlimtalkPhones(phones: string[]) {
+  return merchantApiPost<MerchantAlimtalkPhones>('alimtalk_phones.php', { phones });
+}
+
 export type AdminMailSettings = {
   emailUse: boolean;
   fromEmail: string;

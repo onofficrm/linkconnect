@@ -406,7 +406,7 @@ export function AdminSettings() {
               <Toggle label="최고관리자 발송" checked={boolVal(raw, 'alimtalkNotifyAdmin')} onChange={(v) => setRaw((prev) => setBool(prev, 'alimtalkNotifyAdmin', v))} />
             </div>
             <Field label="최고관리자 수신번호 (쉼표 구분)" value={raw.alimtalkAdminPhones || ''} onChange={(v) => update('alimtalkAdminPhones', v)} />
-            <p className="text-xs text-slate-400 -mt-2">광고주/파트너는 회원정보의 휴대폰(mb_hp)으로 발송됩니다.</p>
+            <p className="text-xs text-slate-400 -mt-2">파트너는 회원정보의 휴대폰으로 발송됩니다. 광고주는 대시보드에 저장한 수신번호(최대 3개)로 발송되고, 비어 있으면 회원정보 휴대폰으로 발송됩니다.</p>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Solapi API Key</label>
               {raw.solapiApiKeySet === '1' ? <p className="text-xs text-emerald-600 mb-2">등록됨 (********)</p> : <p className="text-xs text-amber-600 mb-2">미등록</p>}

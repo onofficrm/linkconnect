@@ -83,9 +83,135 @@ if (!function_exists('lc_alimtalk_member_phone')) {
     }
 }
 
+if (!function_exists('lc_alimtalk_merchant_phone_limit')) {
+    function lc_alimtalk_merchant_phone_limit()
+    {
+        return 3;
+    }
+}
+
+if (!function_exists('lc_alimtalk_ensure_merchant_phones_column')) {
+    function lc_alimtalk_ensure_merchant_phones_column()
+    {
+        if (!function_exists('lc_table') || !function_exists('lc_db_column_exists')) {
+            return;
+        }
+        $table = lc_table('merchants');
+        if (function_exists('lc_db_table_exists') && lc_db_table_exists($table) && !lc_db_column_exists($table, 'mt_alimtalk_phones')) {
+            lc_sql_query(" ALTER TABLE `{$table}` ADD COLUMN `mt_alimtalk_phones` varchar(80) NOT NULL DEFAULT '' ", false);
+        }
+    }
+}
+
+if (!function_exists('lc_alimtalk_merchant_stored_phones')) {
+    /**
+     * @param array<string,mixed>|null $row
+     * @return string[]
+     */
+    function lc_alimtalk_merchant_stored_phones($row)
+    {
+        if (!is_array($row)) {
+            return array();
+        }
+        $raw = (string) ($row['mt_alimtalk_phones'] ?? '');
+        $parts = preg_split('/[,;\s]+/', $raw) ?: array();
+        $phones = array();
+        $limit = lc_alimtalk_merchant_phone_limit();
+        foreach ($parts as $part) {
+            $phone = lc_alimtalk_normalize_phone($part);
+            if ($phone === '' || in_array($phone, $phones, true)) {
+                continue;
+            }
+            $phones[] = $phone;
+            if (count($phones) >= $limit) {
+                break;
+            }
+        }
+        return $phones;
+    }
+}
+
+if (!function_exists('lc_alimtalk_merchant_phones')) {
+    /**
+     * 저장된 수신번호가 있으면 그 목록(최대 3)만 사용한다.
+     * 비어 있으면 회원정보 휴대폰으로 1건 발송한다.
+     *
+     * @param array<string,mixed>|null $row
+     * @return string[]
+     */
+    function lc_alimtalk_merchant_phones($row)
+    {
+        $stored = lc_alimtalk_merchant_stored_phones($row);
+        if ($stored) {
+            return $stored;
+        }
+        if (!is_array($row)) {
+            return array();
+        }
+        $phone = lc_alimtalk_member_phone((string) ($row['mb_id'] ?? ''));
+        return $phone !== '' ? array($phone) : array();
+    }
+}
+
+if (!function_exists('lc_alimtalk_save_merchant_phones')) {
+    /**
+     * @param mixed $raw_phones
+     * @return array{ok:bool,message:string,phones:string[]}
+     */
+    function lc_alimtalk_save_merchant_phones($mt_id, $raw_phones)
+    {
+        $mt_id = (int) $mt_id;
+        $limit = lc_alimtalk_merchant_phone_limit();
+        if ($mt_id <= 0) {
+            return array('ok' => false, 'message' => '광고주를 찾을 수 없습니다.', 'phones' => array());
+        }
+
+        $list = is_array($raw_phones) ? array_values($raw_phones) : array();
+        if (count($list) > $limit) {
+            return array('ok' => false, 'message' => '수신번호는 최대 ' . $limit . '개까지 저장할 수 있습니다.', 'phones' => array());
+        }
+
+        $phones = array();
+        foreach ($list as $index => $raw) {
+            $raw = trim((string) $raw);
+            if ($raw === '') {
+                continue;
+            }
+            $phone = lc_alimtalk_normalize_phone($raw);
+            $slot = (int) $index + 1;
+            if ($phone === '') {
+                return array(
+                    'ok' => false,
+                    'message' => $slot . '번 수신번호는 카카오톡에 가입한 휴대폰 번호여야 합니다. 카카오톡 아이디는 사용할 수 없습니다.',
+                    'phones' => array(),
+                );
+            }
+            if (in_array($phone, $phones, true)) {
+                return array(
+                    'ok' => false,
+                    'message' => '같은 번호가 두 번 들어 있습니다. 서로 다른 번호만 넣어 주세요.',
+                    'phones' => array(),
+                );
+            }
+            $phones[] = $phone;
+        }
+
+        lc_alimtalk_ensure_merchant_phones_column();
+        $table = lc_table('merchants');
+        $csv = lc_sql_escape(implode(',', $phones));
+        lc_sql_query(" UPDATE `{$table}` SET mt_alimtalk_phones = '{$csv}', mt_updated_at = NOW() WHERE mt_id = '{$mt_id}' LIMIT 1 ", false);
+
+        $message = $phones
+            ? '알림 수신번호 ' . count($phones) . '개를 저장했습니다. 같은 DB 알림이 이 번호로 발송됩니다.'
+            : '추가 수신번호를 비웠습니다. 회원정보 휴대폰번호로만 발송됩니다.';
+
+        return array('ok' => true, 'message' => $message, 'phones' => $phones);
+    }
+}
+
 if (!function_exists('lc_alimtalk_resolve_center_phone')) {
     /**
-     * @return array{phone:string,name:string}
+     * @return array{phones:string[],name:string}
      */
     function lc_alimtalk_resolve_center_phone($center, $user_id)
     {
@@ -115,9 +241,8 @@ if (!function_exists('lc_alimtalk_resolve_center_phone')) {
             if (!is_array($row)) {
                 return array('phones' => array(), 'name' => '');
             }
-            $phone = lc_alimtalk_member_phone((string) ($row['mb_id'] ?? ''));
             return array(
-                'phones' => $phone !== '' ? array($phone) : array(),
+                'phones' => lc_alimtalk_merchant_phones($row),
                 'name'   => (string) ($row['mt_company'] ?? $row['mt_code'] ?? '광고주'),
             );
         }

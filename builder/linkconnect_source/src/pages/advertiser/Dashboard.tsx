@@ -18,13 +18,136 @@ import {
 import { AdvertiserLayout } from '../../layouts/AdvertiserLayout';
 import { SummaryCard, StatusBadge } from '../../components/advertiser/AdvertiserShared';
 import { AdvertiserContractNotice } from '../../components/advertiser/AdvertiserContractNotice';
-import { fetchMerchantCampaigns, fetchMerchantDashboard } from '../../lib/api';
+import { fetchMerchantAlimtalkPhones, fetchMerchantCampaigns, fetchMerchantDashboard, saveMerchantAlimtalkPhones } from '../../lib/api';
 import { getLcAuth, shouldShowMerchantContractNotice } from '../../lib/auth';
 import { g5MemberEditUrl } from '../../lib/urls';
 import { guideNeedsAttention } from '../../lib/advertiserOnboarding';
 import { InsightBanner, SkeletonCardGrid, DataTableEmpty, tableRowClass } from '../../components/center-ui';
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+function AdvertiserAlimtalkPhones() {
+  const [phones, setPhones] = useState(['', '', '']);
+  const [memberPhone, setMemberPhone] = useState('');
+  const [savedCount, setSavedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchMerchantAlimtalkPhones()
+      .then((data) => {
+        if (cancelled) return;
+        const saved = Array.isArray(data.phones) ? data.phones : [];
+        const next = ['', '', ''];
+        if (saved.length) {
+          saved.slice(0, 3).forEach((phone, index) => {
+            next[index] = phone;
+          });
+        } else if (data.memberPhone) {
+          next[0] = data.memberPhone;
+        }
+        setPhones(next);
+        setMemberPhone(data.memberPhone || '');
+        setSavedCount(saved.length);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : '수신번호를 불러오지 못했습니다.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await saveMerchantAlimtalkPhones(phones);
+      const saved = Array.isArray(result.phones) ? result.phones : [];
+      const next = ['', '', ''];
+      if (saved.length) {
+        saved.slice(0, 3).forEach((phone, index) => {
+          next[index] = phone;
+        });
+      } else if (result.memberPhone) {
+        next[0] = result.memberPhone;
+      }
+      setPhones(next);
+      setMemberPhone(result.memberPhone || '');
+      setSavedCount(saved.length);
+      setMessage(result.message || '수신번호를 저장했습니다.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '수신번호 저장에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
+      <p className="font-bold">DB 알림 수신번호</p>
+      <p className="mt-1 leading-relaxed">
+        같은 DB 알림을 카카오톡에 가입한 휴대폰 번호로 최대 3명까지 받을 수 있습니다. 카카오톡 아이디는 사용할 수 없습니다.
+      </p>
+      {loading ? (
+        <p className="mt-3 text-amber-800">불러오는 중...</p>
+      ) : (
+        <>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {phones.map((phone, index) => (
+              <label key={index} className="block">
+                <span className="text-xs font-bold text-amber-900">수신번호 {index + 1}</span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  value={phone}
+                  placeholder="01012345678"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPhones((prev) => prev.map((item, itemIndex) => (itemIndex === index ? value : item)));
+                  }}
+                  className="mt-1 w-full px-3 py-2 rounded-xl border border-amber-200 bg-white text-sm text-slate-900 outline-none focus:border-amber-500"
+                />
+              </label>
+            ))}
+          </div>
+          {savedCount === 0 ? (
+            <p className="mt-2 text-xs leading-relaxed text-amber-800">
+              {memberPhone
+                ? '아직 따로 저장한 번호가 없습니다. 저장하기 전에는 회원정보 휴대폰번호로만 발송됩니다.'
+                : '회원정보 휴대폰번호가 없습니다. 여기에 번호를 저장하거나 회원정보 수정을 해 주세요.'}
+              {' '}
+              <a href={g5MemberEditUrl()} className="font-bold underline">회원정보 수정</a>
+            </p>
+          ) : (
+            <p className="mt-2 text-xs leading-relaxed text-amber-800">
+              저장된 {savedCount}개 번호로 같은 알림이 발송됩니다.
+            </p>
+          )}
+          {(error || message) && (
+            <p className={`mt-2 text-xs font-bold ${error ? 'text-red-700' : 'text-emerald-700'}`}>{error || message}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="mt-3 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-sm font-bold disabled:opacity-50"
+          >
+            {saving ? '저장 중...' : '수신번호 저장'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
 
 const fallbackChartData = [
   { date: '10.01', db: 24, approval: 18, cancel: 6 },
@@ -111,14 +234,7 @@ export function AdvertiserDashboard() {
     <AdvertiserLayout activeMenu="dashboard" title="대시보드" balance={balance} pendingBadge={pendingAction}>
         {showContractCard ? <AdvertiserContractNotice /> : null}
 
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
-          <p className="font-bold">DB 알림 수신번호</p>
-          <p className="mt-1 leading-relaxed">
-            카카오톡 아이디는 사용할 수 없습니다. 디비 유입 시 카카오톡으로 알림을 받을 수 있는, 카카오톡에 가입한 휴대폰 번호를{' '}
-            <a href={g5MemberEditUrl()} className="font-bold underline">회원정보 수정</a>
-            의 휴대폰번호에 넣어 주세요.
-          </p>
-        </div>
+        <AdvertiserAlimtalkPhones />
 
         {showOnboardingBanner ? (
           <InsightBanner

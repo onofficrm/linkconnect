@@ -271,6 +271,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `mt_status` varchar(20) NOT NULL DEFAULT 'pending',
                 `mt_balance` int NOT NULL DEFAULT 0,
                 `mt_notify_prefs` text,
+                `mt_alimtalk_phones` varchar(80) NOT NULL DEFAULT '',
                 `mt_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `mt_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`mt_id`),
@@ -714,6 +715,7 @@ if (!function_exists('lc_db_run_migrations')) {
             'mt_admin_tags' => "varchar(200) NOT NULL DEFAULT '' AFTER `mt_admin_memo`",
             'mt_assigned_mb_id' => "varchar(20) NOT NULL DEFAULT '' AFTER `mt_admin_tags`",
             'mt_abuse_score' => "tinyint unsigned NOT NULL DEFAULT 0 AFTER `mt_assigned_mb_id`",
+            'mt_alimtalk_phones' => "varchar(80) NOT NULL DEFAULT '' AFTER `mt_balance`",
         ) as $col => $definition) {
             if (lc_db_table_exists($merchants) && !lc_db_column_exists($merchants, $col)) {
                 $alters[] = "ALTER TABLE `{$merchants}` ADD COLUMN `{$col}` {$definition}";
