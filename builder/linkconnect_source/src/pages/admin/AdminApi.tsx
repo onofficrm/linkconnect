@@ -50,9 +50,12 @@ export function AdminApi() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [issuedKey, setIssuedKey] = useState<ApiClientItem | null>(null);
+  const [issuedLandingKey, setIssuedLandingKey] = useState<ApiClientItem | null>(null);
   const [newMtId, setNewMtId] = useState('');
   const [newName, setNewName] = useState('');
   const [newIps, setNewIps] = useState('');
+  const [landingName, setLandingName] = useState('');
+  const [landingIps, setLandingIps] = useState('');
   const [busy, setBusy] = useState(false);
 
   const primaryClient = useMemo(() => landingClients[0] ?? null, [landingClients]);
@@ -118,6 +121,42 @@ export function AdminApi() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : '키 재발급에 실패했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const createLandingKey = async () => {
+    const name = landingName.trim();
+    if (!name) {
+      setError('업체명을 입력하세요.');
+      return;
+    }
+    setBusy(true);
+    setMessage('');
+    setError('');
+    setIssuedLandingKey(null);
+    try {
+      const result = await updateAdminIntegration({
+        action: 'create_client',
+        name,
+        type: 'landing',
+        allowedIps: landingIps.trim(),
+      });
+      if (result.client) {
+        setIssuedLandingKey(result.client);
+        setMessage(`${result.message} — 아래 발급 키를 복사해 업체에 전달하세요.`);
+      } else {
+        setMessage(result.message);
+      }
+      if (result.landingClients || result.clients) {
+        applyClientsPayload(result);
+      }
+      setLandingName('');
+      setLandingIps('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '외부 DB 수신 키 발급에 실패했습니다.');
     } finally {
       setBusy(false);
     }
@@ -233,10 +272,72 @@ export function AdminApi() {
               <p className="text-xs text-slate-500 mt-4">외부 DB 수신 엔드포인트: <code className="bg-slate-100 px-1 rounded">/plugin/linkconnect/api/db_receive.php</code></p>
             </>
           ) : (
-            <p className="text-sm text-slate-500">
-              {loading ? '불러오는 중...' : '랜딩페이지용 API 클라이언트가 없습니다. (광고주 검수 키는 오른쪽 목록에 표시됩니다)'}
+            <p className="text-sm text-slate-500 mb-4">
+              {loading ? '불러오는 중...' : '등록된 수신 키가 없습니다. 아래에서 업체별로 발급하세요.'}
             </p>
           )}
+
+          <div className="mt-6 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="text-sm font-bold text-slate-900">외부 DB 수신 키 발급</div>
+            {issuedLandingKey ? (
+              <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 space-y-1">
+                <div className="text-xs font-bold text-emerald-900">{issuedLandingKey.name}</div>
+                <div className="font-mono text-xs text-slate-900 break-all">{issuedLandingKey.apiKey}</div>
+              </div>
+            ) : null}
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">업체명 *</label>
+              <input
+                type="text"
+                value={landingName}
+                onChange={(e) => setLandingName(e.target.value)}
+                placeholder="예: ○○파트너 전환 연동"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1">허용 IP (쉼표 구분)</label>
+              <input
+                type="text"
+                value={landingIps}
+                onChange={(e) => setLandingIps(e.target.value)}
+                placeholder="203.0.113.10, 203.0.113.*"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-mono"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={busy || !landingName.trim()}
+              onClick={createLandingKey}
+              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <Plus size={16} /> 수신 API Key 발급
+            </button>
+          </div>
+
+          {landingClients.length > 0 ? (
+            <div className="mt-4 space-y-3 max-h-72 overflow-y-auto">
+              {landingClients.map((c) => (
+                <div key={c.id} className="p-3 border border-slate-200 rounded-xl space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 text-sm truncate">{c.name}</div>
+                      <div className="text-xs text-slate-500">{c.code}</div>
+                    </div>
+                    <StatusBadge status={c.status} />
+                  </div>
+                  <div className="font-mono text-xs text-slate-700 break-all bg-slate-50 px-2 py-1.5 rounded">{c.apiKey}</div>
+                  <div className="text-[11px] text-slate-500">IP: {c.allowedIps || '제한 없음'} · 최근: {c.lastCallAt}</div>
+                  <div className="flex gap-2">
+                    <button type="button" disabled={busy} onClick={() => regenerateKey(c.id)} className="flex-1 py-1.5 text-xs font-bold bg-slate-900 text-white rounded-lg disabled:opacity-50">재발급</button>
+                    <button type="button" disabled={busy} onClick={() => toggleClient(c)} className="flex-1 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50">
+                      {c.statusCode === 'active' ? '비활성' : '활성'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">

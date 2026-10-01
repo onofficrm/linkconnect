@@ -101,7 +101,7 @@ if ($lk_code !== '') {
     }
 
     $result = lc_conversion_create(array(
-        'pt_id'   => isset($body['pt_id']) ? (int) $body['pt_id'] : 0,
+        'pt_id'   => 0,
         'cp_id'   => (int) $campaign['cp_id'],
         'name'    => $name,
         'phone'   => $phone,
@@ -124,7 +124,7 @@ if ($lk_code !== '') {
 }
 
 if (!$result['ok']) {
-    $is_duplicate = stripos($result['message'], '중복') !== false;
+    $is_duplicate = (($result['code'] ?? '') === 'DUPLICATE_RECENT') || stripos($result['message'], '중복') !== false;
     $response = array('success' => false, 'error' => $result['message'], 'code' => $is_duplicate ? 409 : 400);
     lc_api_log_write(array_merge($log_base, array(
         'extId'        => $ext_id,
