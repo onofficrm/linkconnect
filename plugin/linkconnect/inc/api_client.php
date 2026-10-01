@@ -84,16 +84,13 @@ if (!function_exists('lc_api_client_ensure_schema')) {
             return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
         }
 
+        if (function_exists('lc_db_ensure_api_tables')) {
+            return lc_db_ensure_api_tables();
+        }
+
         $table = lc_table('api_clients');
         if (!lc_db_table_exists($table)) {
             return array('ok' => false, 'message' => 'api_clients 테이블이 없습니다.');
-        }
-
-        if (function_exists('lc_db_column_exists') && !lc_db_column_exists($table, 'ac_mt_id')) {
-            lc_sql_query(" ALTER TABLE `{$table}` ADD COLUMN `ac_mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `ac_type`, ADD KEY `idx_ac_mt_id` (`ac_mt_id`) ", false);
-            if (!lc_db_column_exists($table, 'ac_mt_id')) {
-                return array('ok' => false, 'message' => 'ac_mt_id 컬럼 추가에 실패했습니다.');
-            }
         }
 
         return array('ok' => true, 'message' => 'ok');

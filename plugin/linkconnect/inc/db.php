@@ -566,6 +566,78 @@ if (!function_exists('lc_db_column_exists')) {
     }
 }
 
+if (!function_exists('lc_db_ensure_api_tables')) {
+    /**
+     * 기존 설치본에는 api_clients / api_logs 가 없을 수 있다.
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_db_ensure_api_tables()
+    {
+        if (!function_exists('lc_db_installed') || !lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $clients = lc_table('api_clients');
+        if (!lc_db_table_exists($clients)) {
+            $created = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$clients}` (
+                `ac_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ac_code` varchar(30) NOT NULL,
+                `ac_name` varchar(100) NOT NULL DEFAULT '',
+                `ac_type` varchar(30) NOT NULL DEFAULT 'landing',
+                `ac_mt_id` int unsigned NOT NULL DEFAULT 0,
+                `ac_api_key` varchar(64) NOT NULL DEFAULT '',
+                `ac_api_secret` varchar(64) NOT NULL DEFAULT '',
+                `ac_allowed_ips` varchar(500) NOT NULL DEFAULT '',
+                `ac_status` varchar(20) NOT NULL DEFAULT 'active',
+                `ac_last_call_at` datetime DEFAULT NULL,
+                `ac_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`ac_id`),
+                UNIQUE KEY `uk_ac_code` (`ac_code`),
+                UNIQUE KEY `uk_ac_api_key` (`ac_api_key`),
+                KEY `idx_ac_mt_id` (`ac_mt_id`),
+                KEY `idx_ac_type` (`ac_type`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($created === false || !lc_db_table_exists($clients)) {
+                $err = function_exists('lc_sql_error') ? trim((string) lc_sql_error()) : '';
+                return array('ok' => false, 'message' => 'api_clients 테이블 생성에 실패했습니다.' . ($err !== '' ? ' ' . $err : ''));
+            }
+        }
+
+        $logs = lc_table('api_logs');
+        if (!lc_db_table_exists($logs)) {
+            lc_sql_query("CREATE TABLE IF NOT EXISTS `{$logs}` (
+                `al_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `ac_id` int unsigned NOT NULL DEFAULT 0,
+                `al_client_name` varchar(100) NOT NULL DEFAULT '',
+                `al_direction` varchar(30) NOT NULL DEFAULT 'receive',
+                `al_endpoint` varchar(200) NOT NULL DEFAULT '',
+                `al_ext_id` varchar(100) NOT NULL DEFAULT '',
+                `al_int_code` varchar(30) NOT NULL DEFAULT '',
+                `al_status_code` int NOT NULL DEFAULT 200,
+                `al_status` varchar(30) NOT NULL DEFAULT 'success',
+                `al_error` varchar(500) NOT NULL DEFAULT '',
+                `al_request_body` text,
+                `al_response_body` text,
+                `al_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`al_id`),
+                KEY `idx_ac_id` (`ac_id`),
+                KEY `idx_al_created_at` (`al_created_at`),
+                KEY `idx_al_status` (`al_status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+        }
+
+        if (lc_db_table_exists($clients) && function_exists('lc_db_column_exists') && !lc_db_column_exists($clients, 'ac_mt_id')) {
+            lc_sql_query(" ALTER TABLE `{$clients}` ADD COLUMN `ac_mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `ac_type`, ADD KEY `idx_ac_mt_id` (`ac_mt_id`) ", false);
+            if (!lc_db_column_exists($clients, 'ac_mt_id')) {
+                return array('ok' => false, 'message' => 'ac_mt_id 컬럼 추가에 실패했습니다.');
+            }
+        }
+
+        return array('ok' => true, 'message' => 'ok');
+    }
+}
+
 if (!function_exists('lc_db_run_migrations')) {
     /**
      * @return array{ok:bool,message:string,tables?:array}
@@ -652,9 +724,8 @@ if (!function_exists('lc_db_run_migrations')) {
             $alters[] = "ALTER TABLE `{$nf}` ADD COLUMN `nf_priority` varchar(20) NOT NULL DEFAULT 'normal' AFTER `nf_type`, ADD KEY `idx_nf_priority` (`nf_priority`)";
         }
 
-        $api_clients = lc_table('api_clients');
-        if (lc_db_table_exists($api_clients) && !lc_db_column_exists($api_clients, 'ac_mt_id')) {
-            $alters[] = "ALTER TABLE `{$api_clients}` ADD COLUMN `ac_mt_id` int unsigned NOT NULL DEFAULT 0 AFTER `ac_type`, ADD KEY `idx_ac_mt_id` (`ac_mt_id`)";
+        if (function_exists('lc_db_ensure_api_tables')) {
+            lc_db_ensure_api_tables();
         }
 
         foreach (array(
