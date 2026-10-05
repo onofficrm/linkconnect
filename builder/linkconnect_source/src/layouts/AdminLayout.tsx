@@ -7,6 +7,8 @@ import { queueScrollTo } from '../lib/navigation';
 import { g5MemberEditUrl } from '../lib/urls';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { AppTabBar } from '../components/AppTabBar';
+import { isNativeApp } from '../lib/nativeApp';
 import { ImpersonateHistoryBar } from '../components/ImpersonateHistoryBar';
 import { CenterNavItem } from '../components/center-ui';
 
@@ -73,7 +75,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
   const memberInitials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className={`min-h-screen bg-slate-50 flex flex-col font-sans ${isNativeApp() ? 'pb-16' : ''}`}>
       {/* Top Header */}
       <header className="h-16 bg-slate-950 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 fixed top-0 w-full z-50 text-white">
         <div className="flex items-center gap-6">
@@ -206,6 +208,7 @@ export function AdminLayout({ children, activeMenu, title, description }: { chil
         </main>
       </div>
       <AiGuideChat page="admin" role="admin" />
+      <AppTabBar center="admin" />
     </div>
   );
 }

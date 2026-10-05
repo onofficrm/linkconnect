@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from '../../layouts/AdminLayout';
 import { Settings, Save, RotateCcw, Check, Sparkles, PhoneCall, Mail, Send } from 'lucide-react';
-import { fetchAdminSettings, resetAdminSettings, saveAdminSettings, sendAdminTestEmail, sendAdminTestAlimtalk } from '../../lib/api';
+import { fetchAdminSettings, resetAdminSettings, saveAdminSettings, sendAdminTestEmail, sendAdminTestAlimtalk, sendAdminTestPush } from '../../lib/api';
 import type { AdminSettingsResponse } from '../../lib/api';
 
 type RawSettings = Record<string, string>;
@@ -64,6 +64,10 @@ const defaultRaw: RawSettings = {
   callMinDuration: '0',
   callCreateOnMissed: '1',
   callRecordingMode: 'normal',
+  pushEnabled: '0',
+  pushFcmProjectId: '',
+  pushFcmServiceAccountSet: '0',
+  pushReady: '0',
 };
 
 function boolVal(raw: RawSettings, key: string) {
@@ -82,6 +86,9 @@ export function AdminSettings() {
   const [callWebhookTokenInput, setCallWebhookTokenInput] = useState('');
   const [solapiKeyInput, setSolapiKeyInput] = useState('');
   const [solapiSecretInput, setSolapiSecretInput] = useState('');
+  const [pushAccountInput, setPushAccountInput] = useState('');
+  const [testPushStatus, setTestPushStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [testPushMessage, setTestPushMessage] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [testMailStatus, setTestMailStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [testMailMessage, setTestMailMessage] = useState('');
@@ -211,6 +218,11 @@ export function AdminSettings() {
           solapiApiKey: solapiKeyInput.trim(),
           solapiApiSecret: solapiSecretInput.trim(),
         },
+        push: {
+          pushEnabled: boolVal(raw, 'pushEnabled'),
+          pushFcmProjectId: raw.pushFcmProjectId || '',
+          pushFcmServiceAccount: pushAccountInput.trim(),
+        },
       });
       applySettingsResponse(data);
       setGeminiKeyInput('');
@@ -219,6 +231,7 @@ export function AdminSettings() {
       setCallWebhookTokenInput('');
       setSolapiKeyInput('');
       setSolapiSecretInput('');
+      setPushAccountInput('');
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
@@ -250,6 +263,22 @@ export function AdminSettings() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '테스트 메일 발송에 실패했습니다.');
       setTestMailStatus('idle');
+    }
+  };
+
+  const handleTestPush = async () => {
+    setTestPushStatus('sending');
+    setTestPushMessage('');
+    setError('');
+    try {
+      const data = await sendAdminTestPush();
+      applySettingsResponse(data);
+      setTestPushMessage(data.message || '테스트 푸시를 발송했습니다.');
+      setTestPushStatus('sent');
+      setTimeout(() => setTestPushStatus('idle'), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '테스트 푸시 발송에 실패했습니다.');
+      setTestPushStatus('idle');
     }
   };
 
@@ -448,6 +477,43 @@ export function AdminSettings() {
               </button>
               {testAlimtalkMessage ? <span className="text-sm text-emerald-700">{testAlimtalkMessage}</span> : null}
               {raw.alimtalkReady === '1' ? <span className="text-xs text-emerald-600 font-medium">발송 준비됨</span> : <span className="text-xs text-slate-400">설정 저장 후 사용</span>}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-cyan-600 to-slate-800 flex items-center gap-2">
+            <Send className="w-5 h-5 text-white" />
+            <h3 className="font-bold text-white">앱 푸시</h3>
+          </div>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-slate-500">
+              앱을 설치한 광고주·파트너·최고관리자에게 DB 접수, 승인, 취소, 잔액 알림을 보냅니다. Firebase Cloud Messaging 서비스 계정이 필요합니다.
+            </p>
+            <Toggle label="앱 푸시 사용" checked={boolVal(raw, 'pushEnabled')} onChange={(v) => setRaw((prev) => setBool(prev, 'pushEnabled', v))} />
+            <Field label="Firebase 프로젝트 ID" value={raw.pushFcmProjectId || ''} onChange={(v) => update('pushFcmProjectId', v)} />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">서비스 계정 JSON</label>
+              {raw.pushFcmServiceAccountSet === '1' ? <p className="text-xs text-emerald-600 mb-2">등록됨 (********)</p> : <p className="text-xs text-amber-600 mb-2">미등록</p>}
+              <textarea
+                value={pushAccountInput}
+                onChange={(e) => setPushAccountInput(e.target.value)}
+                placeholder="변경할 때만 서비스 계정 JSON 전체를 붙여 넣으세요"
+                rows={4}
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono focus:border-cyan-500 outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={testPushStatus === 'sending'}
+                onClick={handleTestPush}
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-60"
+              >
+                {testPushStatus === 'sending' ? '발송 중...' : testPushStatus === 'sent' ? '발송 완료' : '테스트 푸시 보내기'}
+              </button>
+              {testPushMessage ? <span className="text-sm text-emerald-700">{testPushMessage}</span> : null}
+              {raw.pushReady === '1' ? <span className="text-xs text-emerald-600 font-medium">발송 준비됨</span> : <span className="text-xs text-slate-400">설정 저장 후 사용</span>}
             </div>
           </div>
         </section>

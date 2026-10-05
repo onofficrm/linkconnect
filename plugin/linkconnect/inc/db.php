@@ -566,6 +566,61 @@ if (!function_exists('lc_db_column_exists')) {
     }
 }
 
+if (!function_exists('lc_db_ensure_push_tables')) {
+    /**
+     * @return array{ok:bool,message:string}
+     */
+    function lc_db_ensure_push_tables()
+    {
+        if (!function_exists('lc_db_installed') || !lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $devices = lc_table('push_devices');
+        if (!lc_db_table_exists($devices)) {
+            $created = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$devices}` (
+                `pd_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `mb_id` varchar(20) NOT NULL DEFAULT '',
+                `pd_center` varchar(20) NOT NULL DEFAULT '',
+                `pd_user_id` int unsigned NOT NULL DEFAULT 0,
+                `pd_platform` varchar(20) NOT NULL DEFAULT '',
+                `pd_token` varchar(512) NOT NULL DEFAULT '',
+                `pd_app_version` varchar(40) NOT NULL DEFAULT '',
+                `pd_active` tinyint(1) NOT NULL DEFAULT 1,
+                `pd_last_seen_at` datetime DEFAULT NULL,
+                `pd_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`pd_id`),
+                UNIQUE KEY `uk_pd_token_center` (`pd_token`, `pd_center`),
+                KEY `idx_pd_center_user` (`pd_center`, `pd_user_id`),
+                KEY `idx_pd_mb_id` (`mb_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($created === false || !lc_db_table_exists($devices)) {
+                $err = function_exists('lc_sql_error') ? trim((string) lc_sql_error()) : '';
+                return array('ok' => false, 'message' => 'push_devices 테이블 생성에 실패했습니다.' . ($err !== '' ? ' ' . $err : ''));
+            }
+        }
+
+        $prefs = lc_table('push_prefs');
+        if (!lc_db_table_exists($prefs)) {
+            $created = lc_sql_query("CREATE TABLE IF NOT EXISTS `{$prefs}` (
+                `pp_id` int unsigned NOT NULL AUTO_INCREMENT,
+                `mb_id` varchar(20) NOT NULL DEFAULT '',
+                `pp_center` varchar(20) NOT NULL DEFAULT '',
+                `pp_prefs` text,
+                `pp_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`pp_id`),
+                UNIQUE KEY `uk_pp_mb_center` (`mb_id`, `pp_center`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4", false);
+            if ($created === false || !lc_db_table_exists($prefs)) {
+                $err = function_exists('lc_sql_error') ? trim((string) lc_sql_error()) : '';
+                return array('ok' => false, 'message' => 'push_prefs 테이블 생성에 실패했습니다.' . ($err !== '' ? ' ' . $err : ''));
+            }
+        }
+
+        return array('ok' => true, 'message' => 'ok');
+    }
+}
+
 if (!function_exists('lc_db_ensure_api_tables')) {
     /**
      * 기존 설치본에는 api_clients / api_logs 가 없을 수 있다.
@@ -726,6 +781,9 @@ if (!function_exists('lc_db_run_migrations')) {
 
         if (function_exists('lc_db_ensure_api_tables')) {
             lc_db_ensure_api_tables();
+        }
+        if (function_exists('lc_db_ensure_push_tables')) {
+            lc_db_ensure_push_tables();
         }
 
         foreach (array(

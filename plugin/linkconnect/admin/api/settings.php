@@ -106,6 +106,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lc_api_success($payload);
     }
 
+    if (isset($body['action']) && $body['action'] === 'test_push') {
+        if (!function_exists('lc_push_send_for_notification')) {
+            lc_api_error('푸시 모듈을 사용할 수 없습니다.', 'PUSH_UNAVAILABLE', 500);
+        }
+        global $member;
+        $mb_id = is_array($member) ? (string) ($member['mb_id'] ?? '') : '';
+        $test = lc_push_send_for_notification(array(
+            'center'   => 'admin',
+            'userId'   => 0,
+            'type'     => 'system',
+            'priority' => 'normal',
+            'title'    => '링크커넥트 테스트 알림',
+            'body'     => '앱 푸시가 연결되어 있습니다.',
+            'link'     => '/admin',
+            'refId'    => 0,
+        ));
+        if ((int) ($test['sent'] ?? 0) < 1) {
+            $detail = trim((string) ($test['message'] ?? ''));
+            if ((int) ($test['failed'] ?? 0) > 0) {
+                $detail = '테스트 푸시 발송에 실패했습니다.';
+            } elseif ($detail === '' || $detail === '발송 0건') {
+                $detail = '등록된 관리자 기기가 없거나 푸시가 꺼져 있습니다.';
+            }
+            lc_api_error($detail, 'PUSH_TEST_FAILED', 400);
+        }
+        $payload = lc_settings_api_success_payload('테스트 푸시를 ' . (int) $test['sent'] . '대에 보냈습니다.');
+        $payload['test'] = $test;
+        $payload['memberId'] = $mb_id;
+        lc_api_success($payload);
+    }
+
     if (isset($body['action']) && $body['action'] === 'test_alimtalk') {
         if (!function_exists('lc_alimtalk_send_one')) {
             lc_api_error('알림톡 모듈을 사용할 수 없습니다.', 'ALIMTALK_UNAVAILABLE', 500);
@@ -211,6 +242,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 continue;
             }
             if (in_array($key, array('solapiApiKeySet', 'solapiApiSecretSet', 'ready', 'alimtalkReady'), true)) {
+                continue;
+            }
+            $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;
+        }
+    }
+
+    if (isset($values['push']) && is_array($values['push'])) {
+        foreach ($values['push'] as $key => $value) {
+            if ($key === 'pushFcmServiceAccount') {
+                $key_val = lc_settings_normalize_secret_value($value);
+                if ($key_val !== '') {
+                    $flat[$key] = $key_val;
+                }
+                continue;
+            }
+            if (in_array($key, array('pushFcmServiceAccountSet', 'ready'), true)) {
                 continue;
             }
             $flat[$key] = is_bool($value) ? ($value ? '1' : '0') : $value;

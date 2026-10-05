@@ -21,6 +21,8 @@ import { SuperAdminWidget, SuperAdminHeaderButton } from '../components/SuperAdm
 import { getLcAuth, isCpsUiVisible } from '../lib/auth';
 import { AiGuideChat } from '../components/AiGuideChat';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { AppTabBar } from '../components/AppTabBar';
+import { isNativeApp } from '../lib/nativeApp';
 import { CenterNavItem } from '../components/center-ui';
 
 interface PartnerLayoutProps {
@@ -80,7 +82,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/80 flex flex-col">
+    <div className={`min-h-screen bg-slate-50/80 flex flex-col ${isNativeApp() ? 'pb-16' : ''}`}>
       {!auth.isImpersonating ? <SuperAdminWidget /> : null}
       <ImpersonateBanner />
       <CenterTopBar center="partner" />
@@ -173,6 +175,7 @@ export function PartnerLayout({ children, activeMenu, title }: PartnerLayoutProp
       </main>
       </div>
       <AiGuideChat page="partner" role="partner" />
+      <AppTabBar center="partner" />
     </div>
   );
 }

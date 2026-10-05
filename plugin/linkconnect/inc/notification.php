@@ -70,7 +70,21 @@ if (!function_exists('lc_notification_create')) {
             ", false);
         }
 
-        return (int) lc_sql_insert_id();
+        $nf_id = (int) lc_sql_insert_id();
+        if ($nf_id > 0 && function_exists('lc_push_send_for_notification')) {
+            lc_push_send_for_notification(array(
+                'center'   => $center,
+                'userId'   => $user_id,
+                'type'     => $type,
+                'priority' => $priority,
+                'title'    => $title,
+                'body'     => $body,
+                'link'     => $link,
+                'refId'    => $ref_id,
+            ));
+        }
+
+        return $nf_id;
     }
 }
 
@@ -231,7 +245,7 @@ if (!function_exists('lc_notification_emit_conversion')) {
                     'type'    => 'conversion',
                     'title'   => $title_recv,
                     'body'    => $body,
-                    'link'    => '/advertiser/db',
+                    'link'    => '/advertiser/db?cvId=' . $cv_id,
                     'refType' => 'conversion',
                     'refId'   => $cv_id,
                 ));
@@ -243,7 +257,7 @@ if (!function_exists('lc_notification_emit_conversion')) {
                     'type'    => 'conversion',
                     'title'   => $title_partner,
                     'body'    => $body,
-                    'link'    => '/partner/db-status',
+                    'link'    => '/partner/db-status?cvId=' . $cv_id,
                     'refType' => 'conversion',
                     'refId'   => $cv_id,
                 ));
@@ -254,7 +268,7 @@ if (!function_exists('lc_notification_emit_conversion')) {
                 'type'    => 'conversion',
                 'title'   => $title_recv,
                 'body'    => $body,
-                'link'    => $is_embed ? '/admin/conversions?source=embed' : '/admin/conversions',
+                'link'    => '/admin/conversions?cvId=' . $cv_id . ($is_embed ? '&source=embed' : ''),
                 'refType' => 'conversion',
                 'refId'   => $cv_id,
             ));
@@ -267,7 +281,7 @@ if (!function_exists('lc_notification_emit_conversion')) {
                 'type'    => 'conversion',
                 'title'   => 'DB 승인 완료',
                 'body'    => $cp_name . ' · +' . number_format(function_exists('lc_conversion_resolve_partner_price') ? lc_conversion_resolve_partner_price($conversion) : (int) ($conversion['cv_partner_price'] ?? $conversion['cv_price'] ?? 0)) . '원',
-                'link'    => '/partner/db-status',
+                'link'    => '/partner/db-status?cvId=' . $cv_id,
                 'refType' => 'conversion',
                 'refId'   => $cv_id,
             ));
@@ -281,7 +295,7 @@ if (!function_exists('lc_notification_emit_conversion')) {
                 'type'    => 'conversion',
                 'title'   => 'DB 취소/무효 처리',
                 'body'    => $cp_name . ($reason !== '' ? ' · ' . $reason : ''),
-                'link'    => '/partner/db-cancel',
+                'link'    => '/partner/db-cancel?cvId=' . $cv_id,
                 'refType' => 'conversion',
                 'refId'   => $cv_id,
             ));

@@ -2,6 +2,7 @@ import { Search, Filter, Download, CheckCircle2, Clock, XCircle, MessageSquare, 
 import { SummaryCard, StatusBadge } from '../../components/partner/PartnerShared';
 import { PartnerLayout } from '../../layouts/PartnerLayout';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { downloadPartnerConversionsCsv, fetchPartnerConversions, PartnerConversion } from '../../lib/api';
 import { HelpTipButton } from '../../components/HelpTipButton';
 import { EMBED_HELP } from '../../lib/embedHelpTips';
@@ -16,6 +17,8 @@ export function PartnerDbStatus() {
   const [downloading, setDownloading] = useState(false);
   const [q, setQ] = useState('');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('');
+  const [searchParams] = useSearchParams();
+  const focusCvId = Number(searchParams.get('cvId') || 0);
 
   useEffect(() => {
     setLoading(true);
@@ -135,7 +138,7 @@ export function PartnerDbStatus() {
               {loading ? (
                 <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-500">불러오는 중...</td></tr>
               ) : items.length > 0 ? items.map((db) => (
-                <tr key={db.id} className={`transition-colors ${db.status === '취소/무효' ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50'}`}>
+                <tr key={db.id} id={focusCvId === db.cvId ? 'focus-db' : undefined} className={`transition-colors ${focusCvId === db.cvId ? 'bg-cyan-50 ring-2 ring-inset ring-cyan-300' : db.status === '취소/무효' ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50'}`}>
                   <td className="px-4 py-4 text-slate-500 whitespace-nowrap">{db.date}</td>
                   <td className="px-4 py-4 font-medium text-slate-900 min-w-[140px]">{db.campaign}</td>
                   <td className="px-4 py-4 text-slate-700 whitespace-nowrap">{db.name}</td>

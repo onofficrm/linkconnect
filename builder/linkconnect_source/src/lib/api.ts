@@ -2615,6 +2615,39 @@ export function sendAdminTestAlimtalk(to?: string) {
   return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'test_alimtalk', to: to || '' });
 }
 
+export function sendAdminTestPush() {
+  return adminApiPost<AdminSettingsResponse>('settings.php', { action: 'test_push' });
+}
+
+export type PushPrefs = {
+  conversion: boolean;
+  wallet: boolean;
+  event: boolean;
+  system: boolean;
+  campaign: boolean;
+  call: boolean;
+  contract: boolean;
+  notice: boolean;
+  quietStart: string;
+  quietEnd: string;
+};
+
+export function fetchPushPrefs() {
+  return publicApiGet<{ centers: Array<{ center: string; prefs: PushPrefs }> }>('push_device.php');
+}
+
+export function savePushPrefs(center: string, prefs: PushPrefs) {
+  return publicApiPost<{ message: string; prefs: PushPrefs }>('push_device.php', { action: 'save_prefs', center, prefs });
+}
+
+export function registerPushDevice(payload: { token: string; platform: string; appVersion?: string }) {
+  return publicApiPost<{ message: string; centers: string[] }>('push_device.php', { action: 'register', ...payload });
+}
+
+export function unregisterPushDevice(token: string) {
+  return publicApiPost<{ message: string }>('push_device.php', { action: 'unregister', token });
+}
+
 export type ApiLogItem = {
   id: string;
   alId: number;

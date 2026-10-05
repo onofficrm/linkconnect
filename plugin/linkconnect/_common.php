@@ -189,6 +189,7 @@ if (is_file(LC_PLUGIN_PATH . '/inc/ai.php')) {
     require_once LC_PLUGIN_PATH . '/inc/ai.php';
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/notification.php')) {
+    require_once LC_PLUGIN_PATH . '/inc/push.php';
     require_once LC_PLUGIN_PATH . '/inc/notification.php';
 }
 if (is_file(LC_PLUGIN_PATH . '/inc/admin_log.php')) {

@@ -68,6 +68,13 @@ export function AdminConversions() {
   }, [sourceFilter]);
 
   useEffect(() => {
+    const cvId = Number(searchParams.get('cvId') || 0);
+    if (!cvId || rows.length === 0) return;
+    const row = rows.find((item) => item.cvId === cvId);
+    if (row) openDetail(row);
+  }, [rows, searchParams]);
+
+  useEffect(() => {
     load();
   }, [load]);
 

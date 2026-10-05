@@ -14,6 +14,8 @@ import {
 import { AiGuideChat } from '../components/AiGuideChat';
 import { AdvertiserContractNotice } from '../components/advertiser/AdvertiserContractNotice';
 import { NotificationCenter } from '../components/NotificationCenter';
+import { AppTabBar } from '../components/AppTabBar';
+import { isNativeApp } from '../lib/nativeApp';
 import { CenterNavItem } from '../components/center-ui';
 
 export function AdvertiserLayout({
@@ -49,7 +51,7 @@ export function AdvertiserLayout({
   const dbBadge = pendingBadge;
 
   return (
-    <div className="min-h-screen bg-slate-50/80 flex flex-col">
+    <div className={`min-h-screen bg-slate-50/80 flex flex-col ${isNativeApp() ? 'pb-16' : ''}`}>
       {!auth.isImpersonating ? <SuperAdminWidget /> : null}
       <ImpersonateBanner />
       <CenterTopBar center="advertiser" />
@@ -110,6 +112,7 @@ export function AdvertiserLayout({
       </main>
       </div>
       <AiGuideChat page="advertiser" role="merchant" />
+      <AppTabBar center="advertiser" />
     </div>
   );
 }

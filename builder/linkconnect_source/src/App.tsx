@@ -89,11 +89,18 @@ import { PartnerRouteGuard } from './components/PartnerRouteGuard';
 import { AdvertiserRouteGuard } from './components/AdvertiserRouteGuard';
 import { AdvertiserContractAccessGuard } from './components/advertiser/AdvertiserContractAccessGuard';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { NativeAppBridge } from './components/NativeAppBridge';
+import { PartnerLayout } from './layouts/PartnerLayout';
+import { AdvertiserLayout } from './layouts/AdvertiserLayout';
+import { AdminLayout } from './layouts/AdminLayout';
+import { NotificationInbox } from './pages/app/NotificationInbox';
+import { NotificationPrefsPage } from './pages/app/NotificationPrefsPage';
 import { CpsUiGuard } from './components/CpsUiGuard';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <NativeAppBridge />
       <Routes>
         {/* 공개 마케팅 페이지 — Header + Footer */}
         <Route path="/" element={<RootLayout />}>
@@ -144,6 +151,8 @@ export default function App() {
           <Route path="partner/report" element={<PartnerReport />} />
           <Route path="partner/settlement" element={<PartnerSettlement />} />
           <Route path="partner/support" element={<PartnerSupport />} />
+          <Route path="partner/notifications" element={<PartnerLayout activeMenu="notifications" title="알림"><NotificationInbox center="partner" /></PartnerLayout>} />
+          <Route path="partner/notification-settings" element={<PartnerLayout activeMenu="notification-settings" title="알림 설정"><NotificationPrefsPage center="partner" /></PartnerLayout>} />
         </Route>
         <Route element={<AdvertiserRouteGuard />}>
           <Route path="advertiser/contract" element={<AdvertiserContract />} />
@@ -157,6 +166,8 @@ export default function App() {
             <Route path="advertiser/campaigns" element={<AdvertiserCampaigns />} />
             <Route path="advertiser/campaigns/:cpId/guide" element={<AdvertiserCampaignGuide />} />
             <Route path="advertiser/db" element={<AdvertiserDb />} />
+            <Route path="advertiser/notifications" element={<AdvertiserLayout activeMenu="notifications" title="알림"><NotificationInbox center="merchant" /></AdvertiserLayout>} />
+            <Route path="advertiser/notification-settings" element={<AdvertiserLayout activeMenu="notification-settings" title="알림 설정"><NotificationPrefsPage center="merchant" /></AdvertiserLayout>} />
             <Route path="advertiser/call" element={<Navigate to="/advertiser/db?source=call" replace />} />
             <Route path="advertiser/billing" element={<AdvertiserBilling />} />
             <Route path="advertiser/marketing" element={<AdvertiserMarketing />} />
@@ -171,6 +182,8 @@ export default function App() {
           <Route path="admin/ad-apply" element={<AdminAdApply />} />
           <Route path="admin/campaigns" element={<AdminCampaigns />} />
           <Route path="admin/conversions" element={<AdminConversions />} />
+          <Route path="admin/notifications" element={<AdminLayout activeMenu="notifications" title="알림"><NotificationInbox center="admin" /></AdminLayout>} />
+          <Route path="admin/notification-settings" element={<AdminLayout activeMenu="settings" title="알림 설정"><NotificationPrefsPage center="admin" /></AdminLayout>} />
           <Route path="admin/inflow" element={<AdminInflow />} />
           <Route path="admin/embed" element={<AdminEmbedWidgets />} />
           <Route path="admin/call" element={<AdminCallDb />} />

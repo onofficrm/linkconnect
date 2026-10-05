@@ -88,6 +88,15 @@ export function AdvertiserDb() {
     loadRows();
   }, [loadRows]);
 
+  useEffect(() => {
+    const cvId = Number(searchParams.get('cvId') || 0);
+    if (!cvId || rows.length === 0) return;
+    const row = rows.find((item) => item.cvId === cvId);
+    if (!row) return;
+    setSelectedDb(row);
+    setIsDetailOpen(true);
+  }, [rows, searchParams]);
+
   const handleDownload = async () => {
     setDownloading(true);
     try {

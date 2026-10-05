@@ -85,6 +85,9 @@ if (!function_exists('lc_settings_defaults')) {
             'alimtalkVarSite'          => '#{사이트}',
             'alimtalkVarRole'          => '#{역할}',
             'alimtalkDbTemplateGuide'  => "[#{사이트}]\n#{이름}님이 상담신청하였습니다. - #{캠페인}",
+            'pushEnabled'              => '0',
+            'pushFcmProjectId'         => '',
+            'pushFcmServiceAccount'    => '',
             'callEnabled'           => '0',
             'callProvider'          => '',
             'callApiBaseUrl'        => '',
@@ -177,6 +180,7 @@ if (!function_exists('lc_settings_secret_keys')) {
             'mpCronToken',
             'solapiApiKey',
             'solapiApiSecret',
+            'pushFcmServiceAccount',
         );
     }
 }
@@ -388,7 +392,8 @@ if (!function_exists('lc_settings_raw_for_admin')) {
             $raw['lpAuthKey'],
             $raw['lpPostbackSecret'],
             $raw['solapiApiKey'],
-            $raw['solapiApiSecret']
+            $raw['solapiApiSecret'],
+            $raw['pushFcmServiceAccount']
         );
 
         $raw['geminiApiKeySet'] = trim((string) ($settings['geminiApiKey'] ?? '')) !== '' ? '1' : '0';
@@ -404,6 +409,12 @@ if (!function_exists('lc_settings_raw_for_admin')) {
         $raw['callWebhookTokenSet'] = trim((string) ($settings['callWebhookToken'] ?? '')) !== '' ? '1' : '0';
         $raw['solapiApiKeySet'] = trim((string) ($settings['solapiApiKey'] ?? '')) !== '' ? '1' : '0';
         $raw['solapiApiSecretSet'] = trim((string) ($settings['solapiApiSecret'] ?? '')) !== '' ? '1' : '0';
+        $raw['pushFcmServiceAccountSet'] = trim((string) ($settings['pushFcmServiceAccount'] ?? '')) !== '' ? '1' : '0';
+        $raw['pushReady'] = (
+            trim((string) ($settings['pushEnabled'] ?? '')) === '1'
+            && trim((string) ($settings['pushFcmProjectId'] ?? '')) !== ''
+            && trim((string) ($settings['pushFcmServiceAccount'] ?? '')) !== ''
+        ) ? '1' : '0';
         $raw['alimtalkReady'] = (
             trim((string) ($settings['alimtalkEnabled'] ?? '')) === '1'
             && trim((string) ($settings['solapiApiKey'] ?? '')) !== ''
@@ -501,6 +512,12 @@ if (!function_exists('lc_settings_to_api')) {
                 'solapiApiKeySet'        => trim((string) ($settings['solapiApiKey'] ?? '')) !== '',
                 'solapiApiSecretSet'     => trim((string) ($settings['solapiApiSecret'] ?? '')) !== '',
                 'ready'                  => function_exists('lc_alimtalk_enabled') ? lc_alimtalk_enabled() : false,
+            ),
+            'push' => array(
+                'pushEnabled'              => lc_settings_get_bool('pushEnabled'),
+                'pushFcmProjectId'         => (string) ($settings['pushFcmProjectId'] ?? ''),
+                'pushFcmServiceAccountSet' => trim((string) ($settings['pushFcmServiceAccount'] ?? '')) !== '',
+                'ready'                    => function_exists('lc_push_enabled') ? lc_push_enabled() : false,
             ),
             'partner' => array(
                 'showEstRevenue'      => lc_settings_get_bool('showEstRevenue'),
