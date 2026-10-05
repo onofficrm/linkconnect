@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import LinkConnectPush
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        LinkConnectPush.configureIfPossible()
         return true
     }
 
@@ -40,7 +41,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+        LinkConnectPush.registrationToken(apnsToken: deviceToken) { result in
+            DispatchQueue.main.async {
+                if let error = result as? Error {
+                    NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+                } else {
+                    NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: result)
+                }
+            }
+        }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

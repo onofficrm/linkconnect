@@ -22,9 +22,6 @@ type CapacitorBridge = {
     App?: {
       getInfo?: () => Promise<{ version?: string }>;
     };
-    FCM?: {
-      getToken: () => Promise<{ token?: string }>;
-    };
   };
 };
 
@@ -71,27 +68,15 @@ export async function initNativePush(navigate: (path: string) => void) {
   }
 
   await push.addListener('registration', (token) => {
-    const apnsOrFcm = token.value || '';
-    if (!apnsOrFcm) return;
+    const value = token.value || '';
+    if (!value) return;
+    currentToken = value;
     const version = cap.Plugins?.App?.getInfo?.();
-    void (async () => {
-      let value = apnsOrFcm;
-      if (platform === 'ios' && cap.Plugins?.FCM?.getToken) {
-        try {
-          const fcm = await cap.Plugins.FCM.getToken();
-          if (fcm.token) value = fcm.token;
-        } catch {
-          return;
-        }
-      }
-      currentToken = value;
-      const info = await Promise.resolve(version);
-      await registerPushDevice({
-        token: value,
-        platform,
-        appVersion: info?.version || '',
-      });
-    })().catch(() => undefined);
+    void Promise.resolve(version).then((info) => registerPushDevice({
+      token: value,
+      platform,
+      appVersion: info?.version || '',
+    })).catch(() => undefined);
   });
 
   await push.addListener('pushNotificationActionPerformed', (action) => {
