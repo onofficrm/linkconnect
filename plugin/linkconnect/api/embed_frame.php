@@ -130,6 +130,7 @@ $esc = static function ($value) {
     body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     .lc-frame-error { margin: 12px; padding: 16px; border-radius: 12px; border: 1px solid #fecdd3; background: #fff1f2; color: #be123c; font-size: 14px; line-height: 1.45; }
   </style>
+  <?php echo function_exists('lc_link_head_script_markup') ? lc_link_head_script_markup() : ''; ?>
 </head>
 <body>
 <?php if ($error !== '') { ?>

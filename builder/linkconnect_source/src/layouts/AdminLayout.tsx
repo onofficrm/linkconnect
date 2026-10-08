@@ -18,6 +18,7 @@ const sidebarSections = [
     items: [
       { id: 'dashboard', label: '통합 대시보드', icon: <LayoutDashboard size={20} />, path: '/admin' },
       { id: 'partners', label: '파트너 관리', icon: <Users size={20} />, path: '/admin/partners' },
+      { id: 'link-script', label: '링크 스크립트', icon: <Code size={20} />, path: '/admin/link-script' },
       { id: 'review', label: '자동 심사 큐', icon: <ClipboardList size={20} />, path: '/admin/review-queue' },
       { id: 'advertisers', label: '광고주 관리', icon: <Building2 size={20} />, path: '/admin/advertisers' },
       { id: 'contracts', label: '광고주 계약', icon: <FileText size={20} />, path: '/admin/contracts' },

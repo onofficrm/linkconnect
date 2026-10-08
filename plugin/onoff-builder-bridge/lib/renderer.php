@@ -95,6 +95,38 @@ if (!function_exists('onoff_builder_extract_body_content')) {
     }
 }
 
+if (!function_exists('onoff_builder_link_head_script')) {
+    function onoff_builder_link_head_script()
+    {
+        if (!function_exists('lc_link_head_script_markup')) {
+            $lc_common = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect/_common.php' : '';
+            if ($lc_common !== '' && is_file($lc_common)) {
+                include_once $lc_common;
+            }
+        }
+        if (!function_exists('lc_link_head_script_markup')) {
+            return '';
+        }
+
+        return lc_link_head_script_markup();
+    }
+}
+
+if (!function_exists('onoff_builder_inject_before_head_close')) {
+    function onoff_builder_inject_before_head_close($html, $inject)
+    {
+        if ($inject === '') {
+            return $html;
+        }
+        $pos = stripos($html, '</head>');
+        if ($pos === false) {
+            return $inject . $html;
+        }
+
+        return substr($html, 0, $pos) . $inject . substr($html, $pos);
+    }
+}
+
 if (!function_exists('onoff_builder_landing_context_script')) {
     function onoff_builder_landing_context_script($id)
     {
@@ -177,12 +209,9 @@ if (!function_exists('onoff_builder_render_standalone')) {
         if (preg_match('#<!DOCTYPE#i', $html) || preg_match('#<html#i', $html)) {
             $inject = onoff_builder_landing_context_script($id);
             if ($inject !== '' && stripos($html, 'LC_LANDING_CONTEXT') === false) {
-                if (preg_match('#</head>#i', $html)) {
-                    $html = preg_replace('#</head>#i', $inject . '</head>', $html, 1);
-                } else {
-                    $html = $inject . $html;
-                }
+                $html = onoff_builder_inject_before_head_close($html, $inject);
             }
+            $html = onoff_builder_inject_before_head_close($html, onoff_builder_link_head_script());
             if ($desc !== '' && stripos($html, '<meta name="description"') === false) {
                 $html = preg_replace(
                     '#</head>#i',
@@ -227,6 +256,7 @@ if (!function_exists('onoff_builder_render_with_gnuboard_layout')) {
 
         include_once G5_PATH . '/head.php';
 
+        echo onoff_builder_link_head_script();
         echo '<div class="onoff-builder-gnuboard-wrap">';
         echo onoff_builder_extract_body_content(onoff_builder_get_import_html($id));
         echo '</div>';

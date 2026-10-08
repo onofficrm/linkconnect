@@ -47,6 +47,7 @@ import { AdvertiserContractView } from './pages/advertiser/AdvertiserContractVie
 import { AdvertiserContractComplete } from './pages/advertiser/AdvertiserContractComplete';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { AdminPartners } from './pages/admin/AdminPartners';
+import { AdminLinkScriptPage } from './pages/admin/AdminLinkScript';
 import { AdminAdvertisers } from './pages/admin/AdminAdvertisers';
 import { AdminContracts } from './pages/admin/AdminContracts';
 import { AdminAdApply } from './pages/admin/AdminAdApply';
@@ -177,6 +178,7 @@ export default function App() {
         <Route element={<AdminRouteGuard />}>
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="admin/partners" element={<AdminPartners />} />
+          <Route path="admin/link-script" element={<AdminLinkScriptPage />} />
           <Route path="admin/advertisers" element={<AdminAdvertisers />} />
           <Route path="admin/contracts" element={<AdminContracts />} />
           <Route path="admin/ad-apply" element={<AdminAdApply />} />

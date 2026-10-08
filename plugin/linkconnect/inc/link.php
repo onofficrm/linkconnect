@@ -682,6 +682,115 @@ if (!function_exists('lc_link_get_with_campaign')) {
     }
 }
 
+if (!function_exists('lc_link_request_code')) {
+    function lc_link_request_code()
+    {
+        foreach (array('lkCode', 'lkcode', 'lk_code', 'code') as $key) {
+            if (!isset($_GET[$key])) {
+                continue;
+            }
+            $code = trim((string) $_GET[$key]);
+            if ($code !== '' && preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $code)) {
+                return $code;
+            }
+        }
+        if (isset($_SERVER['REQUEST_URI']) && preg_match('#/(?:c|r)/([a-zA-Z0-9_-]{1,32})(?:/|$|\?)#', (string) $_SERVER['REQUEST_URI'], $matched)) {
+            return $matched[1];
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('lc_link_head_script_markup')) {
+    /**
+     * 현재 요청의 홍보 링크에 저장된 헤드 스크립트. 다른 링크 방문에는 빈 문자열.
+     */
+    function lc_link_head_script_markup()
+    {
+        $code = lc_link_request_code();
+        if ($code === '' || !function_exists('lc_db_column_exists') || !lc_db_column_exists(lc_table('links'), 'lk_head_script')) {
+            return '';
+        }
+        $link = lc_link_get_with_campaign($code);
+        if (!is_array($link)) {
+            return '';
+        }
+        $script = trim((string) ($link['lk_head_script'] ?? ''));
+
+        return $script;
+    }
+}
+
+if (!function_exists('lc_link_admin_lookup')) {
+    /**
+     * @return array<string,mixed>|null
+     */
+    function lc_link_admin_lookup($code)
+    {
+        $code = trim((string) $code);
+        if ($code === '' || !preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $code)) {
+            return null;
+        }
+        $link = lc_link_get_with_campaign($code);
+        if (!is_array($link)) {
+            return null;
+        }
+        $pt_name = '';
+        $pt_code = '';
+        $pt_id = (int) ($link['pt_id'] ?? 0);
+        if ($pt_id > 0 && function_exists('lc_table')) {
+            $partners = lc_table('partners');
+            $row = lc_sql_fetch(" SELECT pt_name, pt_code FROM `{$partners}` WHERE pt_id = {$pt_id} LIMIT 1 ");
+            if (is_array($row)) {
+                $pt_name = (string) ($row['pt_name'] ?? '');
+                $pt_code = (string) ($row['pt_code'] ?? '');
+            }
+        }
+
+        return array(
+            'code'       => (string) $link['lk_code'],
+            'campaign'   => (string) ($link['cp_name'] ?? ''),
+            'campaignCode' => (string) ($link['cp_code'] ?? ''),
+            'partner'    => $pt_name,
+            'partnerCode'=> $pt_code,
+            'landingUrl' => function_exists('lc_link_resolve_redirect_url') ? lc_link_resolve_redirect_url($link) : '',
+            'script'     => (string) ($link['lk_head_script'] ?? ''),
+            'status'     => (string) ($link['lk_status'] ?? ''),
+        );
+    }
+}
+
+if (!function_exists('lc_link_save_head_script')) {
+    /**
+     * @return array{ok:bool,message:string}
+     */
+    function lc_link_save_head_script($code, $script)
+    {
+        $code = trim((string) $code);
+        if ($code === '' || !preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $code)) {
+            return array('ok' => false, 'message' => '링크 코드 형식이 올바르지 않습니다.');
+        }
+        if (!lc_link_get_by_code($code)) {
+            return array('ok' => false, 'message' => '홍보 링크를 찾을 수 없습니다.');
+        }
+        if (!lc_db_column_exists(lc_table('links'), 'lk_head_script')) {
+            return array('ok' => false, 'message' => '스크립트 칸이 아직 없습니다.');
+        }
+        $script = str_replace("\0", '', (string) $script);
+        if (strlen($script) > 20000) {
+            return array('ok' => false, 'message' => '스크립트는 2만 자 이하로 넣어 주세요.');
+        }
+        $table = lc_table('links');
+        $saved = lc_sql_query(" UPDATE `{$table}` SET lk_head_script = '" . lc_sql_escape($script) . "' WHERE lk_code = '" . lc_sql_escape($code) . "' LIMIT 1 ", false);
+        if ($saved === false) {
+            return array('ok' => false, 'message' => '저장에 실패했습니다.');
+        }
+
+        return array('ok' => true, 'message' => '이 홍보 링크의 스크립트를 저장했습니다.');
+    }
+}
+
 if (!function_exists('lc_link_list_for_partner')) {
     function lc_link_list_for_partner($pt_id)
     {

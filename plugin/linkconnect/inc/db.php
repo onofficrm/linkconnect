@@ -317,6 +317,7 @@ if (!function_exists('lc_db_run_schema')) {
                 `lk_channel` varchar(100) NOT NULL DEFAULT '',
                 `lk_sub_id` varchar(100) NOT NULL DEFAULT '',
                 `lk_status` varchar(20) NOT NULL DEFAULT 'active',
+                `lk_head_script` mediumtext,
                 `lk_created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 `lk_updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (`lk_id`),
@@ -693,6 +694,31 @@ if (!function_exists('lc_db_ensure_api_tables')) {
     }
 }
 
+if (!function_exists('lc_link_seed_head_script')) {
+    function lc_link_seed_head_script()
+    {
+        return <<<'HTML'
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1644021973940387');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1644021973940387&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+HTML;
+    }
+}
+
 if (!function_exists('lc_db_run_migrations')) {
     /**
      * @return array{ok:bool,message:string,tables?:array}
@@ -851,6 +877,13 @@ if (!function_exists('lc_db_run_migrations')) {
             }
         }
 
+        $links = lc_table('links');
+        $seed_link_script = false;
+        if (lc_db_table_exists($links) && !lc_db_column_exists($links, 'lk_head_script')) {
+            $alters[] = "ALTER TABLE `{$links}` ADD COLUMN `lk_head_script` mediumtext NULL AFTER `lk_status`";
+            $seed_link_script = true;
+        }
+
         foreach ($alters as $sql) {
             $result = lc_sql_query($sql, false);
             if ($result === false) {
@@ -859,6 +892,12 @@ if (!function_exists('lc_db_run_migrations')) {
                     'message' => '마이그레이션 실패: ' . lc_sql_error(),
                 );
             }
+        }
+
+        if ($seed_link_script && lc_db_table_exists($links) && lc_db_column_exists($links, 'lk_head_script')) {
+            $seed_code = lc_sql_escape('524c19529e');
+            $seed_script = lc_sql_escape(lc_link_seed_head_script());
+            lc_sql_query(" UPDATE `{$links}` SET lk_head_script = '{$seed_script}' WHERE lk_code = '{$seed_code}' AND (lk_head_script IS NULL OR lk_head_script = '') ", false);
         }
 
         if (lc_db_table_exists($campaigns) && lc_db_column_exists($campaigns, 'cp_merchant_price')) {

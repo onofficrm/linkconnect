@@ -80,6 +80,7 @@ if (function_exists('lc_link_is_tracking_request_host') && lc_link_is_tracking_r
   <meta name="twitter:description" content="<?php echo lc_h($seo['description']); ?>">
   <?php } ?>
   <link rel="stylesheet" href="<?php echo lc_h($asset_css); ?>">
+  <?php echo function_exists('lc_link_head_script_markup') ? lc_link_head_script_markup() : ''; ?>
 </head>
 <body class="lc-app lc-app--public">
 <main class="lc-main" style="max-width:560px;margin:2rem auto;padding:1rem;">

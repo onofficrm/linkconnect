@@ -938,6 +938,29 @@ export function fetchAdminDashboard() {
   return adminApiGet<AdminDashboardResponse>('dashboard.php');
 }
 
+export type AdminLinkScript = {
+  code: string;
+  campaign: string;
+  campaignCode: string;
+  partner: string;
+  partnerCode: string;
+  landingUrl: string;
+  script: string;
+  status: string;
+};
+
+export function fetchAdminLinkScript(code: string) {
+  return adminApiGet<{ link: AdminLinkScript }>('links.php', { code });
+}
+
+export function saveAdminLinkScript(code: string, script: string) {
+  return adminApiPost<{ message: string; link: AdminLinkScript }>('links.php', {
+    action: 'save_script',
+    code,
+    script,
+  });
+}
+
 export function fetchAdminPartners(filters?: { status?: string; q?: string }) {
   return adminApiGet<{
     items: AdminPartner[];
