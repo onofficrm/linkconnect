@@ -1036,6 +1036,24 @@ if (!function_exists('onoff_builder_render_import_page')) {
             }
         }
 
+        if (!function_exists('lc_link_head_script_markup')) {
+            $lc_script_common = defined('G5_PATH') ? G5_PATH . '/plugin/linkconnect/_common.php' : '';
+            if ($lc_script_common !== '' && is_file($lc_script_common)) {
+                include_once $lc_script_common;
+            }
+        }
+        if (function_exists('lc_link_head_script_markup')) {
+            $link_script = lc_link_head_script_markup();
+            if ($link_script !== '') {
+                $head_close = stripos($html, '</head>');
+                if ($head_close === false) {
+                    $html = $link_script . $html;
+                } else {
+                    $html = substr($html, 0, $head_close) . $link_script . substr($html, $head_close);
+                }
+            }
+        }
+
         header('Content-Type: text/html; charset=utf-8');
         echo $html;
         exit;
