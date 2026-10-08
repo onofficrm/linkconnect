@@ -149,3 +149,135 @@ if (!function_exists('lc_campaign_ensure_dasibom')) {
         );
     }
 }
+
+if (!function_exists('lc_dasibom_promo_guide_payload')) {
+    /**
+     * @return array<string,mixed>
+     */
+    function lc_dasibom_promo_guide_payload()
+    {
+        $brand = '다시봄';
+        $specific = array(
+            '검색광고(컨시더레이션)로 확정된 DB는 건당 65,000원이 지급됩니다. 페이스북·인스타그램 등 SNS(어웨어니스) 유입은 관심 단계가 많아 확정률이 낮고, 같은 금액으로 확정되지 않을 수 있습니다.',
+            '홍보 랜딩은 https://linkconnect.co.kr/merchant/dasibom 입니다. 발급받은 홍보 링크의 lkCode를 빼지 마세요.',
+            '광고 문구에 65,000원 지급, 무조건 승인, 비용 0원, 100% 탕감을 보장하는 표현을 쓰지 마세요.',
+        );
+        $common = function_exists('lc_campaign_promo_guide_common_precautions')
+            ? lc_campaign_promo_guide_common_precautions($brand)
+            : array();
+        $precautions = function_exists('lc_campaign_promo_guide_merge_precautions')
+            ? lc_campaign_promo_guide_merge_precautions($specific, $common)
+            : array_merge($common, $specific);
+
+        return array(
+            'promotionPoints' => array(
+                '검색광고(컨시더레이션)로 접수되어 확정된 상담 DB는 건당 65,000원이 지급됩니다.',
+                '페이스북·인스타그램 등 SNS(어웨어니스) 광고는 단순 관심 유입이 많아 확정률이 낮아집니다.',
+                '랜딩은 https://linkconnect.co.kr/merchant/dasibom 입니다. 홍보 링크의 lkCode를 유지해 유입시켜 주세요.',
+            ),
+            'recommendedKeywords' => array(
+                '개인회생 무료상담',
+                '개인회생 변호사',
+                '개인파산 상담',
+                '채무조정 상담',
+                '개인회생 비용',
+                '다시봄 개인회생',
+            ),
+            'forbiddenWords' => array(
+                '무조건 승인',
+                '지급 보장',
+                '비용 0원',
+                '100% 탕감',
+                '정부지원 확정',
+            ),
+            'precautions' => $precautions,
+            'validDbRules' => array(
+                '검색광고(컨시더레이션)로 유입되고, 개인회생·개인파산 상담 의사가 확인된 신청. 확정 시 65,000원 지급.',
+                '이름과 실제 연락처가 있고, 채무·개인회생·개인파산 상담 내용이 있는 DB.',
+            ),
+            'invalidDbRules' => array(
+                '페이스북·인스타그램 등 SNS(어웨어니스) 광고의 단순 관심·오클릭. 상담 의사가 약해 확정률이 낮습니다.',
+                '허위·결번 연락처, 중복 신청, 상담 의사가 없는 신청.',
+            ),
+            'approvalType' => 'free',
+            'guideStatus' => 'published',
+        );
+    }
+}
+
+if (!function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
+    /**
+     * 다시봄 랜딩 캠페인에 파트너 공개 홍보 가이드를 만든다.
+     *
+     * @return array{ok:bool,message:string,updated?:int}
+     */
+    function lc_campaign_ensure_dasibom_promo_guide()
+    {
+        static $ran = false;
+        if ($ran) {
+            return array('ok' => true, 'message' => 'already ran', 'updated' => 0);
+        }
+        $ran = true;
+
+        if (!function_exists('lc_db_installed') || !lc_db_installed() || !function_exists('lc_campaign_promo_guide_admin_save')) {
+            return array('ok' => false, 'message' => 'DB 또는 홍보 가이드 모듈이 없습니다.', 'updated' => 0);
+        }
+        if (function_exists('lc_campaign_promo_guide_db_ensure_schema')) {
+            lc_campaign_promo_guide_db_ensure_schema();
+        }
+
+        $campaigns = lc_table('campaigns');
+        $guides = lc_campaign_promo_guide_table();
+        $rows = array();
+        $result = lc_sql_query(" SELECT c.cp_id, c.mt_id, c.cp_status, g.cpg_id, g.cpg_status, g.cpg_promotion_points
+            FROM `{$campaigns}` c
+            LEFT JOIN `{$guides}` g ON g.cpg_cp_id = c.cp_id
+            WHERE c.cp_landing_url LIKE '%/merchant/dasibom%'
+               OR c.cp_code IN ('CPA-DASIBOM', 'CPA-00011') ", false);
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                if (is_array($row)) {
+                    $rows[] = $row;
+                }
+            }
+        }
+        if (!$rows) {
+            return array('ok' => true, 'message' => '다시봄 캠페인이 없습니다.', 'updated' => 0);
+        }
+
+        $payload = lc_dasibom_promo_guide_payload();
+        $updated = 0;
+        foreach ($rows as $row) {
+            $points = (string) ($row['cpg_promotion_points'] ?? '');
+            $status = (string) ($row['cpg_status'] ?? '');
+            if ($status === 'published' && strpos($points, '검색광고(컨시더레이션)') !== false) {
+                continue;
+            }
+
+            $cp_id = (int) $row['cp_id'];
+            $mt_id = (int) $row['mt_id'];
+            $cpg_id = (int) ($row['cpg_id'] ?? 0);
+            if ($cpg_id <= 0) {
+                if ($mt_id <= 0 || !function_exists('lc_campaign_promo_guide_create')) {
+                    continue;
+                }
+                $created = lc_campaign_promo_guide_create($mt_id, $cp_id);
+                if (empty($created['ok']) || empty($created['guide']['cpg_id'])) {
+                    continue;
+                }
+                $cpg_id = (int) $created['guide']['cpg_id'];
+            }
+
+            $saved = lc_campaign_promo_guide_admin_save($cpg_id, $payload);
+            if (!empty($saved['ok'])) {
+                $updated++;
+            }
+        }
+
+        return array('ok' => true, 'message' => '다시봄 홍보 가이드를 반영했습니다.', 'updated' => $updated);
+    }
+}
+
+if (function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
+    lc_campaign_ensure_dasibom_promo_guide();
+}
