@@ -15,7 +15,7 @@ RewriteRule ^go/lp/([A-Za-z0-9_-]+)$ go/lp/index.php?m=$1 [L,QSA]
 RewriteRule ^api/external/linkprice/postback/?$ api/external/linkprice/postback.php [L,QSA]
 
 # LinkConnect React SPA (BrowserRouter) — board short URL보다 우선
-RewriteRule ^(about|affiliate|notice|select-center|cpa-list|cps|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
+RewriteRule ^(about|affiliate|notice|select-center|cpa-list|cpa|cps|events|partner|advertiser|admin)(/.*)?$ index.php [L,QSA]
 
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^robots\.txt$ robots.php [L]
