@@ -158,9 +158,10 @@ if (!function_exists('lc_dasibom_promo_guide_payload')) {
     {
         $brand = '다시봄';
         $specific = array(
-            '검색광고(컨시더레이션)로 확정된 DB는 건당 65,000원이 지급됩니다. 페이스북·인스타그램 등 SNS(어웨어니스) 유입은 관심 단계가 많아 확정률이 낮고, 같은 금액으로 확정되지 않을 수 있습니다.',
-            '홍보 랜딩은 https://linkconnect.co.kr/merchant/dasibom 입니다. 발급받은 홍보 링크의 lkCode를 빼지 마세요.',
-            '광고 문구에 65,000원 지급, 무조건 승인, 비용 0원, 100% 탕감을 보장하는 표현을 쓰지 마세요.',
+            '승인률은 매체마다 다릅니다. 검색광고(웹사이트 상위노출, 키워드, 자동완성)는 최대 90%이고, 페이스북·인스타그램 등 SNS(어웨어니스)는 부재가 많아 50% 안팎입니다.',
+            '부채 1,500만 원 이하, 신청한 적 없음, 잘못 누름, 만 19세 미만, 부재 3회 이상은 승인되지 않습니다.',
+            '광고주는 2012년부터 진행해 온 신뢰 관계로, 기준에 맞는 DB는 가능한 한 승인해 드리고 있습니다.',
+            '홍보 랜딩은 https://linkconnect.co.kr/merchant/dasibom 입니다. 발급 링크의 lkCode를 유지하고, 승인·지급·탕감을 보장하는 문구는 쓰지 마세요.',
         );
         $common = function_exists('lc_campaign_promo_guide_common_precautions')
             ? lc_campaign_promo_guide_common_precautions($brand)
@@ -171,8 +172,8 @@ if (!function_exists('lc_dasibom_promo_guide_payload')) {
 
         return array(
             'promotionPoints' => array(
-                '검색광고(컨시더레이션)로 접수되어 확정된 상담 DB는 건당 65,000원이 지급됩니다.',
-                '페이스북·인스타그램 등 SNS(어웨어니스) 광고는 단순 관심 유입이 많아 확정률이 낮아집니다.',
+                '검색광고(컨시더레이션) 확정 단가는 건당 65,000원입니다. 웹사이트 상위노출, 키워드, 자동완성 등 검색광고의 승인률은 최대 90%까지 나오고 있습니다.',
+                '페이스북·인스타그램 등 SNS(어웨어니스)는 부재가 많아 승인률이 50% 안팎으로 결정됩니다.',
                 '랜딩은 https://linkconnect.co.kr/merchant/dasibom 입니다. 홍보 링크의 lkCode를 유지해 유입시켜 주세요.',
             ),
             'recommendedKeywords' => array(
@@ -192,12 +193,16 @@ if (!function_exists('lc_dasibom_promo_guide_payload')) {
             ),
             'precautions' => $precautions,
             'validDbRules' => array(
-                '검색광고(컨시더레이션)로 유입되고, 개인회생·개인파산 상담 의사가 확인된 신청. 확정 시 65,000원 지급.',
-                '이름과 실제 연락처가 있고, 채무·개인회생·개인파산 상담 내용이 있는 DB.',
+                '검색광고(웹사이트 상위노출, 키워드, 자동완성)로 유입되고 상담 의사가 확인된 신청. 승인률은 최대 90%이며, 확정 시 65,000원이 지급됩니다.',
+                '부채가 1,500만 원을 넘고, 이름과 실제 연락처가 있는 개인회생·개인파산 상담 신청.',
+                '기준에 맞는 DB는 2012년부터 함께해 온 광고주가 가능한 한 승인해 드립니다.',
             ),
             'invalidDbRules' => array(
-                '페이스북·인스타그램 등 SNS(어웨어니스) 광고의 단순 관심·오클릭. 상담 의사가 약해 확정률이 낮습니다.',
-                '허위·결번 연락처, 중복 신청, 상담 의사가 없는 신청.',
+                '부채 1,500만 원 이하인 신청은 승인되지 않습니다.',
+                '상담을 신청한 적이 없다고 하거나, 잘못 눌렀다고 하는 경우는 승인되지 않습니다.',
+                '만 19세 미만은 승인되지 않습니다.',
+                '부재 3회 이상은 승인되지 않습니다.',
+                'SNS(어웨어니스)는 부재가 많아 승인률이 50% 안팎입니다. 허위·결번 연락처와 상담 의사가 없는 신청도 승인되지 않습니다.',
             ),
             'approvalType' => 'free',
             'guideStatus' => 'published',
@@ -250,7 +255,7 @@ if (!function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
         foreach ($rows as $row) {
             $points = (string) ($row['cpg_promotion_points'] ?? '');
             $status = (string) ($row['cpg_status'] ?? '');
-            if ($status === 'published' && strpos($points, '검색광고(컨시더레이션)') !== false) {
+            if ($status === 'published' && strpos($points, '최대 90%') !== false) {
                 continue;
             }
 
