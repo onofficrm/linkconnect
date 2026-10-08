@@ -74,6 +74,11 @@ if (!function_exists('lc_merchant_contract_applies_to_current_user')) {
             return false;
         }
 
+        global $member;
+        if (is_array($member) && (string) ($member['mb_id'] ?? '') === 'playreview') {
+            return false;
+        }
+
         if (function_exists('lc_impersonate_is_active') && lc_impersonate_is_active('merchant')) {
             return true;
         }

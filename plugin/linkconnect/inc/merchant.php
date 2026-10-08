@@ -456,3 +456,61 @@ if (!function_exists('lc_render_merchant_gate')) {
         include LC_LAYOUT_PATH . '/footer.php';
     }
 }
+
+if (!function_exists('lc_play_review_account_ensure')) {
+    /**
+     * 플레이 스토어 검토용 광고주 계정. 이미 있으면 비밀번호는 바꾸지 않는다.
+     *
+     * @return array{ok:bool,message:string}
+     */
+    function lc_play_review_account_ensure()
+    {
+        static $ran = false;
+        if ($ran) {
+            return array('ok' => true, 'message' => 'already ran');
+        }
+        $ran = true;
+
+        if (!function_exists('lc_db_installed') || !lc_db_installed() || !function_exists('lc_merchant_create')) {
+            return array('ok' => false, 'message' => 'DB가 준비되지 않았습니다.');
+        }
+
+        global $g5;
+        if (!isset($g5['member_table'])) {
+            return array('ok' => false, 'message' => '회원 테이블이 없습니다.');
+        }
+
+        $mb_id = 'playreview';
+        $mb_id_esc = function_exists('sql_escape_string') ? sql_escape_string($mb_id) : $mb_id;
+        $exists = sql_fetch(" SELECT mb_id FROM {$g5['member_table']} WHERE mb_id = '{$mb_id_esc}' LIMIT 1 ", false);
+        if (!is_array($exists) || empty($exists['mb_id'])) {
+            $seed = LC_PLUGIN_PATH . '/inc/demo_seed.php';
+            if (is_file($seed)) {
+                require_once $seed;
+            }
+            if (!function_exists('lc_demo_member_ensure')) {
+                return array('ok' => false, 'message' => '회원 생성 함수가 없습니다.');
+            }
+            $created = lc_demo_member_ensure($mb_id, '플레이검토', 'Lc#Play9mK2vR');
+            if (empty($created['ok'])) {
+                return array('ok' => false, 'message' => (string) ($created['message'] ?? '회원 생성 실패'));
+            }
+        }
+
+        $merchant = lc_get_merchant_by_mb_id($mb_id);
+        if (!is_array($merchant)) {
+            $made = lc_merchant_create($mb_id, '플레이검토', LC_MERCHANT_STATUS_ACTIVE, 0);
+            if (empty($made['ok'])) {
+                return array('ok' => false, 'message' => (string) ($made['message'] ?? '광고주 생성 실패'));
+            }
+        } elseif ((string) ($merchant['mt_status'] ?? '') !== LC_MERCHANT_STATUS_ACTIVE) {
+            lc_merchant_update_status((int) $merchant['mt_id'], LC_MERCHANT_STATUS_ACTIVE);
+        }
+
+        return array('ok' => true, 'message' => '검토용 광고주 계정을 준비했습니다.');
+    }
+}
+
+if (function_exists('lc_play_review_account_ensure')) {
+    lc_play_review_account_ensure();
+}
