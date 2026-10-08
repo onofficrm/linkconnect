@@ -163,6 +163,55 @@ if (!function_exists('lc_campaign_promo_guide_merge_precautions')) {
     }
 }
 
+if (!function_exists('lc_campaign_promo_guide_is_dasibom')) {
+    /**
+     * @param array<string,mixed> $campaign
+     */
+    function lc_campaign_promo_guide_is_dasibom(array $campaign)
+    {
+        $url = (string) ($campaign['cp_landing_url'] ?? '');
+        $code = (string) ($campaign['cp_code'] ?? '');
+
+        return strpos($url, '/merchant/dasibom') !== false
+            || $code === 'CPA-DASIBOM'
+            || $code === 'CPA-00011';
+    }
+}
+
+if (!function_exists('lc_campaign_promo_guide_adjust_dasibom_precautions')) {
+    /**
+     * 다시봄 가이드에서 업체명과 방문·비용 문구를 뺀다.
+     *
+     * @param list<string>|array $items
+     * @return list<string>
+     */
+    function lc_campaign_promo_guide_adjust_dasibom_precautions($items)
+    {
+        $out = array();
+        $seen_powerlink = false;
+        foreach ((array) $items as $item) {
+            $item = trim((string) $item);
+            if ($item === '') {
+                continue;
+            }
+            $key = lc_campaign_promo_guide_precaution_dedupe_key($item);
+            if ($key === 'common:region' || $key === 'common:free_claim') {
+                continue;
+            }
+            if ($key === 'common:powerlink_brand') {
+                if ($seen_powerlink) {
+                    continue;
+                }
+                $seen_powerlink = true;
+                $item = '5. 파워링크로 업체명 관련 키워드 사용 금지 / 그 외에 다른 키워드 관계없음';
+            }
+            $out[] = $item;
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('lc_campaign_promo_guide_resolve_brand_name')) {
     /**
      * @param array<string,mixed> $guide_row
@@ -235,6 +284,13 @@ if (!function_exists('lc_campaign_promo_guide_backfill_common_precautions')) {
             $common = lc_campaign_promo_guide_common_precautions($brand);
             $existing = lc_campaign_promo_guide_decode_json_list((string) ($row['cpg_precautions'] ?? ''));
             $merged = lc_campaign_promo_guide_merge_precautions($existing, $common);
+            $cp_id = (int) ($row['cpg_cp_id'] ?? 0);
+            if ($cp_id > 0 && function_exists('lc_campaign_get_by_id')) {
+                $campaign = lc_campaign_get_by_id($cp_id);
+                if (is_array($campaign) && lc_campaign_promo_guide_is_dasibom($campaign)) {
+                    $merged = lc_campaign_promo_guide_adjust_dasibom_precautions($merged);
+                }
+            }
             if ($max > 0 && count($merged) > $max) {
                 $merged = array_slice($merged, 0, $max);
             }
@@ -1470,6 +1526,13 @@ if (!function_exists('lc_campaign_promo_guide_to_api')) {
             lc_campaign_promo_guide_decode_json_list((string) ($row['cpg_precautions'] ?? '')),
             lc_campaign_promo_guide_common_precautions($brand)
         );
+        $guide_cp_id = (int) ($row['cpg_cp_id'] ?? 0);
+        if ($guide_cp_id > 0 && function_exists('lc_campaign_get_by_id')) {
+            $guide_campaign = lc_campaign_get_by_id($guide_cp_id);
+            if (is_array($guide_campaign) && lc_campaign_promo_guide_is_dasibom($guide_campaign)) {
+                $precautions = lc_campaign_promo_guide_adjust_dasibom_precautions($precautions);
+            }
+        }
 
         $data = array(
             'exists'             => true,

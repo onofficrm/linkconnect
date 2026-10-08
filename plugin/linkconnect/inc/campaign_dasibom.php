@@ -169,6 +169,9 @@ if (!function_exists('lc_dasibom_promo_guide_payload')) {
         $precautions = function_exists('lc_campaign_promo_guide_merge_precautions')
             ? lc_campaign_promo_guide_merge_precautions($specific, $common)
             : array_merge($common, $specific);
+        if (function_exists('lc_campaign_promo_guide_adjust_dasibom_precautions')) {
+            $precautions = lc_campaign_promo_guide_adjust_dasibom_precautions($precautions);
+        }
 
         return array(
             'promotionPoints' => array(
@@ -234,7 +237,7 @@ if (!function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
         $campaigns = lc_table('campaigns');
         $guides = lc_campaign_promo_guide_table();
         $rows = array();
-        $result = lc_sql_query(" SELECT c.cp_id, c.mt_id, c.cp_status, g.cpg_id, g.cpg_status, g.cpg_promotion_points
+        $result = lc_sql_query(" SELECT c.cp_id, c.mt_id, c.cp_status, g.cpg_id, g.cpg_status, g.cpg_promotion_points, g.cpg_precautions
             FROM `{$campaigns}` c
             LEFT JOIN `{$guides}` g ON g.cpg_cp_id = c.cp_id
             WHERE c.cp_landing_url LIKE '%/merchant/dasibom%'
@@ -254,8 +257,13 @@ if (!function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
         $updated = 0;
         foreach ($rows as $row) {
             $points = (string) ($row['cpg_promotion_points'] ?? '');
+            $stored = (string) ($row['cpg_precautions'] ?? '');
             $status = (string) ($row['cpg_status'] ?? '');
-            if ($status === 'published' && strpos($points, '최대 90%') !== false) {
+            $stale_precaution = strpos($stored, '이동훈') !== false
+                || strpos($stored, '수도권 외') !== false
+                || strpos($stored, '못뚫으면') !== false
+                || strpos($stored, '업체명 "') !== false;
+            if ($status === 'published' && strpos($points, '최대 90%') !== false && !$stale_precaution) {
                 continue;
             }
 
