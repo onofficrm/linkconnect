@@ -17,6 +17,25 @@ if (!function_exists('lc_api_json_response')) {
     header('Content-Type: application/json; charset=utf-8');
 }
 
+$lk_lookup = isset($_GET['lk']) ? trim((string) $_GET['lk']) : '';
+if ($lk_lookup !== '' && preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $lk_lookup)) {
+    $link = function_exists('lc_link_get_with_campaign') ? lc_link_get_with_campaign($lk_lookup) : null;
+    if (!is_array($link)) {
+        lc_api_error('링크를 찾을 수 없습니다.', 'NOT_FOUND', 404);
+    }
+    lc_api_success(array(
+        'lkCode'     => (string) ($link['lk_code'] ?? ''),
+        'lkStatus'   => (string) ($link['lk_status'] ?? ''),
+        'cpId'       => (int) ($link['cp_id'] ?? 0),
+        'cpCode'     => (string) ($link['cp_code'] ?? ''),
+        'cpName'     => (string) ($link['cp_name'] ?? ''),
+        'cpStatus'   => (string) ($link['cp_status'] ?? ''),
+        'landingUrl' => (string) ($link['cp_landing_url'] ?? ''),
+        'ptId'       => (int) ($link['pt_id'] ?? 0),
+        'redirect'   => function_exists('lc_link_resolve_redirect_url') ? lc_link_resolve_redirect_url($link) : '',
+    ));
+}
+
 $cp_id = isset($_GET['cpId']) ? (int) $_GET['cpId'] : 0;
 $cp_code = isset($_GET['code']) ? trim((string) $_GET['code']) : '';
 
