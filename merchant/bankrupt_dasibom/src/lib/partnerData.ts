@@ -17,6 +17,7 @@ declare global {
   interface Window {
     PARTNER_PHONE?: string;
     LC_LANDING_CONTEXT?: Partial<PartnerData & { has_partner_phone?: boolean; partner_phone_display?: string }>;
+    fbq?: (...args: unknown[]) => void;
   }
 }
 

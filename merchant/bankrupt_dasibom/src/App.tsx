@@ -135,6 +135,9 @@ export default function App() {
 
     setIsSubmitting(false);
     if (result.ok) {
+      if (!result.duplicate && window.fbq) {
+        window.fbq('trackSingle', '1644021973940387', 'CompleteRegistration');
+      }
       setSubmitStatus('success');
       setSubmitMessage(result.message);
       setFormData({
