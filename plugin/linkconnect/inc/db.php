@@ -883,6 +883,9 @@ if (!function_exists('lc_db_run_migrations')) {
             $alters[] = "ALTER TABLE `{$links}` ADD COLUMN `lk_head_script` mediumtext NULL AFTER `lk_status`";
             $seed_link_script = true;
         }
+        if (lc_db_table_exists($links) && !lc_db_column_exists($links, 'lk_landing_url')) {
+            $alters[] = "ALTER TABLE `{$links}` ADD COLUMN `lk_landing_url` varchar(500) NOT NULL DEFAULT '' AFTER `lk_head_script`";
+        }
 
         foreach ($alters as $sql) {
             $result = lc_sql_query($sql, false);

@@ -1181,7 +1181,10 @@ if (!function_exists('lc_link_record_click')) {
 if (!function_exists('lc_link_resolve_redirect_url')) {
     function lc_link_resolve_redirect_url(array $link)
     {
-        $landing = trim((string) ($link['cp_landing_url'] ?? ''));
+        $landing = trim((string) ($link['lk_landing_url'] ?? ''));
+        if ($landing === '') {
+            $landing = trim((string) ($link['cp_landing_url'] ?? ''));
+        }
         $lk_code = trim((string) ($link['lk_code'] ?? ''));
         $tracking_base = function_exists('lc_link_resolve_tracking_base')
             ? lc_link_resolve_tracking_base($link)
@@ -1280,4 +1283,71 @@ if (!function_exists('lc_link_partner_channel_stats')) {
 
         return array();
     }
+}
+
+if (!function_exists('lc_link_ensure_da24_test')) {
+    /**
+     * 다이사 인입 테스트. 홍보 코드 3f9a1c07be 가 da24.co.kr 로 lkCode 를 붙여 보낸다.
+     */
+    function lc_link_ensure_da24_test()
+    {
+        static $ran = false;
+        if ($ran) {
+            return;
+        }
+        $ran = true;
+
+        if (!function_exists('lc_db_installed') || !lc_db_installed() || !function_exists('lc_db_column_exists')) {
+            return;
+        }
+
+        $table = lc_table('links');
+        if (!lc_db_table_exists($table) || !lc_db_column_exists($table, 'lk_landing_url')) {
+            return;
+        }
+
+        $code = '3f9a1c07be';
+        $landing = 'https://da24.co.kr/?mda=520814';
+        $code_esc = lc_sql_escape($code);
+        $landing_esc = lc_sql_escape($landing);
+        $existing = lc_link_get_by_code($code);
+        if (is_array($existing)) {
+            $current = trim((string) ($existing['lk_landing_url'] ?? ''));
+            $status = (string) ($existing['lk_status'] ?? '');
+            if ($current === $landing && $status === 'active') {
+                return;
+            }
+            lc_sql_query(" UPDATE `{$table}` SET
+                lk_landing_url = '{$landing_esc}',
+                lk_status = 'active',
+                lk_updated_at = NOW()
+                WHERE lk_code = '{$code_esc}' LIMIT 1 ", false);
+            return;
+        }
+
+        $cp_table = lc_table('campaigns');
+        $pt_table = lc_table('partners');
+        $campaign = lc_sql_fetch(" SELECT cp_id FROM `{$cp_table}` WHERE cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND cp_code = 'CPA-00011' LIMIT 1 ");
+        $partner = lc_sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_status = '" . lc_sql_escape(LC_PARTNER_STATUS_ACTIVE) . "' AND pt_code = 'PTN-0001' LIMIT 1 ");
+        $cp_id = is_array($campaign) ? (int) $campaign['cp_id'] : 0;
+        $pt_id = is_array($partner) ? (int) $partner['pt_id'] : 0;
+        if ($cp_id <= 0 || $pt_id <= 0) {
+            return;
+        }
+
+        lc_sql_query(" INSERT INTO `{$table}` SET
+            pt_id = '{$pt_id}',
+            cp_id = '{$cp_id}',
+            lk_code = '{$code_esc}',
+            lk_channel = 'da24-test',
+            lk_sub_id = '520814',
+            lk_status = 'active',
+            lk_landing_url = '{$landing_esc}',
+            lk_created_at = NOW(),
+            lk_updated_at = NOW() ", false);
+    }
+}
+
+if (function_exists('lc_link_ensure_da24_test')) {
+    lc_link_ensure_da24_test();
 }

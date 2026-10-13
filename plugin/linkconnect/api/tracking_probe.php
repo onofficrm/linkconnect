@@ -18,43 +18,6 @@ if (!function_exists('lc_api_json_response')) {
 }
 
 $lk_lookup = isset($_GET['lk']) ? trim((string) $_GET['lk']) : '';
-if ($lk_lookup === 'list') {
-    $cp_table = lc_table('campaigns');
-    $rows = array();
-    $result = lc_sql_query(" SELECT cp_id, cp_code, cp_name, cp_status, cp_landing_url FROM `{$cp_table}` ORDER BY cp_id DESC LIMIT 40 ", false);
-    if ($result) {
-        while ($row = sql_fetch_array($result)) {
-            if (is_array($row)) {
-                $rows[] = array(
-                    'id'      => (int) ($row['cp_id'] ?? 0),
-                    'code'    => (string) ($row['cp_code'] ?? ''),
-                    'name'    => (string) ($row['cp_name'] ?? ''),
-                    'status'  => (string) ($row['cp_status'] ?? ''),
-                    'landing' => (string) ($row['cp_landing_url'] ?? ''),
-                );
-            }
-        }
-    }
-    lc_api_success(array('campaigns' => $rows));
-}
-if ($lk_lookup === 'partners') {
-    $pt_table = lc_table('partners');
-    $rows = array();
-    $result = lc_sql_query(" SELECT pt_id, pt_code, pt_name, pt_status FROM `{$pt_table}` ORDER BY pt_id DESC LIMIT 40 ", false);
-    if ($result) {
-        while ($row = sql_fetch_array($result)) {
-            if (is_array($row)) {
-                $rows[] = array(
-                    'id'     => (int) ($row['pt_id'] ?? 0),
-                    'code'   => (string) ($row['pt_code'] ?? ''),
-                    'name'   => (string) ($row['pt_name'] ?? ''),
-                    'status' => (string) ($row['pt_status'] ?? ''),
-                );
-            }
-        }
-    }
-    lc_api_success(array('partners' => $rows));
-}
 if ($lk_lookup !== '' && preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $lk_lookup)) {
     $link = function_exists('lc_link_get_with_campaign') ? lc_link_get_with_campaign($lk_lookup) : null;
     if (!is_array($link)) {
