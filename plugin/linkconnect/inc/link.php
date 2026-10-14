@@ -1287,7 +1287,7 @@ if (!function_exists('lc_link_partner_channel_stats')) {
 
 if (!function_exists('lc_link_ensure_da24_test')) {
     /**
-     * 다이사 인입 테스트. 홍보 코드 3f9a1c07be 가 da24.co.kr 로 lkCode 를 붙여 보낸다.
+     * 다이사 인입 테스트. 홍보 코드 3f9a1c07be 를 PTN-0034 에 두고 da24.co.kr 로 lkCode 를 붙여 보낸다.
      */
     function lc_link_ensure_da24_test()
     {
@@ -1308,16 +1308,27 @@ if (!function_exists('lc_link_ensure_da24_test')) {
 
         $code = '3f9a1c07be';
         $landing = 'https://da24.co.kr/?mda=520814';
+        $partner_code = 'PTN-0034';
         $code_esc = lc_sql_escape($code);
         $landing_esc = lc_sql_escape($landing);
+
+        $pt_table = lc_table('partners');
+        $partner = lc_sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_code = '" . lc_sql_escape($partner_code) . "' LIMIT 1 ");
+        $pt_id = is_array($partner) ? (int) $partner['pt_id'] : 0;
+        if ($pt_id <= 0) {
+            return;
+        }
+
         $existing = lc_link_get_by_code($code);
         if (is_array($existing)) {
             $current = trim((string) ($existing['lk_landing_url'] ?? ''));
             $status = (string) ($existing['lk_status'] ?? '');
-            if ($current === $landing && $status === 'active') {
+            $current_pt = (int) ($existing['pt_id'] ?? 0);
+            if ($current === $landing && $status === 'active' && $current_pt === $pt_id) {
                 return;
             }
             lc_sql_query(" UPDATE `{$table}` SET
+                pt_id = '{$pt_id}',
                 lk_landing_url = '{$landing_esc}',
                 lk_status = 'active',
                 lk_updated_at = NOW()
@@ -1326,12 +1337,9 @@ if (!function_exists('lc_link_ensure_da24_test')) {
         }
 
         $cp_table = lc_table('campaigns');
-        $pt_table = lc_table('partners');
         $campaign = lc_sql_fetch(" SELECT cp_id FROM `{$cp_table}` WHERE cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND cp_code = 'CPA-00011' LIMIT 1 ");
-        $partner = lc_sql_fetch(" SELECT pt_id FROM `{$pt_table}` WHERE pt_status = '" . lc_sql_escape(LC_PARTNER_STATUS_ACTIVE) . "' AND pt_code = 'PTN-0001' LIMIT 1 ");
         $cp_id = is_array($campaign) ? (int) $campaign['cp_id'] : 0;
-        $pt_id = is_array($partner) ? (int) $partner['pt_id'] : 0;
-        if ($cp_id <= 0 || $pt_id <= 0) {
+        if ($cp_id <= 0) {
             return;
         }
 

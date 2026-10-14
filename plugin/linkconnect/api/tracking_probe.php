@@ -23,6 +23,8 @@ if ($lk_lookup !== '' && preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $lk_lookup)) {
     if (!is_array($link)) {
         lc_api_error('링크를 찾을 수 없습니다.', 'NOT_FOUND', 404);
     }
+    $pt_id = (int) ($link['pt_id'] ?? 0);
+    $partner = ($pt_id > 0 && function_exists('lc_get_partner_by_id')) ? lc_get_partner_by_id($pt_id) : null;
     lc_api_success(array(
         'lkCode'     => (string) ($link['lk_code'] ?? ''),
         'lkStatus'   => (string) ($link['lk_status'] ?? ''),
@@ -30,8 +32,11 @@ if ($lk_lookup !== '' && preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $lk_lookup)) {
         'cpCode'     => (string) ($link['cp_code'] ?? ''),
         'cpName'     => (string) ($link['cp_name'] ?? ''),
         'cpStatus'   => (string) ($link['cp_status'] ?? ''),
-        'landingUrl' => (string) ($link['cp_landing_url'] ?? ''),
-        'ptId'       => (int) ($link['pt_id'] ?? 0),
+        'landingUrl' => (string) ($link['lk_landing_url'] ?? ($link['cp_landing_url'] ?? '')),
+        'ptId'       => $pt_id,
+        'ptCode'     => is_array($partner) ? (string) ($partner['pt_code'] ?? '') : '',
+        'ptName'     => is_array($partner) ? (string) ($partner['pt_name'] ?? '') : '',
+        'ptStatus'   => is_array($partner) ? (string) ($partner['pt_status'] ?? '') : '',
         'redirect'   => function_exists('lc_link_resolve_redirect_url') ? lc_link_resolve_redirect_url($link) : '',
     ));
 }
