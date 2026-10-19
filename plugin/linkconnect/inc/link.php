@@ -1287,7 +1287,7 @@ if (!function_exists('lc_link_partner_channel_stats')) {
 
 if (!function_exists('lc_link_ensure_da24_test')) {
     /**
-     * 다이사 인입 테스트. 홍보 코드 3f9a1c07be 를 PTN-0034 에 두고 da24.co.kr 로 lkCode 를 붙여 보낸다.
+     * 다이사 인입. CPA-00016 랜딩을 da24.co.kr 로 채우고, 홍보 코드 3f9a1c07be 를 PTN-0034·CPA-00016 에 둔다.
      */
     function lc_link_ensure_da24_test()
     {
@@ -1319,27 +1319,38 @@ if (!function_exists('lc_link_ensure_da24_test')) {
             return;
         }
 
+        $cp_table = lc_table('campaigns');
+        $campaign = lc_sql_fetch(" SELECT cp_id, cp_landing_url FROM `{$cp_table}` WHERE cp_code = 'CPA-00016' LIMIT 1 ");
+        if (!is_array($campaign)) {
+            $campaign = lc_sql_fetch(" SELECT cp_id, cp_landing_url FROM `{$cp_table}` WHERE cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND cp_code = 'CPA-00011' LIMIT 1 ");
+        }
+        $cp_id = is_array($campaign) ? (int) $campaign['cp_id'] : 0;
+        if ($cp_id <= 0) {
+            return;
+        }
+        if (trim((string) ($campaign['cp_landing_url'] ?? '')) === '') {
+            lc_sql_query(" UPDATE `{$cp_table}` SET
+                cp_landing_url = '{$landing_esc}',
+                cp_updated_at = NOW()
+                WHERE cp_id = '{$cp_id}' AND cp_code = 'CPA-00016' LIMIT 1 ", false);
+        }
+
         $existing = lc_link_get_by_code($code);
         if (is_array($existing)) {
             $current = trim((string) ($existing['lk_landing_url'] ?? ''));
             $status = (string) ($existing['lk_status'] ?? '');
             $current_pt = (int) ($existing['pt_id'] ?? 0);
-            if ($current === $landing && $status === 'active' && $current_pt === $pt_id) {
+            $current_cp = (int) ($existing['cp_id'] ?? 0);
+            if ($current === $landing && $status === 'active' && $current_pt === $pt_id && $current_cp === $cp_id) {
                 return;
             }
             lc_sql_query(" UPDATE `{$table}` SET
                 pt_id = '{$pt_id}',
+                cp_id = '{$cp_id}',
                 lk_landing_url = '{$landing_esc}',
                 lk_status = 'active',
                 lk_updated_at = NOW()
                 WHERE lk_code = '{$code_esc}' LIMIT 1 ", false);
-            return;
-        }
-
-        $cp_table = lc_table('campaigns');
-        $campaign = lc_sql_fetch(" SELECT cp_id FROM `{$cp_table}` WHERE cp_status = '" . lc_sql_escape(LC_STATUS_ACTIVE) . "' AND cp_code = 'CPA-00011' LIMIT 1 ");
-        $cp_id = is_array($campaign) ? (int) $campaign['cp_id'] : 0;
-        if ($cp_id <= 0) {
             return;
         }
 
