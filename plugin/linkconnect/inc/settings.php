@@ -112,15 +112,34 @@ if (!function_exists('lc_settings_defaults')) {
     }
 }
 
-if (!function_exists('lc_settings_get_all')) {
-    function lc_settings_get_all()
+if (!function_exists('lc_settings_reset_runtime_cache')) {
+    function lc_settings_reset_runtime_cache()
     {
+        lc_settings_get_all(true);
+    }
+}
+
+if (!function_exists('lc_settings_get_all')) {
+    function lc_settings_get_all($reset = false)
+    {
+        static $cached = null;
+        if ($reset) {
+            $cached = null;
+        }
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $defaults = lc_settings_defaults();
         if (!function_exists('lc_db_installed') || !function_exists('lc_db_table_exists') || !function_exists('lc_table')) {
-            return $defaults;
+            $cached = $defaults;
+
+            return $cached;
         }
         if (!lc_db_installed() || !lc_db_table_exists(lc_table('settings'))) {
-            return $defaults;
+            $cached = $defaults;
+
+            return $cached;
         }
 
         $table = lc_table('settings');
@@ -134,7 +153,9 @@ if (!function_exists('lc_settings_get_all')) {
             }
         }
 
-        return $defaults;
+        $cached = $defaults;
+
+        return $cached;
     }
 }
 
@@ -235,6 +256,10 @@ if (!function_exists('lc_settings_save_row')) {
             return array('ok' => false, 'message' => '설정 저장 실패 (' . $key . '): ' . $err);
         }
 
+        if (function_exists('lc_settings_reset_runtime_cache')) {
+            lc_settings_reset_runtime_cache();
+        }
+
         return array('ok' => true, 'message' => '');
     }
 }
@@ -283,6 +308,10 @@ if (!function_exists('lc_settings_save')) {
             if (!$saved['ok']) {
                 return array('ok' => false, 'message' => $saved['message'], 'settings' => lc_settings_get_all());
             }
+        }
+
+        if (function_exists('lc_settings_reset_runtime_cache')) {
+            lc_settings_reset_runtime_cache();
         }
 
         return array(

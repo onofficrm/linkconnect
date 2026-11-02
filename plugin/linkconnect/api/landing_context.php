@@ -1,4 +1,7 @@
 <?php
+if (!defined('LC_BOOTSTRAP')) {
+    define('LC_BOOTSTRAP', 'public');
+}
 require_once dirname(__DIR__) . '/_common.php';
 
 lc_api_require_method('GET');

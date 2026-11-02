@@ -227,6 +227,73 @@ if (!function_exists('lc_db_migrations_mark_cached')) {
     }
 }
 
+if (!function_exists('lc_runtime_cache_dir')) {
+    function lc_runtime_cache_dir()
+    {
+        if (defined('G5_DATA_PATH') && G5_DATA_PATH) {
+            $dir = rtrim((string) G5_DATA_PATH, '/') . '/linkconnect/cache';
+        } else {
+            $dir = rtrim(sys_get_temp_dir(), '/') . '/linkconnect-cache';
+        }
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        return $dir;
+    }
+}
+
+if (!function_exists('lc_runtime_cache_get')) {
+    function lc_runtime_cache_get($key, $ttl)
+    {
+        $safe = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $key);
+        $file = lc_runtime_cache_dir() . '/' . $safe . '.json';
+        if ($safe === '' || !is_file($file)) {
+            return null;
+        }
+        if ((time() - (int) filemtime($file)) > max(1, (int) $ttl)) {
+            return null;
+        }
+        $raw = @file_get_contents($file);
+        if (!is_string($raw) || $raw === '') {
+            return null;
+        }
+        $data = json_decode($raw, true);
+
+        return is_array($data) ? $data : null;
+    }
+}
+
+if (!function_exists('lc_runtime_cache_set')) {
+    function lc_runtime_cache_set($key, array $data)
+    {
+        $safe = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $key);
+        if ($safe === '') {
+            return false;
+        }
+
+        return @file_put_contents(
+            lc_runtime_cache_dir() . '/' . $safe . '.json',
+            json_encode($data, JSON_UNESCAPED_UNICODE),
+            LOCK_EX
+        ) !== false;
+    }
+}
+
+if (!function_exists('lc_runtime_cache_clear')) {
+    function lc_runtime_cache_clear($prefix = '')
+    {
+        $dir = lc_runtime_cache_dir();
+        $files = glob($dir . '/' . ($prefix !== '' ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $prefix) . '*' : '*') . '.json');
+        if (!is_array($files)) {
+            return;
+        }
+        foreach ($files as $file) {
+            @unlink($file);
+        }
+    }
+}
+
 if (!function_exists('lc_db_table_exists')) {
     function lc_db_table_exists($table_name)
     {

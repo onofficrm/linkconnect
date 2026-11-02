@@ -1,5 +1,10 @@
 <?php
 require_once __DIR__ . '/_common.php';
+if (function_exists('lc_require_inc')) {
+    lc_require_inc('gemini.php');
+    lc_require_inc('openai.php');
+    lc_require_inc('ai.php');
+}
 
 lc_api_require_method('POST');
 $merchant = lc_api_require_active_merchant();

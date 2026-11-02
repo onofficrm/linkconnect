@@ -4,7 +4,13 @@
  *  - CPS: → /go/lp/...
  *  - CPA: → /r/...
  */
+if (!defined('LC_BOOTSTRAP')) {
+    define('LC_BOOTSTRAP', 'public');
+}
 require_once dirname(__DIR__) . '/plugin/linkconnect/_common.php';
+if (function_exists('lc_require_inc')) {
+    lc_require_inc('linkprice.php');
+}
 
 $code = isset($_GET['code']) ? trim((string) $_GET['code']) : '';
 if ($code === '' && isset($_SERVER['PATH_INFO'])) {

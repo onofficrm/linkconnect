@@ -32,222 +32,95 @@ if (is_file(G5_PATH . '/_site.config.php')) {
 
 require_once dirname(__FILE__) . '/config.php';
 
-if (is_file(LC_PLUGIN_PATH . '/inc/sample_data.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/sample_data.php';
+if (!defined('LC_BOOTSTRAP')) {
+    define('LC_BOOTSTRAP', 'full');
 }
-if (is_file(LC_PLUGIN_PATH . '/inc/db.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/db.php';
-    if (function_exists('lc_db_installed') && lc_db_installed() && function_exists('lc_db_run_migrations')) {
-        lc_db_run_migrations();
+
+if (!function_exists('lc_require_inc')) {
+    function lc_require_inc($file)
+    {
+        $path = LC_PLUGIN_PATH . '/inc/' . ltrim((string) $file, '/');
+        if (is_file($path)) {
+            require_once $path;
+        }
     }
 }
-if (is_file(LC_PLUGIN_PATH . '/inc/partner.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/partner.php';
+
+$lc_public = (LC_BOOTSTRAP === 'public');
+
+lc_require_inc('db.php');
+if (function_exists('lc_db_installed') && lc_db_installed() && function_exists('lc_db_run_migrations')) {
+    lc_db_run_migrations();
 }
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant.php';
+lc_require_inc('settings.php');
+lc_require_inc('partner.php');
+lc_require_inc('merchant.php');
+lc_require_inc('conversion.php');
+lc_require_inc('conversion_attachment.php');
+if (function_exists('lc_conversion_attachment_ensure_schema')) {
+    lc_conversion_attachment_ensure_schema();
 }
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_config.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_config.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_body.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_body.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_pdf.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_pdf.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_access.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_access.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_read.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_read.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_addendum.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_addendum.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_admin.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_contract_custom.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_contract_custom.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_ad_apply.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_ad_apply.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/wallet.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/wallet.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/conversion.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/conversion.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/conversion_attachment.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/conversion_attachment.php';
-    if (function_exists('lc_conversion_attachment_ensure_schema')) {
-        lc_conversion_attachment_ensure_schema();
+lc_require_inc('campaign.php');
+lc_require_inc('campaign_thumbnail.php');
+lc_require_inc('campaign_promo_guide.php');
+lc_require_inc('call.php');
+lc_require_inc('link.php');
+lc_require_inc('api.php');
+lc_require_inc('landing.php');
+lc_require_inc('abuse.php');
+
+if (!$lc_public) {
+    lc_require_inc('merchant_contract_config.php');
+    lc_require_inc('merchant_contract_body.php');
+    lc_require_inc('merchant_contract.php');
+    lc_require_inc('merchant_contract_pdf.php');
+    lc_require_inc('merchant_contract_access.php');
+    lc_require_inc('merchant_contract_read.php');
+    lc_require_inc('merchant_contract_addendum.php');
+    lc_require_inc('merchant_contract_admin.php');
+    lc_require_inc('merchant_contract_custom.php');
+    lc_require_inc('merchant_ad_apply.php');
+    lc_require_inc('wallet.php');
+    lc_require_inc('admin.php');
+    lc_require_inc('auth_bootstrap.php');
+    lc_require_inc('image_process.php');
+    lc_require_inc('settlement.php');
+    lc_require_inc('net_profit.php');
+    lc_require_inc('inquiry.php');
+    lc_require_inc('email_notify.php');
+    lc_require_inc('alimtalk.php');
+    lc_require_inc('api_client.php');
+    lc_require_inc('event.php');
+    lc_require_inc('embed.php');
+    lc_require_inc('embed_events.php');
+    lc_require_inc('partner_analytics.php');
+    lc_require_inc('merchant_marketing.php');
+    lc_require_inc('ui.php');
+    lc_require_inc('page.php');
+    lc_require_inc('notice_board.php');
+    lc_require_inc('community_board.php');
+    lc_require_inc('push.php');
+    lc_require_inc('notification.php');
+    lc_require_inc('admin_log.php');
+    lc_require_inc('impersonate.php');
+    lc_require_inc('partner_tier.php');
+    lc_require_inc('admin_ops.php');
+    lc_require_inc('settlement_risk.php');
+    lc_require_inc('event_roi.php');
+    lc_require_inc('channel_report.php');
+    lc_require_inc('call_recording_request.php');
+    lc_require_inc('linkprice.php');
+    lc_require_inc('platform.php');
+    if (function_exists('lc_mp_enabled') && lc_mp_enabled()) {
+        lc_require_inc('platform_db.php');
+        lc_require_inc('platform_policy.php');
+        lc_require_inc('platform_adapter.php');
+        lc_require_inc('platform_sync.php');
+        if (function_exists('lc_db_installed') && lc_db_installed()
+            && function_exists('lc_mp_db_ensure_schema')) {
+            lc_mp_db_ensure_schema();
+        }
     }
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/admin.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/admin.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/auth_bootstrap.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/auth_bootstrap.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/image_process.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/image_process.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_thumbnail.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_thumbnail.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_promo_guide.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_banktupt.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_banktupt.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_dasibom.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_dasibom.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_hasugu_cpa.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_modemo.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_modemo.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_sindok.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_sindok.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/campaign_dotrak.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/campaign_dotrak.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/settlement.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/settlement.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/net_profit.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/net_profit.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/inquiry.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/inquiry.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/email_notify.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/email_notify.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/settings.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/settings.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/alimtalk.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/alimtalk.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/api_client.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/api_client.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/event.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/event.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/link.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/link.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/embed.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/embed.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/embed_events.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/embed_events.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/partner_analytics.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/partner_analytics.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/merchant_marketing.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/merchant_marketing.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/api.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/api.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/ui.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/ui.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/page.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/page.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/notice_board.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/notice_board.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/community_board.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/community_board.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/gemini.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/gemini.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/openai.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/openai.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/ai.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/ai.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/notification.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/push.php';
-    require_once LC_PLUGIN_PATH . '/inc/notification.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/admin_log.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/admin_log.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/impersonate.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/impersonate.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/partner_tier.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/partner_tier.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/admin_ops.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/admin_ops.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/abuse.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/abuse.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/settlement_risk.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/settlement_risk.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/event_roi.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/event_roi.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/channel_report.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/channel_report.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/call.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/call.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/call_recording_request.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/call_recording_request.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/linkprice.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/linkprice.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/landing.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/landing.php';
-}
-/* 다중 플랫폼 — 플래그 OFF 시 함수들은 no-op */
-if (is_file(LC_PLUGIN_PATH . '/inc/platform.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/platform.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/platform_db.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/platform_db.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/platform_policy.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/platform_policy.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/platform_adapter.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/platform_adapter.php';
-}
-if (is_file(LC_PLUGIN_PATH . '/inc/platform_sync.php')) {
-    require_once LC_PLUGIN_PATH . '/inc/platform_sync.php';
-}
-if (function_exists('lc_mp_enabled') && lc_mp_enabled()
-    && function_exists('lc_db_installed') && lc_db_installed()
-    && function_exists('lc_mp_db_ensure_schema')) {
-    lc_mp_db_ensure_schema();
 }
 
 if (function_exists('lc_link_enforce_tracking_host_gate')) {

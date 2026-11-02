@@ -4,12 +4,17 @@ if (!defined('_GNUBOARD_')) {
 }
 
 if (!function_exists('lc_api_json')) {
-    function lc_api_json(array $payload, $status = 200)
+    function lc_api_json(array $payload, $status = 200, $cache_seconds = 0)
     {
         if (!headers_sent()) {
             http_response_code((int) $status);
             header('Content-Type: application/json; charset=utf-8');
-            header('Cache-Control: no-store, no-cache, must-revalidate');
+            $cache_seconds = (int) $cache_seconds;
+            if ($cache_seconds > 0 && (int) $status === 200) {
+                header('Cache-Control: public, max-age=' . $cache_seconds);
+            } else {
+                header('Cache-Control: no-store, no-cache, must-revalidate');
+            }
         }
 
         echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
@@ -18,7 +23,7 @@ if (!function_exists('lc_api_json')) {
 }
 
 if (!function_exists('lc_api_success')) {
-    function lc_api_success($data = null, $meta = array())
+    function lc_api_success($data = null, $meta = array(), $cache_seconds = 0)
     {
         $payload = array('ok' => true);
         if ($data !== null) {
@@ -28,7 +33,7 @@ if (!function_exists('lc_api_success')) {
             $payload['meta'] = $meta;
         }
 
-        lc_api_json($payload, 200);
+        lc_api_json($payload, 200, $cache_seconds);
     }
 }
 

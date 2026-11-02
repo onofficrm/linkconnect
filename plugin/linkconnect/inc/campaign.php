@@ -85,9 +85,11 @@ if (!function_exists('lc_campaign_to_api')) {
                 )
                 : (string) $row['cp_landing_url'],
             'trackingBaseUrl'   => $tracking_base,
-            'thumbnailUrl'      => function_exists('lc_campaign_thumbnail_public_url')
-                ? lc_campaign_thumbnail_public_url($cp_id)
-                : '',
+            'thumbnailUrl'      => function_exists('lc_campaign_thumbnail_public_url_from_row')
+                ? lc_campaign_thumbnail_public_url_from_row($row)
+                : (function_exists('lc_campaign_thumbnail_public_url')
+                    ? lc_campaign_thumbnail_public_url($cp_id)
+                    : ''),
             'callEnabled'       => function_exists('lc_campaign_call_enabled')
                 ? lc_campaign_call_enabled($cp_id, $call_enabled_set)
                 : false,
@@ -1316,6 +1318,10 @@ if (!function_exists('lc_campaign_save')) {
         }
         $api_campaign = lc_campaign_to_admin_api($saved);
 
+        if (function_exists('lc_runtime_cache_clear')) {
+            lc_runtime_cache_clear('pub_campaigns');
+        }
+
         return array(
             'ok'       => true,
             'message'  => $is_update ? '광고상품이 저장되었습니다.' : '광고상품이 등록되었습니다.',
@@ -1364,6 +1370,10 @@ if (!function_exists('lc_campaign_update_status')) {
                 $saved['mt_company'] = $merchant['mt_company'];
                 $saved['mt_balance'] = $merchant['mt_balance'];
             }
+        }
+
+        if (function_exists('lc_runtime_cache_clear')) {
+            lc_runtime_cache_clear('pub_campaigns');
         }
 
         return array(
@@ -1426,6 +1436,10 @@ if (!function_exists('lc_campaign_delete')) {
         }
 
         lc_sql_query(" DELETE FROM `{$cp_table}` WHERE cp_id = '{$cp_id}' LIMIT 1 ", false);
+
+        if (function_exists('lc_runtime_cache_clear')) {
+            lc_runtime_cache_clear('pub_campaigns');
+        }
 
         return array('ok' => true, 'message' => '광고상품이 삭제되었습니다.');
     }

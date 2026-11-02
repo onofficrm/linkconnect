@@ -2,6 +2,9 @@
 /**
  * 홍보 링크 클릭 리다이렉트 — /r/{code}
  */
+if (!defined('LC_BOOTSTRAP')) {
+    define('LC_BOOTSTRAP', 'public');
+}
 require_once dirname(__DIR__) . '/plugin/linkconnect/_common.php';
 
 $code = isset($_GET['code']) ? trim((string) $_GET['code']) : '';

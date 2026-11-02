@@ -54,6 +54,20 @@ if (!function_exists('lc_campaign_thumbnail_full_path')) {
     }
 }
 
+if (!function_exists('lc_campaign_thumbnail_public_url_from_row')) {
+    function lc_campaign_thumbnail_public_url_from_row(array $row)
+    {
+        $cp_id = (int) ($row['cp_id'] ?? 0);
+        if ($cp_id <= 0 || lc_campaign_thumbnail_relative_from_row($row) === '') {
+            return '';
+        }
+
+        $base = defined('LC_PLUGIN_URL') ? LC_PLUGIN_URL : (G5_PLUGIN_URL . '/linkconnect');
+
+        return rtrim($base, '/') . '/api/campaign-thumbnail.php?cpId=' . $cp_id;
+    }
+}
+
 if (!function_exists('lc_campaign_thumbnail_public_url')) {
     function lc_campaign_thumbnail_public_url($cp_id)
     {
@@ -63,13 +77,11 @@ if (!function_exists('lc_campaign_thumbnail_public_url')) {
         }
 
         $campaign = function_exists('lc_campaign_get_by_id') ? lc_campaign_get_by_id($cp_id) : null;
-        if (!is_array($campaign) || lc_campaign_thumbnail_relative_from_row($campaign) === '') {
+        if (!is_array($campaign)) {
             return '';
         }
 
-        $base = defined('LC_PLUGIN_URL') ? LC_PLUGIN_URL : (G5_PLUGIN_URL . '/linkconnect');
-
-        return rtrim($base, '/') . '/api/campaign-thumbnail.php?cpId=' . $cp_id;
+        return lc_campaign_thumbnail_public_url_from_row($campaign);
     }
 }
 

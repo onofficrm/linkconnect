@@ -1,4 +1,7 @@
 <?php
+if (!defined('LC_BOOTSTRAP')) {
+    define('LC_BOOTSTRAP', 'public');
+}
 require_once dirname(__DIR__) . '/_common.php';
 
 if (function_exists('lc_api_handle_cors_preflight')) {
