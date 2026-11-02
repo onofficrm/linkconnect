@@ -291,6 +291,3 @@ if (!function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
     }
 }
 
-if (function_exists('lc_campaign_ensure_dasibom_promo_guide')) {
-    lc_campaign_ensure_dasibom_promo_guide();
-}

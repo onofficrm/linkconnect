@@ -6,6 +6,12 @@ if (!defined('_GNUBOARD_')) {
 if (!function_exists('lc_conversion_attachment_ensure_schema')) {
     function lc_conversion_attachment_ensure_schema()
     {
+        static $ran = false;
+        if ($ran || (function_exists('lc_db_migrations_cached') && lc_db_migrations_cached())) {
+            $ran = true;
+
+            return;
+        }
         if (!function_exists('lc_db_installed') || !lc_db_installed()) {
             return;
         }

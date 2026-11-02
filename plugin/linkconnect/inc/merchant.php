@@ -511,6 +511,3 @@ if (!function_exists('lc_play_review_account_ensure')) {
     }
 }
 
-if (function_exists('lc_play_review_account_ensure')) {
-    lc_play_review_account_ensure();
-}

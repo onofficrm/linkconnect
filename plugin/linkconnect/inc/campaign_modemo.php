@@ -233,6 +233,3 @@ if (!function_exists('lc_modemo_migrate_off_yevely')) {
     }
 }
 
-if (function_exists('lc_campaign_ensure_modemo')) {
-    lc_campaign_ensure_modemo();
-}

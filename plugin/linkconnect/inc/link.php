@@ -1367,6 +1367,3 @@ if (!function_exists('lc_link_ensure_da24_test')) {
     }
 }
 
-if (function_exists('lc_link_ensure_da24_test')) {
-    lc_link_ensure_da24_test();
-}

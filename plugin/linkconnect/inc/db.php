@@ -3,6 +3,10 @@ if (!defined('_GNUBOARD_')) {
     exit;
 }
 
+if (!defined('LC_DB_MIGRATION_VERSION')) {
+    define('LC_DB_MIGRATION_VERSION', '20261102');
+}
+
 if (!function_exists('lc_table_prefix')) {
     function lc_table_prefix()
     {
@@ -178,13 +182,65 @@ if (!function_exists('lc_sql_rollback')) {
     }
 }
 
+if (!function_exists('lc_db_migration_stamp_path')) {
+    function lc_db_migration_stamp_path()
+    {
+        if (defined('G5_DATA_PATH') && G5_DATA_PATH) {
+            $dir = rtrim((string) G5_DATA_PATH, '/') . '/linkconnect';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+
+            return $dir . '/schema.version';
+        }
+
+        return rtrim(sys_get_temp_dir(), '/') . '/lc_schema.version';
+    }
+}
+
+if (!function_exists('lc_db_migrations_cached')) {
+    function lc_db_migrations_cached()
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $path = lc_db_migration_stamp_path();
+        if (!is_file($path)) {
+            $cached = false;
+
+            return false;
+        }
+
+        $cached = trim((string) @file_get_contents($path)) === (string) LC_DB_MIGRATION_VERSION;
+
+        return $cached;
+    }
+}
+
+if (!function_exists('lc_db_migrations_mark_cached')) {
+    function lc_db_migrations_mark_cached()
+    {
+        $path = lc_db_migration_stamp_path();
+        @file_put_contents($path, (string) LC_DB_MIGRATION_VERSION);
+    }
+}
+
 if (!function_exists('lc_db_table_exists')) {
     function lc_db_table_exists($table_name)
     {
-        $table_name = lc_sql_escape($table_name);
-        $row = lc_sql_fetch(" SHOW TABLES LIKE '{$table_name}' ", false);
+        static $cache = array();
+        $key = (string) $table_name;
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
 
-        return is_array($row) && count($row) > 0;
+        $table_esc = lc_sql_escape($key);
+        $row = lc_sql_fetch(" SHOW TABLES LIKE '{$table_esc}' ", false);
+        $cache[$key] = is_array($row) && count($row) > 0;
+
+        return $cache[$key];
     }
 }
 
@@ -559,11 +615,20 @@ if (!function_exists('lc_db_run_schema')) {
 if (!function_exists('lc_db_column_exists')) {
     function lc_db_column_exists($table_name, $column_name)
     {
-        $table_name = lc_sql_escape($table_name);
-        $column_name = lc_sql_escape($column_name);
-        $row = lc_sql_fetch(" SHOW COLUMNS FROM `{$table_name}` LIKE '{$column_name}' ", false);
+        static $cache = array();
+        $table_key = (string) $table_name;
+        $column_key = (string) $column_name;
+        $cache_key = $table_key . "\0" . $column_key;
+        if (array_key_exists($cache_key, $cache)) {
+            return $cache[$cache_key];
+        }
 
-        return is_array($row) && count($row) > 0;
+        $table_esc = lc_sql_escape($table_key);
+        $column_esc = lc_sql_escape($column_key);
+        $row = lc_sql_fetch(" SHOW COLUMNS FROM `{$table_esc}` LIKE '{$column_esc}' ", false);
+        $cache[$cache_key] = is_array($row) && count($row) > 0;
+
+        return $cache[$cache_key];
     }
 }
 
@@ -725,6 +790,13 @@ if (!function_exists('lc_db_run_migrations')) {
      */
     function lc_db_run_migrations()
     {
+        static $ran = false;
+        if ($ran || lc_db_migrations_cached()) {
+            $ran = true;
+
+            return array('ok' => true, 'message' => 'cached');
+        }
+
         $campaigns = lc_table('campaigns');
         $conversions = lc_table('conversions');
         $inquiries = lc_table('inquiries');
@@ -1292,6 +1364,9 @@ if (!function_exists('lc_db_run_migrations')) {
                 return $lp;
             }
         }
+
+        lc_db_migrations_mark_cached();
+        $ran = true;
 
         return array('ok' => true, 'message' => '마이그레이션 완료');
     }
