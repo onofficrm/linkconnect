@@ -239,3 +239,158 @@ if (!function_exists('lc_campaign_ensure_dotrak')) {
         );
     }
 }
+
+if (!function_exists('lc_dotrak_resolve_campaign_row')) {
+    /**
+     * 도트락 캠페인 행 조회 (코드 → 상품명).
+     *
+     * @return array<string,mixed>|null
+     */
+    function lc_dotrak_resolve_campaign_row()
+    {
+        if (!lc_db_installed() || !function_exists('lc_sql_fetch')) {
+            return null;
+        }
+
+        $def = lc_dotrak_campaign_definition();
+        $table = lc_table('campaigns');
+        $codes = array_merge(array((string) $def['code']), (array) $def['alias_codes']);
+        foreach ($codes as $code) {
+            $code = trim((string) $code);
+            if ($code === '') {
+                continue;
+            }
+            $row = lc_sql_fetch(
+                " SELECT * FROM `{$table}` WHERE cp_code = '" . lc_sql_escape($code) . "' LIMIT 1 ",
+                false
+            );
+            if ($row) {
+                return $row;
+            }
+        }
+
+        foreach ((array) $def['name_needles'] as $needle) {
+            $needle = trim((string) $needle);
+            if ($needle === '') {
+                continue;
+            }
+            $row = lc_sql_fetch(
+                " SELECT * FROM `{$table}` WHERE cp_name LIKE '" . lc_sql_escape('%' . $needle . '%') . "' ORDER BY cp_id ASC LIMIT 1 ",
+                false
+            );
+            if ($row) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('lc_dotrak_disable_call_db')) {
+    /**
+     * 도트락 두피문신 콜디비 설정 해제.
+     * - 관리자/광고주 콜 활성화 off
+     * - 착신번호 비움
+     * - 해당 상품 가상번호 배정 회수·대기 신청 반려
+     *
+     * @return array{ok:bool,message:string,cpId?:int,settingsCleared?:bool,revoked?:int,rejected?:int}
+     */
+    function lc_dotrak_disable_call_db()
+    {
+        if (!lc_db_installed()) {
+            return array('ok' => false, 'message' => 'DB가 설치되지 않았습니다.');
+        }
+
+        $campaign = lc_dotrak_resolve_campaign_row();
+        if (!$campaign) {
+            return array('ok' => false, 'message' => '도트락 캠페인을 찾을 수 없습니다.');
+        }
+
+        $cp_id = (int) ($campaign['cp_id'] ?? 0);
+        if ($cp_id <= 0) {
+            return array('ok' => false, 'message' => '도트락 캠페인 ID가 올바르지 않습니다.');
+        }
+
+        $settings_cleared = false;
+        if (function_exists('lc_call_settings_save')) {
+            $save = lc_call_settings_save($cp_id, array(
+                'adminEnabled' => false,
+                'enabled'      => false,
+                'forward1'     => '',
+                'forward2'     => '',
+                'memo'         => '콜디비 설정 해제',
+            ), 'admin');
+            if (empty($save['ok'])) {
+                return array(
+                    'ok'      => false,
+                    'message' => (string) ($save['message'] ?? '콜 설정 해제에 실패했습니다.'),
+                    'cpId'    => $cp_id,
+                );
+            }
+            $settings_cleared = true;
+        } elseif (lc_db_table_exists(lc_table('call_settings'))) {
+            $cs = lc_table('call_settings');
+            lc_sql_query(
+                " UPDATE `{$cs}` SET
+                    cs_admin_enabled = 0,
+                    cs_enabled = 0,
+                    cs_forward1 = '',
+                    cs_forward2 = '',
+                    cs_memo = '" . lc_sql_escape('콜디비 설정 해제') . "',
+                    cs_updated_at = NOW()
+                  WHERE cp_id = '{$cp_id}' ",
+                false
+            );
+            $settings_cleared = true;
+        }
+
+        $revoked = 0;
+        $rejected = 0;
+        if (lc_db_table_exists(lc_table('call_requests'))) {
+            $car = lc_table('call_requests');
+            $result = lc_sql_query(
+                " SELECT car_id, car_status FROM `{$car}`
+                  WHERE cp_id = '{$cp_id}'
+                    AND car_status IN ('" . LC_CALL_REQ_PENDING . "','" . LC_CALL_REQ_ASSIGNED . "')
+                  ORDER BY car_id ASC ",
+                false
+            );
+            if ($result) {
+                while ($row = sql_fetch_array($result)) {
+                    $car_id = (int) ($row['car_id'] ?? 0);
+                    if ($car_id <= 0) {
+                        continue;
+                    }
+                    $status = (string) ($row['car_status'] ?? '');
+                    if ($status === LC_CALL_REQ_ASSIGNED && function_exists('lc_call_request_revoke')) {
+                        $rel = lc_call_request_revoke($car_id, '도트락 콜디비 설정 해제로 회수');
+                        if (!empty($rel['ok'])) {
+                            $revoked++;
+                        }
+                    } elseif ($status === LC_CALL_REQ_PENDING && function_exists('lc_call_request_reject')) {
+                        $rej = lc_call_request_reject($car_id, '도트락 콜디비 설정 해제로 반려');
+                        if (!empty($rej['ok'])) {
+                            $rejected++;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (function_exists('lc_runtime_cache_clear')) {
+            lc_runtime_cache_clear('pub_campaigns');
+        }
+
+        return array(
+            'ok'              => true,
+            'message'         => '도트락 두피문신 콜디비 설정을 해제했습니다.',
+            'cpId'            => $cp_id,
+            'cpCode'          => (string) ($campaign['cp_code'] ?? ''),
+            'cpName'          => (string) ($campaign['cp_name'] ?? ''),
+            'settingsCleared' => $settings_cleared,
+            'revoked'         => $revoked,
+            'rejected'        => $rejected,
+        );
+    }
+}
